@@ -1,9 +1,14 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --ink: #2b2430; --accent: #e56b8c; --accent2: #5b7fb8; }
+:root { --ink: #2b2430; --accent: #e56b8c; --accent2: #5b7fb8; --side-bg: url("images/title_key.webp"); }
 html, body { height: 100%; }
 body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; background: #17141d; color: var(--ink); }
 #app { max-width: 480px; margin: 0 auto; height: 100dvh; position: relative; background: #000; overflow: hidden; }
-@media (min-width: 720px) { #app { max-width: 900px; } }
+/* PC 가로 화면: 세로 무대를 가운데 두고, 좌우 여백은 현재 배경의 블러 확장으로 채웁니다 */
+@media (min-width: 1024px) and (orientation: landscape) {
+  body::before { content: ""; position: fixed; inset: -40px; background-image: var(--side-bg); background-size: cover; background-position: center; filter: blur(30px) brightness(0.5) saturate(1.15); z-index: 0; }
+  body::after { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(10, 7, 16, 0.55) 100%); z-index: 0; }
+  #app { width: min(56.25dvh, 640px); max-width: none; z-index: 1; box-shadow: 0 0 70px rgba(0,0,0,0.65); border-left: 1px solid rgba(255,255,255,0.09); border-right: 1px solid rgba(255,255,255,0.09); }
+}
 .screen { position: absolute; inset: 0; }
 .hidden { display: none !important; }
 /* 타이틀 */
@@ -43,7 +48,7 @@ body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; backgrou
 #galleryScreen { background: #241d2e; color: #fff; padding: 20px 16px; overflow-y: auto; }
 #galleryScreen h2 { margin-bottom: 14px; }
 .galleryGrid { display: grid; grid-template-columns: 1fr; gap: 14px; }
-@media (min-width: 720px) { .galleryGrid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 720px) { .galleryGrid { grid-template-columns: repeat(2, 1fr); } }
 .gItem img { width: 100%; border-radius: 10px; display: block; }
 .gItem p { font-size: 13px; margin-top: 6px; }
 .gLocked { height: 140px; border-radius: 10px; background: #3a3049; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #8f83a6; }
@@ -54,3 +59,9 @@ body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; backgrou
 .endingLabel { letter-spacing: 6px; color: #ffb9cc; font-size: 13px; }
 .endingBox h2 { margin: 14px 0 10px; font-size: 25px; line-height: 1.45; }
 .endingAff { font-size: 14px; opacity: 0.9; margin-bottom: 18px; }
+
+/* 광고 슬롯 */
+.adSlot { margin: 10px auto 2px; text-align: center; min-height: 0; }
+.chapterAdPanel { position: absolute; inset: 0; z-index: 40; background: rgba(10, 8, 20, 0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; }
+.chapterLabel { font-size: 20px; font-weight: 700; color: #ffe9a8; letter-spacing: 1px; }
+.chapterAdPanel .adSlot { min-height: 250px; }

@@ -75,10 +75,10 @@
     cgEl.classList.add('hidden'); chEl.classList.add('hidden');
     if (step.cg) {
       var cg = CG_LIST.filter(function (c) { return c.id === step.cg; })[0];
-      if (cg) { cgEl.src = cg.file; cgEl.classList.remove('hidden'); unlockCG(cg.id); state.seen[cg.id] = true; }
+      if (cg) { cgEl.src = cg.file; cgEl.classList.remove('hidden'); unlockCG(cg.id); state.seen[cg.id] = true; document.documentElement.style.setProperty('--side-bg', 'url("' + cg.file + '")'); }
       if (step.bg) bgEl.src = BG[step.bg];
     } else {
-      if (step.bg) bgEl.src = BG[step.bg];
+      if (step.bg) { bgEl.src = BG[step.bg]; document.documentElement.style.setProperty('--side-bg', 'url("' + BG[step.bg] + '")'); }
       if (step.ch) { chEl.src = charImg(step.ch, step.ex); chEl.classList.remove('hidden'); }
     }
   }
@@ -109,10 +109,47 @@
 
   function current() { return STEPS[state.pos]; }
 
+  var CFG = window.NEOWA_CONFIG || { adfit: {} };
+  var CHAPTER_BREAKS = {
+    D1_01: 'Day 1 · 전학 첫날', N1_01: 'Day 1 · 밤',
+    D2_01: 'Day 2 · 가까워지는 거리', N2_01: 'Day 2 · 밤',
+    D3_01: 'Day 3 · 축제 준비', N3_01: 'Day 3 · 밤',
+    D4_01: 'Day 4 · 축제 전날', D5_01: 'Day 5 · 축제 당일'
+  };
+
+  function fillAd(el, unit, w, h) {
+    if (!el || !unit) return;
+    var ins = document.createElement('ins');
+    ins.className = 'kakao_ad_area';
+    ins.style.display = 'none';
+    ins.setAttribute('data-ad-unit', unit);
+    ins.setAttribute('data-ad-width', String(w));
+    ins.setAttribute('data-ad-height', String(h));
+    el.appendChild(ins);
+    el.classList.remove('hidden');
+    if (!window.__adfitLoaded) {
+      window.__adfitLoaded = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = '//t1.daumcdn.net/kas/static/ba.min.js';
+      document.body.appendChild(s);
+    }
+  }
+
   function render() {
     var step = current();
     if (!step) { finishToTitle(); return; }
     if (step.judge) { doJudge(); return; }
+    var adfitCfg = CFG.adfit || {};
+    if (adfitCfg.chapter && CHAPTER_BREAKS[step.id] && state.chapterSeen !== step.id) {
+      state.chapterSeen = step.id;
+      stopModes();
+      $('chapterLabel').textContent = CHAPTER_BREAKS[step.id];
+      var adEl = $('adChapter');
+      if (!adEl.dataset.filled) { adEl.dataset.filled = '1'; fillAd(adEl, adfitCfg.chapter, 300, 250); }
+      $('chapterAdPanel').classList.remove('hidden');
+      return;
+    }
     setScene(step);
     $('speakerName').textContent = step.sp || '';
     $('speakerName').style.display = step.sp ? 'block' : 'none';
@@ -270,6 +307,10 @@
     $('endingGalleryBtn').onclick = function () { prevScreen = 'endingScreen'; renderGallery(); show('galleryScreen'); };
     $('endingTitleBtn').onclick = function () { finishToTitle(); };
     $('restartBtn').onclick = function () { startGame(state ? state.name : '김도현'); };
+    $('chapterContinueBtn').onclick = function () { $('chapterAdPanel').classList.add('hidden'); render(); };
+    var adfitInit = CFG.adfit || {};
+    fillAd($('adTitle'), adfitInit.title, 320, 100);
+    fillAd($('adEnding'), adfitInit.ending, 320, 100);
     setInterval(function () { if (state && !$('gameScreen').classList.contains('hidden')) save('neowa_autosave', state); }, 5000);
   });
 })();

@@ -7,7 +7,9 @@
     corridor: 'assets/images/bg_corridor_afternoon.webp',
     library: 'assets/images/bg_library_after.webp',
     rooftop: 'assets/images/bg_rooftop_sunset.webp',
-    broadcast: 'assets/images/bg_broadcast_noon.webp'
+    broadcast: 'assets/images/bg_broadcast_noon.webp',
+    festival: 'assets/images/bg_festival_day.webp',
+    festival_eve: 'assets/images/bg_festival_evening.webp'
   };
   var EXPR = {
     seoyeon: ['normal', 'smile', 'embarrassed'],
@@ -25,8 +27,14 @@
   var autoTimer = null, skipTimer = null, typeTimer = null, typing = false, fullText = '';
   var prevScreen = 'titleScreen';
 
+  var SAVE_VER = 2;
+  function track(ev, params) {
+    try { if (window.gtag) { var p = params || {}; p.game = 'neowa'; window.gtag('event', ev, p); } } catch (e) {}
+  }
+  function validSave(s) { return !!(s && s.v === SAVE_VER && typeof s.pos === 'number'); }
   function freshState(name) {
     return {
+      v: SAVE_VER,
       name: name || '김도현', pos: 0,
       aff: { seoyeon: 0, chaerin: 0, arin: 0 },
       flags: {}, lastFocus: null, backlog: [], seen: {}
@@ -141,8 +149,9 @@
     if (!step) { finishToTitle(); return; }
     if (step.judge) { doJudge(); return; }
     var adfitCfg = CFG.adfit || {};
-    if (adfitCfg.chapter && CHAPTER_BREAKS[step.id] && state.chapterSeen !== step.id) {
-      state.chapterSeen = step.id;
+    var isChapter = !!CHAPTER_BREAKS[step.id] && state.chapterSeen !== step.id;
+    if (isChapter) { state.chapterSeen = step.id; track('chapter_start', { chapter: step.id }); }
+    if (adfitCfg.chapter && isChapter) {
       stopModes();
       $('chapterLabel').textContent = CHAPTER_BREAKS[step.id];
       var adEl = $('adChapter');
@@ -171,7 +180,7 @@
     var chars = ['seoyeon', 'chaerin', 'arin'];
     var max = Math.max(a.seoyeon, a.chaerin, a.arin);
     var target;
-    if (max <= 6) { target = 'END_SOLO_01'; }
+    if (max <= 7) { target = 'END_SOLO_01'; }
     else {
       var tops = chars.filter(function (c) { return a[c] === max; });
       var pick = tops[0];
@@ -180,10 +189,10 @@
         if (flagged.length === 1) pick = flagged[0];
         else if (tops.indexOf(state.lastFocus) >= 0) pick = state.lastFocus;
       }
-      var good = a[pick] >= 11 && hasGoodFlag(pick);
+      var good = a[pick] >= 13 && hasGoodFlag(pick);
       var pre = pick === 'seoyeon' ? 'END_SY_' : (pick === 'chaerin' ? 'END_CH_' : 'END_AR_');
       target = pre + (good ? 'G01' : 'N01');
-      if (a[pick] < 7) target = 'END_SOLO_01';
+      if (a[pick] < 8) target = 'END_SOLO_01';
     }
     state.pos = idx[target];
     render();
@@ -234,6 +243,7 @@
   function showEnding(step) {
     stopModes();
     unlockEnding(step.ending);
+    track('ending_reach', { ending: step.ending });
     $('endingTitle').textContent = ENDING_TITLES[step.ending] || '엔딩';
     var a = state.aff;
     $('endingAff').textContent = '최종 호감도: 서연 ' + a.seoyeon + ' / 채린 ' + a.chaerin + ' / 아린 ' + a.arin;
@@ -244,6 +254,7 @@
 
   function startGame(name) {
     state = freshState(name);
+    track('game_start', {});
     show('gameScreen');
     render();
   }
@@ -256,8 +267,8 @@
     };
     $('continueBtn').onclick = function () {
       var s = load('neowa_autosave');
-      if (s) { state = s; show('gameScreen'); render(); }
-      else alert('저장된 진행이 없습니다.');
+      if (validSave(s)) { state = s; show('gameScreen'); render(); }
+      else alert('저장된 진행이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.');
     };
     $('galleryBtn').onclick = function () { prevScreen = 'titleScreen'; renderGallery(); show('galleryScreen'); };
     $('galleryBackBtn').onclick = function () { show(prevScreen); };
@@ -271,8 +282,8 @@
       e.stopPropagation();
       var slot = prompt('불러올 슬롯 번호를 입력하세요 (1, 2, 3)', '1');
       var s = slot && load('neowa_save_' + slot);
-      if (s) { state = s; stopModes(); show('gameScreen'); render(); }
-      else alert('해당 슬롯에 저장이 없습니다.');
+      if (validSave(s)) { state = s; stopModes(); show('gameScreen'); render(); }
+      else alert('해당 슬롯에 저장이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.');
     };
     $('backlogBtn').onclick = function (e) {
       e.stopPropagation();

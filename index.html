@@ -6,6 +6,9 @@
 <title>방과 후, 너와</title>
 <meta name="google-adsense-account" content="ca-pub-2895947454673475">
 <meta name="description" content="선택지 분기형 비주얼노벨 웹게임. 전학 첫 학기, 방과 후의 선택이 이야기를 바꿉니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <script>
 /* 광고와 통계 설정: 코드가 비어 있으면 해당 기능은 동작하지 않습니다. */
@@ -35,15 +38,16 @@ window.NEOWA_CONFIG = {
     <div class="titleShade"></div>
     <div class="titleBox">
       <h1>방과 후, 너와</h1>
-      <p class="tagline">전학 첫 학기. 방과 후의 선택이, 그녀들과의 거리를 바꿉니다.</p>
-      <label class="nameLabel">주인공 이름
+      <p class="tagline" id="taglineText">전학 첫 학기. 방과 후의 선택이, 그녀들과의 거리를 바꿉니다.</p>
+      <label class="nameLabel"><span id="nameLabelText">주인공 이름</span>
         <input id="nameInput" type="text" maxlength="10" placeholder="김도현">
       </label>
       <button id="newGameBtn" class="mainBtn">새 게임</button>
       <button id="continueBtn" class="subBtn">이어하기</button>
       <button id="galleryBtn" class="subBtn">갤러리</button>
-      <p class="notice">15세 이용가 수준의 학원 드라마입니다. 플레이 시간 약 70분에서 95분, 엔딩 7개.</p>
-      <p class="notice">업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.</p>
+      <div id="langBar" class="langBar" aria-label="Language"></div>
+      <p class="notice" id="noticeText">15세 이용가 수준의 학원 드라마입니다. 플레이 시간 약 70분에서 95분, 엔딩 7개.</p>
+      <p class="notice" id="updateNoticeText">업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.</p>
       <div id="adTitle" class="adSlot hidden"></div>
     </div>
   </section>
@@ -73,14 +77,14 @@ window.NEOWA_CONFIG = {
       <button id="chapterContinueBtn" class="mainBtn">계속</button>
     </div>
     <div id="backlogPanel" class="backlogPanel hidden">
-      <div class="backlogHead"><span>백로그</span><button id="backlogCloseBtn">닫기</button></div>
+      <div class="backlogHead"><span id="backlogTitle">백로그</span><button id="backlogCloseBtn">닫기</button></div>
       <div id="backlogList" class="backlogList"></div>
     </div>
   </section>
 
   <!-- 갤러리 -->
   <section id="galleryScreen" class="screen hidden">
-    <h2>갤러리</h2>
+    <h2 id="galleryTitle">갤러리</h2>
     <div id="galleryGrid" class="galleryGrid"></div>
     <p id="endingList" class="endingList"></p>
     <button id="galleryBackBtn" class="subBtn">돌아가기</button>
@@ -100,6 +104,9 @@ window.NEOWA_CONFIG = {
   </section>
 </div>
 <script src="assets/scenario.js"></script>
+<script>
+(function () { try { var l = localStorage.getItem('neowa_lang'); if (l && l !== 'ko' && ['en','ja','zh','es','fr','ru'].indexOf(l) >= 0) document.write('<script src="assets/i18n/' + l + '.js"><\/script>'); } catch (e) {} })();
+</script>
 <script src="assets/engine.js"></script>
 </body>
 </html>

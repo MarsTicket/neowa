@@ -23,6 +23,23 @@
   var idx = {};
   STEPS.forEach(function (s, i) { idx[s.id] = i; });
   var $ = function (id) { return document.getElementById(id); };
+  // ===== 다국어 (i18n) =====
+  var LANG_LIST = ['ko', 'en', 'ja', 'zh', 'es', 'fr', 'ru'];
+  var LANG_NAMES = { ko: '한국어', en: 'English', ja: '日本語', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' };
+  var curLang = 'ko';
+  try { var savedLang = localStorage.getItem('neowa_lang'); if (LANG_LIST.indexOf(savedLang) >= 0) curLang = savedLang; } catch (e) {}
+  var L = (window.I18N_DATA && window.I18N_DATA.lang === curLang) ? window.I18N_DATA : null;
+  var KO_UI = { tagline: '전학 첫 학기. 방과 후의 선택이, 그녀들과의 거리를 바꿉니다.', nameLabel: '주인공 이름', newGame: '새 게임', continue: '이어하기', gallery: '갤러리', notice: '15세 이용가 수준의 학원 드라마입니다. 플레이 시간 약 70분에서 95분, 엔딩 7개.', updateNotice: '업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.', save: '저장', load: '불러오기', backlog: '백로그', auto: '자동', autoOn: '자동 중', skip: '스킵', skipOn: '스킵 중', continueChapter: '계속', close: '닫기', back: '돌아가기', galleryView: '갤러리 보기', toTitle: '타이틀로', restart: '처음부터 다시', lockedScene: '아직 보지 못한 장면', noRecord: '기록이 없습니다.', endingsSeen: '본 엔딩 {n} / 7', savePrompt: '저장할 슬롯 번호를 입력하세요 (1, 2, 3)', loadPrompt: '불러올 슬롯 번호를 입력하세요 (1, 2, 3)', savedMsg: '{slot}번 슬롯에 저장했습니다.', noSaveMsg: '저장된 진행이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.', noSlotMsg: '해당 슬롯에 저장이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.', finalAff: '최종 호감도: 서연 {sv} / 채린 {cv} / 아린 {av}', defaultName: '김도현', endingFallback: '엔딩' };
+  var KO_SP = { '나': '나', '서연': '서연', '채린': '채린', '아린': '아린', '선생님': '선생님', '학생': '학생' };
+  function U(k) { return (L && L.ui && L.ui[k]) || KO_UI[k] || k; }
+  function spDisp(sp) {
+    if (!sp) return '';
+    if (sp === '주인공') return state ? state.name : sp;
+    return (L && L.sp && L.sp[sp]) || KO_SP[sp] || sp;
+  }
+  function locStep(step) { return (L && L.steps && L.steps[step.id]) || null; }
+  document.documentElement.lang = curLang === 'zh' ? 'zh-CN' : curLang;
+
   var state = null;
   var autoTimer = null, skipTimer = null, typeTimer = null, typing = false, fullText = '';
   var prevScreen = 'titleScreen';
@@ -35,7 +52,7 @@
   function freshState(name) {
     return {
       v: SAVE_VER,
-      name: name || '김도현', pos: 0,
+      name: name || U('defaultName'), pos: 0,
       aff: { seoyeon: 0, chaerin: 0, arin: 0 },
       flags: {}, lastFocus: null, backlog: [], seen: {}
     };
@@ -58,16 +75,16 @@
     CG_LIST.forEach(function (cg) {
       var d = document.createElement('div'); d.className = 'gItem';
       if (g[cg.id]) {
-        d.innerHTML = '<img src="' + cg.file + '" alt="' + cg.title + '"><p>' + cg.title + '</p>';
+        var cgTitle = (L && L.cg && L.cg[cg.id]) || cg.title; d.innerHTML = '<img src="' + cg.file + '" alt="' + cgTitle + '"><p>' + cgTitle + '</p>';
       } else {
-        d.innerHTML = '<div class="gLocked">?</div><p>아직 보지 못한 장면</p>';
+        d.innerHTML = '<div class="gLocked">?</div><p>' + U('lockedScene') + '</p>';
       }
       box.appendChild(d);
     });
     var e = load('neowa_endings') || {};
-    var names = { SY_GOOD: '서연 굿', SY_NORMAL: '서연 노멀', CH_GOOD: '채린 굿', CH_NORMAL: '채린 노멀', AR_GOOD: '아린 굿', AR_NORMAL: '아린 노멀', SOLO: '솔로' };
+    var names = (L && L.endingShort) || { SY_GOOD: '서연 굿', SY_NORMAL: '서연 노멀', CH_GOOD: '채린 굿', CH_NORMAL: '채린 노멀', AR_GOOD: '아린 굿', AR_NORMAL: '아린 노멀', SOLO: '솔로' };
     var got = Object.keys(names).filter(function (k) { return e[k]; }).map(function (k) { return names[k]; });
-    $('endingList').textContent = '본 엔딩 ' + got.length + ' / 7' + (got.length ? ' : ' + got.join(', ') : '');
+    $('endingList').textContent = U('endingsSeen').replace('{n}', String(got.length)) + (got.length ? ' : ' + got.join(', ') : '');
   }
 
   function show(id) {
@@ -111,8 +128,8 @@
 
   function stopModes() {
     clearTimeout(autoTimer); clearInterval(skipTimer); skipTimer = null;
-    $('autoBtn').dataset.on = '0'; $('autoBtn').textContent = '자동';
-    $('skipBtn').dataset.on = '0'; $('skipBtn').textContent = '스킵';
+    $('autoBtn').dataset.on = '0'; $('autoBtn').textContent = U('auto');
+    $('skipBtn').dataset.on = '0'; $('skipBtn').textContent = U('skip');
   }
 
   function current() { return STEPS[state.pos]; }
@@ -153,17 +170,19 @@
     if (isChapter) { state.chapterSeen = step.id; track('chapter_start', { chapter: step.id }); }
     if (adfitCfg.chapter && isChapter) {
       stopModes();
-      $('chapterLabel').textContent = CHAPTER_BREAKS[step.id];
+      $('chapterLabel').textContent = (L && L.chapters && L.chapters[step.id]) || CHAPTER_BREAKS[step.id];
       var adEl = $('adChapter');
       if (!adEl.dataset.filled) { adEl.dataset.filled = '1'; fillAd(adEl, adfitCfg.chapter, 300, 250); }
       $('chapterAdPanel').classList.remove('hidden');
       return;
     }
     setScene(step);
-    $('speakerName').textContent = step.sp || '';
+    var loc = locStep(step);
+    var dispSp = spDisp(step.sp);
+    $('speakerName').textContent = dispSp;
     $('speakerName').style.display = step.sp ? 'block' : 'none';
     if (step.sp && step.tx) {
-      var line = { sp: step.sp, tx: applyText(step.tx) };
+      var line = { sp: dispSp, tx: applyText((loc && loc.tx) || step.tx) };
       var last = state.backlog[state.backlog.length - 1];
       if (!last || last.sp !== line.sp || last.tx !== line.tx || state.pos !== last.pos) {
         state.backlog.push({ sp: line.sp, tx: line.tx, pos: state.pos });
@@ -171,7 +190,7 @@
       }
     }
     $('choiceBox').innerHTML = ''; $('choiceBox').classList.add('hidden');
-    typeText(applyText(step.tx || ''));
+    typeText(applyText((loc && loc.tx) || step.tx || ''));
     if (step.ending) { /* 마지막 대사를 보여준 뒤 클릭하면 엔딩 화면 */ }
   }
 
@@ -226,10 +245,11 @@
 
   function showChoices(step) {
     var box = $('choiceBox'); box.innerHTML = ''; box.classList.remove('hidden');
-    step.choice.forEach(function (c) {
+    var locC = locStep(step);
+    step.choice.forEach(function (c, ci) {
       var b = document.createElement('button');
-      b.className = 'choiceBtn'; b.textContent = c.text;
-      b.onclick = function (e) { e.stopPropagation(); clearTimeout(autoTimer); clearInterval(skipTimer); skipTimer = null; $('skipBtn').dataset.on = '0'; $('skipBtn').textContent = '스킵'; applyChoice(c); };
+      b.className = 'choiceBtn'; b.textContent = (locC && locC.choices && locC.choices[ci]) || c.text;
+      b.onclick = function (e) { e.stopPropagation(); clearTimeout(autoTimer); clearInterval(skipTimer); skipTimer = null; $('skipBtn').dataset.on = '0'; $('skipBtn').textContent = U('skip'); applyChoice(c); };
       box.appendChild(b);
     });
   }
@@ -244,9 +264,9 @@
     stopModes();
     unlockEnding(step.ending);
     track('ending_reach', { ending: step.ending });
-    $('endingTitle').textContent = ENDING_TITLES[step.ending] || '엔딩';
+    $('endingTitle').textContent = (L && L.endings && L.endings[step.ending]) || ENDING_TITLES[step.ending] || U('endingFallback');
     var a = state.aff;
-    $('endingAff').textContent = '최종 호감도: 서연 ' + a.seoyeon + ' / 채린 ' + a.chaerin + ' / 아린 ' + a.arin;
+    $('endingAff').textContent = U('finalAff').replace('{sv}', String(a.seoyeon)).replace('{cv}', String(a.chaerin)).replace('{av}', String(a.arin));
     show('endingScreen');
   }
 
@@ -261,29 +281,55 @@
 
   // ===== UI 연결 =====
   document.addEventListener('DOMContentLoaded', function () {
+    (function applyLangUI() {
+      var set = function (id, key) { var el = $(id); if (el) el.textContent = U(key); };
+      set('taglineText', 'tagline'); set('nameLabelText', 'nameLabel');
+      set('newGameBtn', 'newGame'); set('continueBtn', 'continue'); set('galleryBtn', 'gallery');
+      set('noticeText', 'notice'); set('updateNoticeText', 'updateNotice');
+      set('saveBtn', 'save'); set('loadBtn', 'load'); set('backlogBtn', 'backlog');
+      set('autoBtn', 'auto'); set('skipBtn', 'skip'); set('galBtn2', 'gallery');
+      set('chapterContinueBtn', 'continueChapter'); set('backlogTitle', 'backlog'); set('backlogCloseBtn', 'close');
+      set('galleryTitle', 'gallery'); set('galleryBackBtn', 'back');
+      set('restartBtn', 'restart'); set('endingGalleryBtn', 'galleryView'); set('endingTitleBtn', 'toTitle');
+      var ni = $('nameInput'); if (ni) ni.placeholder = U('defaultName');
+      var bar = $('langBar');
+      if (bar) {
+        LANG_LIST.forEach(function (code) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'langBtn' + (code === curLang ? ' on' : '');
+          b.textContent = LANG_NAMES[code];
+          b.onclick = function () {
+            if (code === curLang) return;
+            try { localStorage.setItem('neowa_lang', code); } catch (e) {}
+            location.reload();
+          };
+          bar.appendChild(b);
+        });
+      }
+    })();
     $('newGameBtn').onclick = function () {
       var n = $('nameInput').value.trim();
-      startGame(n || '김도현');
+      startGame(n || U('defaultName'));
     };
     $('continueBtn').onclick = function () {
       var s = load('neowa_autosave');
       if (validSave(s)) { state = s; show('gameScreen'); render(); }
-      else alert('저장된 진행이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.');
+      else alert(U('noSaveMsg'));
     };
     $('galleryBtn').onclick = function () { prevScreen = 'titleScreen'; renderGallery(); show('galleryScreen'); };
     $('galleryBackBtn').onclick = function () { show(prevScreen); };
     $('dialogueBox').onclick = function () { advance(); };
     $('saveBtn').onclick = function (e) {
       e.stopPropagation();
-      var slot = prompt('저장할 슬롯 번호를 입력하세요 (1, 2, 3)', '1');
-      if (slot && ['1', '2', '3'].indexOf(slot) >= 0) { save('neowa_save_' + slot, state); alert(slot + '번 슬롯에 저장했습니다.'); }
+      var slot = prompt(U('savePrompt'), '1');
+      if (slot && ['1', '2', '3'].indexOf(slot) >= 0) { save('neowa_save_' + slot, state); alert(U('savedMsg').replace('{slot}', slot)); }
     };
     $('loadBtn').onclick = function (e) {
       e.stopPropagation();
-      var slot = prompt('불러올 슬롯 번호를 입력하세요 (1, 2, 3)', '1');
+      var slot = prompt(U('loadPrompt'), '1');
       var s = slot && load('neowa_save_' + slot);
       if (validSave(s)) { state = s; stopModes(); show('gameScreen'); render(); }
-      else alert('해당 슬롯에 저장이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.');
+      else alert(U('noSlotMsg'));
     };
     $('backlogBtn').onclick = function (e) {
       e.stopPropagation();
@@ -292,20 +338,20 @@
       var esc = function (s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
       $('backlogList').innerHTML = state.backlog.map(function (b) {
         return '<p><b>' + esc(b.sp) + '</b> ' + esc(b.tx) + '</p>';
-      }).join('') || '<p>기록이 없습니다.</p>';
+      }).join('') || '<p>' + U('noRecord') + '</p>';
     };
     $('backlogCloseBtn').onclick = function () { $('backlogPanel').classList.add('hidden'); };
     $('autoBtn').onclick = function (e) {
       e.stopPropagation();
       var on = $('autoBtn').dataset.on === '1';
       $('autoBtn').dataset.on = on ? '0' : '1';
-      $('autoBtn').textContent = on ? '자동' : '자동 중';
+      $('autoBtn').textContent = on ? U('auto') : U('autoOn');
       if (!on) scheduleAuto(); else clearTimeout(autoTimer);
     };
     $('skipBtn').onclick = function (e) {
       e.stopPropagation();
       if (skipTimer) { stopModes(); return; }
-      $('skipBtn').dataset.on = '1'; $('skipBtn').textContent = '스킵 중';
+      $('skipBtn').dataset.on = '1'; $('skipBtn').textContent = U('skipOn');
       skipTimer = setInterval(function () {
         var step = current();
         if (!step || step.choice || step.ending || step.judge) { stopModes(); if (step) render(); return; }
@@ -317,7 +363,7 @@
     $('galBtn2').onclick = function (e) { e.stopPropagation(); prevScreen = 'gameScreen'; renderGallery(); show('galleryScreen'); };
     $('endingGalleryBtn').onclick = function () { prevScreen = 'endingScreen'; renderGallery(); show('galleryScreen'); };
     $('endingTitleBtn').onclick = function () { finishToTitle(); };
-    $('restartBtn').onclick = function () { startGame(state ? state.name : '김도현'); };
+    $('restartBtn').onclick = function () { startGame(state ? state.name : U('defaultName')); };
     $('chapterContinueBtn').onclick = function () { $('chapterAdPanel').classList.add('hidden'); render(); };
     var adfitInit = CFG.adfit || {};
     fillAd($('adTitle'), adfitInit.title, 320, 100);

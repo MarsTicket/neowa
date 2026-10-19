@@ -1,7 +1,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --ink: #2b2430; --accent: #e56b8c; --accent2: #5b7fb8; --side-bg: url("images/title_key.webp"); }
 html, body { height: 100%; }
-body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; background: #17141d; color: var(--ink); }
+body { font-family: "Noto Sans KR", "Noto Sans JP", "Noto Sans SC", "Noto Sans", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; background: #17141d; color: var(--ink); }
 #app { max-width: 480px; margin: 0 auto; height: 100dvh; position: relative; background: #000; overflow: hidden; }
 /* PC 가로 화면: 세로 무대를 가운데 두고, 좌우 여백은 현재 배경의 블러 확장으로 채웁니다 */
 @media (min-width: 1024px) and (orientation: landscape) {
@@ -65,3 +65,12 @@ body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; backgrou
 .chapterAdPanel { position: absolute; inset: 0; z-index: 40; background: rgba(10, 8, 20, 0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; }
 .chapterLabel { font-size: 20px; font-weight: 700; color: #ffe9a8; letter-spacing: 1px; }
 .chapterAdPanel .adSlot { min-height: 250px; }
+
+/* 언어별 폰트 우선순위 (Noto 웹폰트, unicode-range 서브셋으로 필요한 글자만 내려받음) */
+html[lang="ja"] body { font-family: "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", "Noto Sans", sans-serif; }
+html[lang="zh-CN"] body { font-family: "Noto Sans SC", "Noto Sans KR", "Noto Sans JP", "Noto Sans", sans-serif; }
+html[lang="en"] body, html[lang="es"] body, html[lang="fr"] body, html[lang="ru"] body { font-family: "Noto Sans", "Noto Sans KR", "Noto Sans JP", "Noto Sans SC", sans-serif; }
+/* 타이틀 언어 선택 */
+.langBar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+.langBtn { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; cursor: pointer; }
+.langBtn.on { background: #ffb7c5; color: #40222c; border-color: #ffb7c5; font-weight: 700; }

@@ -27,7 +27,12 @@
   var LANG_LIST = ['ko', 'en', 'ja', 'zh', 'es', 'fr', 'ru'];
   var LANG_NAMES = { ko: '한국어', en: 'English', ja: '日本語', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' };
   var curLang = 'ko';
-  try { var savedLang = localStorage.getItem('neowa_lang'); if (LANG_LIST.indexOf(savedLang) >= 0) curLang = savedLang; } catch (e) {}
+  try {
+    var langMatch = /[?&]lang=([a-z]{2})/.exec(location.search || '');
+    var cookieMatch = /(?:^|; )neowa_lang=([a-z]{2})/.exec(document.cookie || '');
+    var savedLang = (langMatch && langMatch[1]) || localStorage.getItem('neowa_lang') || (cookieMatch && cookieMatch[1]);
+    if (LANG_LIST.indexOf(savedLang) >= 0) curLang = savedLang;
+  } catch (e) {}
   var L = (window.I18N_DATA && window.I18N_DATA.lang === curLang) ? window.I18N_DATA : null;
   var KO_UI = { tagline: '전학 첫 학기. 방과 후의 선택이, 그녀들과의 거리를 바꿉니다.', nameLabel: '주인공 이름', newGame: '새 게임', continue: '이어하기', gallery: '갤러리', notice: '15세 이용가 수준의 학원 드라마입니다. 플레이 시간 약 70분에서 95분, 엔딩 7개.', updateNotice: '업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.', save: '저장', load: '불러오기', backlog: '백로그', auto: '자동', autoOn: '자동 중', skip: '스킵', skipOn: '스킵 중', continueChapter: '계속', close: '닫기', back: '돌아가기', galleryView: '갤러리 보기', toTitle: '타이틀로', restart: '처음부터 다시', lockedScene: '아직 보지 못한 장면', noRecord: '기록이 없습니다.', endingsSeen: '본 엔딩 {n} / 7', savePrompt: '저장할 슬롯 번호를 입력하세요 (1, 2, 3)', loadPrompt: '불러올 슬롯 번호를 입력하세요 (1, 2, 3)', savedMsg: '{slot}번 슬롯에 저장했습니다.', noSaveMsg: '저장된 진행이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.', noSlotMsg: '해당 슬롯에 저장이 없습니다. 업데이트된 버전에서는 이전 진행 저장이 초기화됩니다.', finalAff: '최종 호감도: 서연 {sv} / 채린 {cv} / 아린 {av}', defaultName: '김도현', endingFallback: '엔딩' };
   var KO_SP = { '나': '나', '서연': '서연', '채린': '채린', '아린': '아린', '선생님': '선생님', '학생': '학생' };
@@ -280,7 +285,7 @@
   }
 
   // ===== UI 연결 =====
-  document.addEventListener('DOMContentLoaded', function () {
+  function initUI() {
     (function applyLangUI() {
       var set = function (id, key) { var el = $(id); if (el) el.textContent = U(key); };
       set('taglineText', 'tagline'); set('nameLabelText', 'nameLabel');
@@ -301,7 +306,10 @@
           b.onclick = function () {
             if (code === curLang) return;
             try { localStorage.setItem('neowa_lang', code); } catch (e) {}
-            location.reload();
+            try { document.cookie = 'neowa_lang=' + code + '; path=/; max-age=31536000'; } catch (e) {}
+            var u = new URL(location.href);
+            u.searchParams.set('lang', code);
+            location.href = u.toString();
           };
           bar.appendChild(b);
         });
@@ -369,5 +377,24 @@
     fillAd($('adTitle'), adfitInit.title, 320, 100);
     fillAd($('adEnding'), adfitInit.ending, 320, 100);
     setInterval(function () { if (state && !$('gameScreen').classList.contains('hidden')) save('neowa_autosave', state); }, 5000);
-  });
+  }
+  function loadI18n(done) {
+    var finished = false;
+    var finish = function () {
+      if (finished) return; finished = true;
+      L = (window.I18N_DATA && window.I18N_DATA.lang === curLang) ? window.I18N_DATA : null;
+      done();
+    };
+    var s = document.createElement('script');
+    s.onload = finish; s.onerror = finish;
+    setTimeout(finish, 3000);
+    s.src = 'assets/i18n/' + curLang + '.js';
+    document.head.appendChild(s);
+  }
+  function boot() {
+    if (curLang !== 'ko' && !L) loadI18n(initUI);
+    else initUI();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();

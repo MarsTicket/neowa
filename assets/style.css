@@ -8,6 +8,8 @@ body { font-family: "Noto Sans KR", "Noto Sans JP", "Noto Sans SC", "Noto Sans",
   body::before { content: ""; position: fixed; inset: -40px; background-image: var(--side-bg); background-size: cover; background-position: center; filter: blur(30px) brightness(0.5) saturate(1.15); z-index: 0; }
   body::after { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(10, 7, 16, 0.55) 100%); z-index: 0; }
   #app { width: min(56.25dvh, 640px); max-width: none; z-index: 1; box-shadow: 0 0 70px rgba(0,0,0,0.65); border-left: 1px solid rgba(255,255,255,0.09); border-right: 1px solid rgba(255,255,255,0.09); }
+  /* 문서 페이지는 #app이 없습니다. 블러 레이어(z-index: 0)보다 위에 쌓임 맥락을 둡니다. */
+  .doc, .policy { position: relative; z-index: 1; }
 }
 .screen { position: absolute; inset: 0; }
 .hidden { display: none !important; }

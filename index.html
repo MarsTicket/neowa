@@ -5,7 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>방과 후, 너와</title>
 <meta name="google-adsense-account" content="ca-pub-2895947454673475">
-<meta name="description" content="선택지 분기형 비주얼노벨 웹게임. 전학 첫 학기, 방과 후의 선택이 이야기를 바꿉니다.">
+<meta name="description" content="전학 첫 학기, 방과 후의 선택이 그녀들과의 거리를 바꿉니다. 한 회 약 40–70분, 엔딩 7개의 웹 비주얼노벨.">
+<meta name="theme-color" content="#17141d">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="방과 후, 너와">
+<meta property="og:title" content="방과 후, 너와">
+<meta property="og:description" content="전학 첫 학기, 방과 후의 선택이 그녀들과의 거리를 바꿉니다. 한 회 약 40–70분, 엔딩 7개.">
+<meta property="og:url" content="https://neowa.kr/">
+<meta property="og:image" content="https://neowa.kr/assets/images/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="방과 후, 너와">
+<meta name="twitter:description" content="전학 첫 학기, 방과 후의 선택이 그녀들과의 거리를 바꿉니다. 한 회 약 40–70분, 엔딩 7개.">
+<meta name="twitter:image" content="https://neowa.kr/assets/images/og.jpg">
+<link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -46,40 +61,75 @@ window.NEOWA_CONFIG = {
       <button id="continueBtn" class="subBtn">이어하기</button>
       <button id="galleryBtn" class="subBtn">갤러리</button>
       <div id="langBar" class="langBar" aria-label="Language"></div>
-      <p class="notice" id="noticeText">15세 이용가 수준의 학원 드라마입니다. 플레이 시간 약 70분에서 95분, 엔딩 7개.</p>
+      <p class="crawlIntro" id="crawlIntro">전학 첫 학기, 닷새 동안의 방과 후를 고르는 이야기입니다. 반장 한서연, 도서 위원 문채린, 방송부 노아린. 선택에 따라 엔딩은 일곱으로 갈라집니다.</p>
+      <p class="notice" id="noticeText">15세 이용가 수준의 학원 드라마입니다. 한 회 약 40–70분, 엔딩 7개.</p>
+      <p class="notice" id="autosaveHint">이어하기는 약 5초마다 남는 자동 저장을 불러옵니다. 슬롯 저장과는 별개입니다.</p>
       <p class="notice" id="updateNoticeText">업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.</p>
+      <p id="titleMsg" class="notice" role="status"></p>
       <div id="adTitle" class="adSlot hidden"></div>
-      <p class="notice"><a href="privacy.html" style="color:#ffb9cc">개인정보처리방침</a></p>
+      <nav class="footLinks" aria-label="사이트">
+        <a id="linkAbout" href="about.html">소개</a>
+        <a id="linkChars" href="characters.html">등장인물</a>
+        <a id="linkContact" href="contact.html">문의</a>
+        <a id="linkPrivacy" href="privacy.html">개인정보처리방침</a>
+      </nav>
     </div>
   </section>
 
   <!-- 게임 -->
   <section id="gameScreen" class="screen hidden">
-    <img id="bgImg" class="bgImg" alt="">
-    <img id="cgImg" class="cgImg hidden" alt="">
-    <img id="charImg" class="charImg hidden" alt="">
-    <div id="choiceBox" class="choiceBox hidden"></div>
+    <img id="bgImg" class="bgImg" alt="" width="1920" height="1280">
+    <img id="cgImg" class="cgImg hidden" alt="" width="1920" height="1280">
+    <img id="charImg" class="charImg hidden" alt="" width="1280" height="1920">
+    <div id="choiceBox" class="choiceBox hidden" aria-live="polite"></div>
     <div class="topBar">
-      <button id="saveBtn">저장</button>
-      <button id="loadBtn">불러오기</button>
-      <button id="backlogBtn">백로그</button>
-      <button id="autoBtn" data-on="0">자동</button>
-      <button id="skipBtn" data-on="0">스킵</button>
-      <button id="galBtn2">갤러리</button>
+      <button id="saveBtn" type="button">저장</button>
+      <button id="loadBtn" type="button">불러오기</button>
+      <button id="backlogBtn" type="button">백로그</button>
+      <button id="autoBtn" type="button" data-on="0" aria-pressed="false">자동</button>
+      <button id="skipBtn" type="button" data-on="0" aria-pressed="false">스킵</button>
+      <button id="settingsBtn" type="button">설정</button>
+      <button id="galBtn2" type="button">갤러리</button>
+      <button id="titleBtn" type="button">타이틀</button>
     </div>
     <div id="dialogueBox" class="dialogueBox">
-      <div id="speakerName" class="speakerName"></div>
-      <p id="textBody" class="textBody"></p>
-      <div class="nextMark">▼</div>
+      <div id="dialogueLive" aria-live="polite" aria-atomic="true">
+        <div id="speakerName" class="speakerName"></div>
+        <p id="textBody" class="textBody"></p>
+      </div>
+      <div class="nextMark" id="nextMark" aria-hidden="true">▼</div>
     </div>
-    <div id="chapterAdPanel" class="chapterAdPanel hidden">
+    <div id="chapterPanel" class="chapterPanel hidden" role="dialog" aria-modal="true" aria-labelledby="chapterLabel">
       <p id="chapterLabel" class="chapterLabel"></p>
-      <div id="adChapter" class="adSlot"></div>
-      <button id="chapterContinueBtn" class="mainBtn">계속</button>
+      <button id="chapterContinueBtn" class="mainBtn" type="button">계속</button>
     </div>
-    <div id="backlogPanel" class="backlogPanel hidden">
-      <div class="backlogHead"><span id="backlogTitle">백로그</span><button id="backlogCloseBtn">닫기</button></div>
+    <div id="backlogPanel" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="backlogTitle">
+      <div class="backlogHead"><span id="backlogTitle">백로그</span><button id="backlogCloseBtn" type="button">닫기</button></div>
       <div id="backlogList" class="backlogList"></div>
+    </div>
+    <div id="savePanel" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="savePanelTitle">
+      <div class="backlogHead"><span id="savePanelTitle">저장</span><button id="savePanelClose" type="button">닫기</button></div>
+      <p id="savePanelHint" class="panelHint"></p>
+      <div id="saveSlots"></div>
+      <p id="saveStatus" class="panelHint" role="status"></p>
+      <div id="overwriteBox" class="hidden">
+        <p id="overwriteText" class="panelHint"></p>
+        <button id="overwriteYes" class="mainBtn" type="button">덮어쓰기</button>
+        <button id="overwriteNo" class="subBtn" type="button">취소</button>
+      </div>
+    </div>
+    <div id="settingsPanel" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="backlogHead"><span id="settingsTitle">설정</span><button id="settingsClose" type="button">닫기</button></div>
+      <p id="speedLabel" class="panelHint">글자 속도</p>
+      <div id="speedSeg" class="seg" role="group"></div>
+      <p id="waitLabel" class="panelHint">자동 대기</p>
+      <div id="waitSeg" class="seg" role="group"></div>
+    </div>
+    <div id="titleConfirm" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="titleConfirmTitle">
+      <p id="titleConfirmTitle" class="chapterLabel">타이틀로 돌아갈까요?</p>
+      <p id="titleConfirmBody" class="panelHint">진행은 자동 저장됩니다.</p>
+      <button id="titleConfirmYes" class="mainBtn" type="button">돌아가기</button>
+      <button id="titleConfirmNo" class="subBtn" type="button">취소</button>
     </div>
   </section>
 

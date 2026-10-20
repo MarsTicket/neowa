@@ -80,16 +80,19 @@ body { font-family: "Noto Sans KR", "Noto Sans JP", "Noto Sans SC", "Noto Sans",
 
 /* 낮은 가로 화면: 타이틀이 잘리지 않고 스크롤됩니다 */
 @media (orientation: landscape) and (max-height: 520px) {
-  html, body { height: auto; min-height: 100%; }
-  body { overflow: auto; }
-  #app { height: auto; min-height: 100dvh; overflow: visible; }
-  #titleScreen { position: relative; min-height: 100dvh; height: auto; align-items: flex-start; overflow: visible; }
-  .titleArt, .titleShade { position: absolute; height: 100%; min-height: 100dvh; }
-  .titleBox { padding-top: 12px; padding-bottom: 20px; }
-  .titleBox h1 { font-size: 28px; }
-  .tagline, .crawlIntro { font-size: 13px; margin: 6px 0; }
-  .mainBtn, .subBtn { padding: 8px; margin: 4px 0; min-height: 40px; }
-  .notice { margin-top: 6px; }
+  html:has(#titleScreen:not(.hidden)),
+  html:has(#titleScreen:not(.hidden)) body { height: auto; min-height: 100%; overflow: auto; }
+  #app:has(#titleScreen:not(.hidden)) { height: auto; min-height: 100dvh; overflow: visible; }
+  #titleScreen:not(.hidden) { position: relative; min-height: 100dvh; height: auto; align-items: flex-start; overflow: visible; }
+  #titleScreen:not(.hidden) .titleArt,
+  #titleScreen:not(.hidden) .titleShade { position: absolute; height: 100%; min-height: 100dvh; }
+  #titleScreen:not(.hidden) .titleBox { padding-top: 12px; padding-bottom: 20px; }
+  #titleScreen:not(.hidden) h1 { font-size: 28px; }
+  #titleScreen:not(.hidden) .tagline,
+  #titleScreen:not(.hidden) .crawlIntro { font-size: 13px; margin: 6px 0; }
+  #titleScreen:not(.hidden) .mainBtn,
+  #titleScreen:not(.hidden) .subBtn { padding: 8px; margin: 4px 0; min-height: 40px; }
+  #titleScreen:not(.hidden) .notice { margin-top: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nextMark { animation: none; opacity: 0.85; }

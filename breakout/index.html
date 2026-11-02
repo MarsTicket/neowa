@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c14">
 <title>벽돌깨기 - 너와 아케이드</title>
 <meta name="description" content="3D 벽돌깨기. 마우스, 터치, 방향키로 패들을 움직이세요.">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
@@ -14,54 +15,172 @@ gtag('config', 'G-T386KYRRLK');
 </script>
 <script src="../assets/three.min.js"></script>
 <style>
+:root{
+  --bg:#0a0c14;--surface:#12152a;--surface-2:#181c36;--line:#232744;--line-2:#3a4066;
+  --text:#f2f3f7;--sub:#c8cdea;--muted:#9aa1c2;--blue:#3182f6;--red:#ff5a5a;
+  --r-lg:20px;--r-md:14px;--shadow:0 20px 50px rgba(0,0,0,.45);
+  --chrome:96px;
+}
 *{box-sizing:border-box}
-body{margin:0;background:#0a0c14;color:#f2f3f7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
-.wrap{max-width:860px;margin:0 auto;padding:20px 24px 40px}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(800px 420px at 80% -10%,var(--glow),transparent 60%);z-index:-1}
 a{color:inherit;text-decoration:none}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0 16px;border-bottom:1px solid #232744;margin-bottom:16px}
-.top h1{font-size:28px;margin:0;letter-spacing:-0.5px}
-.top .eyebrow{font-size:12px;font-weight:800;letter-spacing:1px;color:#ffb020;margin:0 0 4px}
-.back{display:inline-block;padding:10px 16px;border:1px solid #3a4066;border-radius:999px;font-size:14px;font-weight:700;min-height:44px;line-height:22px;color:#c8cdea}
-.hud{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
-@media(max-width:560px){.hud{grid-template-columns:1fr 1fr}}
-.stat{background:#161a30;border:1px solid #2a2f52;border-radius:14px;padding:10px 14px}
-.stat .label{display:block;font-size:12px;color:#9aa1c2;margin-bottom:2px}
-.stat .value{font-size:22px;font-weight:900;line-height:1.2}
-.stat.score .value{font-size:28px;color:#ffb020}
-canvas{display:block;width:100%;height:auto;background:#050816;border:1px solid #2a2f52;border-radius:20px;touch-action:none;box-shadow:0 20px 50px rgba(0,0,0,0.45)}
-.controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-button{border:0;border-radius:999px;padding:13px 22px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer}
+.app{max-width:1180px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.topbar{display:flex;align-items:center;gap:12px;min-height:60px;padding:4px 0 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.back{display:inline-flex;align-items:center;white-space:pre;padding:0 16px;border:1px solid var(--line-2);border-radius:999px;font-size:14px;font-weight:800;min-height:44px;color:var(--sub);flex:none}
+.back:active{background:var(--surface)}
+.title{flex:1;min-width:0}
+.title .eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--accent);margin:0 0 2px}
+.title h1{font-size:22px;margin:0;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:0 14px;min-height:34px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:800;color:var(--sub);flex:none}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
+body[data-state="playing"] .chip{color:#7ee787}
+body[data-state="playing"] .chip::before{background:#7ee787;box-shadow:0 0 0 4px rgba(126,231,135,.18)}
+body[data-state="paused"] .chip{color:#ffb020}
+body[data-state="paused"] .chip::before{background:#ffb020}
+body[data-state="over"] .chip{color:var(--red)}
+body[data-state="over"] .chip::before{background:var(--red)}
+body[data-state="clear"] .chip{color:#7ee0ff}
+body[data-state="clear"] .chip::before{background:#7ee0ff}
+button{font:inherit;border:0;border-radius:999px;padding:0 20px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer;touch-action:manipulation;transition:transform .1s ease,opacity .15s ease,background .15s ease}
+button:active{transform:scale(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 button.primary{background:#fff;color:#0a0c14}
-button.accent{background:#3182f6;color:#fff}
-button.secondary{background:transparent;color:#f2f3f7;border:1px solid #3a4066}
-p{color:#9aa1c2;line-height:1.6;font-size:14px}
-.msg{font-weight:800;min-height:24px;margin-top:14px;color:#c8cdea}
+button.accent{background:var(--blue);color:#fff}
+button.secondary{background:transparent;color:var(--text);border:1px solid var(--line-2)}
+button.sm{min-height:44px;padding:0 16px;font-size:14px}
+.game{display:flex;flex-direction:column;gap:14px}
+.stage{position:relative;container-type:inline-size;width:100%;margin:0 auto;border-radius:var(--r-lg);box-shadow:var(--shadow);background:var(--board-bg)}
+canvas{display:block;width:100%;height:auto;aspect-ratio:var(--ar);background:var(--board-bg);border:1px solid var(--line);border-radius:var(--r-lg);touch-action:none}
+body[data-state="playing"] canvas{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:var(--r-lg);background:rgba(6,8,16,.55);pointer-events:none;opacity:1;transition:opacity .2s ease}
+.overlay.hidden{opacity:0;visibility:hidden}
+body[data-state="ready"] .overlay{background:linear-gradient(180deg,rgba(6,8,16,.1),rgba(6,8,16,.6))}
+body[data-state="over"] .overlay{background:rgba(30,6,10,.62)}
+body[data-state="clear"] .overlay{background:rgba(6,20,32,.6)}
+.ov-card{pointer-events:auto;text-align:center;background:rgba(18,21,42,.92);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:20px 24px;max-width:340px;width:100%;box-shadow:var(--shadow);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ov-kicker{margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:1.2px;color:var(--accent)}
+body[data-state="over"] .ov-kicker{color:var(--red)}
+.ov-card h2{margin:0 0 8px;font-size:26px;letter-spacing:-.5px}
+.ov-text{margin:0 0 16px;color:var(--sub);font-size:14px;line-height:1.6}
+.ov-text b{color:var(--text)}
+.ov-badge{display:inline-block;margin:0 0 10px;padding:4px 10px;border-radius:999px;background:var(--accent);color:#0a0c14;font-size:12px;font-weight:900}
+.ov-card button{width:100%}
+.toast{position:absolute;left:50%;top:14px;transform:translate(-50%,-8px);padding:8px 16px;border-radius:999px;background:rgba(10,12,20,.8);border:1px solid var(--line-2);font-size:14px;font-weight:900;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.warn{color:var(--red)}
+@container (max-width:460px){
+  .ov-card{padding:12px 16px;max-width:280px}
+  .ov-card h2{font-size:20px;margin-bottom:4px}
+  .ov-text{font-size:13px;margin-bottom:10px}
+  .ov-text .more{display:none}
+  .ov-badge{margin-bottom:6px}
+  .ov-card button{min-height:44px}
+}
+@container (max-width:300px){
+  .ov-kicker,.ov-text{display:none}
+}
+.panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.hud{display:grid;grid-template-columns:repeat(var(--hud-cols,4),minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 12px;min-width:0}
+.stat .label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px;white-space:nowrap}
+.stat .value{display:block;font-size:22px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat.score{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.stat.score .value{color:var(--accent);font-size:26px}
+.pips{display:flex;gap:4px;margin-top:4px}
+.pips i{width:12px;height:5px;border-radius:3px;background:var(--line-2)}
+.pips i.on{background:var(--red)}
+.msg{font-weight:800;font-size:14px;line-height:1.5;min-height:44px;color:var(--sub);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:11px 14px;display:flex;align-items:center}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.controls .wide{grid-column:1/-1}
+body:not([data-state="playing"]) .needs-play{opacity:.4}
+.hint{margin:0;color:var(--muted);line-height:1.6;font-size:13px}
+/* 가로 화면, 넓은 화면: 게임판 + 오른쪽 패널 */
+@media (min-width:760px),(orientation:landscape) and (min-width:560px){
+  .game{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,290px);align-items:start;gap:16px}
+  .stage{width:min(100%,calc((100vh - var(--chrome)) * var(--arn)));width:min(100%,calc((100dvh - var(--chrome)) * var(--arn)))}
+  .hud{--hud-cols:2}
+  .stat.score{grid-column:1/-1}
+}
+/* 낮은 가로 화면(휴대폰 가로): 상단 압축 */
+@media (orientation:landscape) and (max-height:520px){
+  :root{--chrome:76px}
+  .app{padding-top:6px;padding-bottom:6px}
+  .topbar{min-height:48px;padding:0 0 6px;margin-bottom:8px}
+  .title .eyebrow{display:none}
+  .title h1{font-size:18px}
+  .chip{min-height:30px;padding:0 10px;font-size:12px}
+  .panel{gap:8px}
+  .stat{padding:5px 10px}
+  .stat .label{font-size:11px;margin-bottom:0}
+  .stat .value{font-size:18px}
+  .stat.score .value{font-size:20px}
+  .msg{min-height:44px;padding:6px 12px;font-size:13px}
+  .controls button{min-height:44px;font-size:14px}
+  .hint{display:none}
+  .stat.score{grid-column:auto}
+  .controls .wide{grid-column:auto}
+  .pips{margin-top:2px}
+  .ov-card{padding:14px 18px}
+  .ov-card h2{font-size:22px}
+  .ov-text{margin-bottom:10px}
+}
+@media (max-width:480px){
+  .topbar{gap:8px}
+  .back .long{display:none}
+  .chip{display:none}
+  .hud{--hud-cols:2}
+}
+:root{--accent:#ffb020;--glow:rgba(255,176,32,.10);--board-bg:#050816;--ar:3/2;--arn:1.5}
+.lvbar{display:flex;gap:4px;margin-top:5px}
+.lvbar i{flex:1;height:5px;border-radius:3px;background:var(--line-2)}
+.lvbar i.on{background:var(--accent)}
+body[data-state="playing"].stuck #launchBtn{box-shadow:0 0 0 4px rgba(49,130,246,.3)}
 </style>
 </head>
-<body>
-<div class="wrap">
-<div class="top">
-<div>
+<body data-state="ready">
+<div class="app">
+<header class="topbar">
+<a class="back" href="../" aria-label="허브로 돌아가기">← 허브<span class="long">로 돌아가기</span></a>
+<div class="title">
 <p class="eyebrow">BREAKOUT</p>
 <h1>벽돌깨기</h1>
 </div>
-<a class="back" href="../">허브로 돌아가기</a>
+<span class="chip" id="stateChip">대기 중</span>
+<button id="soundBtn" class="secondary sm">소리 끄기</button>
+</header>
+<main class="game">
+<div class="stage">
+<canvas id="game" width="720" height="480"></canvas>
+<div class="overlay" id="overlay">
+<div class="ov-card">
+<p class="ov-kicker" id="ovKicker">BREAKOUT</p>
+<span class="ov-badge" id="ovBadge" hidden>신기록</span>
+<h2 id="ovTitle">벽돌깨기</h2>
+<p class="ov-text" id="ovText">게임판을 드래그해 패들을 움직입니다.</p>
+<button id="ovBtn" class="primary">게임 시작</button>
 </div>
+</div>
+<div class="toast" id="toast"></div>
+</div>
+<aside class="panel">
 <div class="hud">
 <div class="stat score"><span class="label">점수</span><span class="value" id="score">0</span></div>
-<div class="stat"><span class="label">목숨</span><span class="value" id="lives">3</span></div>
-<div class="stat"><span class="label">레벨</span><span class="value" id="level">1</span></div>
+<div class="stat"><span class="label">목숨</span><span class="value" id="lives">3</span><span class="pips" id="livesPips"><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+<div class="stat"><span class="label">레벨</span><span class="value" id="level">1</span><span class="lvbar" id="levelBar"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
 <div class="stat"><span class="label">최고기록</span><span class="value" id="best">0</span></div>
 </div>
-<canvas id="game" width="720" height="480"></canvas>
-<div class="msg" id="msg">시작 버튼을 누른 뒤, 공 발사 버튼을 누르세요. 마우스나 터치 드래그, 방향키로 패들을 움직입니다.</div>
+<div class="msg" id="msg" role="status" aria-live="polite">시작 버튼을 누르거나 게임판을 터치하세요.</div>
 <div class="controls">
-<button id="startBtn" class="primary">게임 시작</button>
-<button id="launchBtn" class="accent">공 발사</button>
-<button id="pauseBtn" class="secondary">일시정지</button>
-<button id="soundBtn" class="secondary">소리 끄기</button>
+<button id="startBtn" class="primary wide">게임 시작</button>
+<button id="launchBtn" class="accent needs-play">공 발사</button>
+<button id="pauseBtn" class="secondary needs-play">일시정지</button>
 </div>
-<p>드래그로 패들을 움직이세요. 벽돌을 모두 깨면 다음 레벨로 갑니다. 레벨 5까지 깨면 클리어입니다.</p>
+<p class="hint">드래그로 패들 이동. 게임판을 짧게 탭하거나 공 발사 버튼으로 공을 띄웁니다. 레벨 5까지 깨면 클리어.</p>
+</aside>
+</main>
 </div>
 <script>
 "use strict";
@@ -71,12 +190,48 @@ var livesEl = document.getElementById("lives");
 var levelEl = document.getElementById("level");
 var bestEl = document.getElementById("best");
 var msgEl = document.getElementById("msg");
+var pauseBtn = document.getElementById("pauseBtn");
+var startBtn = document.getElementById("startBtn");
+var chipEl = document.getElementById("stateChip");
+var overlayEl = document.getElementById("overlay");
+var ovKicker = document.getElementById("ovKicker");
+var ovBadge = document.getElementById("ovBadge");
+var ovTitle = document.getElementById("ovTitle");
+var ovText = document.getElementById("ovText");
+var ovBtn = document.getElementById("ovBtn");
+var toastEl = document.getElementById("toast");
+var pipsEl = document.getElementById("livesPips");
+var levelBarEl = document.getElementById("levelBar");
 var BEST_KEY = "neowa_hub_breakout_high";
 var best = 0;
 try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
 bestEl.textContent = best;
+var bestAtStart = best;
 if (typeof THREE === "undefined") {
   msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요.";
+}
+var STATE_LABEL = { ready: "대기 중", playing: "플레이 중", paused: "일시정지", over: "게임 오버", clear: "클리어" };
+function setUI(s, ov) {
+  document.body.setAttribute("data-state", s);
+  chipEl.textContent = STATE_LABEL[s] || "";
+  pauseBtn.textContent = s === "paused" ? "계속하기" : "일시정지";
+  startBtn.textContent = s === "ready" ? "게임 시작" : "다시 시작";
+  if (s !== "playing") { clearTimeout(toastTimer); toastEl.classList.remove("show"); }
+  if (!ov) { overlayEl.classList.add("hidden"); return; }
+  ovKicker.textContent = ov.kicker;
+  ovTitle.textContent = ov.title;
+  ovText.innerHTML = ov.text;
+  ovBtn.textContent = ov.btn;
+  ovBadge.hidden = !ov.badge;
+  overlayEl.classList.remove("hidden");
+}
+var toastTimer = null;
+function showToast(text, warn) {
+  toastEl.textContent = text;
+  toastEl.classList.toggle("warn", !!warn);
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1300);
 }
 var soundOn = true;
 var sounds = {};
@@ -96,49 +251,78 @@ function playSound(n) {
 }
 document.getElementById("soundBtn").addEventListener("click", function (ev) {
   soundOn = !soundOn;
-  ev.target.textContent = soundOn ? "소리 끄기" : "소리 켜기";
+  ev.currentTarget.textContent = soundOn ? "소리 끄기" : "소리 켜기";
 });
 var W = 28, H = 20;
 var scene = null, camera = null, renderer = null;
-var paddleMesh = null, ballMesh = null;
+var paddleMesh = null, ballMesh = null, ballShadow = null;
 var brickGeo = null, particleGeo = null;
-var particles = [];
+var particles = [], particleMats = {};
 function init3D() {
   if (typeof THREE === "undefined") return false;
   if (renderer) return true;
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050816);
+  scene.fog = new THREE.Fog(0x050816, 28, 52);
   camera = new THREE.PerspectiveCamera(50, 720 / 480, 0.1, 100);
   camera.position.set(0, 22, 14);
   camera.lookAt(0, 0, 0);
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "low-power" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(720, 480, false);
   } catch (e) {
     renderer = null;
     return false;
   }
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  scene.add(new THREE.HemisphereLight(0xfff0d8, 0x101030, 0.8));
   var dir = new THREE.DirectionalLight(0xffffff, 1.0);
   dir.position.set(5, 10, 5);
   scene.add(dir);
-  var ground = new THREE.Mesh(new THREE.PlaneGeometry(34, 26), new THREE.MeshStandardMaterial({ color: 0x0a0e24, roughness: 1 }));
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 44), new THREE.MeshStandardMaterial({ color: 0x070b20, roughness: 1 }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -1;
   scene.add(ground);
+  var court = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: 0x0b1130, roughness: 1 }));
+  court.rotation.x = -Math.PI / 2;
+  court.position.y = -0.98;
+  scene.add(court);
+  var grid = new THREE.GridHelper(28, 14, 0x1c2a5e, 0x141d44);
+  grid.position.y = -0.96;
+  scene.add(grid);
+  var wallMat = new THREE.MeshStandardMaterial({ color: 0x2a3a7a, emissive: 0x3a5aa8, emissiveIntensity: 0.6, roughness: 0.5 });
+  var sideGeo = new THREE.BoxGeometry(0.35, 0.7, H + 0.7);
+  var left = new THREE.Mesh(sideGeo, wallMat);
+  left.position.set(-W / 2 - 0.18, -0.6, 0);
+  scene.add(left);
+  var right = new THREE.Mesh(sideGeo, wallMat);
+  right.position.set(W / 2 + 0.18, -0.6, 0);
+  scene.add(right);
+  var top = new THREE.Mesh(new THREE.BoxGeometry(W + 0.7, 0.7, 0.35), wallMat);
+  top.position.set(0, -0.6, -H / 2 - 0.18);
+  scene.add(top);
+  var danger = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.14), new THREE.MeshBasicMaterial({ color: 0xff5a5a, transparent: true, opacity: 0.5 }));
+  danger.rotation.x = -Math.PI / 2;
+  danger.position.set(0, -0.95, H / 2);
+  scene.add(danger);
   brickGeo = new THREE.BoxGeometry(2.6, 0.6, 0.9);
   particleGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-  paddleMesh = new THREE.Mesh(new THREE.BoxGeometry(4, 0.6, 0.8), new THREE.MeshStandardMaterial({ color: 0x4dd2ff, emissive: 0x1a6a8a, emissiveIntensity: 0.6, roughness: 0.3 }));
+  paddleMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 3.2, 4, 10), new THREE.MeshStandardMaterial({ color: 0x4dd2ff, emissive: 0x1a6a8a, emissiveIntensity: 0.6, roughness: 0.3 }));
+  paddleMesh.rotation.z = Math.PI / 2;
   scene.add(paddleMesh);
-  ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8, roughness: 0.2 }));
+  ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8, roughness: 0.2 }));
   scene.add(ballMesh);
+  ballShadow = new THREE.Mesh(new THREE.CircleGeometry(0.45, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 }));
+  ballShadow.rotation.x = -Math.PI / 2;
+  scene.add(ballShadow);
   return true;
 }
 function to3D(x, y) { return { x: x - W / 2, z: y - H / 2 }; }
 function spawnBurst(x, y, color) {
+  if (!particleMats[color]) particleMats[color] = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.8, flatShading: true });
   for (var i = 0; i < 12; i++) {
-    var m = new THREE.Mesh(particleGeo, new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 }));
+    var m = new THREE.Mesh(particleGeo, particleMats[color]);
     var q = to3D(x, y);
     m.position.set(q.x, 0, q.z);
     scene.add(m);
@@ -153,6 +337,7 @@ function updateParticles(dt) {
     p.mesh.position.z += p.vz * dt;
     p.mesh.position.y += 0.5 * dt;
     p.mesh.rotation.x += dt * 5;
+    p.mesh.scale.setScalar(Math.max(0.05, p.life / 0.6));
     if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
   }
 }
@@ -164,6 +349,7 @@ var bricks = [];
 var keys = {};
 var lastTime = 0;
 var COLORS = [0xff5a5a, 0xffb020, 0x7ee787, 0x4dd2ff, 0xaa7eff];
+var brickMats = {};
 function buildLevel(lv) {
   bricks.forEach(function (b) { if (scene) scene.remove(b.mesh); });
   bricks = [];
@@ -174,7 +360,8 @@ function buildLevel(lv) {
   for (var r = 0; r < rows; r++) {
     for (var c = 0; c < cols; c++) {
       var col = COLORS[r % COLORS.length];
-      var mesh = new THREE.Mesh(brickGeo, new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.4, roughness: 0.3 }));
+      if (!brickMats[col]) brickMats[col] = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.4, roughness: 0.3, flatShading: true });
+      var mesh = new THREE.Mesh(brickGeo, brickMats[col]);
       if (scene) scene.add(mesh);
       var bx = startX + c * spacing, by = 2 + r * 1.4;
       var q = to3D(bx, by);
@@ -200,13 +387,20 @@ function updateHud() {
     try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
   }
   bestEl.textContent = best;
+  var pips = pipsEl.children;
+  for (var i = 0; i < pips.length; i++) pips[i].className = i < lives ? "on" : "";
+  var lv = levelBarEl.children;
+  for (var j = 0; j < lv.length; j++) lv[j].className = j < level ? "on" : "";
+  document.body.classList.toggle("stuck", !!ball.stuck);
 }
 function syncMeshes() {
   if (!renderer) return;
   var p = to3D(paddle.x, 18.5);
   paddleMesh.position.set(p.x, 0, p.z);
   var b = to3D(ball.x, ball.y);
-  ballMesh.position.set(b.x, 0, b.z);
+  var bob = ball.stuck && state === "playing" ? Math.abs(Math.sin(performance.now() / 180)) * 0.35 : 0;
+  ballMesh.position.set(b.x, bob, b.z);
+  ballShadow.position.set(b.x, -0.94, b.z);
 }
 function launch() {
   if (state !== "playing" || !ball.stuck) return;
@@ -214,6 +408,7 @@ function launch() {
   ball.vx = (Math.random() < 0.5 ? -1 : 1) * 6;
   ball.vy = -9;
   playSound("bounce");
+  document.body.classList.remove("stuck");
 }
 function loseLife() {
   lives -= 1;
@@ -222,20 +417,30 @@ function loseLife() {
     state = "over";
     playSound("gameover");
     msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 시작 버튼을 눌러 다시 플레이하세요.";
+    setUI("over", {
+      kicker: "GAME OVER", title: "게임 오버",
+      text: "점수 <b>" + score + "점</b> · 레벨 <b>" + level + "</b><br>최고기록 " + best + "점",
+      btn: "다시 시작", badge: score > bestAtStart && score > 0
+    });
   } else {
     ball.stuck = true;
     ball.x = paddle.x; ball.y = 16;
     msgEl.textContent = "공을 놓쳤습니다. 남은 목숨 " + lives + "개. 공 발사 버튼을 누르세요.";
+    showToast("목숨 " + lives + "개 남음", true);
   }
 }
 function startGame() {
   if (!init3D()) { msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요."; return; }
+  var wasRunning = state === "playing";
   playSound("click");
+  bestAtStart = best;
   resetGame();
   state = "playing";
+  setUI("playing");
   msgEl.textContent = "레벨 " + level + " 시작! 공 발사 버튼을 누르세요.";
+  showToast("레벨 " + level);
   lastTime = performance.now();
-  requestAnimationFrame(loop);
+  if (!wasRunning) requestAnimationFrame(loop);
 }
 function loop(now) {
   if (state !== "playing") return;
@@ -279,11 +484,17 @@ function loop(now) {
         state = "clear";
         playSound("powerup");
         msgEl.textContent = "클리어! 모든 레벨을 깨셨습니다. 점수 " + score + "점.";
+        setUI("clear", {
+          kicker: "ALL CLEAR", title: "클리어!",
+          text: "레벨 5까지 모두 깼습니다.<br>점수 <b>" + score + "점</b> · 최고기록 " + best + "점",
+          btn: "처음부터 다시", badge: score > bestAtStart
+        });
       } else {
         level += 1;
         playSound("powerup");
         buildLevel(level);
         msgEl.textContent = "레벨 " + level + " 시작! 공 발사 버튼을 누르세요.";
+        showToast("레벨 " + level + " 시작");
       }
     }
   }
@@ -293,17 +504,38 @@ function loop(now) {
   if (renderer) renderer.render(scene, camera);
   if (state === "playing") requestAnimationFrame(loop);
 }
-document.getElementById("startBtn").addEventListener("click", startGame);
+function togglePause() {
+  if (state === "playing") {
+    state = "paused";
+    msgEl.textContent = "일시정지했습니다. 계속하기 버튼을 누르면 이어서 플레이합니다.";
+    setUI("paused", { kicker: "PAUSED", title: "일시정지", text: "점수 <b>" + score + "점</b> · 레벨 <b>" + level + "</b>", btn: "계속하기" });
+  } else if (state === "paused") {
+    state = "playing";
+    setUI("playing");
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+    msgEl.textContent = ball.stuck ? "공 발사 버튼을 누르세요." : "레벨 " + level + " 진행 중";
+  }
+}
+startBtn.addEventListener("click", startGame);
 document.getElementById("launchBtn").addEventListener("click", launch);
-document.getElementById("pauseBtn").addEventListener("click", function () {
-  if (state === "playing") { state = "paused"; msgEl.textContent = "일시정지했습니다. 일시정지 버튼을 다시 누르면 이어서 플레이합니다."; }
-  else if (state === "paused") { state = "playing"; lastTime = performance.now(); requestAnimationFrame(loop); msgEl.textContent = ""; }
+pauseBtn.addEventListener("click", togglePause);
+ovBtn.addEventListener("click", function () {
+  if (state === "paused") togglePause();
+  else startGame();
+});
+overlayEl.querySelector(".ov-card").addEventListener("click", function (ev) {
+  if (ev.target !== ovBtn && state === "ready") startGame();
+});
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden && state === "playing") togglePause();
 });
 window.addEventListener("keydown", function (ev) {
   if (["ArrowLeft", "ArrowRight", " "].indexOf(ev.key) >= 0) ev.preventDefault();
   keys[ev.key] = true;
   if (ev.key === " " && state === "playing") launch();
   if (ev.key === "Enter" && (state === "ready" || state === "over" || state === "clear")) startGame();
+  if (ev.key === "p" || ev.key === "P") togglePause();
 });
 window.addEventListener("keyup", function (ev) { keys[ev.key] = false; });
 function canvasPos(ev) {
@@ -315,28 +547,49 @@ canvas.addEventListener("mousemove", function (ev) {
   var p = canvasPos(ev);
   paddle.x = Math.max(2, Math.min(W - 2, p.x));
 });
+var lastTouchAt = 0;
+canvas.addEventListener("click", function () {
+  if (performance.now() - lastTouchAt < 700) return;
+  if (state === "playing") launch();
+});
+var tapStart = null;
 canvas.addEventListener("touchstart", function (ev) {
   ev.preventDefault();
+  lastTouchAt = performance.now();
   var p = canvasPos(ev);
+  var wasReady = state === "ready";
   paddle.x = Math.max(2, Math.min(W - 2, p.x));
-  if (state === "ready") startGame();
+  tapStart = wasReady ? null : { x: ev.touches[0].clientX, y: ev.touches[0].clientY, t: performance.now() };
+  if (wasReady) startGame();
 }, { passive: false });
 canvas.addEventListener("touchmove", function (ev) {
   ev.preventDefault();
   var p = canvasPos(ev);
   paddle.x = Math.max(2, Math.min(W - 2, p.x));
 }, { passive: false });
+canvas.addEventListener("touchend", function (ev) {
+  lastTouchAt = performance.now();
+  if (!tapStart) return;
+  var t = ev.changedTouches[0];
+  var moved = Math.abs(t.clientX - tapStart.x) + Math.abs(t.clientY - tapStart.y);
+  if (moved < 12 && performance.now() - tapStart.t < 300 && state === "playing") launch();
+  tapStart = null;
+});
+var READY_OV = { kicker: "BREAKOUT", title: "벽돌깨기", text: "게임판을 드래그해 패들을 움직입니다.<span class=\"more\"><br>목숨 3개, 레벨 5까지 깨면 클리어.</span>", btn: "게임 시작" };
 if (typeof THREE !== "undefined") {
   if (init3D()) {
     resetGame();
     state = "ready";
+    setUI("ready", READY_OV);
     syncMeshes();
     renderer.render(scene, camera);
   } else {
     msgEl.textContent = "WebGL을 사용할 수 없어 3D 게임을 실행할 수 없습니다. 브라우저에서 WebGL을 켜고 페이지를 새로고침하세요.";
+    setUI("ready", { kicker: "안내", title: "3D를 켤 수 없음", text: "브라우저에서 WebGL을 켜고 새로고침하세요.", btn: "다시 시도" });
     updateHud();
   }
 } else {
+  setUI("ready", { kicker: "안내", title: "로딩 실패", text: "3D 엔진을 불러오지 못했습니다. 새로고침하세요.", btn: "다시 시도" });
   updateHud();
 }
 </script>

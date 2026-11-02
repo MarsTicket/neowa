@@ -14,52 +14,152 @@ gtag('config', 'G-T386KYRRLK');
 </script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0f1220;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none}
-header{max-width:980px;margin:0 auto;padding:28px 20px 8px}
-h1{margin:0;font-size:36px;letter-spacing:-0.5px}
-header p{color:#c8cdea;line-height:1.6;margin:10px 0 0}
-main{max-width:980px;margin:0 auto;padding:16px 20px 40px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:720px){.grid{grid-template-columns:1fr}h1{font-size:30px}}
-.card{background:#1b2038;border:1px solid #2f375f;border-radius:16px;padding:20px}
-.card h2{margin:0 0 8px;font-size:22px}
-.card p{margin:0 0 16px;color:#c8cdea;line-height:1.6}
-.card a{display:inline-block;background:#3182f6;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px;min-height:44px;line-height:20px}
-.card a:hover{background:#1f6fe0}
-.note{margin-top:20px;color:#9aa1c2;line-height:1.6;font-size:14px}
-footer{max-width:980px;margin:0 auto;padding:0 20px 32px;color:#9aa1c2;font-size:13px;line-height:1.6}
+body{margin:0;background:#0d0f1c;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none}
+a{color:inherit;text-decoration:none}
+header{position:sticky;top:0;z-index:10;background:#12152a;border-bottom:1px solid #232744}
+.head{max-width:1100px;margin:0 auto;padding:14px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.logo{font-size:22px;font-weight:900;letter-spacing:-0.5px;white-space:nowrap}
+.logo span{color:#7ee0ff}
+.search{flex:1;min-width:200px}
+.search input{width:100%;background:#1b2038;border:1px solid #2f375f;color:#fff;border-radius:999px;padding:12px 16px;font-size:15px;outline:none}
+.search input::placeholder{color:#8b91b3}
+nav{max-width:1100px;margin:0 auto;padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:#1b2038;border:1px solid #2f375f;color:#c8cdea;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;min-height:44px}
+.chip.active{background:#3182f6;border-color:#3182f6;color:#fff}
+main{max-width:1100px;margin:0 auto;padding:16px 20px 40px}
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:0;background:linear-gradient(135deg,#1a1440,#0b2a4a);border:1px solid #2f375f;border-radius:20px;overflow:hidden;margin-bottom:28px}
+@media(max-width:720px){.hero{grid-template-columns:1fr}}
+.hero-art{min-height:220px;background:radial-gradient(circle at 30% 30%,#7ee0ff33,transparent 50%),radial-gradient(circle at 70% 70%,#ff5a5a33,transparent 50%),linear-gradient(135deg,#16204d,#0b1020);display:flex;align-items:center;justify-content:center;font-size:64px}
+.hero-art img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-body{padding:24px}
+.tag{display:inline-block;background:#3182f6;color:#fff;font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;margin-bottom:10px}
+.hero-body h1{margin:0 0 10px;font-size:30px;line-height:1.2}
+.hero-body p{margin:0 0 18px;color:#c8cdea;line-height:1.6}
+.btn{display:inline-block;background:#fff;color:#0d0f1c;font-weight:900;padding:13px 22px;border-radius:999px;min-height:44px;line-height:18px}
+.btn.blue{background:#3182f6;color:#fff}
+section h2{margin:28px 0 14px;font-size:22px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.card{background:#161a30;border:1px solid #2a2f52;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.card.hidden{display:none}
+.art{aspect-ratio:16/9;background:linear-gradient(135deg,#1e2a5a,#3a1a5a);position:relative;overflow:hidden}
+.art img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0}
+.art .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:56px}
+.card-body{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.card-body h3{margin:0;font-size:18px}
+.meta{color:#9aa1c2;font-size:13px}
+.card-body p{margin:0;color:#c8cdea;line-height:1.6;flex:1}
+.card-body .btn{align-self:flex-start}
+.note{margin-top:24px;color:#9aa1c2;line-height:1.6;font-size:14px}
+footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;color:#9aa1c2;font-size:13px;line-height:1.6}
 </style>
 </head>
 <body>
 <header>
-<h1>너와 아케이드</h1>
-<p>키보드 없이 터치만으로 플레이할 수 있는 게임 모음입니다. 가로 화면에 최적화했습니다. 테슬라 차량 브라우저에서도 터치로 플레이 가능합니다. 최고기록은 이 브라우저에만 저장됩니다.</p>
+<div class="head">
+<div class="logo">너와 <span>아케이드</span></div>
+<div class="search"><input id="searchInput" type="search" placeholder="게임 검색" aria-label="게임 검색"></div>
+</div>
 </header>
+<nav id="cats" aria-label="카테고리">
+<button class="chip active" data-cat="all">전체</button>
+<button class="chip" data-cat="shooting">슈팅</button>
+<button class="chip" data-cat="action">액션</button>
+<button class="chip" data-cat="puzzle">퍼즐</button>
+<button class="chip" data-cat="story">스토리</button>
+</nav>
 <main>
-<div class="grid">
-<div class="card">
-<h2>별빛 수호대</h2>
+<div class="hero">
+<div class="hero-art"><img src="assets/shooting-card.jpg" alt="" onerror="this.style.display='none'"><span aria-hidden="true">🚀</span></div>
+<div class="hero-body">
+<span class="tag">대표 게임</span>
+<h1>별빛 수호대</h1>
 <p>종스크롤 슈팅. 방향키로 이동하고 스페이스바로 발사하세요. 터치에서는 드래그로 이동하고 자동으로 발사합니다. 웨이브를 깨고 점수를 쌓으세요.</p>
-<a href="shooting/">플레이하기</a>
+<a class="btn" href="shooting/">지금 플레이</a>
 </div>
-<div class="card">
-<h2>스네이크</h2>
-<p>방향키, 스와이프, 화면 방향 버튼으로 뱀을 움직이세요. 먹이를 먹을수록 속도가 빨라집니다. 벽이나 몸에 부딪히면 끝입니다.</p>
-<a href="snake/">플레이하기</a>
 </div>
-<div class="card">
-<h2>벽돌깨기</h2>
-<p>마우스, 터치, 방향키로 패들을 움직이세요. 공으로 벽돌을 모두 깨면 다음 레벨로 갑니다. 목숨은 3개입니다.</p>
-<a href="breakout/">플레이하기</a>
+
+<section>
+<h2>인기 게임</h2>
+<div class="grid" id="gameGrid">
+<article class="card" data-cat="shooting action" data-name="별빛 수호대 슈팅">
+<div class="art"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트" onerror="this.style.display='none'"><div class="fallback" aria-hidden="true">🚀</div></div>
+<div class="card-body">
+<h3>별빛 수호대</h3>
+<div class="meta">슈팅 · 액션</div>
+<p>종스크롤 슈팅. 웨이브를 깨고 최고기록에 도전하세요.</p>
+<a class="btn blue" href="shooting/">Start</a>
 </div>
-<div class="card">
-<h2>방과 후, 너와(스토리 게임)</h2>
+</article>
+<article class="card" data-cat="action puzzle" data-name="스네이크">
+<div class="art"><img src="assets/snake-card.jpg" alt="스네이크 아트" onerror="this.style.display='none'"><div class="fallback" aria-hidden="true">🐍</div></div>
+<div class="card-body">
+<h3>스네이크</h3>
+<div class="meta">액션 · 퍼즐</div>
+<p>방향키, 스와이프, 화면 방향 버튼으로 뱀을 움직이세요. 먹이를 먹을수록 빨라집니다.</p>
+<a class="btn blue" href="snake/">Start</a>
+</div>
+</article>
+<article class="card" data-cat="action puzzle" data-name="벽돌깨기">
+<div class="art"><img src="assets/breakout-card.jpg" alt="벽돌깨기 아트" onerror="this.style.display='none'"><div class="fallback" aria-hidden="true">🧱</div></div>
+<div class="card-body">
+<h3>벽돌깨기</h3>
+<div class="meta">액션 · 퍼즐</div>
+<p>마우스, 터치, 방향키로 패들을 움직이세요. 벽돌을 모두 깨면 다음 레벨로 갑니다.</p>
+<a class="btn blue" href="breakout/">Start</a>
+</div>
+</article>
+</div>
+</section>
+
+<section>
+<h2>스토리 게임</h2>
+<div class="grid">
+<article class="card" data-cat="story" data-name="방과 후 너와 스토리">
+<div class="art"><img src="assets/images/title_key.webp" alt="방과 후, 너와 타이틀 아트" onerror="this.style.display='none'"><div class="fallback" aria-hidden="true">📖</div></div>
+<div class="card-body">
+<h3>방과 후, 너와(스토리 게임)</h3>
+<div class="meta">스토리</div>
 <p>선택지 분기형 비주얼노벨. 전학 첫 학기, 방과 후의 선택이 이야기를 바꿉니다. 약 70분에서 95분, 엔딩 7개. 카탈로그로 남겨 둔 스토리 게임입니다.</p>
-<a href="story/">플레이하기</a>
+<a class="btn blue" href="story/">Start</a>
 </div>
+</article>
 </div>
-<p class="note">게임을 시작하면 점수와 최고기록이 화면에 표시됩니다. 게임이 끝나면 다시 시작 버튼을 눌러 바로 다시 플레이할 수 있습니다.</p>
+</section>
+
+<p class="note" id="noResult" hidden>검색 결과가 없어요. 다른 단어로 검색해 보세요.</p>
+<p class="note">키보드 없이 터치만으로 플레이할 수 있습니다. 가로 화면에 최적화했습니다. 테슬라 차량 브라우저에서도 터치로 플레이 가능합니다. 최고기록은 이 브라우저에만 저장됩니다.</p>
 </main>
 <footer>너와 아케이드. 모든 게임은 서버나 로그인 없이 브라우저에서 바로 실행됩니다.</footer>
+<script>
+"use strict";
+var searchInput = document.getElementById("searchInput");
+var cards = Array.prototype.slice.call(document.querySelectorAll("article.card"));
+var noResult = document.getElementById("noResult");
+var activeCat = "all";
+function applyFilter() {
+  var q = searchInput.value.trim().toLowerCase();
+  var shown = 0;
+  cards.forEach(function (card) {
+    var cats = card.getAttribute("data-cat") || "";
+    var name = card.getAttribute("data-name") || "";
+    var catOk = activeCat === "all" || cats.split(" ").indexOf(activeCat) >= 0;
+    var qOk = !q || name.toLowerCase().indexOf(q) >= 0;
+    var show = catOk && qOk;
+    card.classList.toggle("hidden", !show);
+    if (show) shown += 1;
+  });
+  noResult.hidden = shown > 0;
+}
+document.getElementById("cats").addEventListener("click", function (ev) {
+  var btn = ev.target.closest(".chip");
+  if (!btn) return;
+  activeCat = btn.getAttribute("data-cat");
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (c) { c.classList.toggle("active", c === btn); });
+  applyFilter();
+});
+searchInput.addEventListener("input", applyFilter);
+</script>
 </body>
 </html>

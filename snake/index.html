@@ -15,32 +15,45 @@ gtag('config', 'G-T386KYRRLK');
 <script src="../assets/three.min.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0b1020;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
-.wrap{max-width:920px;margin:0 auto;padding:16px}
-a{color:#9ec2ff}
-h1{font-size:24px;margin:0 0 8px}
-.hud{display:flex;gap:16px;font-weight:700;flex-wrap:wrap;margin-bottom:12px}
-.layout{display:flex;gap:16px;align-items:flex-start}
+body{margin:0;background:#0a0c14;color:#f2f3f7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+.wrap{max-width:920px;margin:0 auto;padding:20px 24px 40px}
+a{color:inherit;text-decoration:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0 16px;border-bottom:1px solid #232744;margin-bottom:16px}
+.top h1{font-size:28px;margin:0;letter-spacing:-0.5px}
+.top .eyebrow{font-size:12px;font-weight:800;letter-spacing:1px;color:#7ee787;margin:0 0 4px}
+.back{display:inline-block;padding:10px 16px;border:1px solid #3a4066;border-radius:999px;font-size:14px;font-weight:700;min-height:44px;line-height:22px;color:#c8cdea}
+.hud{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:#161a30;border:1px solid #2a2f52;border-radius:14px;padding:10px 14px}
+.stat .label{display:block;font-size:12px;color:#9aa1c2;margin-bottom:2px}
+.stat .value{font-size:22px;font-weight:900;line-height:1.2}
+.stat.score .value{font-size:28px;color:#7ee787}
+.layout{display:flex;gap:20px;align-items:flex-start}
 @media(max-width:720px){.layout{flex-direction:column}}
-canvas{display:block;width:100%;max-width:520px;height:auto;background:#07130a;border:1px solid #2f375f;border-radius:12px;touch-action:none}
-.side{flex:1;min-width:200px}
-.pad{display:grid;grid-template-columns:repeat(3,64px);gap:8px;justify-content:center;margin:12px 0}
-.pad button{width:64px;height:64px;font-size:22px}
-button{background:#3182f6;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;min-height:44px;cursor:pointer}
-button.secondary{background:#2a3358}
+canvas{display:block;width:100%;max-width:520px;height:auto;background:#07130a;border:1px solid #2a2f52;border-radius:20px;touch-action:none;box-shadow:0 20px 50px rgba(0,0,0,0.45)}
+.side{flex:1;min-width:220px}
+.pad{display:grid;grid-template-columns:repeat(3,64px);gap:8px;justify-content:center;margin:16px 0}
+.pad button{width:64px;height:64px;font-size:22px;background:#161a30;border:1px solid #3a4066;color:#f2f3f7}
+button{border:0;border-radius:999px;padding:13px 22px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer}
+button.primary{background:#fff;color:#0a0c14}
+button.secondary{background:transparent;color:#f2f3f7;border:1px solid #3a4066}
 .controls{display:flex;gap:10px;flex-wrap:wrap}
-p{color:#c8cdea;line-height:1.6}
-.msg{font-weight:700;min-height:24px}
+p{color:#9aa1c2;line-height:1.6;font-size:14px}
+.msg{font-weight:800;min-height:24px;color:#c8cdea}
 </style>
 </head>
 <body>
 <div class="wrap">
+<div class="top">
+<div>
+<p class="eyebrow">SNAKE</p>
 <h1>스네이크</h1>
-<p><a href="../">허브로 돌아가기</a></p>
+</div>
+<a class="back" href="../">허브로 돌아가기</a>
+</div>
 <div class="hud">
-<span>점수: <span id="score">0</span></span>
-<span>속도 단계: <span id="speed">1</span></span>
-<span>최고기록: <span id="best">0</span></span>
+<div class="stat score"><span class="label">점수</span><span class="value" id="score">0</span></div>
+<div class="stat"><span class="label">속도 단계</span><span class="value" id="speed">1</span></div>
+<div class="stat"><span class="label">최고기록</span><span class="value" id="best">0</span></div>
 </div>
 <div class="layout">
 <canvas id="game" width="600" height="600"></canvas>
@@ -52,11 +65,11 @@ p{color:#c8cdea;line-height:1.6}
 <span></span><button data-dir="down" aria-label="아래">▼</button><span></span>
 </div>
 <div class="controls">
-<button id="startBtn">게임 시작</button>
+<button id="startBtn" class="primary">게임 시작</button>
 <button id="pauseBtn" class="secondary">일시정지</button>
 <button id="soundBtn" class="secondary">소리 끄기</button>
 </div>
-<p>먹이를 먹으면 점수가 오르고 속도 단계가 올라갑니다. 벽이나 자기 몸에 부딪히면 게임이 끝납니다. 방향을 바로 뒤로 꺾을 수는 없습니다.</p>
+<p>먹이를 먹을수록 빨라집니다. 벽에 닿으면 반대쪽에서 이어집니다. 자기 몸에 부딪히면 게임이 끝납니다.</p>
 </div>
 </div>
 </div>
@@ -185,7 +198,11 @@ function step() {
   if (state !== "playing") return;
   dir = nextDir;
   var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS || snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
+  if (head.x < 0) head.x = COLS - 1;
+  if (head.x >= COLS) head.x = 0;
+  if (head.y < 0) head.y = ROWS - 1;
+  if (head.y >= ROWS) head.y = 0;
+  if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
     gameOver();
     return;
   }

@@ -2,196 +2,382 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0c14">
-<title>너와 아케이드</title>
-<meta name="description" content="터치만으로 플레이할 수 있는 아케이드 게임 모음. 종스크롤 슈팅, 스네이크, 벽돌깨기, 그리고 스토리 게임 한 편.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>너와 아케이드 · 설치 없이 바로 하는 무료 웹게임</title>
+<meta name="description" content="설치도 로그인도 없이 브라우저에서 바로 하는 무료 아케이드 게임. 종스크롤 슈팅, 스네이크, 벽돌깨기, 그리고 선택형 비주얼노벨 한 편. 모바일 터치와 키보드 모두 지원.">
+<meta name="google-adsense-account" content="ca-pub-2895947454673475">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2895947454673475" crossorigin="anonymous"></script>
+<link rel="canonical" href="https://neowa.kr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="너와 아케이드">
+<meta property="og:title" content="너와 아케이드 · 설치 없이 바로 하는 무료 웹게임">
+<meta property="og:description" content="슈팅, 스네이크, 벽돌깨기, 비주얼노벨. 브라우저에서 바로, 터치 한 번으로.">
+<meta property="og:url" content="https://neowa.kr/">
+<meta property="og:image" content="https://neowa.kr/assets/shooting-card.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){window.dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-T386KYRRLK');
-</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
 <style>
 :root{
-  --bg:#0a0c14;--surface:#12152a;--surface-2:#181c36;--line:#232744;--line-2:#3a4066;
-  --text:#f2f3f7;--sub:#c8cdea;--muted:#9aa1c2;--blue:#3182f6;
-  --cyan:#7ee0ff;--green:#7ee787;--amber:#ffb020;--pink:#ff8fb8;
-  --r-lg:20px;--r-md:14px;--shadow:0 20px 50px rgba(0,0,0,.45);
+  --bg:#05060c;--bg-2:#0b0d18;--card:#0e1020;--ink:#f4f5fb;--sub:#aab0d4;--mute:#6f7699;
+  --line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.16);
+  --cyan:#5ee7ff;--lime:#7dff9b;--amber:#ffb547;--pink:#ff7aa8;--gold:#ffd166;
+  --f-display:"Black Han Sans","Pretendard Variable",Pretendard,system-ui,sans-serif;
+  --f-body:"Pretendard Variable",Pretendard,system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --f-num:"Chakra Petch","Pretendard Variable",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(900px 500px at 85% -10%,rgba(49,130,246,.16),transparent 60%),radial-gradient(700px 400px at -10% 30%,rgba(126,224,255,.07),transparent 60%);z-index:-1}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-.container{max-width:1040px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
-header{display:flex;justify-content:space-between;align-items:center;padding-top:18px;padding-bottom:18px}
-.logo{font-size:20px;font-weight:900;letter-spacing:-.5px;display:flex;align-items:center;gap:10px;min-height:44px}
-.logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#0a0c14;font-size:15px;font-weight:900}
+img{display:block;max-width:100%}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:3px;border-radius:10px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+
+/* 헤더 */
+.top{position:absolute;top:0;left:0;right:0;z-index:5}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:72px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:21px;letter-spacing:.5px}
+.logo i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-style:normal;font-size:18px;color:#05060c;
+  background:conic-gradient(from 210deg,var(--cyan),var(--lime),var(--amber),var(--pink),var(--cyan));box-shadow:0 0 24px rgba(94,231,255,.4)}
 .logo span{color:var(--cyan)}
-.logo .logo-mark{color:#0a0c14}
-nav{display:flex;gap:4px}
-nav a{display:inline-flex;align-items:center;padding:0 14px;font-size:14px;font-weight:700;color:var(--sub);min-height:44px;border-radius:999px}
-nav a:hover{background:var(--surface)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#0a0c14;font-weight:900;font-size:15px;padding:0 26px;border-radius:999px;min-height:48px;border:1px solid transparent;transition:transform .12s ease,background .12s ease}
+.nav{display:flex;gap:2px}
+.nav a{padding:10px 14px;border-radius:12px;font-size:14px;font-weight:700;color:var(--sub)}
+.nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+
+/* 히어로 */
+.hero{position:relative;min-height:min(92vh,820px);display:flex;align-items:center;overflow:hidden;padding:110px 0 80px;isolation:isolate}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:200px;background:linear-gradient(transparent,var(--bg));z-index:-1}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.kicker{display:inline-flex;align-items:center;gap:8px;padding:7px 14px 7px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line-2);
+  font-size:13px;font-weight:700;color:var(--sub);margin-bottom:22px}
+.kicker b{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 4px rgba(125,255,155,.18);animation:live 1.6s infinite}
+@keyframes live{50%{box-shadow:0 0 0 8px rgba(125,255,155,0)}}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(46px,7.4vw,92px);line-height:1.02;letter-spacing:.5px;margin:0 0 22px}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--cyan),var(--lime) 45%,var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 28px rgba(94,231,255,.35))}
+.lead{font-size:clamp(16px,1.6vw,19px);color:var(--sub);margin:0 0 32px;max-width:520px;word-break:keep-all}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;min-height:56px;padding:0 28px;border-radius:16px;font-weight:800;font-size:16px;transition:transform .12s,filter .15s,background .15s}
 .btn:active{transform:scale(.97)}
-.btn.outline{background:transparent;color:var(--text);border-color:var(--line-2)}
-.btn.outline:hover{background:var(--surface)}
-.btn.sm{min-height:44px;padding:0 20px;font-size:14px}
-.hero{display:grid;grid-template-columns:1.15fr 1fr;gap:36px;align-items:center;padding:20px 0 44px}
-.hero-art{position:relative;border-radius:var(--r-lg);overflow:hidden;background:#16204d;aspect-ratio:16/9;box-shadow:var(--shadow);border:1px solid var(--line)}
-.hero-art img{width:100%;height:100%;object-fit:cover;display:block}
-.hero-art .tag{position:absolute;left:14px;top:14px;background:rgba(10,12,20,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.12);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;color:var(--cyan)}
-.eyebrow{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;margin:0 0 12px}
-.hero h1{margin:0 0 14px;font-size:44px;line-height:1.12;letter-spacing:-1.2px}
-.hero p{margin:0 0 24px;color:var(--sub);line-height:1.7;font-size:16px}
-.hero .eyebrow{color:var(--cyan);margin-bottom:12px}
-.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 22px;padding:0;list-style:none}
-.chips li{font-size:13px;font-weight:700;color:var(--sub);background:var(--surface);border:1px solid var(--line);padding:7px 12px;border-radius:999px}
-section{padding:40px 0;border-top:1px solid var(--line)}
-.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
-section h2{margin:0 0 6px;font-size:26px;letter-spacing:-.5px}
-.section-note{margin:0;color:var(--muted);line-height:1.6}
-.list{display:flex;flex-direction:column;gap:12px}
-.pick{display:grid;grid-template-columns:44px 220px 1fr auto;gap:22px;align-items:center;padding:14px 18px 14px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);transition:border-color .15s ease,transform .15s ease}
-.pick:hover{border-color:var(--line-2);transform:translateY(-1px)}
-.num{font-size:26px;font-weight:900;color:var(--line-2);text-align:center;font-variant-numeric:tabular-nums}
-.thumb{border-radius:var(--r-md);overflow:hidden;background:#16204d;aspect-ratio:16/9;display:block}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
-.pick:hover .thumb img{transform:scale(1.04)}
-.pick-body h3{margin:0 0 6px;font-size:20px;letter-spacing:-.3px}
-.meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.meta span{font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
-.meta .genre{color:var(--accent,var(--cyan));background:rgba(255,255,255,.05)}
-.meta .best{color:var(--sub)}
-.pick-body p{margin:0;color:var(--sub);line-height:1.6;font-size:15px}
-.story{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:center;padding:14px 18px 14px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
-.story-art{aspect-ratio:16/9;border-radius:var(--r-md);background:radial-gradient(120% 90% at 20% 10%,#ff8fb8 0%,transparent 55%),radial-gradient(120% 90% at 90% 100%,#7a6bff 0%,transparent 60%),#241a3a;display:flex;align-items:flex-end;padding:14px;position:relative;overflow:hidden}
-.story-art::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 14px)}
-.story-art strong{position:relative;z-index:1;font-size:17px;line-height:1.3;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4)}
-.story h3{margin:0 0 8px;font-size:20px}
-.story p{margin:0 0 16px;color:var(--sub);line-height:1.7}
-.info{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.info div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px}
-.info b{display:block;font-size:15px;margin-bottom:4px}
-.info span{color:var(--muted);font-size:14px;line-height:1.6}
-footer{padding-top:28px;padding-bottom:max(40px,env(safe-area-inset-bottom));color:var(--muted);font-size:13px;line-height:1.7}
-@media(max-width:860px){
-  .pick{grid-template-columns:180px 1fr;grid-template-areas:"thumb body" "thumb cta";row-gap:12px;padding:14px}
-  .pick .num{display:none}
-  .pick .thumb{grid-area:thumb}
-  .pick .pick-body{grid-area:body}
-  .pick .btn{grid-area:cta;justify-self:start}
+.btn svg{width:18px;height:18px}
+.btn-p{background:var(--ink);color:#05060c;box-shadow:0 12px 40px -10px rgba(94,231,255,.6)}
+.btn-p:hover{filter:brightness(.92)}
+.btn-g{border:1px solid var(--line-2);background:rgba(255,255,255,.04)}
+.btn-g:hover{background:rgba(255,255,255,.1)}
+.resume{margin-top:22px;display:none;align-items:center;gap:12px;font-size:14px;color:var(--sub)}
+.resume.on{display:flex}
+.resume img{width:44px;height:30px;border-radius:7px;object-fit:cover}
+.resume b{color:var(--ink)}
+.resume a{color:var(--cyan);font-weight:700}
+
+/* 히어로 오른쪽: 쌓인 카드 */
+.stack{position:relative;aspect-ratio:1/1.02;max-width:460px;justify-self:end;width:100%}
+.stack a{position:absolute;width:62%;aspect-ratio:3/4;border-radius:22px;overflow:hidden;border:1px solid var(--line-2);box-shadow:0 30px 60px -20px rgba(0,0,0,.8);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.stack img{width:100%;height:100%;object-fit:cover}
+.stack a::after{content:attr(data-name);position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;font-family:var(--f-display);font-size:20px;
+  background:linear-gradient(transparent,rgba(0,0,0,.85))}
+.stack .s1{left:0;top:12%;transform:rotate(-8deg);z-index:1}
+.stack .s2{left:19%;top:0;transform:rotate(1deg);z-index:3}
+.stack .s3{right:0;top:14%;transform:rotate(9deg);z-index:2}
+.stack a:hover{transform:translateY(-10px) rotate(0) scale(1.03);z-index:4;box-shadow:0 40px 80px -20px rgba(0,0,0,.9),0 0 0 2px var(--c)}
+
+/* 섹션 공통 */
+section{padding:72px 0}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:28px;flex-wrap:wrap}
+.eyebrow{font-family:var(--f-num);font-size:12px;letter-spacing:4px;color:var(--mute);margin:0 0 10px}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4vw,44px);letter-spacing:.5px;margin:0;line-height:1.1}
+.sec-note{color:var(--sub);margin:0;font-size:15px}
+.sec-note kbd{font-family:var(--f-num);font-size:12px;padding:2px 7px;border-radius:6px;border:1px solid var(--line-2);border-bottom-width:2px}
+
+/* 게임 카드 */
+.games{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.gc{--c:var(--cyan);position:relative;display:flex;flex-direction:column;border-radius:24px;background:var(--card);border:1px solid var(--line);overflow:hidden;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .25s}
+.gc:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c) 55%,transparent);box-shadow:0 30px 60px -24px color-mix(in srgb,var(--c) 55%,transparent)}
+.gc-art{position:relative;aspect-ratio:16/11;overflow:hidden}
+.gc-art img{width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.gc:hover .gc-art img{transform:scale(1.06)}
+.gc-art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,var(--card))}
+.gc-no{position:absolute;left:16px;top:14px;z-index:1;font-family:var(--f-num);font-size:13px;font-weight:700;letter-spacing:2px;padding:6px 10px;border-radius:10px;
+  background:rgba(5,6,12,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.gc-body{position:relative;padding:4px 22px 22px;display:flex;flex-direction:column;flex:1;margin-top:-28px;z-index:1}
+.gc-genre{font-family:var(--f-num);font-size:11px;letter-spacing:3px;color:var(--c);margin:0 0 6px}
+.gc h3{font-family:var(--f-display);font-weight:400;font-size:30px;margin:0 0 10px;letter-spacing:.5px}
+.gc p{margin:0 0 16px;color:var(--sub);font-size:15px;word-break:keep-all}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 20px;padding:0;list-style:none}
+.tags li{font-size:12px;font-weight:700;color:var(--sub);padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.gc-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:16px;border-top:1px solid var(--line)}
+.gc-best span{display:block;font-size:11px;color:var(--mute);font-family:var(--f-num);letter-spacing:2px}
+.gc-best b{font-family:var(--f-num);font-size:22px;font-weight:700}
+.gc-best b.none{font-family:var(--f-body);font-size:14px;color:var(--sub);font-weight:700}
+.play{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 20px;border-radius:14px;background:var(--c);color:#05060c;font-weight:800;font-size:15px;
+  box-shadow:0 10px 26px -10px var(--c)}
+.play svg{width:14px;height:14px}
+.gc .cover{position:absolute;inset:0;z-index:2}
+.gc .play{position:relative;z-index:3}
+
+/* 스토리 배너 */
+.story{position:relative;border-radius:28px;overflow:hidden;border:1px solid rgba(255,122,168,.25);background:#1a0f1c;display:grid;grid-template-columns:1.15fr .85fr;min-height:420px;isolation:isolate}
+.story-bg{position:absolute;inset:0;z-index:-2}
+.story-bg img{width:100%;height:100%;object-fit:cover;filter:blur(28px) saturate(1.2) brightness(.45);transform:scale(1.2)}
+.story::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(20,8,20,.9) 30%,rgba(20,8,20,.2))}
+.story-txt{padding:48px 44px;display:flex;flex-direction:column;justify-content:center}
+.story .eyebrow{color:var(--pink)}
+.story h2{font-size:clamp(36px,5vw,56px);margin-bottom:16px}
+.story p{color:#e7d6e3;margin:0 0 22px;font-size:16px;max-width:460px;word-break:keep-all}
+.cast{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 28px}
+.cast span{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.cast span b{color:var(--pink);margin-right:6px;font-weight:800}
+.story .btn-p{background:var(--pink);box-shadow:0 14px 40px -12px var(--pink)}
+.story-art{position:relative;overflow:hidden}
+.story-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 30%);mask-image:linear-gradient(90deg,transparent,#000 30%)}
+
+/* 특징 */
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.feat{padding:22px;border-radius:20px;background:var(--bg-2);border:1px solid var(--line)}
+.feat svg{width:26px;height:26px;color:var(--cyan);margin-bottom:14px}
+.feat b{display:block;font-size:16px;margin-bottom:6px}
+.feat span{font-size:14px;color:var(--sub);word-break:keep-all}
+
+footer{padding:40px 0 max(48px,env(safe-area-inset-bottom));border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer nav{display:flex;gap:18px;flex-wrap:wrap}
+footer nav a:hover{color:var(--ink)}
+
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr}
+  .stack{display:none}
+  .games{grid-template-columns:1fr 1fr}
+  .games .gc:last-child{grid-column:1/-1}
+  .feats{grid-template-columns:1fr 1fr}
 }
-@media(max-width:640px){
-  .hero{grid-template-columns:1fr;gap:20px;padding-top:4px}
-  .hero h1{font-size:34px}
-  .pick{grid-template-columns:1fr;grid-template-areas:"thumb" "body" "cta"}
-  .pick .btn{justify-self:stretch}
+@media (max-width:680px){
+  .nav a:not(.keep){display:none}
+  .hero{min-height:auto;padding:100px 0 56px}
+  .cta .btn{flex:1 1 auto;padding:0 20px}
+  section{padding:52px 0}
+  .games{grid-template-columns:1fr}
+  .gc-art{aspect-ratio:16/9}
   .story{grid-template-columns:1fr}
-  .info{grid-template-columns:1fr}
+  .story-art{height:300px;order:-1}
+  .story-art img{-webkit-mask-image:linear-gradient(180deg,#000 60%,transparent);mask-image:linear-gradient(180deg,#000 60%,transparent)}
+  .story-txt{padding:4px 22px 30px}
+  .feats{grid-template-columns:1fr}
 }
+@media (prefers-reduced-motion:reduce){.kicker b{animation:none}html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
-<header class="container">
-<a class="logo" href="./"><span class="logo-mark" aria-hidden="true">N</span>너와 <span>아케이드</span></a>
-<nav aria-label="바로가기">
-<a href="#games">게임</a>
-<a href="#story">스토리</a>
-</nav>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="./" aria-label="너와 아케이드 홈"><i aria-hidden="true">너</i>너와 <span>아케이드</span></a>
+    <nav class="nav" aria-label="바로가기">
+      <a class="keep" href="#games">게임</a>
+      <a class="keep" href="#story">스토리</a>
+      <a href="about.html">소개</a>
+    </nav>
+  </div>
 </header>
-<main class="container">
-<div class="hero">
-<a class="hero-art" href="shooting/"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트"><span class="tag">추천 게임</span></a>
-<div>
-<p class="eyebrow">Featured</p>
-<h1>별빛 수호대</h1>
-<p>종스크롤 슈팅. 드래그로 이동하고 자동으로 발사합니다. 웨이브를 깨고 최고기록에 도전하세요.</p>
-<ul class="chips"><li>터치 드래그</li><li>자동 발사</li><li>목숨 3개</li></ul>
-<div class="hero-actions">
-<a class="btn" href="shooting/">지금 플레이</a>
-<a class="btn outline" href="#games">전체 게임 보기</a>
-</div>
-</div>
-</div>
 
-<section id="games">
-<div class="section-head">
-<div>
-<h2>게임</h2>
-<p class="section-note">터치만으로 플레이할 수 있는 세 편입니다. 별도 설치나 로그인이 필요 없습니다.</p>
-</div>
-</div>
-<div class="list">
-<div class="pick" style="--accent:var(--cyan)">
-<div class="num">01</div>
-<a class="thumb" href="shooting/"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트"></a>
-<div class="pick-body">
-<h3>별빛 수호대</h3>
-<div class="meta"><span class="genre">슈팅</span><span class="best" data-key="neowa_hub_shooting_high">최고기록 0</span></div>
-<p>종스크롤 슈팅. 웨이브를 깨고 점수를 쌓으세요.</p>
-</div>
-<a class="btn outline sm" href="shooting/">플레이</a>
-</div>
-<div class="pick" style="--accent:var(--green)">
-<div class="num">02</div>
-<a class="thumb" href="snake/"><img src="assets/snake-card.jpg" alt="스네이크 아트"></a>
-<div class="pick-body">
-<h3>스네이크</h3>
-<div class="meta"><span class="genre">액션</span><span class="best" data-key="neowa_hub_snake_high">최고기록 0</span></div>
-<p>스와이프와 화면 방향 버튼으로 뱀을 움직이세요. 먹이를 먹을수록 빨라집니다.</p>
-</div>
-<a class="btn outline sm" href="snake/">플레이</a>
-</div>
-<div class="pick" style="--accent:var(--amber)">
-<div class="num">03</div>
-<a class="thumb" href="breakout/"><img src="assets/breakout-card.jpg" alt="벽돌깨기 아트"></a>
-<div class="pick-body">
-<h3>벽돌깨기</h3>
-<div class="meta"><span class="genre">액션</span><span class="best" data-key="neowa_hub_breakout_high">최고기록 0</span></div>
-<p>드래그로 패들을 움직이세요. 벽돌을 모두 깨면 다음 레벨로 갑니다.</p>
-</div>
-<a class="btn outline sm" href="breakout/">플레이</a>
-</div>
-</div>
-</section>
+<main>
+  <div class="hero">
+    <canvas id="bg" aria-hidden="true"></canvas>
+    <div class="wrap hero-grid">
+      <div>
+        <p class="kicker"><b></b>무료 · 설치 없음 · 로그인 없음</p>
+        <h1>탭 한 번이면<br><em>바로 한 판.</em></h1>
+        <p class="lead">브라우저에서 바로 켜지는 아케이드 게임 3종과 비주얼노벨 한 편. 휴대폰은 터치로, PC는 키보드로 지금 바로 시작하세요.</p>
+        <div class="cta">
+          <a class="btn btn-p" id="quickPlay" href="shooting/"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>바로 플레이</a>
+          <a class="btn btn-g" href="#games">게임 고르기</a>
+        </div>
+        <p class="resume" id="resume"></p>
+      </div>
+      <div class="stack" aria-hidden="true">
+        <a class="s1" href="snake/" data-name="네온 스네이크" style="--c:var(--lime)" tabindex="-1"><img src="assets/snake-card.jpg" alt=""></a>
+        <a class="s2" href="shooting/" data-name="별빛 수호대" style="--c:var(--cyan)" tabindex="-1"><img src="assets/shooting-card.jpg" alt=""></a>
+        <a class="s3" href="breakout/" data-name="네온 브레이커" style="--c:var(--amber)" tabindex="-1"><img src="assets/breakout-card.jpg" alt=""></a>
+      </div>
+    </div>
+  </div>
 
-<section id="story">
-<div class="section-head">
-<div>
-<h2>스토리</h2>
-<p class="section-note">카탈로그로 남겨 둔 스토리 게임 한 편입니다.</p>
-</div>
-</div>
-<div class="story">
-<a class="story-art" href="story/" aria-label="방과 후, 너와 스토리로 이동"><strong>방과 후,<br>너와</strong></a>
-<div>
-<h3>방과 후, 너와(스토리 게임)</h3>
-<p>선택지 분기형 비주얼노벨. 전학 첫 학기, 방과 후의 선택이 이야기를 바꿉니다. 약 70분에서 95분, 엔딩 7개.</p>
-<a class="btn outline sm" href="story/">스토리로 이동</a>
-</div>
-</div>
-</section>
+  <section id="games">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="eyebrow">ARCADE · 3 GAMES</p><h2>오늘은 뭘 할까요?</h2></div>
+        <p class="sec-note">키보드 <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 으로 바로 시작</p>
+      </div>
+      <div class="games">
+        <article class="gc" style="--c:var(--cyan)">
+          <a class="cover" href="shooting/" aria-label="별빛 수호대 플레이"></a>
+          <div class="gc-art"><span class="gc-no">01</span><img src="assets/shooting-card.jpg" alt="별빛 수호대: 우주 전투기가 적 함대를 향해 레이저를 쏘는 장면" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">SHOOTING</p>
+            <h3>별빛 수호대</h3>
+            <p>발사는 자동, 당신은 피하기만. 파워업을 모아 5방향 탄을 완성하고 5웨이브마다 나오는 보스를 잡으세요.</p>
+            <ul class="tags"><li>드래그 이동</li><li>보스전</li><li>콤보 최대 ×8</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_shooting_high">0</b></div>
+              <a class="play" href="shooting/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" style="--c:var(--lime)">
+          <a class="cover" href="snake/" aria-label="네온 스네이크 플레이"></a>
+          <div class="gc-art"><span class="gc-no">02</span><img src="assets/snake-card.jpg" alt="네온 스네이크: 빛나는 초록 뱀이 사과를 향해 가는 장면" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">PUZZLE ACTION</p>
+            <h3>네온 스네이크</h3>
+            <p>먹을수록 길어지고 빨라집니다. 벽은 통과, 내 꼬리와 바위만 조심. 사라지기 전에 황금 먹이를 노리세요.</p>
+            <ul class="tags"><li>스와이프</li><li>벽 통과</li><li>황금 먹이 5배</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_snake_high">0</b></div>
+              <a class="play" href="snake/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" style="--c:var(--amber)">
+          <a class="cover" href="breakout/" aria-label="네온 브레이커 플레이"></a>
+          <div class="gc-art"><span class="gc-no">03</span><img src="assets/breakout-card.jpg" alt="네온 브레이커: 빛나는 공이 무지개색 벽돌을 깨는 장면" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">BREAKOUT</p>
+            <h3>네온 브레이커</h3>
+            <p>패들 끝으로 받아 각도를 노리세요. 멀티볼과 관통하는 불꽃공으로 8개 스테이지를 시원하게 깨부숩니다.</p>
+            <ul class="tags"><li>드래그 패들</li><li>아이템 5종</li><li>8 스테이지</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_breakout_high">0</b></div>
+              <a class="play" href="breakout/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
 
-<section aria-label="플레이 안내">
-<div class="info">
-<div><b>터치만으로 완주</b><span>키보드 없이 터치만으로 플레이할 수 있습니다.</span></div>
-<div><b>가로 화면 최적화</b><span>테슬라 차량 브라우저에서도 터치로 플레이 가능합니다.</span></div>
-<div><b>기록은 이 기기에</b><span>최고기록은 이 브라우저에만 저장됩니다.</span></div>
-</div>
-</section>
+  <section id="story">
+    <div class="wrap">
+      <div class="story">
+        <div class="story-bg" aria-hidden="true"><img src="assets/images/title_key.webp" alt="" loading="lazy"></div>
+        <div class="story-txt">
+          <p class="eyebrow">VISUAL NOVEL</p>
+          <h2>방과 후, 너와</h2>
+          <p>전학 첫 학기, 닷새 동안의 방과 후. 누구와 시간을 보낼지 고르는 선택이 이야기를 일곱 갈래로 바꿉니다.</p>
+          <div class="cast"><span><b>반장</b>한서연</span><span><b>도서위원</b>문채린</span><span><b>방송부</b>노아린</span></div>
+          <div class="cta">
+            <a class="btn btn-p" href="story/"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>이야기 시작하기</a>
+            <a class="btn btn-g" href="characters.html">등장인물 보기</a>
+          </div>
+        </div>
+        <div class="story-art"><img src="assets/images/title_key.webp" alt="방과 후, 너와 대표 일러스트" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="특징">
+    <div class="wrap feats">
+      <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg><b>3초 만에 시작</b><span>설치·회원가입 없이 링크만 열면 됩니다.</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><b>한 손 터치 조작</b><span>휴대폰은 드래그·스와이프, PC는 키보드.</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v10H3z"/><path d="M7 21h10M12 17v4"/></svg><b>큰 화면도 OK</b><span>태블릿, PC, 차량 브라우저까지 화면에 맞춰집니다.</span></div>
+      <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><b>내 최고기록 저장</b><span>기록은 이 기기 브라우저에만 남습니다.</span></div>
+    </div>
+  </section>
 </main>
-<footer class="container">너와 아케이드. 모든 게임은 서버나 로그인 없이 브라우저에서 바로 실행됩니다.</footer>
+
+<footer>
+  <div class="wrap">
+    <span>© 너와 아케이드 · neowa.kr</span>
+    <nav aria-label="사이트 정보">
+      <a href="about.html">소개</a>
+      <a href="characters.html">등장인물</a>
+      <a href="contact.html">문의</a>
+      <a href="privacy.html">개인정보처리방침</a>
+    </nav>
+  </div>
+</footer>
+
 <script>
-document.querySelectorAll(".best[data-key]").forEach(function (el) {
-  var v = 0;
-  try { v = parseInt(localStorage.getItem(el.getAttribute("data-key")) || "0", 10) || 0; } catch (e) { v = 0; }
-  if (v > 0) el.textContent = "최고기록 " + v.toLocaleString("ko-KR");
-  else el.textContent = "첫 기록에 도전";
-});
+(function () {
+  'use strict';
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function num(k) { return parseInt(get(k) || '0', 10) || 0; }
+  var NAMES = { shooting: '별빛 수호대', snake: '네온 스네이크', breakout: '네온 브레이커' };
+
+  // 최고기록
+  document.querySelectorAll('[data-key]').forEach(function (el) {
+    var v = num(el.getAttribute('data-key'));
+    if (v > 0) el.textContent = v.toLocaleString('ko-KR');
+    else { el.textContent = '첫 기록에 도전'; el.classList.add('none'); }
+  });
+
+  // 최근 플레이 이어서
+  var last = get('neowa_last');
+  if (NAMES[last]) {
+    document.getElementById('quickPlay').href = last + '/';
+    var r = document.getElementById('resume'), best = num('neowa_hub_' + last + '_high');
+    r.innerHTML = '<img src="assets/' + last + '-card.jpg" alt=""><span>최근 플레이 <b></b>' + (best ? ' · 최고 <b>' + best.toLocaleString('ko-KR') + '</b>' : '') + '</span>';
+    r.querySelector('b').textContent = NAMES[last];
+    r.classList.add('on');
+  }
+
+  // 숫자키 1·2·3 바로 시작
+  window.addEventListener('keydown', function (e) {
+    if (e.target.closest && e.target.closest('input,textarea')) return;
+    var m = { '1': 'shooting/', '2': 'snake/', '3': 'breakout/' }[e.key];
+    if (m) location.href = m;
+  });
+
+  // 히어로 배경: 별 + 네온 격자 (화면 밖이거나 동작 줄이기 설정이면 멈춤)
+  var cv = document.getElementById('bg'), c = cv.getContext('2d'), W, H, dpr, stars = [], t = 0, run = true;
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function size() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr;
+    stars = []; for (var i = 0; i < Math.min(220, W * H / 5000); i++) stars.push({ x: Math.random() * W, y: Math.random() * H * 0.7, z: Math.random() });
+  }
+  function draw() {
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#05060c'); g.addColorStop(0.62, '#0d0a22'); g.addColorStop(1, '#05060c');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    var hz = H * 0.66;
+    var glow = c.createRadialGradient(W * 0.72, hz, 0, W * 0.72, hz, W * 0.55);
+    glow.addColorStop(0, 'rgba(94,231,255,.20)'); glow.addColorStop(0.4, 'rgba(180,90,255,.10)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = glow; c.fillRect(0, 0, W, H);
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i]; c.globalAlpha = 0.25 + 0.6 * s.z * (0.6 + 0.4 * Math.sin(t * 2 + i));
+      c.fillStyle = '#fff'; c.fillRect(s.x, s.y, 1 + s.z, 1 + s.z);
+    }
+    c.globalAlpha = 1;
+    // 원근 격자
+    c.save(); c.beginPath(); c.rect(0, hz, W, H - hz); c.clip();
+    c.strokeStyle = 'rgba(94,231,255,.28)'; c.lineWidth = 1;
+    var cx = W * 0.6;
+    for (var k = -30; k <= 30; k++) { c.beginPath(); c.moveTo(cx + k * 18, hz); c.lineTo(cx + k * 220, H); c.stroke(); }
+    var off = (t * 0.35) % 1;
+    for (var j = 0; j < 16; j++) {
+      var p = (j + off) / 16, y = hz + Math.pow(p, 2.2) * (H - hz);
+      c.globalAlpha = Math.min(1, p * 1.6); c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
+    }
+    c.restore();
+    c.fillStyle = 'rgba(94,231,255,.55)'; c.fillRect(0, hz - 1, W, 1);
+  }
+  function loop() { if (run) { t += 1 / 60; draw(); } requestAnimationFrame(loop); }
+  size(); draw();
+  window.addEventListener('resize', function () { size(); draw(); });
+  if (!still) {
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (en) { run = en[0].isIntersecting; }).observe(cv);
+    requestAnimationFrame(loop);
+  }
+})();
 </script>
 </body>
 </html>

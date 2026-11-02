@@ -3,692 +3,493 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0c14">
-<title>별빛 수호대 - 너와 아케이드</title>
-<meta name="description" content="3D 종스크롤 슈팅. 방향키와 스페이스바, 터치 드래그와 자동 발사로 플레이하세요.">
+<meta name="theme-color" content="#05060c">
+<title>별빛 수호대 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 종스크롤 슈팅. 드래그로 움직이면 자동으로 발사합니다. 파워업을 모으고 5웨이브마다 나오는 보스를 잡으세요.">
+<meta property="og:title" content="별빛 수호대 · 너와 아케이드">
+<meta property="og:description" content="드래그 한 손가락으로 하는 종스크롤 슈팅. 보스를 잡고 최고기록에 도전하세요.">
+<meta property="og:image" content="https://neowa.kr/assets/shooting-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=2">
+<style>:root{--accent:#5ee7ff;--accent-ink:#03161c}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){window.dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-T386KYRRLK');
-</script>
-<script src="../assets/three.min.js"></script>
-<style>
-:root{
-  --bg:#0a0c14;--surface:#12152a;--surface-2:#181c36;--line:#232744;--line-2:#3a4066;
-  --text:#f2f3f7;--sub:#c8cdea;--muted:#9aa1c2;--blue:#3182f6;--red:#ff5a5a;
-  --r-lg:20px;--r-md:14px;--shadow:0 20px 50px rgba(0,0,0,.45);
-  --chrome:96px;
-}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(800px 420px at 80% -10%,var(--glow),transparent 60%);z-index:-1}
-a{color:inherit;text-decoration:none}
-.app{max-width:1180px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-.topbar{display:flex;align-items:center;gap:12px;min-height:60px;padding:4px 0 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
-.back{display:inline-flex;align-items:center;white-space:pre;padding:0 16px;border:1px solid var(--line-2);border-radius:999px;font-size:14px;font-weight:800;min-height:44px;color:var(--sub);flex:none}
-.back:active{background:var(--surface)}
-.title{flex:1;min-width:0}
-.title .eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--accent);margin:0 0 2px}
-.title h1{font-size:22px;margin:0;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chip{display:inline-flex;align-items:center;gap:8px;padding:0 14px;min-height:34px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:800;color:var(--sub);flex:none}
-.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
-body[data-state="playing"] .chip{color:#7ee787}
-body[data-state="playing"] .chip::before{background:#7ee787;box-shadow:0 0 0 4px rgba(126,231,135,.18)}
-body[data-state="paused"] .chip{color:#ffb020}
-body[data-state="paused"] .chip::before{background:#ffb020}
-body[data-state="over"] .chip{color:var(--red)}
-body[data-state="over"] .chip::before{background:var(--red)}
-body[data-state="clear"] .chip{color:#7ee0ff}
-body[data-state="clear"] .chip::before{background:#7ee0ff}
-button{font:inherit;border:0;border-radius:999px;padding:0 20px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer;touch-action:manipulation;transition:transform .1s ease,opacity .15s ease,background .15s ease}
-button:active{transform:scale(.96)}
-button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-button.primary{background:#fff;color:#0a0c14}
-button.accent{background:var(--blue);color:#fff}
-button.secondary{background:transparent;color:var(--text);border:1px solid var(--line-2)}
-button.sm{min-height:44px;padding:0 16px;font-size:14px}
-.game{display:flex;flex-direction:column;gap:14px}
-.stage{position:relative;container-type:inline-size;width:100%;margin:0 auto;border-radius:var(--r-lg);box-shadow:var(--shadow);background:var(--board-bg)}
-canvas{display:block;width:100%;height:auto;aspect-ratio:var(--ar);background:var(--board-bg);border:1px solid var(--line);border-radius:var(--r-lg);touch-action:none}
-body[data-state="playing"] canvas{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
-.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:var(--r-lg);background:rgba(6,8,16,.55);pointer-events:none;opacity:1;transition:opacity .2s ease}
-.overlay.hidden{opacity:0;visibility:hidden}
-body[data-state="ready"] .overlay{background:linear-gradient(180deg,rgba(6,8,16,.1),rgba(6,8,16,.6))}
-body[data-state="over"] .overlay{background:rgba(30,6,10,.62)}
-body[data-state="clear"] .overlay{background:rgba(6,20,32,.6)}
-.ov-card{pointer-events:auto;text-align:center;background:rgba(18,21,42,.92);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:20px 24px;max-width:340px;width:100%;box-shadow:var(--shadow);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.ov-kicker{margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:1.2px;color:var(--accent)}
-body[data-state="over"] .ov-kicker{color:var(--red)}
-.ov-card h2{margin:0 0 8px;font-size:26px;letter-spacing:-.5px}
-.ov-text{margin:0 0 16px;color:var(--sub);font-size:14px;line-height:1.6}
-.ov-text b{color:var(--text)}
-.ov-badge{display:inline-block;margin:0 0 10px;padding:4px 10px;border-radius:999px;background:var(--accent);color:#0a0c14;font-size:12px;font-weight:900}
-.ov-card button{width:100%}
-.toast{position:absolute;left:50%;top:14px;transform:translate(-50%,-8px);padding:8px 16px;border-radius:999px;background:rgba(10,12,20,.8);border:1px solid var(--line-2);font-size:14px;font-weight:900;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;white-space:nowrap}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.toast.warn{color:var(--red)}
-@container (max-width:460px){
-  .ov-card{padding:12px 16px;max-width:280px}
-  .ov-card h2{font-size:20px;margin-bottom:4px}
-  .ov-text{font-size:13px;margin-bottom:10px}
-  .ov-text .more{display:none}
-  .ov-badge{margin-bottom:6px}
-  .ov-card button{min-height:44px}
-}
-@container (max-width:300px){
-  .ov-kicker,.ov-text{display:none}
-}
-.panel{display:flex;flex-direction:column;gap:12px;min-width:0}
-.hud{display:grid;grid-template-columns:repeat(var(--hud-cols,4),minmax(0,1fr));gap:8px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 12px;min-width:0}
-.stat .label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px;white-space:nowrap}
-.stat .value{display:block;font-size:22px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat.score{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
-.stat.score .value{color:var(--accent);font-size:26px}
-.pips{display:flex;gap:4px;margin-top:4px}
-.pips i{width:12px;height:5px;border-radius:3px;background:var(--line-2)}
-.pips i.on{background:var(--red)}
-.msg{font-weight:800;font-size:14px;line-height:1.5;min-height:44px;color:var(--sub);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:11px 14px;display:flex;align-items:center}
-.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.controls .wide{grid-column:1/-1}
-body:not([data-state="playing"]) .needs-play{opacity:.4}
-.hint{margin:0;color:var(--muted);line-height:1.6;font-size:13px}
-/* 가로 화면, 넓은 화면: 게임판 + 오른쪽 패널 */
-@media (min-width:760px),(orientation:landscape) and (min-width:560px){
-  .game{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,290px);align-items:start;gap:16px}
-  .stage{width:min(100%,calc((100vh - var(--chrome)) * var(--arn)));width:min(100%,calc((100dvh - var(--chrome)) * var(--arn)))}
-  .hud{--hud-cols:2}
-  .stat.score{grid-column:1/-1}
-}
-/* 낮은 가로 화면(휴대폰 가로): 상단 압축 */
-@media (orientation:landscape) and (max-height:520px){
-  :root{--chrome:76px}
-  .app{padding-top:6px;padding-bottom:6px}
-  .topbar{min-height:48px;padding:0 0 6px;margin-bottom:8px}
-  .title .eyebrow{display:none}
-  .title h1{font-size:18px}
-  .chip{min-height:30px;padding:0 10px;font-size:12px}
-  .panel{gap:8px}
-  .stat{padding:5px 10px}
-  .stat .label{font-size:11px;margin-bottom:0}
-  .stat .value{font-size:18px}
-  .stat.score .value{font-size:20px}
-  .msg{min-height:44px;padding:6px 12px;font-size:13px}
-  .controls button{min-height:44px;font-size:14px}
-  .hint{display:none}
-  .stat.score{grid-column:auto}
-  .controls .wide{grid-column:auto}
-  .pips{margin-top:2px}
-  .ov-card{padding:14px 18px}
-  .ov-card h2{font-size:22px}
-  .ov-text{margin-bottom:10px}
-}
-@media (max-width:480px){
-  .topbar{gap:8px}
-  .back .long{display:none}
-  .chip{display:none}
-  .hud{--hud-cols:2}
-}
-:root{--accent:#7ee0ff;--glow:rgba(126,224,255,.12);--board-bg:#050816;--ar:3/2;--arn:1.5}
-body[data-state="playing"] #startBtn,body[data-state="paused"] #startBtn{display:none}
-body[data-state="ready"] #restartBtn,body[data-state="over"] #restartBtn,body[data-state="clear"] #restartBtn{display:none}
-</style>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
 </head>
-<body data-state="ready">
-<div class="app">
-<header class="topbar">
-<a class="back" href="../" aria-label="허브로 돌아가기">← 허브<span class="long">로 돌아가기</span></a>
-<div class="title">
-<p class="eyebrow">SHOOTING</p>
-<h1>별빛 수호대</h1>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>아케이드</a>
+    <div class="g-name"><small>STAGE 01</small>별빛 수호대</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div><kbd>↑↓←→</kbd><kbd>WASD</kbd> 이동</div>
+          <div><kbd>드래그</kbd> 마우스·터치 이동</div>
+          <div><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>ITEMS</h3>
+        <div class="g-keys">
+          <div><kbd style="color:#5ee7ff">P</kbd> 화력 강화 (최대 5단)</div>
+          <div><kbd style="color:#7aa2ff">S</kbd> 보호막 1회</div>
+          <div><kbd style="color:#ff4d6d">♥</kbd> 목숨 +1</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hScore">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">WAVE</span><span class="h-v sm" id="hWave">1</span><div class="h-bar" id="hBossBar" hidden><i id="hBoss"></i></div></div>
+        <div class="h-box r"><span class="h-lb">LIFE</span><div class="h-lives" id="hLives"></div><span class="h-lb" id="hPow" style="margin-top:4px">POWER 1</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 01</p>
+        <h1 class="ov-title">별빛 수호대</h1>
+        <p class="ov-desc">끝없이 내려오는 적 함대를 막아 내세요. 발사는 자동, 당신은 피하기만 하면 됩니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11V5a2 2 0 1 1 4 0v6m0-1a2 2 0 1 1 4 0v3a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 4 13.5V12a2 2 0 1 1 4 0"/></svg>드래그로 이동</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>5웨이브마다 보스</span>
+        </div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>출격하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint">화면 아무 곳이나 탭 · 스페이스</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 출격</button>
+          <a class="ov-next" href="../snake/"><img src="../assets/snake-card.jpg" alt=""><span class="grow"><b>네온 스네이크</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../snake/"><img src="../assets/snake-card.jpg" alt=""><span><b>네온 스네이크</b><span>퍼즐 액션</span></span></a>
+        <a class="g-more" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span><b>네온 브레이커</b><span>벽돌깨기</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
 </div>
-<span class="chip" id="stateChip">대기 중</span>
-<button id="soundBtn" class="secondary sm">소리 끄기</button>
-</header>
-<main class="game">
-<div class="stage">
-<canvas id="game" width="720" height="480"></canvas>
-<div class="overlay" id="overlay">
-<div class="ov-card">
-<p class="ov-kicker" id="ovKicker">SHOOTING</p>
-<span class="ov-badge" id="ovBadge" hidden>신기록</span>
-<h2 id="ovTitle">별빛 수호대</h2>
-<p class="ov-text" id="ovText">게임판을 드래그하면 기체가 따라옵니다. 발사는 자동입니다.</p>
-<button id="ovBtn" class="primary">게임 시작</button>
-</div>
-</div>
-<div class="toast" id="toast"></div>
-</div>
-<aside class="panel">
-<div class="hud">
-<div class="stat score"><span class="label">점수</span><span class="value" id="score">0</span></div>
-<div class="stat"><span class="label">목숨</span><span class="value" id="lives">3</span><span class="pips" id="livesPips"><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
-<div class="stat"><span class="label">웨이브</span><span class="value" id="wave">1</span></div>
-<div class="stat"><span class="label">최고기록</span><span class="value" id="best">0</span></div>
-</div>
-<div class="msg" id="msg" role="status" aria-live="polite">시작 버튼을 누르거나 게임판을 터치하세요.</div>
-<div class="controls">
-<button id="startBtn" class="primary wide">게임 시작</button>
-<button id="fireBtn" class="accent needs-play">발사</button>
-<button id="pauseBtn" class="secondary needs-play">일시정지</button>
-<button id="restartBtn" class="secondary wide">다시 시작</button>
-</div>
-<p class="hint">드래그로 이동, 자동 발사. 적이 붉은 선까지 내려오면 목숨이 줄어듭니다.</p>
-</aside>
-</main>
-</div>
+
+<script src="../assets/arcade/arcade.js?v=2"></script>
 <script>
-"use strict";
-var canvas = document.getElementById("game");
-var scoreEl = document.getElementById("score");
-var livesEl = document.getElementById("lives");
-var waveEl = document.getElementById("wave");
-var bestEl = document.getElementById("best");
-var msgEl = document.getElementById("msg");
-var pauseBtn = document.getElementById("pauseBtn");
-var startBtn = document.getElementById("startBtn");
-var chipEl = document.getElementById("stateChip");
-var overlayEl = document.getElementById("overlay");
-var ovKicker = document.getElementById("ovKicker");
-var ovBadge = document.getElementById("ovBadge");
-var ovTitle = document.getElementById("ovTitle");
-var ovText = document.getElementById("ovText");
-var ovBtn = document.getElementById("ovBtn");
-var toastEl = document.getElementById("toast");
-var pipsEl = document.getElementById("livesPips");
-var BEST_KEY = "neowa_hub_shooting_high";
-var best = 0;
-try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
-bestEl.textContent = best;
-var bestAtStart = best;
-var STATE_LABEL = { ready: "대기 중", playing: "플레이 중", paused: "일시정지", over: "게임 오버", clear: "클리어" };
-function setUI(s, ov) {
-  document.body.setAttribute("data-state", s);
-  chipEl.textContent = STATE_LABEL[s] || "";
-  pauseBtn.textContent = s === "paused" ? "계속하기" : "일시정지";
-  startBtn.textContent = s === "ready" ? "게임 시작" : "다시 시작";
-  if (s !== "playing") { clearTimeout(toastTimer); toastEl.classList.remove("show"); }
-  if (!ov) { overlayEl.classList.add("hidden"); return; }
-  ovKicker.textContent = ov.kicker;
-  ovTitle.textContent = ov.title;
-  ovText.innerHTML = ov.text;
-  ovBtn.textContent = ov.btn;
-  ovBadge.hidden = !ov.badge;
-  overlayEl.classList.remove("hidden");
-}
-var toastTimer = null;
-function showToast(text, warn) {
-  toastEl.textContent = text;
-  toastEl.classList.toggle("warn", !!warn);
-  toastEl.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1300);
-}
-var soundOn = true;
-var sounds = {};
-["laser", "explosion", "gameover", "powerup", "click"].forEach(function (n) {
-  var a = new Audio("../assets/sounds/" + n + ".wav");
-  a.preload = "auto";
-  if (n === "laser") a.volume = 0.25;
-  sounds[n] = a;
-});
-function playSound(n) {
-  if (!soundOn) return;
-  try {
-    var a = sounds[n];
-    if (!a) return;
-    a.currentTime = 0;
-    a.play().catch(function () {});
-  } catch (e) {}
-}
-document.getElementById("soundBtn").addEventListener("click", function (ev) {
-  soundOn = !soundOn;
-  ev.currentTarget.textContent = soundOn ? "소리 끄기" : "소리 켜기";
-});
-var shootParticles = [];
-var shootParticleGeo = null;
-var particleMats = {};
-function spawnShootBurst(x, y, color) {
-  if (!scene || !shootParticleGeo) return;
-  if (!particleMats[color]) particleMats[color] = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.9, flatShading: true });
-  for (var i = 0; i < 14; i++) {
-    var m = new THREE.Mesh(shootParticleGeo, particleMats[color]);
-    var q = to3D(x, y);
-    m.position.set(q.x, 0, q.z);
-    scene.add(m);
-    shootParticles.push({ mesh: m, vx: (Math.random() - 0.5) * 9, vz: (Math.random() - 0.5) * 9, life: 0.6 });
-  }
-}
-function updateShootParticles(dt) {
-  for (var i = shootParticles.length - 1; i >= 0; i--) {
-    var p = shootParticles[i];
-    p.life -= dt;
-    p.mesh.position.x += p.vx * dt;
-    p.mesh.position.z += p.vz * dt;
-    p.mesh.position.y += 0.6 * dt;
-    p.mesh.rotation.x += dt * 6;
-    p.mesh.scale.setScalar(Math.max(0.05, p.life / 0.6));
-    if (p.life <= 0) { scene.remove(p.mesh); shootParticles.splice(i, 1); }
-  }
-}
-if (typeof THREE === "undefined") {
-  msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요.";
-}
-var W = 28, H = 20;
-var scene = null, camera = null, renderer = null;
-var playerMesh = null, playerEngine = null;
-var sharedGeos = {}, sharedMats = {};
-var starLayers = [], floorGrid = null;
-function mat(color, emissive, intensity) {
-  return new THREE.MeshStandardMaterial({ color: color, emissive: emissive, emissiveIntensity: intensity, roughness: 0.45, metalness: 0.25, flatShading: true });
-}
-function lineRect(x0, z0, x1, z1, y, color, opacity) {
-  var g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute([x0, y, z0, x1, y, z0, x1, y, z0, x1, y, z1, x1, y, z1, x0, y, z1, x0, y, z1, x0, y, z0], 3));
-  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: opacity }));
-}
-function makeStars(count, size, color, opacity, y) {
-  var g = new THREE.BufferGeometry();
-  var pos = [];
-  for (var s = 0; s < count; s++) pos.push((Math.random() - 0.5) * 44, y, (Math.random() - 0.5) * 34);
-  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  var pts = new THREE.Points(g, new THREE.PointsMaterial({ color: color, size: size, transparent: true, opacity: opacity, sizeAttenuation: true }));
-  scene.add(pts);
-  return pts;
-}
-function init3D() {
-  if (typeof THREE === "undefined") return false;
-  if (renderer) return true;
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050816);
-  scene.fog = new THREE.Fog(0x050816, 28, 52);
-  camera = new THREE.PerspectiveCamera(50, 720 / 480, 0.1, 100);
-  camera.position.set(0, 22, 14);
-  camera.lookAt(0, 0, 0);
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "low-power" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(720, 480, false);
-  } catch (e) {
-    renderer = null;
-    return false;
-  }
-  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-  scene.add(new THREE.HemisphereLight(0xa8d8ff, 0x1a1030, 0.8));
-  var dir = new THREE.DirectionalLight(0xffffff, 1.0);
-  dir.position.set(5, 10, 5);
-  scene.add(dir);
-  var ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 44), new THREE.MeshStandardMaterial({ color: 0x070b20, roughness: 1 }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -1.2;
-  scene.add(ground);
-  floorGrid = new THREE.GridHelper(48, 24, 0x1c2a5e, 0x131c42);
-  floorGrid.position.y = -1.15;
-  scene.add(floorGrid);
-  starLayers.push({ pts: makeStars(260, 0.1, 0xffffff, 0.55, -0.9), speed: 1.2 });
-  starLayers.push({ pts: makeStars(90, 0.18, 0xbfe9ff, 0.9, -0.85), speed: 3.0 });
-  scene.add(lineRect(-W / 2, -H / 2, W / 2, H / 2, -0.95, 0x3a5aa8, 0.55));
-  var danger = new THREE.Mesh(new THREE.PlaneGeometry(W, 0.12), new THREE.MeshBasicMaterial({ color: 0xff5a5a, transparent: true, opacity: 0.45 }));
-  danger.rotation.x = -Math.PI / 2;
-  danger.position.set(0, -0.94, H / 2 - 3);
-  scene.add(danger);
-  var zone = new THREE.Mesh(new THREE.PlaneGeometry(W, H / 2 - 1), new THREE.MeshBasicMaterial({ color: 0x4dd2ff, transparent: true, opacity: 0.035 }));
-  zone.rotation.x = -Math.PI / 2;
-  zone.position.set(0, -0.96, (10 + H - 1) / 2 - H / 2);
-  scene.add(zone);
-  sharedGeos.octa = new THREE.OctahedronGeometry(0.7);
-  sharedGeos.icosa = new THREE.IcosahedronGeometry(0.9);
-  sharedGeos.dodeca = new THREE.DodecahedronGeometry(1.1);
-  sharedGeos.bullet = new THREE.BoxGeometry(0.18, 0.18, 0.9);
-  shootParticleGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
-  sharedGeos.enemyBullet = new THREE.SphereGeometry(0.28, 10, 8);
-  sharedMats.bullet = mat(0xffd94d, 0xffd94d, 1.0);
-  sharedMats.enemyBullet = mat(0xff5a5a, 0xff5a5a, 1.0);
-  playerMesh = new THREE.Group();
-  var fuselage = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.8, 4), mat(0x4dd2ff, 0x1a6a8a, 0.6));
-  fuselage.rotation.x = -Math.PI / 2;
-  playerMesh.add(fuselage);
-  var wing = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.15, 0.8), mat(0x2a6a9a, 0x1a4a6a, 0.4));
-  wing.position.z = 0.4;
-  playerMesh.add(wing);
-  var finGeo = new THREE.BoxGeometry(0.12, 0.5, 0.6);
-  var finMat = mat(0x7ee0ff, 0x2a8ab0, 0.6);
-  [-1.1, 1.1].forEach(function (fx) {
-    var fin = new THREE.Mesh(finGeo, finMat);
-    fin.position.set(fx, 0.2, 0.55);
-    playerMesh.add(fin);
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960;
+  var fx = new A.FX();
+  var P, bullets, enemies, ebullets, items, wave, queue, waveT, score, chain, chainT, lives, kills, dyingT, boss, keys = {}, drag = null, stars, bgOff = 0, nextWaveT;
+
+  /* ---------- 스프라이트 ---------- */
+  var SHIP = A.sprite('ship', 64, 72, function (x) {
+    x.translate(32, 36);
+    x.shadowColor = '#5ee7ff'; x.shadowBlur = 14;
+    var g = x.createLinearGradient(0, -30, 0, 30); g.addColorStop(0, '#e9fdff'); g.addColorStop(0.5, '#5ee7ff'); g.addColorStop(1, '#1b6c9a');
+    x.fillStyle = g;
+    x.beginPath(); x.moveTo(0, -30); x.lineTo(8, -10); x.lineTo(26, 12); x.lineTo(24, 22); x.lineTo(8, 16); x.lineTo(0, 24); x.lineTo(-8, 16); x.lineTo(-24, 22); x.lineTo(-26, 12); x.lineTo(-8, -10); x.closePath(); x.fill();
+    x.shadowBlur = 0;
+    x.fillStyle = '#0b2533'; x.beginPath(); x.ellipse(0, -6, 5, 10, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#aef4ff'; x.beginPath(); x.ellipse(-1.5, -9, 2, 4, 0, 0, Math.PI * 2); x.fill();
   });
-  var cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), mat(0xffffff, 0x7ee0ff, 0.8));
-  cockpit.position.y = 0.4;
-  playerMesh.add(cockpit);
-  playerEngine = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), mat(0xaa00ff, 0xaa00ff, 1.2));
-  playerEngine.position.z = 0.9;
-  playerMesh.add(playerEngine);
-  var pl = new THREE.PointLight(0x4dd2ff, 1.2, 8, 1);
-  playerMesh.add(pl);
-  scene.add(playerMesh);
-  return true;
-}
-function to3D(x, y) { return { x: x - W / 2, z: y - H / 2 }; }
-function scrollBackground(dt) {
-  if (!renderer) return;
-  starLayers.forEach(function (l) {
-    var arr = l.pts.geometry.attributes.position.array;
-    for (var i = 2; i < arr.length; i += 3) {
-      arr[i] += l.speed * dt;
-      if (arr[i] > 17) arr[i] -= 34;
-    }
-    l.pts.geometry.attributes.position.needsUpdate = true;
+  var BUL = A.sprite('pbul', 14, 40, function (x) {
+    x.shadowColor = '#5ee7ff'; x.shadowBlur = 8;
+    var g = x.createLinearGradient(0, 0, 0, 40); g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(94,231,255,0)');
+    x.fillStyle = g; A.rr(x, 4, 4, 6, 34, 3); x.fill();
   });
-  floorGrid.position.z = (floorGrid.position.z + dt * 1.6) % 2;
-}
-function syncMeshes() {
-  if (!renderer) return;
-  var now = performance.now();
-  var p = to3D(player.x, player.y);
-  playerMesh.position.set(p.x, 0, p.z);
-  playerMesh.visible = player.inv <= 0 || Math.floor(now / 90) % 2 === 0;
-  playerEngine.scale.setScalar(1 + Math.sin(now / 100) * 0.2);
-  enemies.forEach(function (e) {
-    var q = to3D(e.x, e.y);
-    e.mesh.position.set(q.x, Math.sin(now / 400 + e.phase) * 0.15, q.z);
-    e.mesh.rotation.y += 0.02;
-    if (e.flash > 0) { e.flash -= 1 / 60; e.mesh.material.emissiveIntensity = 1.6; }
-    else e.mesh.material.emissiveIntensity = 0.5;
-  });
-  bullets.forEach(function (b) {
-    var q = to3D(b.x, b.y);
-    b.mesh.position.set(q.x, 0, q.z);
-  });
-  enemyBullets.forEach(function (b) {
-    var q = to3D(b.x, b.y);
-    b.mesh.position.set(q.x, 0, q.z);
-  });
-}
-function removeMesh(obj) {
-  if (obj && obj.mesh && scene) scene.remove(obj.mesh);
-}
-var state = "ready";
-var score = 0, lives = 3, wave = 1;
-var player = { x: 14, y: 17, speed: 12, inv: 0 };
-var bullets = [], enemyBullets = [], enemies = [];
-var keys = {};
-var lastTime = 0, fireTimer = 0, enemyTimer = 0, bannerTimer = 0;
-var drag = false;
-function spawnWave(n) {
-  enemies.forEach(function (e) { removeMesh(e); if (e.mesh) e.mesh.material.dispose(); });
-  enemies = [];
-  var rows = Math.min(2 + Math.floor(n / 2), 4);
-  var cols = Math.min(6 + n, 12);
-  var spacing = 2.2;
-  var startX = (W - (cols - 1) * spacing) / 2;
-  for (var r = 0; r < rows; r++) {
-    for (var c = 0; c < cols; c++) {
-      var type = r === 0 ? 2 : (r === 1 ? 1 : 0);
-      var geo = type === 2 ? sharedGeos.dodeca : (type === 1 ? sharedGeos.icosa : sharedGeos.octa);
-      var col = type === 2 ? 0xff5a5a : (type === 1 ? 0xffb020 : 0x4dd2ff);
-      var mesh = new THREE.Mesh(geo, mat(col, col, 0.5));
-      if (scene) scene.add(mesh);
-      enemies.push({
-        baseX: startX + c * spacing, baseY: 2 + r * 2,
-        x: startX + c * spacing, y: 2 + r * 2,
-        phase: c * 0.7 + r, type: type,
-        hp: type === 2 ? 3 : (type === 1 ? 2 : 1),
-        score: type === 2 ? 250 : (type === 1 ? 150 : 100),
-        mesh: mesh, flash: 0
-      });
-    }
-  }
-  bannerTimer = 1.5;
-}
-function resetGame() {
-  score = 0; lives = 3; wave = 1;
-  player.x = 14; player.y = 17; player.inv = 0;
-  bullets.forEach(removeMesh); enemyBullets.forEach(removeMesh);
-  bullets = []; enemyBullets = [];
-  spawnWave(wave);
-  updateHud();
-}
-function updateHud() {
-  scoreEl.textContent = score;
-  livesEl.textContent = lives;
-  waveEl.textContent = wave;
-  if (score > best) {
-    best = score;
-    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
-  }
-  bestEl.textContent = best;
-  var pips = pipsEl.children;
-  for (var i = 0; i < pips.length; i++) pips[i].className = i < lives ? "on" : "";
-}
-function fire() {
-  playSound("laser");
-  var mesh = new THREE.Mesh(sharedGeos.bullet, sharedMats.bullet);
-  if (scene) scene.add(mesh);
-  bullets.push({ x: player.x, y: player.y - 1, vy: -20, mesh: mesh });
-}
-function startGame() {
-  if (!init3D()) { msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요."; return; }
-  var wasRunning = state === "playing";
-  bestAtStart = best;
-  resetGame();
-  state = "playing";
-  setUI("playing");
-  msgEl.textContent = "웨이브 " + wave + " 시작!";
-  showToast("웨이브 " + wave);
-  lastTime = performance.now();
-  if (!wasRunning) requestAnimationFrame(loop);
-}
-function loseLife() {
-  lives -= 1;
-  updateHud();
-  enemyBullets.forEach(removeMesh);
-  enemyBullets = [];
-  player.x = 14; player.y = 17; player.inv = 2;
-  if (lives <= 0) {
-    state = "over";
-    playSound("gameover");
-    msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 다시 시작 버튼을 누르세요.";
-    setUI("over", {
-      kicker: "GAME OVER", title: "게임 오버",
-      text: "점수 <b>" + score + "점</b> · 웨이브 <b>" + wave + "</b><br>최고기록 " + best + "점",
-      btn: "다시 시작", badge: score > bestAtStart && score > 0
-    });
-  } else {
-    msgEl.textContent = "목숨이 줄었습니다. 남은 목숨 " + lives + "개.";
-    showToast("목숨 " + lives + "개 남음", true);
-  }
-}
-function loop(now) {
-  if (state !== "playing") return;
-  var dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
-  if (bannerTimer > 0) bannerTimer -= dt;
-  if (player.inv > 0) player.inv -= dt;
-  var dx = 0, dy = 0;
-  if (keys.ArrowLeft || keys.a) dx -= 1;
-  if (keys.ArrowRight || keys.d) dx += 1;
-  if (keys.ArrowUp || keys.w) dy -= 1;
-  if (keys.ArrowDown || keys.s) dy += 1;
-  if (dx !== 0 || dy !== 0) {
-    var len = Math.sqrt(dx * dx + dy * dy);
-    player.x += dx / len * player.speed * dt;
-    player.y += dy / len * player.speed * dt;
-  }
-  player.x = Math.max(1, Math.min(W - 1, player.x));
-  player.y = Math.max(10, Math.min(H - 1, player.y));
-  fireTimer -= dt;
-  if (fireTimer <= 0) { fire(); fireTimer = 0.18; }
-  for (var i = bullets.length - 1; i >= 0; i--) {
-    bullets[i].y += bullets[i].vy * dt;
-    if (bullets[i].y < -1) { removeMesh(bullets[i]); bullets.splice(i, 1); }
-  }
-  var t = now / 1000;
-  enemyTimer -= dt;
-  if (enemyTimer <= 0) {
-    enemyTimer = 1.2;
-    enemies.forEach(function (e) {
-      if (Math.random() < 0.12) {
-        var mesh = new THREE.Mesh(sharedGeos.enemyBullet, sharedMats.enemyBullet);
-        if (scene) scene.add(mesh);
-        enemyBullets.push({ x: e.x, y: e.y + 1, vy: 7 + wave * 0.5, mesh: mesh });
+  function enemySprite(type) {
+    var def = TYPES[type];
+    return A.sprite('en' + type, def.r * 2 + 24, def.r * 2 + 24, function (x, w) {
+      x.translate(w / 2, w / 2); x.shadowColor = def.c; x.shadowBlur = 12;
+      var r = def.r, g = x.createLinearGradient(0, -r, 0, r); g.addColorStop(0, '#fff'); g.addColorStop(0.35, def.c); g.addColorStop(1, def.d);
+      x.fillStyle = g; x.beginPath();
+      if (type === 'drone') { x.moveTo(0, r); x.lineTo(r, -r * 0.4); x.lineTo(r * 0.4, -r); x.lineTo(0, -r * 0.5); x.lineTo(-r * 0.4, -r); x.lineTo(-r, -r * 0.4); }
+      else if (type === 'weaver') { for (var i = 0; i < 6; i++) { var a = i / 6 * Math.PI * 2 + Math.PI / 6; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } }
+      else if (type === 'gunner') { x.moveTo(0, r); x.lineTo(r, 0); x.lineTo(r * 0.6, -r); x.lineTo(-r * 0.6, -r); x.lineTo(-r, 0); }
+      else if (type === 'tank') { for (var j = 0; j < 8; j++) { var b = j / 8 * Math.PI * 2 + Math.PI / 8; x.lineTo(Math.cos(b) * r, Math.sin(b) * r); } }
+      else { // boss
+        x.moveTo(0, r * 0.7); x.lineTo(r * 0.5, r * 0.4); x.lineTo(r, r * 0.6); x.lineTo(r * 0.85, -r * 0.2); x.lineTo(r * 0.45, -r * 0.55); x.lineTo(0, -r * 0.35);
+        x.lineTo(-r * 0.45, -r * 0.55); x.lineTo(-r * 0.85, -r * 0.2); x.lineTo(-r, r * 0.6); x.lineTo(-r * 0.5, r * 0.4);
       }
+      x.closePath(); x.fill(); x.shadowBlur = 0;
+      x.fillStyle = 'rgba(10,6,20,.75)'; x.beginPath(); x.arc(0, type === 'boss' ? 0 : -r * 0.05, r * (type === 'boss' ? 0.22 : 0.3), 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#fff'; x.beginPath(); x.arc(0, type === 'boss' ? 0 : -r * 0.05, r * (type === 'boss' ? 0.1 : 0.13), 0, Math.PI * 2); x.fill();
     });
   }
-  for (var j = enemies.length - 1; j >= 0; j--) {
-    var e = enemies[j];
-    e.baseY += (0.8 + wave * 0.2) * dt;
-    e.x = e.baseX + Math.sin(t * 1.2 + e.phase) * 1.2;
-    e.y = e.baseY + Math.sin(t * 0.4 + e.phase) * 0.4;
-    if (e.y > H - 3) {
-      enemies.forEach(removeMesh);
-      enemies = [];
-      enemyBullets.forEach(removeMesh);
-      enemyBullets = [];
-      loseLife();
-      if (state === "playing") spawnWave(wave);
-      break;
+  var TYPES = {
+    drone: { r: 17, hp: 1, sc: 100, c: '#ff5d8f', d: '#7a1038' },
+    weaver: { r: 17, hp: 2, sc: 150, c: '#ffb547', d: '#7a4300' },
+    gunner: { r: 20, hp: 4, sc: 300, c: '#b48cff', d: '#3c1d80' },
+    tank: { r: 30, hp: 14, sc: 700, c: '#ff7a45', d: '#6e2200' },
+    boss: { r: 78, hp: 200, sc: 5000, c: '#ff4d6d', d: '#4a0618' }
+  };
+  var ITEM = { P: '#5ee7ff', S: '#7aa2ff', L: '#ff4d6d' };
+  function itemSprite(k) {
+    return A.sprite('it' + k, 44, 44, function (x) {
+      x.translate(22, 22); x.shadowColor = ITEM[k]; x.shadowBlur = 12;
+      x.strokeStyle = ITEM[k]; x.lineWidth = 3; x.fillStyle = 'rgba(5,8,20,.85)';
+      x.beginPath(); x.arc(0, 0, 14, 0, Math.PI * 2); x.fill(); x.stroke(); x.shadowBlur = 0;
+      x.fillStyle = '#fff'; x.font = '700 16px "Chakra Petch",system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(k === 'L' ? '♥' : k, 0, 1);
+    });
+  }
+  // 배경 성운 (한 번만 그림)
+  var NEB = A.sprite('neb', W, H, function (x) {
+    var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#060818'); g.addColorStop(0.6, '#0b0b24'); g.addColorStop(1, '#170a2a');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    [[90, 220, 260, '#3b1b7a'], [450, 520, 300, '#0f3a6e'], [180, 820, 260, '#5a1240'], [500, 120, 180, '#103f5a']].forEach(function (b) {
+      var r = x.createRadialGradient(b[0], b[1], 0, b[0], b[1], b[2]); r.addColorStop(0, A.hexA(b[3], 0.55)); r.addColorStop(1, A.hexA(b[3], 0));
+      x.fillStyle = r; x.fillRect(0, 0, W, H);
+    });
+  });
+  function makeStars() {
+    stars = [];
+    for (var i = 0; i < 120; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, z: Math.random() });
+  }
+
+  /* ---------- 웨이브 구성 ---------- */
+  function buildWave(n) {
+    var q = [], t = 0.6, i, k;
+    if (n % 5 === 0) { q.push({ t: 1.2, type: 'boss', x: W / 2 }); return q; }
+    var budget = 6 + n * 2.2, patterns = ['line', 'vee', 'column', 'rain'];
+    if (n >= 2) patterns.push('gunners');
+    if (n >= 3) patterns.push('tank');
+    while (budget > 0) {
+      var p = A.pick(patterns);
+      if (p === 'line') { var c = A.irand(4, 6); for (i = 0; i < c; i++) q.push({ t: t, type: 'drone', x: (W / (c + 1)) * (i + 1), m: 'straight' }); t += 1.6; budget -= c; }
+      else if (p === 'vee') { for (i = 0; i < 7; i++) q.push({ t: t + Math.abs(i - 3) * 0.18, type: 'drone', x: 90 + i * 60, m: 'straight' }); t += 2.2; budget -= 7; }
+      else if (p === 'column') { var cx = A.rand(120, W - 120); for (i = 0; i < 5; i++) q.push({ t: t + i * 0.32, type: 'weaver', x: cx, m: 'sine' }); t += 2.4; budget -= 6; }
+      else if (p === 'rain') { for (i = 0; i < 8; i++) q.push({ t: t + i * 0.22, type: 'drone', x: A.rand(40, W - 40), m: 'dive' }); t += 2.4; budget -= 7; }
+      else if (p === 'gunners') { k = n >= 6 ? 3 : 2; for (i = 0; i < k; i++) q.push({ t: t + i * 0.3, type: 'gunner', x: (W / (k + 1)) * (i + 1), m: 'hover' }); t += 3; budget -= 8; }
+      else if (p === 'tank') { q.push({ t: t, type: 'tank', x: A.rand(140, W - 140), m: 'slow' }); t += 3; budget -= 10; }
+    }
+    return q;
+  }
+  function spawn(s) {
+    var d = TYPES[s.type], hpMul = 1 + (wave - 1) * 0.12;
+    var e = { type: s.type, x: s.x, y: -d.r - 10, r: d.r, hp: Math.ceil(d.hp * (s.type === 'boss' ? 1 + (wave / 5 - 1) * 0.6 : hpMul)), sc: d.sc, m: s.m, t: 0, fire: A.rand(0.8, 1.8), hit: 0, x0: s.x, spr: enemySprite(s.type) };
+    e.max = e.hp;
+    var sp = 1 + Math.min(wave, 20) * 0.04;
+    if (e.m === 'straight') e.vy = 170 * sp;
+    if (e.m === 'sine') e.vy = 140 * sp;
+    if (e.m === 'dive') { e.vy = 260 * sp; e.vx = (P.x - e.x) * 0.25; }
+    if (e.m === 'hover') { e.vy = 160; e.ty = A.rand(150, 300); }
+    if (e.m === 'slow') e.vy = 60 * sp;
+    if (s.type === 'boss') { e.vy = 70; e.ty = 200; e.phase = 0; boss = e; document.getElementById('hBossBar').hidden = false; A.sfx('bigboom'); fx.shake(6, 0.6); }
+    enemies.push(e);
+  }
+
+  /* ---------- 게임 로직 ---------- */
+  function reset() {
+    P = { x: W / 2, y: H - 150, inv: 2, pow: 1, shield: 0, fireT: 0, tilt: 0 };
+    bullets = []; enemies = []; ebullets = []; items = [];
+    score = 0; chain = 0; chainT = 0; lives = 3; kills = 0; dyingT = 0; boss = null; nextWaveT = 0;
+    wave = 0; fx.clear(); keys = {}; drag = null;
+    nextWave();
+    hud();
+  }
+  function nextWave() {
+    wave++; queue = buildWave(wave); waveT = 0;
+    S.banner(wave % 5 === 0 ? '경고: 보스 접근' : 'WAVE ' + wave, wave % 5 === 0 ? 'WARNING' : 'GET READY');
+    if (wave > 1) A.sfx('level');
+    hud();
+  }
+  function mult() { return Math.min(8, 1 + Math.floor(chain / 6)); }
+  function addScore(v, x, y, col) {
+    var m = mult(), pts = v * m; score += pts;
+    fx.text(x, y, '+' + pts, col || '#fff', m > 1 ? 22 : 18);
+  }
+  function fire() {
+    var lv = P.pow, x = P.x, y = P.y - 30, sp = -1150;
+    function b(dx, ang) { bullets.push({ x: x + dx, y: y, vx: Math.sin(ang) * -sp, vy: Math.cos(ang) * sp }); }
+    if (lv === 1) b(0, 0);
+    else if (lv === 2) { b(-9, 0); b(9, 0); }
+    else if (lv === 3) { b(0, 0); b(-10, -0.12); b(10, 0.12); }
+    else if (lv === 4) { b(-7, 0); b(7, 0); b(-14, -0.16); b(14, 0.16); }
+    else { b(0, 0); b(-9, -0.08); b(9, 0.08); b(-16, -0.22); b(16, 0.22); }
+    A.sfx('shoot');
+  }
+  function enemyShoot(e, ang, spd) {
+    ebullets.push({ x: e.x, y: e.y + e.r * 0.4, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd });
+  }
+  function aimAt(e) { return Math.atan2(P.y - e.y, P.x - e.x); }
+  function killEnemy(e, i) {
+    enemies.splice(i, 1); kills++;
+    chain++; chainT = 1.6;
+    addScore(e.sc, e.x, e.y, TYPES[e.type].c);
+    var big = e.type === 'tank' || e.type === 'boss';
+    fx.burst(e.x, e.y, TYPES[e.type].c, big ? 60 : 22, big ? 520 : 340, big ? 0.9 : 0.6, big ? 5 : 3.5);
+    fx.burst(e.x, e.y, '#ffffff', big ? 20 : 6, 260, 0.35, 2.5);
+    fx.ring(e.x, e.y, TYPES[e.type].c, e.r * (big ? 5 : 3), big ? 0.6 : 0.35);
+    if (e.type === 'boss') {
+      boss = null; document.getElementById('hBossBar').hidden = true;
+      fx.shake(14, 1); fx.flashIt('#ffffff', 0.9); A.sfx('bigboom'); A.vibrate([60, 40, 120]);
+      for (var k = 0; k < 6; k++) setTimeout(function () { fx.burst(A.rand(150, 390), A.rand(120, 300), A.pick(['#ff4d6d', '#ffd166', '#fff']), 30, 480, 0.8, 4); A.sfx('boom'); }, k * 120);
+      ebullets.length = 0;
+      dropItem(e.x - 30, e.y, 'P'); dropItem(e.x + 30, e.y, Math.random() < 0.5 ? 'L' : 'S');
+    } else {
+      A.sfx(big ? 'bigboom' : 'boom', big ? 1 : A.rand(0.9, 1.2));
+      if (big) fx.shake(7, 0.35); else fx.shake(2, 0.1);
+      if (e.type === 'tank') dropItem(e.x, e.y, P.pow < 5 ? 'P' : A.pick(['S', 'L']));
+      else if (Math.random() < 0.05 + (e.type === 'gunner' ? 0.08 : 0)) dropItem(e.x, e.y, Math.random() < 0.7 ? 'P' : (Math.random() < 0.6 ? 'S' : 'L'));
     }
   }
-  for (var k = enemyBullets.length - 1; k >= 0; k--) {
-    enemyBullets[k].y += enemyBullets[k].vy * dt;
-    if (enemyBullets[k].y > H + 1) { removeMesh(enemyBullets[k]); enemyBullets.splice(k, 1); }
+  function dropItem(x, y, k) { items.push({ x: x, y: y, k: k, vy: 110, t: 0 }); }
+  function hurt() {
+    if (P.inv > 0 || dyingT > 0) return;
+    if (P.shield) {
+      P.shield = 0; P.inv = 1.2; fx.ring(P.x, P.y, '#7aa2ff', 120, 0.5); A.sfx('hit'); fx.shake(5, 0.2);
+      clearBulletsNear(P.x, P.y, 200); return;
+    }
+    lives--; chain = 0; P.pow = Math.max(1, P.pow - 1); P.inv = 2.2;
+    fx.burst(P.x, P.y, '#5ee7ff', 40, 420, 0.8, 4); fx.ring(P.x, P.y, '#ff4d6d', 160, 0.6);
+    fx.shake(12, 0.5); fx.flashIt('#ff2244', 0.7); A.sfx('hurt'); A.vibrate(160);
+    clearBulletsNear(P.x, P.y, 9999);
+    if (lives <= 0) { dyingT = 1.4; A.sfx('bigboom'); fx.burst(P.x, P.y, '#ffffff', 50, 600, 1.2, 5); }
+    hud();
   }
-  for (var b = bullets.length - 1; b >= 0; b--) {
-    for (var ei = enemies.length - 1; ei >= 0; ei--) {
-      var en = enemies[ei];
-      if (Math.abs(bullets[b].x - en.x) < 1.1 && Math.abs(bullets[b].y - en.y) < 1.0) {
-        removeMesh(bullets[b]);
-        bullets.splice(b, 1);
-        en.hp -= 1;
-        en.flash = 0.08;
-        if (en.hp <= 0) {
-          score += en.score;
-          spawnShootBurst(en.x, en.y, en.type === 2 ? 0xff5a5a : (en.type === 1 ? 0xffb020 : 0x4dd2ff));
-          playSound("explosion");
-          removeMesh(en);
-          en.mesh.material.dispose();
-          enemies.splice(ei, 1);
+  function clearBulletsNear(x, y, r) {
+    for (var i = ebullets.length - 1; i >= 0; i--) {
+      var b = ebullets[i]; if (Math.hypot(b.x - x, b.y - y) < r) { fx.burst(b.x, b.y, '#ff8fb8', 3, 120, 0.3, 2); ebullets.splice(i, 1); }
+    }
+  }
+
+  function update(dt) {
+    var i, j, e, b;
+    fx.update(dt); bgOff += dt;
+    if (dyingT > 0) {
+      dyingT -= dt; updateEntities(dt, true);
+      if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['격추', A.fmt(kills)], ['최대 화력', 'LV ' + P.pow]]);
+      return;
+    }
+    // 이동
+    var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0);
+    var ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
+    var px = P.x;
+    if (kx || ky) { var l = Math.hypot(kx, ky); P.x += kx / l * 520 * dt; P.y += ky / l * 520 * dt; }
+    P.x = A.clamp(P.x, 24, W - 24); P.y = A.clamp(P.y, 120, H - 40);
+    P.tilt = A.lerp(P.tilt, A.clamp((P.x - px) / (dt * 600), -1, 1), 0.2);
+    if (P.inv > 0) P.inv -= dt;
+    // 발사
+    P.fireT -= dt;
+    if (P.fireT <= 0) { fire(); P.fireT = 0.11; }
+    // 엔진 불꽃
+    fx.spark(P.x + A.rand(-4, 4), P.y + 26, A.pick(['#5ee7ff', '#ffd166', '#ff8fb8']), A.rand(-20, 20), A.rand(200, 320), 0.22, 2.4);
+    // 콤보 시간
+    if (chainT > 0) { chainT -= dt; if (chainT <= 0) chain = 0; }
+    // 스폰
+    waveT += dt;
+    while (queue.length && queue[0].t <= waveT) spawn(queue.shift());
+    queue.sort(function (a, c) { return a.t - c.t; });
+    if (!queue.length && !enemies.length) {
+      nextWaveT += dt;
+      if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2 + 60, 'CLEAR +' + wave * 200, '#ffd166', 24); nextWave(); }
+    }
+    updateEntities(dt, false);
+    // 총알 vs 적
+    for (i = bullets.length - 1; i >= 0; i--) {
+      b = bullets[i];
+      for (j = enemies.length - 1; j >= 0; j--) {
+        e = enemies[j];
+        if (e.y < -e.r) continue;
+        var dx = b.x - e.x, dy = b.y - e.y;
+        if (dx * dx + dy * dy < (e.r + 6) * (e.r + 6)) {
+          bullets.splice(i, 1); e.hp--; e.hit = 0.08;
+          fx.spark(b.x, b.y, '#ffffff', A.rand(-80, 80), A.rand(-60, 60), 0.18, 2);
+          if (e.hp <= 0) killEnemy(e, j); else A.sfx('hit', e.type === 'boss' ? 0.7 : 1);
+          break;
         }
-        break;
       }
     }
-  }
-  if (state === "playing" && player.inv <= 0) {
-    for (var eb = 0; eb < enemyBullets.length; eb++) {
-      if (Math.abs(enemyBullets[eb].x - player.x) < 1.0 && Math.abs(enemyBullets[eb].y - player.y) < 0.9) {
-        removeMesh(enemyBullets[eb]);
-        enemyBullets.splice(eb, 1);
-        loseLife();
-        break;
-      }
+    // 피격
+    if (P.inv <= 0) {
+      for (i = ebullets.length - 1; i >= 0; i--) { b = ebullets[i]; if (Math.hypot(b.x - P.x, b.y - P.y) < 13) { ebullets.splice(i, 1); hurt(); break; } }
+      for (i = 0; i < enemies.length; i++) { e = enemies[i]; if (Math.hypot(e.x - P.x, e.y - P.y) < e.r * 0.8 + 12) { if (e.type !== 'boss') { e.hp = 0; killEnemy(e, i); } hurt(); break; } }
     }
-    for (var ec = 0; ec < enemies.length; ec++) {
-      if (player.inv > 0) break;
-      if (Math.abs(enemies[ec].x - player.x) < 1.2 && Math.abs(enemies[ec].y - player.y) < 1.1) {
-        spawnShootBurst(enemies[ec].x, enemies[ec].y, 0xff5a5a);
-        playSound("explosion");
-        removeMesh(enemies[ec]);
-        enemies.splice(ec, 1);
-        loseLife();
-        break;
+    // 아이템
+    for (i = items.length - 1; i >= 0; i--) {
+      var it = items[i]; it.t += dt;
+      var d = Math.hypot(P.x - it.x, P.y - it.y);
+      if (d < 130) { it.x += (P.x - it.x) * 6 * dt; it.y += (P.y - it.y) * 6 * dt; } else it.y += it.vy * dt;
+      if (d < 30) {
+        items.splice(i, 1); A.sfx('power'); fx.ring(P.x, P.y, ITEM[it.k], 90, 0.4);
+        if (it.k === 'P') { if (P.pow < 5) { P.pow++; fx.text(P.x, P.y - 50, 'POWER UP', '#5ee7ff', 20); } else addScore(1000, P.x, P.y - 50, '#5ee7ff'); }
+        if (it.k === 'S') { P.shield = 1; fx.text(P.x, P.y - 50, 'SHIELD', '#7aa2ff', 20); }
+        if (it.k === 'L') { if (lives < 5) lives++; fx.text(P.x, P.y - 50, '1UP', '#ff4d6d', 22); }
+        hud();
+      } else if (it.y > H + 30) items.splice(i, 1);
+    }
+    hud();
+  }
+  function updateEntities(dt, dying) {
+    var i, e, b;
+    for (i = bullets.length - 1; i >= 0; i--) { b = bullets[i]; b.x += b.vx * dt; b.y += b.vy * dt; if (b.y < -40 || b.x < -20 || b.x > W + 20) bullets.splice(i, 1); }
+    for (i = ebullets.length - 1; i >= 0; i--) { b = ebullets[i]; b.x += b.vx * dt; b.y += b.vy * dt; if (b.y > H + 20 || b.y < -20 || b.x < -20 || b.x > W + 20) ebullets.splice(i, 1); }
+    for (i = enemies.length - 1; i >= 0; i--) {
+      e = enemies[i]; e.t += dt; if (e.hit > 0) e.hit -= dt;
+      if (e.m === 'straight') e.y += e.vy * dt;
+      else if (e.m === 'sine') { e.y += e.vy * dt; e.x = e.x0 + Math.sin(e.t * 2.6) * 110; }
+      else if (e.m === 'dive') { e.y += e.vy * dt; e.x += e.vx * dt; }
+      else if (e.m === 'slow') { e.y += e.vy * dt; e.x = e.x0 + Math.sin(e.t * 0.9) * 40; }
+      else if (e.m === 'hover') {
+        if (e.y < e.ty) e.y += e.vy * dt; else { e.x = e.x0 + Math.sin(e.t * 1.2) * 70; if (e.t > 9) e.y += 120 * dt; }
       }
+      if (e.type === 'boss') updateBoss(e, dt, dying);
+      else if (!dying && e.y > 40 && e.y < H * 0.7 && (e.type === 'gunner' || e.type === 'tank' || (wave >= 4 && e.type === 'weaver'))) {
+        e.fire -= dt;
+        if (e.fire <= 0) {
+          var spd = 230 + wave * 6;
+          if (e.type === 'tank') { for (var k = -2; k <= 2; k++) enemyShoot(e, Math.PI / 2 + k * 0.22, spd * 0.85); e.fire = 2.2; }
+          else if (e.type === 'gunner') { var a = aimAt(e); enemyShoot(e, a, spd); if (wave >= 7) { enemyShoot(e, a - 0.18, spd); enemyShoot(e, a + 0.18, spd); } e.fire = A.rand(1.3, 1.9); }
+          else { enemyShoot(e, aimAt(e), spd * 0.9); e.fire = A.rand(2.2, 3.2); }
+        }
+      }
+      if (e.y > H + e.r + 10) { enemies.splice(i, 1); chain = 0; }
+    }
+    for (i = items.length - 1; i >= 0 && dying; i--) items[i].y += items[i].vy * dt;
+  }
+  function updateBoss(e, dt, dying) {
+    if (e.y < e.ty) { e.y += e.vy * dt; return; }
+    e.x = W / 2 + Math.sin(e.t * 0.6) * 140; e.y = e.ty + Math.sin(e.t * 1.3) * 24;
+    if (dying) return;
+    var rage = e.hp < e.max * 0.4;
+    e.fire -= dt;
+    if (e.fire <= 0) {
+      e.phase = (e.phase + 1) % 3;
+      var spd = 210 + wave * 4, n, k;
+      if (e.phase === 0) { n = rage ? 22 : 16; for (k = 0; k < n; k++) enemyShoot(e, k / n * Math.PI * 2 + e.t, spd * 0.8); e.fire = rage ? 1.0 : 1.4; }
+      else if (e.phase === 1) { var a = aimAt(e); for (k = -3; k <= 3; k++) enemyShoot(e, a + k * 0.12, spd); e.fire = rage ? 0.8 : 1.2; }
+      else { for (k = 0; k < 6; k++) (function (k2) { setTimeout(function () { if (boss === e && S.state === 'playing') { enemyShoot(e, Math.PI / 2 + Math.sin(k2) * 0.6, spd * 1.1); enemyShoot(e, Math.PI / 2 - Math.sin(k2) * 0.6, spd * 1.1); } }, k2 * 90); })(k); e.fire = rage ? 1.0 : 1.5; }
+      A.sfx('shoot', 0.5);
     }
   }
-  if (state === "playing" && enemies.length === 0) {
-    score += 500 + wave * 100;
-    wave += 1;
-    updateHud();
-    playSound("powerup");
-    spawnWave(wave);
-    msgEl.textContent = "웨이브 " + wave + " 시작!";
-    showToast("웨이브 " + wave + " 시작");
+
+  /* ---------- 그리기 ---------- */
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    c.drawImage(NEB, -10, -10, W + 20, H + 20);
+    // 별
+    var spd = S.state === 'playing' ? 1 : 0.4;
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      s.y += (30 + s.z * 220) * spd * (1 / 60);
+      if (s.y > H) { s.y = -4; s.x = Math.random() * W; }
+      c.globalAlpha = 0.25 + s.z * 0.75; c.fillStyle = s.z > 0.85 ? '#cfefff' : '#fff';
+      var sz = 0.6 + s.z * 1.8; c.fillRect(s.x, s.y, sz, sz * (1 + s.z * 1.4));
+    }
+    c.globalAlpha = 1;
+    if (P) {
+      // 아이템
+      for (i = 0; i < items.length; i++) { var it = items[i]; A.draw(c, itemSprite(it.k), it.x, it.y, 1 + Math.sin(it.t * 8) * 0.08); }
+      // 적
+      for (i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        var rot = e.type === 'weaver' ? e.t * 2 : 0;
+        A.draw(c, e.spr, e.x, e.y, 1, rot);
+        if (e.hit > 0) { c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.8; A.draw(c, e.spr, e.x, e.y, 1, rot); c.restore(); }
+        if (e.type === 'tank' && e.hp < e.max) { c.fillStyle = 'rgba(255,255,255,.15)'; c.fillRect(e.x - 24, e.y + e.r + 6, 48, 4); c.fillStyle = '#ff7a45'; c.fillRect(e.x - 24, e.y + e.r + 6, 48 * e.hp / e.max, 4); }
+      }
+      // 내 총알
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (i = 0; i < bullets.length; i++) A.draw(c, BUL, bullets[i].x, bullets[i].y + 10, 1, Math.atan2(bullets[i].vx, -bullets[i].vy));
+      c.restore();
+      // 적 총알
+      var EB = A.glowDot('#ff4d8b', 5);
+      for (i = 0; i < ebullets.length; i++) { c.drawImage(EB, ebullets[i].x - 15, ebullets[i].y - 15, 30, 30); }
+      // 플레이어
+      if (S.state !== 'ready' && (dyingT <= 0 || lives > 0)) {
+        if (!(P.inv > 0 && Math.floor(P.inv * 14) % 2 === 0)) {
+          A.draw(c, SHIP, P.x, P.y, 1, P.tilt * 0.25);
+        }
+        if (P.shield) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(122,162,255,' + (0.5 + Math.sin(S.time * 8) * 0.2) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(P.x, P.y, 40, 0, Math.PI * 2); c.stroke(); c.restore(); }
+        if (drag) { c.fillStyle = 'rgba(255,255,255,.9)'; c.beginPath(); c.arc(P.x, P.y + 2, 3, 0, Math.PI * 2); c.fill(); }
+      } else if (S.state === 'ready') {
+        A.draw(c, SHIP, W / 2, H - 170 + Math.sin(S.time * 2) * 8);
+      }
+      // 보스 체력
+      if (boss) document.getElementById('hBoss').style.width = (boss.hp / boss.max * 100) + '%';
+    }
+    fx.draw(c);
+    c.restore();
+    fx.drawFlash(c, W, H);
   }
-  updateHud();
-  scrollBackground(dt);
-  syncMeshes();
-  updateShootParticles(dt);
-  if (renderer) renderer.render(scene, camera);
-  requestAnimationFrame(loop);
-}
-function togglePause() {
-  if (state === "playing") {
-    state = "paused";
-    msgEl.textContent = "일시정지했습니다. 계속하기 버튼을 누르면 이어서 플레이합니다.";
-    setUI("paused", { kicker: "PAUSED", title: "일시정지", text: "점수 <b>" + score + "점</b> · 웨이브 <b>" + wave + "</b>", btn: "계속하기" });
-  } else if (state === "paused") {
-    state = "playing";
-    setUI("playing");
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
-    msgEl.textContent = "웨이브 " + wave + " 진행 중";
+
+  var lastHud = '';
+  function hud() {
+    var m = mult();
+    var key = score + '|' + m + '|' + lives + '|' + wave + '|' + P.pow;
+    if (key === lastHud) return; lastHud = key;
+    document.getElementById('hScore').textContent = A.fmt(score);
+    document.getElementById('hMult').textContent = m > 1 ? '×' + m + ' COMBO' : '';
+    document.getElementById('hWave').textContent = wave;
+    document.getElementById('hPow').textContent = 'POWER ' + P.pow;
+    var lv = document.getElementById('hLives'), html = '';
+    for (var i = 0; i < Math.max(3, lives); i++) html += '<i' + (i < lives ? '' : ' class="e"') + '></i>';
+    lv.innerHTML = html;
   }
-}
-startBtn.addEventListener("click", startGame);
-document.getElementById("restartBtn").addEventListener("click", startGame);
-document.getElementById("fireBtn").addEventListener("click", function () { if (state === "playing") fire(); });
-pauseBtn.addEventListener("click", togglePause);
-ovBtn.addEventListener("click", function () {
-  if (state === "paused") togglePause();
-  else startGame();
-});
-overlayEl.querySelector(".ov-card").addEventListener("click", function (ev) {
-  if (ev.target !== ovBtn && state === "ready") startGame();
-});
-document.addEventListener("visibilitychange", function () {
-  if (document.hidden && state === "playing") togglePause();
-});
-window.addEventListener("keydown", function (ev) {
-  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].indexOf(ev.key) >= 0) ev.preventDefault();
-  keys[ev.key] = true;
-  if (ev.key === " " && state === "playing" && !ev.repeat) fire();
-  if (ev.key === "Enter" && (state === "ready" || state === "over")) startGame();
-  if (ev.key === "p" || ev.key === "P") togglePause();
-});
-window.addEventListener("keyup", function (ev) { keys[ev.key] = false; });
-function canvasPos(ev) {
-  var r = canvas.getBoundingClientRect();
-  var touch = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
-  return { x: (touch.clientX - r.left) / r.width * W, y: (touch.clientY - r.top) / r.height * H };
-}
-canvas.addEventListener("touchstart", function (ev) {
-  ev.preventDefault();
-  drag = true;
-  var p = canvasPos(ev);
-  player.x = Math.max(1, Math.min(W - 1, p.x));
-  player.y = Math.max(10, Math.min(H - 1, p.y - 2));
-  if (state === "ready") startGame();
-}, { passive: false });
-canvas.addEventListener("touchmove", function (ev) {
-  ev.preventDefault();
-  if (!drag) return;
-  var p = canvasPos(ev);
-  player.x = Math.max(1, Math.min(W - 1, p.x));
-  player.y = Math.max(10, Math.min(H - 1, p.y - 2));
-}, { passive: false });
-canvas.addEventListener("touchend", function () { drag = false; });
-canvas.addEventListener("touchcancel", function () { drag = false; });
-var READY_OV = { kicker: "SHOOTING", title: "별빛 수호대", text: "게임판을 드래그하면 기체가 따라옵니다.<span class=\"more\"><br>발사는 자동, 목숨은 3개입니다.</span>", btn: "게임 시작" };
-if (typeof THREE !== "undefined") {
-  if (init3D()) {
-    resetGame();
-    state = "ready";
-    setUI("ready", READY_OV);
-    syncMeshes();
-    renderer.render(scene, camera);
-  } else {
-    msgEl.textContent = "WebGL을 사용할 수 없어 3D 게임을 실행할 수 없습니다. 브라우저에서 WebGL을 켜고 페이지를 새로고침하세요.";
-    setUI("ready", { kicker: "안내", title: "3D를 켤 수 없음", text: "브라우저에서 WebGL을 켜고 새로고침하세요.", btn: "다시 시도" });
-    updateHud();
-  }
-} else {
-  setUI("ready", { kicker: "안내", title: "로딩 실패", text: "3D 엔진을 불러오지 못했습니다. 새로고침하세요.", btn: "다시 시도" });
-  updateHud();
-}
+
+  /* ---------- 입력: 손가락 아래가 가려지지 않게 '상대 이동' ---------- */
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return;
+    var p = S.toLocal(e); drag = { id: e.pointerId, sx: p.x, sy: p.y, px: P.x, py: P.y };
+    try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!drag || drag.id !== e.pointerId || S.state !== 'playing' || dyingT > 0) return;
+    var p = S.toLocal(e), sens = e.pointerType === 'mouse' ? 1 : 1.25;
+    P.x = A.clamp(drag.px + (p.x - drag.sx) * sens, 24, W - 24);
+    P.y = A.clamp(drag.py + (p.y - drag.sy) * sens, 120, H - 40);
+  });
+  function endDrag(e) { if (drag && drag.id === e.pointerId) drag = null; }
+  stage.addEventListener('pointerup', endDrag); stage.addEventListener('pointercancel', endDrag);
+
+  var S = new A.Shell({
+    id: 'shooting', W: W, H: H,
+    init: function () { makeStars(); P = { x: W / 2, y: H - 150, inv: 0, pow: 1 }; bullets = []; enemies = []; ebullets = []; items = []; },
+    reset: reset,
+    update: update,
+    idle: function (dt) { fx.update(dt); },
+    render: render,
+    keydown: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; },
+    keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; }
+  });
+})();
 </script>
 </body>
 </html>

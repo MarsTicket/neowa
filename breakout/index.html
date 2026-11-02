@@ -15,38 +15,53 @@ gtag('config', 'G-T386KYRRLK');
 <script src="../assets/three.min.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0b1020;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
-.wrap{max-width:760px;margin:0 auto;padding:16px}
-a{color:#9ec2ff}
-h1{font-size:24px;margin:0 0 8px}
-.hud{display:flex;gap:16px;font-weight:700;flex-wrap:wrap;margin-bottom:12px}
-canvas{display:block;width:100%;height:auto;background:#050816;border:1px solid #2f375f;border-radius:12px;touch-action:none}
-.controls{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-button{background:#3182f6;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;min-height:44px;cursor:pointer}
-button.secondary{background:#2a3358}
-p{color:#c8cdea;line-height:1.6}
-.msg{font-weight:700;min-height:24px}
+body{margin:0;background:#0a0c14;color:#f2f3f7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+.wrap{max-width:860px;margin:0 auto;padding:20px 24px 40px}
+a{color:inherit;text-decoration:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0 16px;border-bottom:1px solid #232744;margin-bottom:16px}
+.top h1{font-size:28px;margin:0;letter-spacing:-0.5px}
+.top .eyebrow{font-size:12px;font-weight:800;letter-spacing:1px;color:#ffb020;margin:0 0 4px}
+.back{display:inline-block;padding:10px 16px;border:1px solid #3a4066;border-radius:999px;font-size:14px;font-weight:700;min-height:44px;line-height:22px;color:#c8cdea}
+.hud{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:560px){.hud{grid-template-columns:1fr 1fr}}
+.stat{background:#161a30;border:1px solid #2a2f52;border-radius:14px;padding:10px 14px}
+.stat .label{display:block;font-size:12px;color:#9aa1c2;margin-bottom:2px}
+.stat .value{font-size:22px;font-weight:900;line-height:1.2}
+.stat.score .value{font-size:28px;color:#ffb020}
+canvas{display:block;width:100%;height:auto;background:#050816;border:1px solid #2a2f52;border-radius:20px;touch-action:none;box-shadow:0 20px 50px rgba(0,0,0,0.45)}
+.controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+button{border:0;border-radius:999px;padding:13px 22px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer}
+button.primary{background:#fff;color:#0a0c14}
+button.accent{background:#3182f6;color:#fff}
+button.secondary{background:transparent;color:#f2f3f7;border:1px solid #3a4066}
+p{color:#9aa1c2;line-height:1.6;font-size:14px}
+.msg{font-weight:800;min-height:24px;margin-top:14px;color:#c8cdea}
 </style>
 </head>
 <body>
 <div class="wrap">
+<div class="top">
+<div>
+<p class="eyebrow">BREAKOUT</p>
 <h1>벽돌깨기</h1>
-<p><a href="../">허브로 돌아가기</a></p>
+</div>
+<a class="back" href="../">허브로 돌아가기</a>
+</div>
 <div class="hud">
-<span>점수: <span id="score">0</span></span>
-<span>목숨: <span id="lives">3</span></span>
-<span>레벨: <span id="level">1</span></span>
-<span>최고기록: <span id="best">0</span></span>
+<div class="stat score"><span class="label">점수</span><span class="value" id="score">0</span></div>
+<div class="stat"><span class="label">목숨</span><span class="value" id="lives">3</span></div>
+<div class="stat"><span class="label">레벨</span><span class="value" id="level">1</span></div>
+<div class="stat"><span class="label">최고기록</span><span class="value" id="best">0</span></div>
 </div>
 <canvas id="game" width="720" height="480"></canvas>
 <div class="msg" id="msg">시작 버튼을 누른 뒤, 공 발사 버튼을 누르세요. 마우스나 터치 드래그, 방향키로 패들을 움직입니다.</div>
 <div class="controls">
-<button id="startBtn">게임 시작</button>
-<button id="launchBtn">공 발사</button>
+<button id="startBtn" class="primary">게임 시작</button>
+<button id="launchBtn" class="accent">공 발사</button>
 <button id="pauseBtn" class="secondary">일시정지</button>
 <button id="soundBtn" class="secondary">소리 끄기</button>
 </div>
-<p>공이 아래로 떨어지면 목숨이 하나 줄고, 벽돌을 모두 깨면 다음 레벨로 갑니다. 레벨 5까지 깨면 클리어입니다.</p>
+<p>드래그로 패들을 움직이세요. 벽돌을 모두 깨면 다음 레벨로 갑니다. 레벨 5까지 깨면 클리어입니다.</p>
 </div>
 <script>
 "use strict";

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c14">
 <title>스네이크 - 너와 아케이드</title>
 <meta name="description" content="3D 스네이크. 방향키, 스와이프, 화면 방향 버튼으로 플레이하세요.">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
@@ -14,64 +15,205 @@ gtag('config', 'G-T386KYRRLK');
 </script>
 <script src="../assets/three.min.js"></script>
 <style>
+:root{
+  --bg:#0a0c14;--surface:#12152a;--surface-2:#181c36;--line:#232744;--line-2:#3a4066;
+  --text:#f2f3f7;--sub:#c8cdea;--muted:#9aa1c2;--blue:#3182f6;--red:#ff5a5a;
+  --r-lg:20px;--r-md:14px;--shadow:0 20px 50px rgba(0,0,0,.45);
+  --chrome:96px;
+}
 *{box-sizing:border-box}
-body{margin:0;background:#0a0c14;color:#f2f3f7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
-.wrap{max-width:920px;margin:0 auto;padding:20px 24px 40px}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(800px 420px at 80% -10%,var(--glow),transparent 60%);z-index:-1}
 a{color:inherit;text-decoration:none}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0 16px;border-bottom:1px solid #232744;margin-bottom:16px}
-.top h1{font-size:28px;margin:0;letter-spacing:-0.5px}
-.top .eyebrow{font-size:12px;font-weight:800;letter-spacing:1px;color:#7ee787;margin:0 0 4px}
-.back{display:inline-block;padding:10px 16px;border:1px solid #3a4066;border-radius:999px;font-size:14px;font-weight:700;min-height:44px;line-height:22px;color:#c8cdea}
-.hud{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;margin-bottom:14px}
-.stat{background:#161a30;border:1px solid #2a2f52;border-radius:14px;padding:10px 14px}
-.stat .label{display:block;font-size:12px;color:#9aa1c2;margin-bottom:2px}
-.stat .value{font-size:22px;font-weight:900;line-height:1.2}
-.stat.score .value{font-size:28px;color:#7ee787}
-.layout{display:flex;gap:20px;align-items:flex-start}
-@media(max-width:720px){.layout{flex-direction:column}}
-canvas{display:block;width:100%;max-width:520px;height:auto;background:#07130a;border:1px solid #2a2f52;border-radius:20px;touch-action:none;box-shadow:0 20px 50px rgba(0,0,0,0.45)}
-.side{flex:1;min-width:220px}
-.pad{display:grid;grid-template-columns:repeat(3,64px);gap:8px;justify-content:center;margin:16px 0}
-.pad button{width:64px;height:64px;font-size:22px;background:#161a30;border:1px solid #3a4066;color:#f2f3f7}
-button{border:0;border-radius:999px;padding:13px 22px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer}
+.app{max-width:1180px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.topbar{display:flex;align-items:center;gap:12px;min-height:60px;padding:4px 0 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.back{display:inline-flex;align-items:center;white-space:pre;padding:0 16px;border:1px solid var(--line-2);border-radius:999px;font-size:14px;font-weight:800;min-height:44px;color:var(--sub);flex:none}
+.back:active{background:var(--surface)}
+.title{flex:1;min-width:0}
+.title .eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--accent);margin:0 0 2px}
+.title h1{font-size:22px;margin:0;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:0 14px;min-height:34px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:800;color:var(--sub);flex:none}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
+body[data-state="playing"] .chip{color:#7ee787}
+body[data-state="playing"] .chip::before{background:#7ee787;box-shadow:0 0 0 4px rgba(126,231,135,.18)}
+body[data-state="paused"] .chip{color:#ffb020}
+body[data-state="paused"] .chip::before{background:#ffb020}
+body[data-state="over"] .chip{color:var(--red)}
+body[data-state="over"] .chip::before{background:var(--red)}
+body[data-state="clear"] .chip{color:#7ee0ff}
+body[data-state="clear"] .chip::before{background:#7ee0ff}
+button{font:inherit;border:0;border-radius:999px;padding:0 20px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer;touch-action:manipulation;transition:transform .1s ease,opacity .15s ease,background .15s ease}
+button:active{transform:scale(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 button.primary{background:#fff;color:#0a0c14}
-button.secondary{background:transparent;color:#f2f3f7;border:1px solid #3a4066}
-.controls{display:flex;gap:10px;flex-wrap:wrap}
-p{color:#9aa1c2;line-height:1.6;font-size:14px}
-.msg{font-weight:800;min-height:24px;color:#c8cdea}
+button.accent{background:var(--blue);color:#fff}
+button.secondary{background:transparent;color:var(--text);border:1px solid var(--line-2)}
+button.sm{min-height:44px;padding:0 16px;font-size:14px}
+.game{display:flex;flex-direction:column;gap:14px}
+.stage{position:relative;container-type:inline-size;width:100%;margin:0 auto;border-radius:var(--r-lg);box-shadow:var(--shadow);background:var(--board-bg)}
+canvas{display:block;width:100%;height:auto;aspect-ratio:var(--ar);background:var(--board-bg);border:1px solid var(--line);border-radius:var(--r-lg);touch-action:none}
+body[data-state="playing"] canvas{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:var(--r-lg);background:rgba(6,8,16,.55);pointer-events:none;opacity:1;transition:opacity .2s ease}
+.overlay.hidden{opacity:0;visibility:hidden}
+body[data-state="ready"] .overlay{background:linear-gradient(180deg,rgba(6,8,16,.1),rgba(6,8,16,.6))}
+body[data-state="over"] .overlay{background:rgba(30,6,10,.62)}
+body[data-state="clear"] .overlay{background:rgba(6,20,32,.6)}
+.ov-card{pointer-events:auto;text-align:center;background:rgba(18,21,42,.92);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:20px 24px;max-width:340px;width:100%;box-shadow:var(--shadow);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ov-kicker{margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:1.2px;color:var(--accent)}
+body[data-state="over"] .ov-kicker{color:var(--red)}
+.ov-card h2{margin:0 0 8px;font-size:26px;letter-spacing:-.5px}
+.ov-text{margin:0 0 16px;color:var(--sub);font-size:14px;line-height:1.6}
+.ov-text b{color:var(--text)}
+.ov-badge{display:inline-block;margin:0 0 10px;padding:4px 10px;border-radius:999px;background:var(--accent);color:#0a0c14;font-size:12px;font-weight:900}
+.ov-card button{width:100%}
+.toast{position:absolute;left:50%;top:14px;transform:translate(-50%,-8px);padding:8px 16px;border-radius:999px;background:rgba(10,12,20,.8);border:1px solid var(--line-2);font-size:14px;font-weight:900;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.warn{color:var(--red)}
+@container (max-width:460px){
+  .ov-card{padding:12px 16px;max-width:280px}
+  .ov-card h2{font-size:20px;margin-bottom:4px}
+  .ov-text{font-size:13px;margin-bottom:10px}
+  .ov-text .more{display:none}
+  .ov-badge{margin-bottom:6px}
+  .ov-card button{min-height:44px}
+}
+@container (max-width:300px){
+  .ov-kicker,.ov-text{display:none}
+}
+.panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.hud{display:grid;grid-template-columns:repeat(var(--hud-cols,4),minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 12px;min-width:0}
+.stat .label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px;white-space:nowrap}
+.stat .value{display:block;font-size:22px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat.score{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.stat.score .value{color:var(--accent);font-size:26px}
+.pips{display:flex;gap:4px;margin-top:4px}
+.pips i{width:12px;height:5px;border-radius:3px;background:var(--line-2)}
+.pips i.on{background:var(--red)}
+.msg{font-weight:800;font-size:14px;line-height:1.5;min-height:44px;color:var(--sub);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:11px 14px;display:flex;align-items:center}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.controls .wide{grid-column:1/-1}
+body:not([data-state="playing"]) .needs-play{opacity:.4}
+.hint{margin:0;color:var(--muted);line-height:1.6;font-size:13px}
+/* 가로 화면, 넓은 화면: 게임판 + 오른쪽 패널 */
+@media (min-width:760px),(orientation:landscape) and (min-width:560px){
+  .game{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,290px);align-items:start;gap:16px}
+  .stage{width:min(100%,calc((100vh - var(--chrome)) * var(--arn)));width:min(100%,calc((100dvh - var(--chrome)) * var(--arn)))}
+  .hud{--hud-cols:2}
+  .stat.score{grid-column:1/-1}
+}
+/* 낮은 가로 화면(휴대폰 가로): 상단 압축 */
+@media (orientation:landscape) and (max-height:520px){
+  :root{--chrome:76px}
+  .app{padding-top:6px;padding-bottom:6px}
+  .topbar{min-height:48px;padding:0 0 6px;margin-bottom:8px}
+  .title .eyebrow{display:none}
+  .title h1{font-size:18px}
+  .chip{min-height:30px;padding:0 10px;font-size:12px}
+  .panel{gap:8px}
+  .stat{padding:5px 10px}
+  .stat .label{font-size:11px;margin-bottom:0}
+  .stat .value{font-size:18px}
+  .stat.score .value{font-size:20px}
+  .msg{min-height:44px;padding:6px 12px;font-size:13px}
+  .controls button{min-height:44px;font-size:14px}
+  .hint{display:none}
+  .stat.score{grid-column:auto}
+  .controls .wide{grid-column:auto}
+  .pips{margin-top:2px}
+  .ov-card{padding:14px 18px}
+  .ov-card h2{font-size:22px}
+  .ov-text{margin-bottom:10px}
+}
+@media (max-width:480px){
+  .topbar{gap:8px}
+  .back .long{display:none}
+  .chip{display:none}
+  .hud{--hud-cols:2}
+}
+:root{--accent:#7ee787;--glow:rgba(126,231,135,.10);--board-bg:#07130a;--ar:1/1;--arn:1;--pad:64px}
+.game.snake{display:flex;flex-direction:column;gap:12px}
+.snake .stage{width:min(100%,560px)}
+.act{display:flex;gap:14px;align-items:center;justify-content:center}
+.act .side-controls{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;max-width:260px}
+.act .controls{grid-template-columns:1fr}
+.pad{display:grid;grid-template-columns:repeat(3,var(--pad));grid-template-rows:repeat(3,var(--pad));gap:8px;flex:none}
+.pad button{width:var(--pad);height:var(--pad);padding:0;border-radius:18px;font-size:22px;background:var(--surface-2);border:1px solid var(--line-2);color:var(--text);box-shadow:0 4px 0 #0b0e1c}
+.pad button:active,.pad button.hit{background:var(--accent);color:#0a0c14;border-color:var(--accent);transform:translateY(2px);box-shadow:0 2px 0 #0b0e1c}
+.pad .dot{display:grid;place-items:center}
+.pad .dot::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--line-2)}
+body[data-state="playing"] .pad .dot::before{background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.snake .hud{--hud-cols:3}
+.snake .stat.score{grid-column:auto}
+@media (orientation:landscape) and (min-width:560px){
+  .game.snake{display:grid;grid-template-columns:minmax(150px,240px) auto minmax(196px,250px);align-items:start;justify-content:center;gap:16px}
+  .snake .stage{width:min(calc(100vh - var(--chrome)),calc(100vw - 480px),640px);width:min(calc(100dvh - var(--chrome)),calc(100vw - 480px),640px)}
+  .snake .hud{--hud-cols:1}
+  .act{flex-direction:column;align-items:stretch}
+  .act .pad{align-self:center}
+  .act .side-controls{max-width:none}
+}
+@media (orientation:landscape) and (max-height:520px){
+  :root{--pad:58px}
+  .snake .hud{--hud-cols:1;gap:6px}
+  .act{gap:10px}
+}
+@media (max-width:480px){
+  .snake .hud{--hud-cols:3}
+  :root{--pad:60px}
+}
 </style>
 </head>
-<body>
-<div class="wrap">
-<div class="top">
-<div>
+<body data-state="ready">
+<div class="app">
+<header class="topbar">
+<a class="back" href="../" aria-label="허브로 돌아가기">← 허브<span class="long">로 돌아가기</span></a>
+<div class="title">
 <p class="eyebrow">SNAKE</p>
 <h1>스네이크</h1>
 </div>
-<a class="back" href="../">허브로 돌아가기</a>
-</div>
+<span class="chip" id="stateChip">대기 중</span>
+<button id="soundBtn" class="secondary sm">소리 끄기</button>
+</header>
+<main class="game snake">
+<aside class="panel info">
 <div class="hud">
 <div class="stat score"><span class="label">점수</span><span class="value" id="score">0</span></div>
 <div class="stat"><span class="label">속도 단계</span><span class="value" id="speed">1</span></div>
 <div class="stat"><span class="label">최고기록</span><span class="value" id="best">0</span></div>
 </div>
-<div class="layout">
+<div class="msg" id="msg" role="status" aria-live="polite">시작 버튼을 누르거나 게임판을 터치하세요.</div>
+</aside>
+<div class="stage">
 <canvas id="game" width="600" height="600"></canvas>
-<div class="side">
-<div class="msg" id="msg">시작 버튼을 누르세요. 방향키, 스와이프, 아래 방향 버튼으로 움직입니다.</div>
-<div class="pad">
+<div class="overlay" id="overlay">
+<div class="ov-card">
+<p class="ov-kicker" id="ovKicker">SNAKE</p>
+<span class="ov-badge" id="ovBadge" hidden>신기록</span>
+<h2 id="ovTitle">스네이크</h2>
+<p class="ov-text" id="ovText">스와이프나 방향 버튼으로 움직입니다.</p>
+<button id="ovBtn" class="primary">게임 시작</button>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+</div>
+<div class="act">
+<div class="pad" role="group" aria-label="방향 버튼">
 <span></span><button data-dir="up" aria-label="위">▲</button><span></span>
-<button data-dir="left" aria-label="왼쪽">◀</button><span></span><button data-dir="right" aria-label="오른쪽">▶</button>
+<button data-dir="left" aria-label="왼쪽">◀</button><span class="dot" aria-hidden="true"></span><button data-dir="right" aria-label="오른쪽">▶</button>
 <span></span><button data-dir="down" aria-label="아래">▼</button><span></span>
 </div>
+<div class="side-controls">
 <div class="controls">
 <button id="startBtn" class="primary">게임 시작</button>
-<button id="pauseBtn" class="secondary">일시정지</button>
-<button id="soundBtn" class="secondary">소리 끄기</button>
+<button id="pauseBtn" class="secondary needs-play">일시정지</button>
 </div>
-<p>먹이를 먹을수록 빨라집니다. 벽에 닿으면 반대쪽에서 이어집니다. 자기 몸에 부딪히면 게임이 끝납니다.</p>
+<p class="hint">벽은 반대쪽으로 이어집니다. 자기 몸에 부딪히면 끝납니다.</p>
 </div>
 </div>
+</main>
 </div>
 <script>
 "use strict";
@@ -80,10 +222,44 @@ var scoreEl = document.getElementById("score");
 var speedEl = document.getElementById("speed");
 var bestEl = document.getElementById("best");
 var msgEl = document.getElementById("msg");
+var pauseBtn = document.getElementById("pauseBtn");
+var startBtn = document.getElementById("startBtn");
+var chipEl = document.getElementById("stateChip");
+var overlayEl = document.getElementById("overlay");
+var ovKicker = document.getElementById("ovKicker");
+var ovBadge = document.getElementById("ovBadge");
+var ovTitle = document.getElementById("ovTitle");
+var ovText = document.getElementById("ovText");
+var ovBtn = document.getElementById("ovBtn");
+var toastEl = document.getElementById("toast");
 var BEST_KEY = "neowa_hub_snake_high";
 var best = 0;
 try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
 bestEl.textContent = best;
+var bestAtStart = best;
+var STATE_LABEL = { ready: "대기 중", playing: "플레이 중", paused: "일시정지", over: "게임 오버", clear: "클리어" };
+function setUI(s, ov) {
+  document.body.setAttribute("data-state", s);
+  chipEl.textContent = STATE_LABEL[s] || "";
+  pauseBtn.textContent = s === "paused" ? "계속하기" : "일시정지";
+  startBtn.textContent = s === "ready" ? "게임 시작" : "다시 시작";
+  if (s !== "playing") { clearTimeout(toastTimer); toastEl.classList.remove("show"); }
+  if (!ov) { overlayEl.classList.add("hidden"); return; }
+  ovKicker.textContent = ov.kicker;
+  ovTitle.textContent = ov.title;
+  ovText.innerHTML = ov.text;
+  ovBtn.textContent = ov.btn;
+  ovBadge.hidden = !ov.badge;
+  overlayEl.classList.remove("hidden");
+}
+var toastTimer = null;
+function showToast(text, warn) {
+  toastEl.textContent = text;
+  toastEl.classList.toggle("warn", !!warn);
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1300);
+}
 var soundOn = true;
 var sounds = {};
 ["coin", "gameover", "click"].forEach(function (n) {
@@ -102,69 +278,152 @@ function playSound(n) {
 }
 document.getElementById("soundBtn").addEventListener("click", function (ev) {
   soundOn = !soundOn;
-  ev.target.textContent = soundOn ? "소리 끄기" : "소리 켜기";
+  ev.currentTarget.textContent = soundOn ? "소리 끄기" : "소리 켜기";
 });
 if (typeof THREE === "undefined") {
   msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요.";
 }
 var COLS = 20, ROWS = 20;
 var scene = null, camera = null, renderer = null;
-var snakeGroup = null, foodMesh = null, flashMesh = null;
+var snakeGroup = null, foodMesh = null, foodRing = null, flashMesh = null;
 var flashUntil = 0, flashX = 0, flashY = 0;
 var bodyGeo = null, headGeo = null, foodGeo = null;
+var headGroup = null, headMat = null, bodyMats = [], segPool = [];
+function makeCheckerTexture() {
+  var c = document.createElement("canvas");
+  c.width = COLS; c.height = ROWS;
+  var g = c.getContext("2d");
+  for (var y = 0; y < ROWS; y++) {
+    for (var x = 0; x < COLS; x++) {
+      g.fillStyle = (x + y) % 2 === 0 ? "#0e2416" : "#0b1d12";
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  var tex = new THREE.CanvasTexture(c);
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  return tex;
+}
+function dashedFrame(half, y, color) {
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute([-half, y, -half, half, y, -half, half, y, half, -half, y, half, -half, y, -half], 3));
+  var line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: color, dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.8 }));
+  line.computeLineDistances();
+  return line;
+}
 function init3D() {
   if (typeof THREE === "undefined") return false;
   if (renderer) return true;
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x07130a);
+  scene.fog = new THREE.Fog(0x07130a, 30, 50);
   camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  camera.position.set(0, 20, 14);
-  camera.lookAt(0, 0, 0);
+  camera.position.set(0, 25, 11);
+  camera.lookAt(0, 0, 1.5);
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "low-power" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(600, 600, false);
   } catch (e) {
     renderer = null;
     return false;
   }
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  scene.add(new THREE.HemisphereLight(0xd8ffe0, 0x0a1a10, 0.8));
   var dir = new THREE.DirectionalLight(0xffffff, 1.0);
   dir.position.set(5, 10, 5);
   scene.add(dir);
-  var ground = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), new THREE.MeshStandardMaterial({ color: 0x0a1a10, roughness: 1 }));
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x06100a, roughness: 1 }));
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.6;
+  ground.position.y = -0.7;
   scene.add(ground);
+  var plinth = new THREE.Mesh(new THREE.BoxGeometry(21, 0.4, 21), new THREE.MeshStandardMaterial({ color: 0x12301c, roughness: 0.9 }));
+  plinth.position.y = -0.75;
+  scene.add(plinth);
+  var board = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ map: makeCheckerTexture(), roughness: 1 }));
+  board.rotation.x = -Math.PI / 2;
+  board.position.y = -0.54;
+  scene.add(board);
   var grid = new THREE.GridHelper(20, 20, 0x2a4a3a, 0x1a2a22);
   grid.position.y = -0.5;
+  grid.material.transparent = true;
+  grid.material.opacity = 0.5;
   scene.add(grid);
-  bodyGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+  scene.add(dashedFrame(10.25, -0.48, 0x7ee787));
+  bodyGeo = new THREE.BoxGeometry(0.86, 0.8, 0.86);
   headGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
-  foodGeo = new THREE.SphereGeometry(0.55, 16, 16);
+  foodGeo = new THREE.IcosahedronGeometry(0.55, 0);
+  var shades = [0x5fd36e, 0x4cc25d, 0x3db04f, 0x33a045, 0x2b8f3c, 0x247e34];
+  shades.forEach(function (c) {
+    bodyMats.push(new THREE.MeshStandardMaterial({ color: c, emissive: 0x0a2a12, emissiveIntensity: 0.4, roughness: 0.45, flatShading: true }));
+  });
   snakeGroup = new THREE.Group();
   scene.add(snakeGroup);
-  foodMesh = new THREE.Mesh(foodGeo, new THREE.MeshStandardMaterial({ color: 0xff5a5a, emissive: 0xff2222, emissiveIntensity: 0.7, roughness: 0.3 }));
+  headGroup = new THREE.Group();
+  headMat = new THREE.MeshStandardMaterial({ color: 0x7ee787, emissive: 0x2a5a2a, emissiveIntensity: 0.4, roughness: 0.4, flatShading: true });
+  headGroup.add(new THREE.Mesh(headGeo, headMat));
+  var eyeGeo = new THREE.BoxGeometry(0.16, 0.2, 0.2);
+  var eyeMat = new THREE.MeshBasicMaterial({ color: 0x0a0c14 });
+  [-0.24, 0.24].forEach(function (ez) {
+    var eye = new THREE.Mesh(eyeGeo, eyeMat);
+    eye.position.set(0.46, 0.2, ez);
+    headGroup.add(eye);
+  });
+  scene.add(headGroup);
+  foodMesh = new THREE.Mesh(foodGeo, new THREE.MeshStandardMaterial({ color: 0xff5a5a, emissive: 0xff2222, emissiveIntensity: 0.7, roughness: 0.3, flatShading: true }));
   scene.add(foodMesh);
-  flashMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffff99, emissive: 0xffff66, emissiveIntensity: 1.2, transparent: true, opacity: 0.9 }));
+  foodRing = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.62, 20), new THREE.MeshBasicMaterial({ color: 0xff7a7a, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+  foodRing.rotation.x = -Math.PI / 2;
+  scene.add(foodRing);
+  flashMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffff99, emissive: 0xffff66, emissiveIntensity: 1.2, transparent: true, opacity: 0.9 }));
   flashMesh.visible = false;
   scene.add(flashMesh);
   return true;
 }
+function animateFood() {
+  if (!foodMesh || !food) return;
+  var t = performance.now() / 1000;
+  foodMesh.position.set(food.x - 10 + 0.5, 0.1 + Math.sin(t * 4) * 0.12, food.y - 10 + 0.5);
+  foodMesh.rotation.y = t * 1.5;
+  foodRing.position.set(food.x - 10 + 0.5, -0.47, food.y - 10 + 0.5);
+  foodRing.scale.setScalar(1 + (Math.sin(t * 4) + 1) * 0.12);
+}
 function draw() {
   if (!renderer) return;
-  while (snakeGroup.children.length > 0) snakeGroup.remove(snakeGroup.children[0]);
-  snake.forEach(function (s, idx) {
-    var m = new THREE.Mesh(idx === 0 ? headGeo : bodyGeo, new THREE.MeshStandardMaterial({ color: idx === 0 ? 0x7ee787 : 0x2f9e44, emissive: idx === 0 ? 0x2a5a2a : 0x0a2a12, emissiveIntensity: 0.4, roughness: 0.4 }));
-    m.position.set(s.x - 10 + 0.5, 0, s.y - 10 + 0.5);
-    snakeGroup.add(m);
-  });
-  if (food) foodMesh.position.set(food.x - 10 + 0.5, 0, food.y - 10 + 0.5);
+  var bodyCount = Math.max(0, snake.length - 1);
+  while (segPool.length < bodyCount) {
+    var seg = new THREE.Mesh(bodyGeo, bodyMats[0]);
+    snakeGroup.add(seg);
+    segPool.push(seg);
+  }
+  for (var i = 0; i < segPool.length; i++) {
+    var m = segPool[i];
+    if (i < bodyCount) {
+      var s = snake[i + 1];
+      m.visible = true;
+      m.material = bodyMats[Math.min(bodyMats.length - 1, Math.floor(i * bodyMats.length / Math.max(bodyCount, 6)))];
+      m.position.set(s.x - 10 + 0.5, -0.05, s.y - 10 + 0.5);
+    } else {
+      m.visible = false;
+    }
+  }
+  if (snake.length) {
+    headGroup.position.set(snake[0].x - 10 + 0.5, 0, snake[0].y - 10 + 0.5);
+    headGroup.rotation.y = -Math.atan2(dir.y, dir.x);
+  }
+  animateFood();
   if (flashMesh) {
     flashMesh.visible = Date.now() < flashUntil;
     if (flashMesh.visible) flashMesh.position.set(flashX - 10 + 0.5, 0, flashY - 10 + 0.5);
   }
   renderer.render(scene, camera);
+}
+function renderLoop() {
+  if (state !== "playing" || !renderer) return;
+  animateFood();
+  if (flashMesh) flashMesh.visible = Date.now() < flashUntil;
+  renderer.render(scene, camera);
+  requestAnimationFrame(renderLoop);
 }
 var state = "ready";
 var snake = [], dir = { x: 1, y: 0 }, nextDir = { x: 1, y: 0 }, food = null, score = 0, timer = null;
@@ -181,6 +440,7 @@ function resetGame() {
   snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
   dir = { x: 1, y: 0 }; nextDir = { x: 1, y: 0 };
   score = 0;
+  if (headMat) { headMat.color.setHex(0x7ee787); headMat.emissive.setHex(0x2a5a2a); }
   placeFood();
   updateHud();
   draw();
@@ -208,10 +468,12 @@ function step() {
   }
   snake.unshift(head);
   if (food && head.x === food.x && head.y === food.y) {
+    var prevLevel = speedLevel();
     score += 10;
     playSound("coin");
     flashX = food.x; flashY = food.y; flashUntil = Date.now() + 300;
     placeFood();
+    if (speedLevel() > prevLevel) showToast("속도 " + speedLevel() + "단계");
   } else {
     snake.pop();
   }
@@ -222,18 +484,28 @@ function step() {
 }
 function startGame() {
   if (!init3D()) { msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요."; return; }
+  var wasRunning = state === "playing";
   playSound("click");
+  bestAtStart = best;
   resetGame();
   state = "playing";
+  setUI("playing");
   msgEl.textContent = "플레이 중입니다.";
   clearInterval(timer);
   timer = setInterval(step, speedMs());
+  if (!wasRunning) requestAnimationFrame(renderLoop);
 }
 function gameOver() {
   state = "over";
   clearInterval(timer);
   playSound("gameover");
+  if (headMat) { headMat.color.setHex(0xff5a5a); headMat.emissive.setHex(0x5a1010); }
   msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 시작 버튼을 눌러 다시 플레이하세요.";
+  setUI("over", {
+    kicker: "GAME OVER", title: "게임 오버",
+    text: "점수 <b>" + score + "점</b> · 길이 <b>" + snake.length + "</b><br>최고기록 " + best + "점",
+    btn: "다시 시작", badge: score > bestAtStart && score > 0
+  });
   draw();
 }
 function setDir(x, y) {
@@ -242,19 +514,47 @@ function setDir(x, y) {
   if (x === dir.x && y === dir.y) return;
   nextDir = { x: x, y: y };
 }
-document.getElementById("startBtn").addEventListener("click", startGame);
-document.getElementById("pauseBtn").addEventListener("click", function () {
-  if (state === "playing") { state = "paused"; clearInterval(timer); msgEl.textContent = "일시정지했습니다. 일시정지 버튼을 다시 누르면 이어서 플레이합니다."; }
-  else if (state === "paused") { state = "playing"; timer = setInterval(step, speedMs()); msgEl.textContent = "플레이 중입니다."; }
+function togglePause() {
+  if (state === "playing") {
+    state = "paused";
+    clearInterval(timer);
+    msgEl.textContent = "일시정지했습니다. 계속하기 버튼을 누르면 이어서 플레이합니다.";
+    setUI("paused", { kicker: "PAUSED", title: "일시정지", text: "점수 <b>" + score + "점</b> · 속도 <b>" + speedLevel() + "단계</b>", btn: "계속하기" });
+  } else if (state === "paused") {
+    state = "playing";
+    setUI("playing");
+    timer = setInterval(step, speedMs());
+    requestAnimationFrame(renderLoop);
+    msgEl.textContent = "플레이 중입니다.";
+  }
+}
+startBtn.addEventListener("click", startGame);
+pauseBtn.addEventListener("click", togglePause);
+ovBtn.addEventListener("click", function () {
+  if (state === "paused") togglePause();
+  else startGame();
 });
+overlayEl.querySelector(".ov-card").addEventListener("click", function (ev) {
+  if (ev.target !== ovBtn && state === "ready") startGame();
+});
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden && state === "playing") togglePause();
+});
+function padDir(d) {
+  if (d === "up") setDir(0, -1);
+  if (d === "down") setDir(0, 1);
+  if (d === "left") setDir(-1, 0);
+  if (d === "right") setDir(1, 0);
+}
 document.querySelectorAll(".pad button").forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    var d = btn.getAttribute("data-dir");
-    if (d === "up") setDir(0, -1);
-    if (d === "down") setDir(0, 1);
-    if (d === "left") setDir(-1, 0);
-    if (d === "right") setDir(1, 0);
+  var d = btn.getAttribute("data-dir");
+  btn.addEventListener("pointerdown", function (ev) {
+    ev.preventDefault();
+    padDir(d);
+    btn.classList.add("hit");
+    setTimeout(function () { btn.classList.remove("hit"); }, 120);
   });
+  btn.addEventListener("click", function () { padDir(d); });
 });
 window.addEventListener("keydown", function (ev) {
   if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].indexOf(ev.key) >= 0) ev.preventDefault();
@@ -263,6 +563,7 @@ window.addEventListener("keydown", function (ev) {
   if (ev.key === "ArrowLeft" || ev.key === "a") setDir(-1, 0);
   if (ev.key === "ArrowRight" || ev.key === "d") setDir(1, 0);
   if (ev.key === "Enter" && (state === "ready" || state === "over")) startGame();
+  if (ev.key === "p" || ev.key === "P") togglePause();
 });
 var touchX = null, touchY = null;
 canvas.addEventListener("touchstart", function (ev) {
@@ -274,20 +575,24 @@ canvas.addEventListener("touchend", function (ev) {
   if (touchX === null) return;
   var t = ev.changedTouches[0];
   var dx = t.clientX - touchX, dy = t.clientY - touchY;
+  touchX = null; touchY = null;
   if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
   if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
   else setDir(0, dy > 0 ? 1 : -1);
-  touchX = null; touchY = null;
 });
+var READY_OV = { kicker: "SNAKE", title: "스네이크", text: "스와이프나 방향 버튼으로 움직입니다.<span class=\"more\"><br>벽은 반대쪽으로 이어집니다.</span>", btn: "게임 시작" };
 if (typeof THREE !== "undefined") {
   if (init3D()) {
     resetGame();
     state = "ready";
+    setUI("ready", READY_OV);
   } else {
     msgEl.textContent = "WebGL을 사용할 수 없어 3D 게임을 실행할 수 없습니다. 브라우저에서 WebGL을 켜고 페이지를 새로고침하세요.";
+    setUI("ready", { kicker: "안내", title: "3D를 켤 수 없음", text: "브라우저에서 WebGL을 켜고 새로고침하세요.", btn: "다시 시도" });
     updateHud();
   }
 } else {
+  setUI("ready", { kicker: "안내", title: "로딩 실패", text: "3D 엔진을 불러오지 못했습니다. 새로고침하세요.", btn: "다시 시도" });
   updateHud();
 }
 </script>

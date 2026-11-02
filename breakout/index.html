@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>벽돌깨기 - 너와 아케이드</title>
+<meta name="description" content="벽돌깨기. 마우스, 터치, 방향키로 패들을 움직이세요.">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){window.dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-T386KYRRLK');
+</script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1020;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+a{color:#9ec2ff}
+h1{font-size:24px;margin:0 0 8px}
+.hud{display:flex;gap:16px;font-weight:700;flex-wrap:wrap;margin-bottom:12px}
+canvas{display:block;width:100%;height:auto;background:#050816;border:1px solid #2f375f;border-radius:12px;touch-action:none}
+.controls{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+button{background:#3182f6;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;min-height:44px;cursor:pointer}
+button.secondary{background:#2a3358}
+p{color:#c8cdea;line-height:1.6}
+.msg{font-weight:700;min-height:24px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>벽돌깨기</h1>
+<p><a href="../">허브로 돌아가기</a></p>
+<div class="hud">
+<span>점수: <span id="score">0</span></span>
+<span>목숨: <span id="lives">3</span></span>
+<span>레벨: <span id="level">1</span></span>
+<span>최고기록: <span id="best">0</span></span>
+</div>
+<canvas id="game" width="720" height="480"></canvas>
+<div class="msg" id="msg">시작 버튼을 누른 뒤 공을 클릭하거나 스페이스바로 발사하세요. 마우스, 터치 드래그, 방향키로 패들을 움직입니다.</div>
+<div class="controls">
+<button id="startBtn">게임 시작</button>
+<button id="pauseBtn" class="secondary">일시정지</button>
+<button id="launchBtn" class="secondary">공 발사</button>
+</div>
+<p>벽돌을 모두 깨면 다음 레벨로 갑니다. 공이 아래로 떨어지면 목숨이 하나 줄고, 레벨 5까지 깨면 클리어입니다.</p>
+</div>
+<script>
+"use strict";
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+var W = 720, H = 480;
+var scoreEl = document.getElementById("score");
+var livesEl = document.getElementById("lives");
+var levelEl = document.getElementById("level");
+var bestEl = document.getElementById("best");
+var msgEl = document.getElementById("msg");
+var BEST_KEY = "neowa_hub_breakout_high";
+var best = 0;
+try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
+bestEl.textContent = best;
+var state = "ready";
+var score = 0, lives = 3, level = 1;
+var paddle = { x: 310, w: 100, h: 14, y: H - 30, speed: 520 };
+var ball = { x: 360, y: H - 50, vx: 0, vy: 0, r: 8, stuck: true };
+var bricks = [];
+var keys = {};
+var lastTime = 0;
+var colors = ["#ff5a5a", "#ffb020", "#4dd2ff", "#7ee787", "#b78cff"];
+function buildBricks(lv) {
+  bricks = [];
+  var rows = Math.min(3 + lv, 6);
+  var cols = 9;
+  var bw = 72, bh = 22, gap = 6, startX = 12, startY = 50;
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      bricks.push({ x: startX + c * (bw + gap), y: startY + r * (bh + gap), w: bw, h: bh, color: colors[r % colors.length], points: (rows - r) * 10 });
+    }
+  }
+}
+function resetBall() {
+  ball.stuck = true;
+  ball.x = paddle.x + paddle.w / 2;
+  ball.y = paddle.y - 12;
+  ball.vx = 0; ball.vy = 0;
+}
+function resetGame() {
+  score = 0; lives = 3; level = 1;
+  paddle.x = 310;
+  buildBricks(level);
+  resetBall();
+  updateHud();
+}
+function updateHud() {
+  scoreEl.textContent = score;
+  livesEl.textContent = lives;
+  levelEl.textContent = level;
+  if (score > best) {
+    best = score;
+    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
+  }
+  bestEl.textContent = best;
+}
+function launch() {
+  if (state !== "playing" || !ball.stuck) return;
+  ball.stuck = false;
+  var speed = 300 + (level - 1) * 35;
+  ball.vx = speed * 0.35;
+  ball.vy = -speed * 0.94;
+  msgEl.textContent = "";
+}
+function startGame() {
+  resetGame();
+  state = "playing";
+  msgEl.textContent = "공 발사 버튼이나 스페이스바를 눌러 공을 발사하세요.";
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+}
+function loseLife() {
+  lives -= 1;
+  updateHud();
+  resetBall();
+  if (lives <= 0) {
+    state = "over";
+    msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 시작 버튼을 눌러 다시 플레이하세요.";
+  } else {
+    msgEl.textContent = "목숨이 줄었습니다. 남은 목숨 " + lives + "개. 공을 다시 발사하세요.";
+  }
+}
+function loop(now) {
+  if (state !== "playing") return;
+  var dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  if (keys.ArrowLeft || keys.a) paddle.x -= paddle.speed * dt;
+  if (keys.ArrowRight || keys.d) paddle.x += paddle.speed * dt;
+  paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
+  if (ball.stuck) {
+    ball.x = paddle.x + paddle.w / 2;
+    ball.y = paddle.y - 12;
+  } else {
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+    if (ball.x > W - ball.r) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+    if (ball.y < ball.r) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+    if (ball.y - ball.r < paddle.y + paddle.h && ball.y + ball.r > paddle.y && ball.x >= paddle.x && ball.x <= paddle.x + paddle.w && ball.vy > 0) {
+      var rel = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+      var speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      var angle = rel * 1.0;
+      ball.vx = speed * Math.sin(angle);
+      ball.vy = -Math.abs(speed * Math.cos(angle));
+      ball.y = paddle.y - ball.r - 1;
+    }
+    for (var i = bricks.length - 1; i >= 0; i--) {
+      var b = bricks[i];
+      if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w && ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+        var prevX = ball.x - ball.vx * dt, prevY = ball.y - ball.vy * dt;
+        if (prevY + ball.r <= b.y || prevY - ball.r >= b.y + b.h) ball.vy = -ball.vy;
+        else ball.vx = -ball.vx;
+        score += b.points;
+        bricks.splice(i, 1);
+        break;
+      }
+    }
+    if (ball.y > H + 20) {
+      loseLife();
+      draw();
+      if (state === "playing") requestAnimationFrame(loop);
+      return;
+    }
+    if (bricks.length === 0) {
+      if (level >= 5) {
+        state = "clear";
+        updateHud();
+        msgEl.textContent = "클리어! 모든 레벨을 깼습니다. 점수 " + score + "점, 최고기록 " + best + "점.";
+        draw();
+        return;
+      }
+      level += 1;
+      updateHud();
+      buildBricks(level);
+      resetBall();
+      msgEl.textContent = "레벨 " + level + " 시작! 공을 발사하세요.";
+    }
+  }
+  updateHud();
+  draw();
+  requestAnimationFrame(loop);
+}
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#050816";
+  ctx.fillRect(0, 0, W, H);
+  bricks.forEach(function (b) {
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+  });
+  ctx.fillStyle = "#4dd2ff";
+  ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
+}
+document.getElementById("startBtn").addEventListener("click", startGame);
+document.getElementById("launchBtn").addEventListener("click", launch);
+document.getElementById("pauseBtn").addEventListener("click", function () {
+  if (state === "playing") { state = "paused"; msgEl.textContent = "일시정지했습니다. 일시정지 버튼을 다시 누르면 이어서 플레이합니다."; }
+  else if (state === "paused") { state = "playing"; lastTime = performance.now(); requestAnimationFrame(loop); msgEl.textContent = ""; }
+});
+window.addEventListener("keydown", function (ev) {
+  if (["ArrowLeft", "ArrowRight", " "].indexOf(ev.key) >= 0) ev.preventDefault();
+  keys[ev.key] = true;
+  if (ev.key === " ") launch();
+  if (ev.key === "Enter" && (state === "ready" || state === "over" || state === "clear")) startGame();
+});
+window.addEventListener("keyup", function (ev) { keys[ev.key] = false; });
+function canvasPos(ev) {
+  var r = canvas.getBoundingClientRect();
+  var touch = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
+  return (touch.clientX - r.left) * (W / r.width);
+}
+canvas.addEventListener("mousemove", function (ev) {
+  paddle.x = Math.max(0, Math.min(W - paddle.w, canvasPos(ev) - paddle.w / 2));
+});
+canvas.addEventListener("touchstart", function (ev) {
+  ev.preventDefault();
+  paddle.x = Math.max(0, Math.min(W - paddle.w, canvasPos(ev) - paddle.w / 2));
+  if (state === "ready") startGame();
+  else launch();
+}, { passive: false });
+canvas.addEventListener("touchmove", function (ev) {
+  ev.preventDefault();
+  paddle.x = Math.max(0, Math.min(W - paddle.w, canvasPos(ev) - paddle.w / 2));
+}, { passive: false });
+canvas.addEventListener("click", function () { launch(); });
+resetGame();
+state = "ready";
+draw();
+</script>
+</body>
+</html>

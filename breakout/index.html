@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>벽돌깨기 - 너와 아케이드</title>
-<meta name="description" content="벽돌깨기. 마우스, 터치, 방향키로 패들을 움직이세요.">
+<meta name="description" content="3D 벽돌깨기. 마우스, 터치, 방향키로 패들을 움직이세요.">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -12,6 +12,7 @@ function gtag(){window.dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-T386KYRRLK');
 </script>
+<script src="../assets/three.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
@@ -24,7 +25,7 @@ canvas{display:block;width:100%;height:auto;background:#050816;border:1px solid 
 button{background:#3182f6;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;min-height:44px;cursor:pointer}
 button.secondary{background:#2a3358}
 p{color:#c8cdea;line-height:1.6}
-.msg{font-weight:700;min-height:24px;margin-top:12px}
+.msg{font-weight:700;min-height:24px}
 </style>
 </head>
 <body>
@@ -38,19 +39,18 @@ p{color:#c8cdea;line-height:1.6}
 <span>최고기록: <span id="best">0</span></span>
 </div>
 <canvas id="game" width="720" height="480"></canvas>
-<div class="msg" id="msg">시작 버튼을 누른 뒤 공을 클릭하거나 스페이스바로 발사하세요. 마우스, 터치 드래그, 방향키로 패들을 움직입니다.</div>
+<div class="msg" id="msg">시작 버튼을 누른 뒤, 공 발사 버튼을 누르세요. 마우스나 터치 드래그, 방향키로 패들을 움직입니다.</div>
 <div class="controls">
 <button id="startBtn">게임 시작</button>
+<button id="launchBtn">공 발사</button>
 <button id="pauseBtn" class="secondary">일시정지</button>
-<button id="launchBtn" class="secondary">공 발사</button>
+<button id="soundBtn" class="secondary">소리 끄기</button>
 </div>
-<p>벽돌을 모두 깨면 다음 레벨로 갑니다. 공이 아래로 떨어지면 목숨이 하나 줄고, 레벨 5까지 깨면 클리어입니다.</p>
+<p>공이 아래로 떨어지면 목숨이 하나 줄고, 벽돌을 모두 깨면 다음 레벨로 갑니다. 레벨 5까지 깨면 클리어입니다.</p>
 </div>
 <script>
 "use strict";
 var canvas = document.getElementById("game");
-var ctx = canvas.getContext("2d");
-var W = 720, H = 480;
 var scoreEl = document.getElementById("score");
 var livesEl = document.getElementById("lives");
 var levelEl = document.getElementById("level");
@@ -60,36 +60,120 @@ var BEST_KEY = "neowa_hub_breakout_high";
 var best = 0;
 try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
 bestEl.textContent = best;
+if (typeof THREE === "undefined") {
+  msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요.";
+}
+var soundOn = true;
+var sounds = {};
+["bounce", "click", "hit", "gameover", "powerup"].forEach(function (n) {
+  var a = new Audio("../assets/sounds/" + n + ".wav");
+  a.preload = "auto";
+  sounds[n] = a;
+});
+function playSound(n) {
+  if (!soundOn) return;
+  try {
+    var a = sounds[n];
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(function () {});
+  } catch (e) {}
+}
+document.getElementById("soundBtn").addEventListener("click", function (ev) {
+  soundOn = !soundOn;
+  ev.target.textContent = soundOn ? "소리 끄기" : "소리 켜기";
+});
+var W = 28, H = 20;
+var scene = null, camera = null, renderer = null;
+var paddleMesh = null, ballMesh = null;
+var brickGeo = null, particleGeo = null;
+var particles = [];
+function init3D() {
+  if (typeof THREE === "undefined") return false;
+  if (renderer) return true;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050816);
+  camera = new THREE.PerspectiveCamera(50, 720 / 480, 0.1, 100);
+  camera.position.set(0, 22, 14);
+  camera.lookAt(0, 0, 0);
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(720, 480, false);
+  } catch (e) {
+    renderer = null;
+    return false;
+  }
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  var dir = new THREE.DirectionalLight(0xffffff, 1.0);
+  dir.position.set(5, 10, 5);
+  scene.add(dir);
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(34, 26), new THREE.MeshStandardMaterial({ color: 0x0a0e24, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1;
+  scene.add(ground);
+  brickGeo = new THREE.BoxGeometry(2.6, 0.6, 0.9);
+  particleGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+  paddleMesh = new THREE.Mesh(new THREE.BoxGeometry(4, 0.6, 0.8), new THREE.MeshStandardMaterial({ color: 0x4dd2ff, emissive: 0x1a6a8a, emissiveIntensity: 0.6, roughness: 0.3 }));
+  scene.add(paddleMesh);
+  ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8, roughness: 0.2 }));
+  scene.add(ballMesh);
+  return true;
+}
+function to3D(x, y) { return { x: x - W / 2, z: y - H / 2 }; }
+function spawnBurst(x, y, color) {
+  for (var i = 0; i < 12; i++) {
+    var m = new THREE.Mesh(particleGeo, new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 }));
+    var q = to3D(x, y);
+    m.position.set(q.x, 0, q.z);
+    scene.add(m);
+    particles.push({ mesh: m, vx: (Math.random() - 0.5) * 8, vz: (Math.random() - 0.5) * 8, life: 0.6 });
+  }
+}
+function updateParticles(dt) {
+  for (var i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i];
+    p.life -= dt;
+    p.mesh.position.x += p.vx * dt;
+    p.mesh.position.z += p.vz * dt;
+    p.mesh.position.y += 0.5 * dt;
+    p.mesh.rotation.x += dt * 5;
+    if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
+  }
+}
 var state = "ready";
 var score = 0, lives = 3, level = 1;
-var paddle = { x: 310, w: 100, h: 14, y: H - 30, speed: 520 };
-var ball = { x: 360, y: H - 50, vx: 0, vy: 0, r: 8, stuck: true };
+var paddle = { x: 14, speed: 16 };
+var ball = { x: 14, y: 16, vx: 0, vy: 0, stuck: true };
 var bricks = [];
 var keys = {};
 var lastTime = 0;
-var colors = ["#ff5a5a", "#ffb020", "#4dd2ff", "#7ee787", "#b78cff"];
-function buildBricks(lv) {
+var COLORS = [0xff5a5a, 0xffb020, 0x7ee787, 0x4dd2ff, 0xaa7eff];
+function buildLevel(lv) {
+  bricks.forEach(function (b) { if (scene) scene.remove(b.mesh); });
   bricks = [];
-  var rows = Math.min(3 + lv, 6);
+  var rows = 3 + Math.min(lv - 1, 2);
   var cols = 9;
-  var bw = 72, bh = 22, gap = 6, startX = 12, startY = 50;
+  var spacing = 3.0;
+  var startX = (W - (cols - 1) * spacing) / 2;
   for (var r = 0; r < rows; r++) {
     for (var c = 0; c < cols; c++) {
-      bricks.push({ x: startX + c * (bw + gap), y: startY + r * (bh + gap), w: bw, h: bh, color: colors[r % colors.length], points: (rows - r) * 10 });
+      var col = COLORS[r % COLORS.length];
+      var mesh = new THREE.Mesh(brickGeo, new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.4, roughness: 0.3 }));
+      if (scene) scene.add(mesh);
+      var bx = startX + c * spacing, by = 2 + r * 1.4;
+      var q = to3D(bx, by);
+      mesh.position.set(q.x, 0, q.z);
+      bricks.push({ x: bx, y: by, color: col, mesh: mesh });
     }
   }
-}
-function resetBall() {
   ball.stuck = true;
-  ball.x = paddle.x + paddle.w / 2;
-  ball.y = paddle.y - 12;
-  ball.vx = 0; ball.vy = 0;
+  ball.x = paddle.x; ball.y = 16;
 }
 function resetGame() {
   score = 0; lives = 3; level = 1;
-  paddle.x = 310;
-  buildBricks(level);
-  resetBall();
+  paddle.x = 14;
+  buildLevel(level);
   updateHud();
 }
 function updateHud() {
@@ -102,31 +186,41 @@ function updateHud() {
   }
   bestEl.textContent = best;
 }
+function syncMeshes() {
+  if (!renderer) return;
+  var p = to3D(paddle.x, 18.5);
+  paddleMesh.position.set(p.x, 0, p.z);
+  var b = to3D(ball.x, ball.y);
+  ballMesh.position.set(b.x, 0, b.z);
+}
 function launch() {
   if (state !== "playing" || !ball.stuck) return;
   ball.stuck = false;
-  var speed = 300 + (level - 1) * 35;
-  ball.vx = speed * 0.35;
-  ball.vy = -speed * 0.94;
-  msgEl.textContent = "";
-}
-function startGame() {
-  resetGame();
-  state = "playing";
-  msgEl.textContent = "공 발사 버튼이나 스페이스바를 눌러 공을 발사하세요.";
-  lastTime = performance.now();
-  requestAnimationFrame(loop);
+  ball.vx = (Math.random() < 0.5 ? -1 : 1) * 6;
+  ball.vy = -9;
+  playSound("bounce");
 }
 function loseLife() {
   lives -= 1;
   updateHud();
-  resetBall();
   if (lives <= 0) {
     state = "over";
+    playSound("gameover");
     msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 시작 버튼을 눌러 다시 플레이하세요.";
   } else {
-    msgEl.textContent = "목숨이 줄었습니다. 남은 목숨 " + lives + "개. 공을 다시 발사하세요.";
+    ball.stuck = true;
+    ball.x = paddle.x; ball.y = 16;
+    msgEl.textContent = "공을 놓쳤습니다. 남은 목숨 " + lives + "개. 공 발사 버튼을 누르세요.";
   }
+}
+function startGame() {
+  if (!init3D()) { msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요."; return; }
+  playSound("click");
+  resetGame();
+  state = "playing";
+  msgEl.textContent = "레벨 " + level + " 시작! 공 발사 버튼을 누르세요.";
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
 }
 function loop(now) {
   if (state !== "playing") return;
@@ -134,72 +228,55 @@ function loop(now) {
   lastTime = now;
   if (keys.ArrowLeft || keys.a) paddle.x -= paddle.speed * dt;
   if (keys.ArrowRight || keys.d) paddle.x += paddle.speed * dt;
-  paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
+  paddle.x = Math.max(2, Math.min(W - 2, paddle.x));
   if (ball.stuck) {
-    ball.x = paddle.x + paddle.w / 2;
-    ball.y = paddle.y - 12;
+    ball.x = paddle.x; ball.y = 16;
   } else {
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
-    if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
-    if (ball.x > W - ball.r) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
-    if (ball.y < ball.r) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
-    if (ball.y - ball.r < paddle.y + paddle.h && ball.y + ball.r > paddle.y && ball.x >= paddle.x && ball.x <= paddle.x + paddle.w && ball.vy > 0) {
-      var rel = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-      var speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-      var angle = rel * 1.0;
-      ball.vx = speed * Math.sin(angle);
-      ball.vy = -Math.abs(speed * Math.cos(angle));
-      ball.y = paddle.y - ball.r - 1;
+    if (ball.x < 0.5 || ball.x > W - 0.5) { ball.vx *= -1; ball.x = Math.max(0.5, Math.min(W - 0.5, ball.x)); playSound("bounce"); }
+    if (ball.y < 0.5) { ball.vy *= -1; ball.y = 0.5; playSound("bounce"); }
+    if (ball.y > 18.5 && ball.vy > 0 && Math.abs(ball.x - paddle.x) < 2.2) {
+      ball.vy *= -1;
+      ball.vx += (ball.x - paddle.x) * 0.8;
+      if (ball.vx > 12) ball.vx = 12;
+      if (ball.vx < -12) ball.vx = -12;
+      ball.y = 18.5;
+      playSound("bounce");
     }
+    if (ball.y > H) { loseLife(); }
     for (var i = bricks.length - 1; i >= 0; i--) {
-      var b = bricks[i];
-      if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w && ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
-        var prevX = ball.x - ball.vx * dt, prevY = ball.y - ball.vy * dt;
-        if (prevY + ball.r <= b.y || prevY - ball.r >= b.y + b.h) ball.vy = -ball.vy;
-        else ball.vx = -ball.vx;
-        score += b.points;
+      var br = bricks[i];
+      if (Math.abs(ball.x - br.x) < 1.6 && Math.abs(ball.y - br.y) < 0.9) {
+        spawnBurst(br.x, br.y, br.color);
+        scene.remove(br.mesh);
         bricks.splice(i, 1);
+        score += 100;
+        ball.vy *= -1;
+        playSound("hit");
         break;
       }
     }
-    if (ball.y > H + 20) {
-      loseLife();
-      draw();
-      if (state === "playing") requestAnimationFrame(loop);
-      return;
-    }
-    if (bricks.length === 0) {
+    if (state === "playing" && bricks.length === 0) {
+      score += 1000;
+      updateHud();
       if (level >= 5) {
         state = "clear";
-        updateHud();
-        msgEl.textContent = "클리어! 모든 레벨을 깼습니다. 점수 " + score + "점, 최고기록 " + best + "점.";
-        draw();
-        return;
+        playSound("powerup");
+        msgEl.textContent = "클리어! 모든 레벨을 깨셨습니다. 점수 " + score + "점.";
+      } else {
+        level += 1;
+        playSound("powerup");
+        buildLevel(level);
+        msgEl.textContent = "레벨 " + level + " 시작! 공 발사 버튼을 누르세요.";
       }
-      level += 1;
-      updateHud();
-      buildBricks(level);
-      resetBall();
-      msgEl.textContent = "레벨 " + level + " 시작! 공을 발사하세요.";
     }
   }
   updateHud();
-  draw();
-  requestAnimationFrame(loop);
-}
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = "#050816";
-  ctx.fillRect(0, 0, W, H);
-  bricks.forEach(function (b) {
-    ctx.fillStyle = b.color;
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-  });
-  ctx.fillStyle = "#4dd2ff";
-  ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-  ctx.fillStyle = "#fff";
-  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
+  syncMeshes();
+  updateParticles(dt);
+  if (renderer) renderer.render(scene, camera);
+  if (state === "playing") requestAnimationFrame(loop);
 }
 document.getElementById("startBtn").addEventListener("click", startGame);
 document.getElementById("launchBtn").addEventListener("click", launch);
@@ -210,32 +287,43 @@ document.getElementById("pauseBtn").addEventListener("click", function () {
 window.addEventListener("keydown", function (ev) {
   if (["ArrowLeft", "ArrowRight", " "].indexOf(ev.key) >= 0) ev.preventDefault();
   keys[ev.key] = true;
-  if (ev.key === " ") launch();
+  if (ev.key === " " && state === "playing") launch();
   if (ev.key === "Enter" && (state === "ready" || state === "over" || state === "clear")) startGame();
 });
 window.addEventListener("keyup", function (ev) { keys[ev.key] = false; });
 function canvasPos(ev) {
   var r = canvas.getBoundingClientRect();
   var touch = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
-  return (touch.clientX - r.left) * (W / r.width);
+  return { x: (touch.clientX - r.left) / r.width * W, y: (touch.clientY - r.top) / r.height * H };
 }
 canvas.addEventListener("mousemove", function (ev) {
-  paddle.x = Math.max(0, Math.min(W - paddle.w, canvasPos(ev) - paddle.w / 2));
+  var p = canvasPos(ev);
+  paddle.x = Math.max(2, Math.min(W - 2, p.x));
 });
 canvas.addEventListener("touchstart", function (ev) {
   ev.preventDefault();
-  paddle.x = Math.max(0, Math.min(W - paddle.w, canvasPos(ev) - paddle.w / 2));
+  var p = canvasPos(ev);
+  paddle.x = Math.max(2, Math.min(W - 2, p.x));
   if (state === "ready") startGame();
-  else launch();
 }, { passive: false });
 canvas.addEventListener("touchmove", function (ev) {
   ev.preventDefault();
-  paddle.x = Math.max(0, Math.min(W - paddle.w, canvasPos(ev) - paddle.w / 2));
+  var p = canvasPos(ev);
+  paddle.x = Math.max(2, Math.min(W - 2, p.x));
 }, { passive: false });
-canvas.addEventListener("click", function () { launch(); });
-resetGame();
-state = "ready";
-draw();
+if (typeof THREE !== "undefined") {
+  if (init3D()) {
+    resetGame();
+    state = "ready";
+    syncMeshes();
+    renderer.render(scene, camera);
+  } else {
+    msgEl.textContent = "WebGL을 사용할 수 없어 3D 게임을 실행할 수 없습니다. 브라우저에서 WebGL을 켜고 페이지를 새로고침하세요.";
+    updateHud();
+  }
+} else {
+  updateHud();
+}
 </script>
 </body>
 </html>

@@ -15,17 +15,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../assets/arcade/arcade.css?v=2">
-<style>:root{--accent:#7dff9b;--accent-ink:#04170a}</style>
+<style>:root{--accent:#7dff9b;--accent-ink:#04170a;--ar:125,255,155}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
 </head>
 <body class="g" data-state="ready">
 <div class="g-shell">
   <header class="g-top">
-    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>아케이드</a>
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
     <div class="g-name"><small>STAGE 02</small>네온 스네이크</div>
     <div class="g-icons">
       <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
       <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
     </div>
   </header>
@@ -34,9 +35,11 @@
     <aside class="g-side">
       <div class="g-card"><h3>CONTROLS</h3>
         <div class="g-keys">
-          <div><kbd>↑↓←→</kbd><kbd>WASD</kbd> 방향</div>
-          <div><kbd>스와이프</kbd> 터치 조작</div>
-          <div><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리</div>
+          <div class="k-only"><kbd>↑↓←→</kbd><kbd>WASD</kbd> 방향</div>
+          <div class="t-only"><kbd>스와이프</kbd> 화면을 밀어 방향 전환</div>
+          <div class="t-only"><kbd>▲</kbd> 방향 버튼도 사용 가능</div>
+          <div class="k-only"><kbd>스와이프</kbd> 터치 조작</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
         </div>
       </div>
       <div class="g-card"><h3>RULES</h3>
@@ -67,7 +70,7 @@
         </div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
-        <p class="ov-hint">화면 아무 곳이나 탭 · 스페이스</p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
       </section>
 
       <section class="g-ov" id="ovPause" aria-label="일시정지">

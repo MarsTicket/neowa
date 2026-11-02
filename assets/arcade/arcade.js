@@ -207,14 +207,43 @@
     S.ctx = S.canvas.getContext('2d');
     S.scale = 1;
     var body = document.body;
-    if (window.matchMedia && matchMedia('(pointer:coarse)').matches) body.classList.add('touch');
+    // 터치 화면 판별: 휴대폰·태블릿·테슬라 차량 화면 (마우스가 없는 기기)
+    var mm = function (q) { return window.matchMedia && matchMedia(q).matches; };
+    var isTouch = mm('(pointer:coarse)') || mm('(any-pointer:coarse)') || (navigator.maxTouchPoints > 0 && !mm('(pointer:fine)')) || /Tesla\//.test(navigator.userAgent);
+    if (isTouch) body.classList.add('touch');
+    window.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch' && !body.classList.contains('touch')) { body.classList.add('touch'); S.fit(); }
+    }, true);
+    // 전체 화면 버튼 (지원하는 브라우저에서만 보임)
+    var de = document.documentElement;
+    var fsReq = de.requestFullscreen || de.webkitRequestFullscreen;
+    var fsExit = document.exitFullscreen || document.webkitExitFullscreen;
+    var fsEl = function () { return document.fullscreenElement || document.webkitFullscreenElement; };
+    if (fsReq && (document.fullscreenEnabled || document.webkitFullscreenEnabled)) body.classList.add('can-fs');
+    S.toggleFs = function () {
+      try {
+        if (fsEl()) fsExit.call(document);
+        else { var r = fsReq.call(de); if (r && r.catch) r.catch(function () {}); }
+      } catch (e) {}
+    };
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) {
+      document.addEventListener(ev, function () { body.classList.toggle('is-fs', !!fsEl()); setTimeout(S.fit, 60); });
+    });
     A.setMuted(muted);
     setState('ready');
     S.fit = function () {
-      var top = S.wrap.getBoundingClientRect();
+      // 가로 화면 + 터치 + 방향패드(스네이크)면 패드를 오른쪽에 둠
+      var hasPad = !!document.querySelector('.g-pad .pad');
+      var padSide = hasPad && body.classList.contains('touch') && window.innerWidth > window.innerHeight * 1.15;
+      body.classList.toggle('pad-side', padSide);
       var aw = S.wrap.clientWidth - 24, ah = S.wrap.clientHeight - 16;
       var ar = S.W / S.H;
-      var wide = aw > 900 && aw - ah * ar > 520;
+      if (padSide) {
+        var pb = Math.max(56, Math.min(96, Math.floor(window.innerHeight * 0.13)));
+        body.style.setProperty('--pb', pb + 'px');
+        aw -= 2 * (pb * 3 + 20 + 40); // 좌우 대칭으로 패드 자리 비움
+      }
+      var wide = !padSide && aw > 900 && aw - ah * ar > 520;
       S.wrap.classList.toggle('wide', wide);
       if (wide) aw -= 2 * (220 + 28);
       var w = Math.min(aw, ah * ar), h = w / ar;
@@ -223,7 +252,7 @@
       var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
       S.canvas.width = Math.round(w * dpr); S.canvas.height = Math.round(h * dpr);
       S.scale = (w * dpr) / S.W; S.cssScale = w / S.W;
-      void top;
+      if (cfg.onResize) cfg.onResize();
     };
     window.addEventListener('resize', S.fit);
     window.addEventListener('orientationchange', function () { setTimeout(S.fit, 200); });
@@ -289,7 +318,7 @@
         if (k < 1) requestAnimationFrame(count);
       })();
       if (window.gtag) try { gtag('event', 'game_over', { game_name: cfg.id, score: score }); } catch (e) {}
-      setTimeout(function () { var b = document.querySelector('#ovOver .btn-p'); if (b) b.focus({ preventScroll: true }); }, 400);
+      if (!body.classList.contains('touch')) setTimeout(function () { var b = document.querySelector('#ovOver .btn-p'); if (b) b.focus({ preventScroll: true }); }, 400);
     };
 
     S.banner = function (big, small) {
@@ -309,6 +338,7 @@
       else if (act === 'resume') S.resume();
       else if (act === 'pause') S.pause();
       else if (act === 'mute') { A.setMuted(!A.isMuted()); if (!A.isMuted()) A.sfx('click'); }
+      else if (act === 'fs') S.toggleFs();
     });
     // 시작 화면은 어디를 눌러도 시작
     var ovStart = document.getElementById('ovStart');
@@ -325,6 +355,7 @@
       }
       if (k === 'p' || k === 'P' || k === 'Escape') { e.preventDefault(); S.togglePause(); return; }
       if (k === 'm' || k === 'M') { A.setMuted(!A.isMuted()); return; }
+      if (k === 'f' || k === 'F') { S.toggleFs(); return; }
       if ((k === 'r' || k === 'R') && S.state === 'over') { S.start(); return; }
       if (S.state === 'playing' && cfg.keydown) cfg.keydown(e);
       if (/^Arrow/.test(k) || k === ' ') e.preventDefault();

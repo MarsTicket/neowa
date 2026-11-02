@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://neowa.kr/</loc></url>
+  <url><loc>https://neowa.kr/shooting/</loc></url>
+  <url><loc>https://neowa.kr/snake/</loc></url>
+  <url><loc>https://neowa.kr/breakout/</loc></url>
+  <url><loc>https://neowa.kr/story/</loc></url>
   <url><loc>https://neowa.kr/about.html</loc></url>
   <url><loc>https://neowa.kr/characters.html</loc></url>
   <url><loc>https://neowa.kr/contact.html</loc></url>

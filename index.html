@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c14">
 <title>너와 아케이드</title>
 <meta name="description" content="터치만으로 플레이할 수 있는 아케이드 게임 모음. 종스크롤 슈팅, 스네이크, 벽돌깨기, 그리고 스토리 게임 한 편.">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
@@ -13,112 +14,184 @@ gtag('js', new Date());
 gtag('config', 'G-T386KYRRLK');
 </script>
 <style>
+:root{
+  --bg:#0a0c14;--surface:#12152a;--surface-2:#181c36;--line:#232744;--line-2:#3a4066;
+  --text:#f2f3f7;--sub:#c8cdea;--muted:#9aa1c2;--blue:#3182f6;
+  --cyan:#7ee0ff;--green:#7ee787;--amber:#ffb020;--pink:#ff8fb8;
+  --r-lg:20px;--r-md:14px;--shadow:0 20px 50px rgba(0,0,0,.45);
+}
 *{box-sizing:border-box}
-body{margin:0;background:#0a0c14;color:#f2f3f7;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(900px 500px at 85% -10%,rgba(49,130,246,.16),transparent 60%),radial-gradient(700px 400px at -10% 30%,rgba(126,224,255,.07),transparent 60%);z-index:-1}
 a{color:inherit;text-decoration:none}
-header{max-width:980px;margin:0 auto;padding:22px 24px;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:20px;font-weight:900;letter-spacing:-0.5px}
-.logo span{color:#7ee0ff}
-nav a{display:inline-block;padding:12px 10px;font-size:14px;font-weight:700;color:#c8cdea;min-height:44px;line-height:20px}
-main{max-width:980px;margin:0 auto;padding:8px 24px 48px}
-.hero{display:grid;grid-template-columns:1.15fr 1fr;gap:32px;align-items:center;padding:24px 0 40px;border-bottom:1px solid #232744}
-@media(max-width:720px){.hero{grid-template-columns:1fr;gap:20px}}
-.hero-art{border-radius:16px;overflow:hidden;background:#16204d;aspect-ratio:16/9}
+.container{max-width:1040px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+header{display:flex;justify-content:space-between;align-items:center;padding-top:18px;padding-bottom:18px}
+.logo{font-size:20px;font-weight:900;letter-spacing:-.5px;display:flex;align-items:center;gap:10px;min-height:44px}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#0a0c14;font-size:15px;font-weight:900}
+.logo span{color:var(--cyan)}
+.logo .logo-mark{color:#0a0c14}
+nav{display:flex;gap:4px}
+nav a{display:inline-flex;align-items:center;padding:0 14px;font-size:14px;font-weight:700;color:var(--sub);min-height:44px;border-radius:999px}
+nav a:hover{background:var(--surface)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#0a0c14;font-weight:900;font-size:15px;padding:0 26px;border-radius:999px;min-height:48px;border:1px solid transparent;transition:transform .12s ease,background .12s ease}
+.btn:active{transform:scale(.97)}
+.btn.outline{background:transparent;color:var(--text);border-color:var(--line-2)}
+.btn.outline:hover{background:var(--surface)}
+.btn.sm{min-height:44px;padding:0 20px;font-size:14px}
+.hero{display:grid;grid-template-columns:1.15fr 1fr;gap:36px;align-items:center;padding:20px 0 44px}
+.hero-art{position:relative;border-radius:var(--r-lg);overflow:hidden;background:#16204d;aspect-ratio:16/9;box-shadow:var(--shadow);border:1px solid var(--line)}
 .hero-art img{width:100%;height:100%;object-fit:cover;display:block}
-.eyebrow{font-size:13px;font-weight:800;letter-spacing:1px;color:#7ee0ff;text-transform:uppercase;margin:0 0 12px}
-.hero h1{margin:0 0 12px;font-size:40px;line-height:1.15;letter-spacing:-1px}
-.hero p{margin:0 0 24px;color:#c8cdea;line-height:1.7;font-size:16px}
-.btn{display:inline-block;background:#fff;color:#0a0c14;font-weight:900;padding:14px 26px;border-radius:999px;min-height:48px;line-height:20px}
-.btn.outline{background:transparent;color:#fff;border:1px solid #3a4066}
-section{padding:36px 0;border-bottom:1px solid #232744}
-section h2{margin:0 0 8px;font-size:24px;letter-spacing:-0.5px}
-.section-note{margin:0 0 24px;color:#9aa1c2;line-height:1.6}
-.pick{display:grid;grid-template-columns:48px 240px 1fr auto;gap:20px;align-items:center;padding:20px 0;border-top:1px solid #1a1e33}
-.pick:first-of-type{border-top:0}
-@media(max-width:720px){.pick{grid-template-columns:32px 1fr;grid-template-rows:auto auto auto}.pick .thumb{grid-column:2}.pick .btn{grid-column:2;justify-self:start}}
-.num{font-size:28px;font-weight:900;color:#3a4066}
-.thumb{border-radius:12px;overflow:hidden;background:#16204d;aspect-ratio:16/9}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.pick-body h3{margin:0 0 6px;font-size:20px}
-.meta{color:#9aa1c2;font-size:13px;margin-bottom:8px}
-.pick-body p{margin:0;color:#c8cdea;line-height:1.6}
-.story{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:center}
-@media(max-width:720px){.story{grid-template-columns:1fr}}
+.hero-art .tag{position:absolute;left:14px;top:14px;background:rgba(10,12,20,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.12);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;color:var(--cyan)}
+.eyebrow{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;margin:0 0 12px}
+.hero h1{margin:0 0 14px;font-size:44px;line-height:1.12;letter-spacing:-1.2px}
+.hero p{margin:0 0 24px;color:var(--sub);line-height:1.7;font-size:16px}
+.hero .eyebrow{color:var(--cyan);margin-bottom:12px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 22px;padding:0;list-style:none}
+.chips li{font-size:13px;font-weight:700;color:var(--sub);background:var(--surface);border:1px solid var(--line);padding:7px 12px;border-radius:999px}
+section{padding:40px 0;border-top:1px solid var(--line)}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+section h2{margin:0 0 6px;font-size:26px;letter-spacing:-.5px}
+.section-note{margin:0;color:var(--muted);line-height:1.6}
+.list{display:flex;flex-direction:column;gap:12px}
+.pick{display:grid;grid-template-columns:44px 220px 1fr auto;gap:22px;align-items:center;padding:14px 18px 14px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);transition:border-color .15s ease,transform .15s ease}
+.pick:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.num{font-size:26px;font-weight:900;color:var(--line-2);text-align:center;font-variant-numeric:tabular-nums}
+.thumb{border-radius:var(--r-md);overflow:hidden;background:#16204d;aspect-ratio:16/9;display:block}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+.pick:hover .thumb img{transform:scale(1.04)}
+.pick-body h3{margin:0 0 6px;font-size:20px;letter-spacing:-.3px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.meta span{font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
+.meta .genre{color:var(--accent,var(--cyan));background:rgba(255,255,255,.05)}
+.meta .best{color:var(--sub)}
+.pick-body p{margin:0;color:var(--sub);line-height:1.6;font-size:15px}
+.story{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:center;padding:14px 18px 14px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
+.story-art{aspect-ratio:16/9;border-radius:var(--r-md);background:radial-gradient(120% 90% at 20% 10%,#ff8fb8 0%,transparent 55%),radial-gradient(120% 90% at 90% 100%,#7a6bff 0%,transparent 60%),#241a3a;display:flex;align-items:flex-end;padding:14px;position:relative;overflow:hidden}
+.story-art::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 14px)}
+.story-art strong{position:relative;z-index:1;font-size:17px;line-height:1.3;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4)}
 .story h3{margin:0 0 8px;font-size:20px}
-.story p{margin:0 0 16px;color:#c8cdea;line-height:1.7}
-.note{margin-top:32px;color:#9aa1c2;line-height:1.7;font-size:14px}
-footer{max-width:980px;margin:0 auto;padding:0 24px 40px;color:#9aa1c2;font-size:13px;line-height:1.7}
+.story p{margin:0 0 16px;color:var(--sub);line-height:1.7}
+.info{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.info div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px}
+.info b{display:block;font-size:15px;margin-bottom:4px}
+.info span{color:var(--muted);font-size:14px;line-height:1.6}
+footer{padding-top:28px;padding-bottom:max(40px,env(safe-area-inset-bottom));color:var(--muted);font-size:13px;line-height:1.7}
+@media(max-width:860px){
+  .pick{grid-template-columns:180px 1fr;grid-template-areas:"thumb body" "thumb cta";row-gap:12px;padding:14px}
+  .pick .num{display:none}
+  .pick .thumb{grid-area:thumb}
+  .pick .pick-body{grid-area:body}
+  .pick .btn{grid-area:cta;justify-self:start}
+}
+@media(max-width:640px){
+  .hero{grid-template-columns:1fr;gap:20px;padding-top:4px}
+  .hero h1{font-size:34px}
+  .pick{grid-template-columns:1fr;grid-template-areas:"thumb" "body" "cta"}
+  .pick .btn{justify-self:stretch}
+  .story{grid-template-columns:1fr}
+  .info{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<header>
-<div class="logo">너와 <span>아케이드</span></div>
+<header class="container">
+<a class="logo" href="./"><span class="logo-mark" aria-hidden="true">N</span>너와 <span>아케이드</span></a>
 <nav aria-label="바로가기">
 <a href="#games">게임</a>
 <a href="#story">스토리</a>
 </nav>
 </header>
-<main>
+<main class="container">
 <div class="hero">
-<div class="hero-art"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트"></div>
+<a class="hero-art" href="shooting/"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트"><span class="tag">추천 게임</span></a>
 <div>
 <p class="eyebrow">Featured</p>
 <h1>별빛 수호대</h1>
 <p>종스크롤 슈팅. 드래그로 이동하고 자동으로 발사합니다. 웨이브를 깨고 최고기록에 도전하세요.</p>
+<ul class="chips"><li>터치 드래그</li><li>자동 발사</li><li>목숨 3개</li></ul>
+<div class="hero-actions">
 <a class="btn" href="shooting/">지금 플레이</a>
+<a class="btn outline" href="#games">전체 게임 보기</a>
+</div>
 </div>
 </div>
 
 <section id="games">
+<div class="section-head">
+<div>
 <h2>게임</h2>
 <p class="section-note">터치만으로 플레이할 수 있는 세 편입니다. 별도 설치나 로그인이 필요 없습니다.</p>
-<div class="pick">
+</div>
+</div>
+<div class="list">
+<div class="pick" style="--accent:var(--cyan)">
 <div class="num">01</div>
-<div class="thumb"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트"></div>
+<a class="thumb" href="shooting/"><img src="assets/shooting-card.jpg" alt="별빛 수호대 아트"></a>
 <div class="pick-body">
 <h3>별빛 수호대</h3>
-<div class="meta">슈팅</div>
+<div class="meta"><span class="genre">슈팅</span><span class="best" data-key="neowa_hub_shooting_high">최고기록 0</span></div>
 <p>종스크롤 슈팅. 웨이브를 깨고 점수를 쌓으세요.</p>
 </div>
-<a class="btn outline" href="shooting/">플레이</a>
+<a class="btn outline sm" href="shooting/">플레이</a>
 </div>
-<div class="pick">
+<div class="pick" style="--accent:var(--green)">
 <div class="num">02</div>
-<div class="thumb"><img src="assets/snake-card.jpg" alt="스네이크 아트"></div>
+<a class="thumb" href="snake/"><img src="assets/snake-card.jpg" alt="스네이크 아트"></a>
 <div class="pick-body">
 <h3>스네이크</h3>
-<div class="meta">액션</div>
+<div class="meta"><span class="genre">액션</span><span class="best" data-key="neowa_hub_snake_high">최고기록 0</span></div>
 <p>스와이프와 화면 방향 버튼으로 뱀을 움직이세요. 먹이를 먹을수록 빨라집니다.</p>
 </div>
-<a class="btn outline" href="snake/">플레이</a>
+<a class="btn outline sm" href="snake/">플레이</a>
 </div>
-<div class="pick">
+<div class="pick" style="--accent:var(--amber)">
 <div class="num">03</div>
-<div class="thumb"><img src="assets/breakout-card.jpg" alt="벽돌깨기 아트"></div>
+<a class="thumb" href="breakout/"><img src="assets/breakout-card.jpg" alt="벽돌깨기 아트"></a>
 <div class="pick-body">
 <h3>벽돌깨기</h3>
-<div class="meta">액션</div>
+<div class="meta"><span class="genre">액션</span><span class="best" data-key="neowa_hub_breakout_high">최고기록 0</span></div>
 <p>드래그로 패들을 움직이세요. 벽돌을 모두 깨면 다음 레벨로 갑니다.</p>
 </div>
-<a class="btn outline" href="breakout/">플레이</a>
+<a class="btn outline sm" href="breakout/">플레이</a>
+</div>
 </div>
 </section>
 
 <section id="story">
+<div class="section-head">
+<div>
 <h2>스토리</h2>
 <p class="section-note">카탈로그로 남겨 둔 스토리 게임 한 편입니다.</p>
+</div>
+</div>
 <div class="story">
-<div class="thumb"><img src="assets/images/title_key.webp" alt="방과 후, 너와 타이틀 아트"></div>
+<a class="story-art" href="story/" aria-label="방과 후, 너와 스토리로 이동"><strong>방과 후,<br>너와</strong></a>
 <div>
 <h3>방과 후, 너와(스토리 게임)</h3>
 <p>선택지 분기형 비주얼노벨. 전학 첫 학기, 방과 후의 선택이 이야기를 바꿉니다. 약 70분에서 95분, 엔딩 7개.</p>
-<a class="btn outline" href="story/">스토리로 이동</a>
+<a class="btn outline sm" href="story/">스토리로 이동</a>
 </div>
 </div>
 </section>
 
-<p class="note">키보드 없이 터치만으로 플레이할 수 있습니다. 가로 화면에 최적화했습니다. 테슬라 차량 브라우저에서도 터치로 플레이 가능합니다. 최고기록은 이 브라우저에만 저장됩니다.</p>
+<section aria-label="플레이 안내">
+<div class="info">
+<div><b>터치만으로 완주</b><span>키보드 없이 터치만으로 플레이할 수 있습니다.</span></div>
+<div><b>가로 화면 최적화</b><span>테슬라 차량 브라우저에서도 터치로 플레이 가능합니다.</span></div>
+<div><b>기록은 이 기기에</b><span>최고기록은 이 브라우저에만 저장됩니다.</span></div>
+</div>
+</section>
 </main>
-<footer>너와 아케이드. 모든 게임은 서버나 로그인 없이 브라우저에서 바로 실행됩니다.</footer>
+<footer class="container">너와 아케이드. 모든 게임은 서버나 로그인 없이 브라우저에서 바로 실행됩니다.</footer>
+<script>
+document.querySelectorAll(".best[data-key]").forEach(function (el) {
+  var v = 0;
+  try { v = parseInt(localStorage.getItem(el.getAttribute("data-key")) || "0", 10) || 0; } catch (e) { v = 0; }
+  if (v > 0) el.textContent = "최고기록 " + v.toLocaleString("ko-KR");
+  else el.textContent = "첫 기록에 도전";
+});
+</script>
 </body>
 </html>

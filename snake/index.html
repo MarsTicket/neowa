@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>스네이크 - 너와 아케이드</title>
-<meta name="description" content="스네이크. 방향키, 스와이프, 화면 방향 버튼으로 플레이하세요.">
+<meta name="description" content="3D 스네이크. 방향키, 스와이프, 화면 방향 버튼으로 플레이하세요.">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -12,6 +12,7 @@ function gtag(){window.dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-T386KYRRLK');
 </script>
+<script src="../assets/three.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
@@ -53,6 +54,7 @@ p{color:#c8cdea;line-height:1.6}
 <div class="controls">
 <button id="startBtn">게임 시작</button>
 <button id="pauseBtn" class="secondary">일시정지</button>
+<button id="soundBtn" class="secondary">소리 끄기</button>
 </div>
 <p>먹이를 먹으면 점수가 오르고 속도 단계가 올라갑니다. 벽이나 자기 몸에 부딪히면 게임이 끝납니다. 방향을 바로 뒤로 꺾을 수는 없습니다.</p>
 </div>
@@ -61,8 +63,6 @@ p{color:#c8cdea;line-height:1.6}
 <script>
 "use strict";
 var canvas = document.getElementById("game");
-var ctx = canvas.getContext("2d");
-var COLS = 20, ROWS = 20, CELL = 30;
 var scoreEl = document.getElementById("score");
 var speedEl = document.getElementById("speed");
 var bestEl = document.getElementById("best");
@@ -71,6 +71,88 @@ var BEST_KEY = "neowa_hub_snake_high";
 var best = 0;
 try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
 bestEl.textContent = best;
+var soundOn = true;
+var sounds = {};
+["coin", "gameover", "click"].forEach(function (n) {
+  var a = new Audio("../assets/sounds/" + n + ".wav");
+  a.preload = "auto";
+  sounds[n] = a;
+});
+function playSound(n) {
+  if (!soundOn) return;
+  try {
+    var a = sounds[n];
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(function () {});
+  } catch (e) {}
+}
+document.getElementById("soundBtn").addEventListener("click", function (ev) {
+  soundOn = !soundOn;
+  ev.target.textContent = soundOn ? "소리 끄기" : "소리 켜기";
+});
+if (typeof THREE === "undefined") {
+  msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요.";
+}
+var COLS = 20, ROWS = 20;
+var scene = null, camera = null, renderer = null;
+var snakeGroup = null, foodMesh = null, flashMesh = null;
+var flashUntil = 0, flashX = 0, flashY = 0;
+var bodyGeo = null, headGeo = null, foodGeo = null;
+function init3D() {
+  if (typeof THREE === "undefined") return false;
+  if (renderer) return true;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x07130a);
+  camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  camera.position.set(0, 20, 14);
+  camera.lookAt(0, 0, 0);
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(600, 600, false);
+  } catch (e) {
+    renderer = null;
+    return false;
+  }
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  var dir = new THREE.DirectionalLight(0xffffff, 1.0);
+  dir.position.set(5, 10, 5);
+  scene.add(dir);
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), new THREE.MeshStandardMaterial({ color: 0x0a1a10, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.6;
+  scene.add(ground);
+  var grid = new THREE.GridHelper(20, 20, 0x2a4a3a, 0x1a2a22);
+  grid.position.y = -0.5;
+  scene.add(grid);
+  bodyGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+  headGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+  foodGeo = new THREE.SphereGeometry(0.55, 16, 16);
+  snakeGroup = new THREE.Group();
+  scene.add(snakeGroup);
+  foodMesh = new THREE.Mesh(foodGeo, new THREE.MeshStandardMaterial({ color: 0xff5a5a, emissive: 0xff2222, emissiveIntensity: 0.7, roughness: 0.3 }));
+  scene.add(foodMesh);
+  flashMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffff99, emissive: 0xffff66, emissiveIntensity: 1.2, transparent: true, opacity: 0.9 }));
+  flashMesh.visible = false;
+  scene.add(flashMesh);
+  return true;
+}
+function draw() {
+  if (!renderer) return;
+  while (snakeGroup.children.length > 0) snakeGroup.remove(snakeGroup.children[0]);
+  snake.forEach(function (s, idx) {
+    var m = new THREE.Mesh(idx === 0 ? headGeo : bodyGeo, new THREE.MeshStandardMaterial({ color: idx === 0 ? 0x7ee787 : 0x2f9e44, emissive: idx === 0 ? 0x2a5a2a : 0x0a2a12, emissiveIntensity: 0.4, roughness: 0.4 }));
+    m.position.set(s.x - 10 + 0.5, 0, s.y - 10 + 0.5);
+    snakeGroup.add(m);
+  });
+  if (food) foodMesh.position.set(food.x - 10 + 0.5, 0, food.y - 10 + 0.5);
+  if (flashMesh) {
+    flashMesh.visible = Date.now() < flashUntil;
+    if (flashMesh.visible) flashMesh.position.set(flashX - 10 + 0.5, 0, flashY - 10 + 0.5);
+  }
+  renderer.render(scene, camera);
+}
 var state = "ready";
 var snake = [], dir = { x: 1, y: 0 }, nextDir = { x: 1, y: 0 }, food = null, score = 0, timer = null;
 function speedMs() { return Math.max(70, 160 - Math.floor(score / 10) * 10); }
@@ -110,6 +192,8 @@ function step() {
   snake.unshift(head);
   if (food && head.x === food.x && head.y === food.y) {
     score += 10;
+    playSound("coin");
+    flashX = food.x; flashY = food.y; flashUntil = Date.now() + 300;
     placeFood();
   } else {
     snake.pop();
@@ -120,6 +204,8 @@ function step() {
   timer = setInterval(step, speedMs());
 }
 function startGame() {
+  if (!init3D()) { msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요."; return; }
+  playSound("click");
   resetGame();
   state = "playing";
   msgEl.textContent = "플레이 중입니다.";
@@ -129,32 +215,15 @@ function startGame() {
 function gameOver() {
   state = "over";
   clearInterval(timer);
+  playSound("gameover");
   msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 시작 버튼을 눌러 다시 플레이하세요.";
   draw();
 }
 function setDir(x, y) {
   if (state !== "playing") return;
-  if (x === -nextDir.x && y === -nextDir.y) return;
-  if (x === nextDir.x && y === nextDir.y) return;
+  if (x === -dir.x && y === -dir.y) return;
+  if (x === dir.x && y === dir.y) return;
   nextDir = { x: x, y: y };
-}
-function draw() {
-  ctx.clearRect(0, 0, 600, 600);
-  ctx.fillStyle = "#07130a";
-  ctx.fillRect(0, 0, 600, 600);
-  ctx.strokeStyle = "#12281a";
-  for (var i = 0; i <= COLS; i++) {
-    ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, 600); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(600, i * CELL); ctx.stroke();
-  }
-  if (food) {
-    ctx.fillStyle = "#ff5a5a";
-    ctx.beginPath(); ctx.arc(food.x * CELL + 15, food.y * CELL + 15, 11, 0, Math.PI * 2); ctx.fill();
-  }
-  snake.forEach(function (s, idx) {
-    ctx.fillStyle = idx === 0 ? "#7ee787" : "#2f9e44";
-    ctx.fillRect(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4);
-  });
 }
 document.getElementById("startBtn").addEventListener("click", startGame);
 document.getElementById("pauseBtn").addEventListener("click", function () {
@@ -193,8 +262,17 @@ canvas.addEventListener("touchend", function (ev) {
   else setDir(0, dy > 0 ? 1 : -1);
   touchX = null; touchY = null;
 });
-resetGame();
-state = "ready";
+if (typeof THREE !== "undefined") {
+  if (init3D()) {
+    resetGame();
+    state = "ready";
+  } else {
+    msgEl.textContent = "WebGL을 사용할 수 없어 3D 게임을 실행할 수 없습니다. 브라우저에서 WebGL을 켜고 페이지를 새로고침하세요.";
+    updateHud();
+  }
+} else {
+  updateHud();
+}
 </script>
 </body>
 </html>

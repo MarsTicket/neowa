@@ -2,160 +2,64 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>방과 후, 너와</title>
-<meta name="google-adsense-account" content="ca-pub-2895947454673475">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2895947454673475" crossorigin="anonymous"></script>
-<meta name="description" content="전학 첫 학기, 방과 후의 선택이 그녀들과의 거리를 바꿉니다. 한 회 약 40–70분, 엔딩 7개의 웹 비주얼노벨.">
-<meta name="theme-color" content="#17141d">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="방과 후, 너와">
-<meta property="og:title" content="방과 후, 너와">
-<meta property="og:description" content="전학 첫 학기, 방과 후의 선택이 그녀들과의 거리를 바꿉니다. 한 회 약 40–70분, 엔딩 7개.">
-<meta property="og:url" content="https://neowa.kr/">
-<meta property="og:image" content="https://neowa.kr/assets/images/og.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:locale" content="ko_KR">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="방과 후, 너와">
-<meta name="twitter:description" content="전학 첫 학기, 방과 후의 선택이 그녀들과의 거리를 바꿉니다. 한 회 약 40–70분, 엔딩 7개.">
-<meta name="twitter:image" content="https://neowa.kr/assets/images/og.jpg">
-<link rel="icon" href="assets/favicon.png" type="image/png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=20261020">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>너와 아케이드</title>
+<meta name="description" content="터치만으로 플레이할 수 있는 아케이드 게임 모음. 종스크롤 슈팅, 스네이크, 벽돌깨기, 그리고 스토리 게임 한 편.">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>
-/* 광고와 통계 설정: 코드가 비어 있으면 해당 기능은 동작하지 않습니다. */
-window.NEOWA_CONFIG = {
-  gaId: 'G-T386KYRRLK',
-  adfit: { title: '', chapter: '', ending: '' }
-};
-(function () {
-  var id = window.NEOWA_CONFIG.gaId;
-  if (!id) return;
-  var s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
-  document.head.appendChild(s);
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function () { window.dataLayer.push(arguments); };
-  window.gtag('js', new Date());
-  window.gtag('config', id);
-})();
+window.dataLayer = window.dataLayer || [];
+function gtag(){window.dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-T386KYRRLK');
 </script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0f1220;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none}
+header{max-width:980px;margin:0 auto;padding:28px 20px 8px}
+h1{margin:0;font-size:36px;letter-spacing:-0.5px}
+header p{color:#c8cdea;line-height:1.6;margin:10px 0 0}
+main{max-width:980px;margin:0 auto;padding:16px 20px 40px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}h1{font-size:30px}}
+.card{background:#1b2038;border:1px solid #2f375f;border-radius:16px;padding:20px}
+.card h2{margin:0 0 8px;font-size:22px}
+.card p{margin:0 0 16px;color:#c8cdea;line-height:1.6}
+.card a{display:inline-block;background:#3182f6;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px;min-height:44px;line-height:20px}
+.card a:hover{background:#1f6fe0}
+.note{margin-top:20px;color:#9aa1c2;line-height:1.6;font-size:14px}
+footer{max-width:980px;margin:0 auto;padding:0 20px 32px;color:#9aa1c2;font-size:13px;line-height:1.6}
+</style>
 </head>
 <body>
-<div id="app">
-  <!-- 타이틀 -->
-  <section id="titleScreen" class="screen">
-    <img class="titleArt" src="assets/images/title_key.webp" alt="방과 후, 너와 대표 이미지">
-    <div class="titleShade"></div>
-    <div class="titleBox">
-      <h1>방과 후, 너와</h1>
-      <p class="tagline" id="taglineText">전학 첫 학기. 방과 후의 선택이, 그녀들과의 거리를 바꿉니다.</p>
-      <label class="nameLabel"><span id="nameLabelText">주인공 이름</span>
-        <input id="nameInput" type="text" maxlength="10" placeholder="김도현">
-      </label>
-      <button id="newGameBtn" class="mainBtn">새 게임</button>
-      <button id="continueBtn" class="subBtn">이어하기</button>
-      <button id="galleryBtn" class="subBtn">갤러리</button>
-      <div id="langBar" class="langBar" aria-label="Language"></div>
-      <p class="crawlIntro" id="crawlIntro">전학 첫 학기, 닷새 동안의 방과 후를 고르는 이야기입니다. 반장 한서연, 도서 위원 문채린, 방송부 노아린. 선택에 따라 엔딩은 일곱으로 갈라집니다.</p>
-      <p class="notice" id="noticeText">15세 이용가 수준의 학원 드라마입니다. 한 회 약 40–70분, 엔딩 7개.</p>
-      <p class="notice" id="autosaveHint">이어하기는 약 5초마다 남는 자동 저장을 불러옵니다. 슬롯 저장과는 별개입니다.</p>
-      <p class="notice" id="updateNoticeText">업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.</p>
-      <p id="titleMsg" class="notice" role="status"></p>
-      <div id="adTitle" class="adSlot hidden"></div>
-      <nav class="footLinks" aria-label="사이트">
-        <a id="linkAbout" href="about.html">소개</a>
-        <a id="linkChars" href="characters.html">등장인물</a>
-        <a id="linkContact" href="contact.html">문의</a>
-        <a id="linkPrivacy" href="privacy.html">개인정보처리방침</a>
-      </nav>
-    </div>
-  </section>
-
-  <!-- 게임 -->
-  <section id="gameScreen" class="screen hidden">
-    <img id="bgImg" class="bgImg" alt="" width="1920" height="1280">
-    <img id="cgImg" class="cgImg hidden" alt="" width="1920" height="1280">
-    <img id="charImg" class="charImg hidden" alt="" width="1280" height="1920">
-    <div id="choiceBox" class="choiceBox hidden" aria-live="polite"></div>
-    <div class="topBar">
-      <button id="saveBtn" type="button">저장</button>
-      <button id="loadBtn" type="button">불러오기</button>
-      <button id="backlogBtn" type="button">백로그</button>
-      <button id="autoBtn" type="button" data-on="0" aria-pressed="false">자동</button>
-      <button id="skipBtn" type="button" data-on="0" aria-pressed="false">스킵</button>
-      <button id="settingsBtn" type="button">설정</button>
-      <button id="galBtn2" type="button">갤러리</button>
-      <button id="titleBtn" type="button">타이틀</button>
-    </div>
-    <div id="dialogueBox" class="dialogueBox">
-      <div id="dialogueLive" aria-live="polite" aria-atomic="true">
-        <div id="speakerName" class="speakerName"></div>
-        <p id="textBody" class="textBody"></p>
-      </div>
-      <div class="nextMark" id="nextMark" aria-hidden="true">▼</div>
-    </div>
-    <div id="chapterPanel" class="chapterPanel hidden" role="dialog" aria-modal="true" aria-labelledby="chapterLabel">
-      <p id="chapterLabel" class="chapterLabel"></p>
-      <button id="chapterContinueBtn" class="mainBtn" type="button">계속</button>
-    </div>
-    <div id="backlogPanel" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="backlogTitle">
-      <div class="backlogHead"><span id="backlogTitle">백로그</span><button id="backlogCloseBtn" type="button">닫기</button></div>
-      <div id="backlogList" class="backlogList"></div>
-    </div>
-    <div id="savePanel" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="savePanelTitle">
-      <div class="backlogHead"><span id="savePanelTitle">저장</span><button id="savePanelClose" type="button">닫기</button></div>
-      <p id="savePanelHint" class="panelHint"></p>
-      <div id="saveSlots"></div>
-      <p id="saveStatus" class="panelHint" role="status"></p>
-      <div id="overwriteBox" class="hidden">
-        <p id="overwriteText" class="panelHint"></p>
-        <button id="overwriteYes" class="mainBtn" type="button">덮어쓰기</button>
-        <button id="overwriteNo" class="subBtn" type="button">취소</button>
-      </div>
-    </div>
-    <div id="settingsPanel" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="backlogHead"><span id="settingsTitle">설정</span><button id="settingsClose" type="button">닫기</button></div>
-      <p id="speedLabel" class="panelHint">글자 속도</p>
-      <div id="speedSeg" class="seg" role="group"></div>
-      <p id="waitLabel" class="panelHint">자동 대기</p>
-      <div id="waitSeg" class="seg" role="group"></div>
-    </div>
-    <div id="titleConfirm" class="backlogPanel hidden" role="dialog" aria-modal="true" aria-labelledby="titleConfirmTitle">
-      <p id="titleConfirmTitle" class="chapterLabel">타이틀로 돌아갈까요?</p>
-      <p id="titleConfirmBody" class="panelHint">진행은 자동 저장됩니다.</p>
-      <button id="titleConfirmYes" class="mainBtn" type="button">돌아가기</button>
-      <button id="titleConfirmNo" class="subBtn" type="button">취소</button>
-    </div>
-  </section>
-
-  <!-- 갤러리 -->
-  <section id="galleryScreen" class="screen hidden">
-    <h2 id="galleryTitle">갤러리</h2>
-    <div id="galleryGrid" class="galleryGrid"></div>
-    <p id="endingList" class="endingList"></p>
-    <button id="galleryBackBtn" class="subBtn">돌아가기</button>
-  </section>
-
-  <!-- 엔딩 -->
-  <section id="endingScreen" class="screen hidden">
-    <div class="endingBox">
-      <p class="endingLabel">ENDING</p>
-      <h2 id="endingTitle"></h2>
-      <p id="endingAff" class="endingAff"></p>
-      <div id="adEnding" class="adSlot hidden"></div>
-      <button id="restartBtn" class="mainBtn">처음부터 다시</button>
-      <button id="endingGalleryBtn" class="subBtn">갤러리 보기</button>
-      <button id="endingTitleBtn" class="subBtn">타이틀로</button>
-    </div>
-  </section>
+<header>
+<h1>너와 아케이드</h1>
+<p>키보드 없이 터치만으로 플레이할 수 있는 게임 모음입니다. 가로 화면에 최적화했습니다. 테슬라 차량 브라우저에서도 터치로 플레이 가능합니다. 최고기록은 이 브라우저에만 저장됩니다.</p>
+</header>
+<main>
+<div class="grid">
+<div class="card">
+<h2>별빛 수호대</h2>
+<p>종스크롤 슈팅. 방향키로 이동하고 스페이스바로 발사하세요. 터치에서는 드래그로 이동하고 자동으로 발사합니다. 웨이브를 깨고 점수를 쌓으세요.</p>
+<a href="shooting/">플레이하기</a>
 </div>
-<script src="assets/scenario.js"></script>
-<script src="assets/engine.js?v=20261020"></script>
+<div class="card">
+<h2>스네이크</h2>
+<p>방향키, 스와이프, 화면 방향 버튼으로 뱀을 움직이세요. 먹이를 먹을수록 속도가 빨라집니다. 벽이나 몸에 부딪히면 끝입니다.</p>
+<a href="snake/">플레이하기</a>
+</div>
+<div class="card">
+<h2>벽돌깨기</h2>
+<p>마우스, 터치, 방향키로 패들을 움직이세요. 공으로 벽돌을 모두 깨면 다음 레벨로 갑니다. 목숨은 3개입니다.</p>
+<a href="breakout/">플레이하기</a>
+</div>
+<div class="card">
+<h2>방과 후, 너와(스토리 게임)</h2>
+<p>선택지 분기형 비주얼노벨. 전학 첫 학기, 방과 후의 선택이 이야기를 바꿉니다. 약 70분에서 95분, 엔딩 7개. 카탈로그로 남겨 둔 스토리 게임입니다.</p>
+<a href="story/">플레이하기</a>
+</div>
+</div>
+<p class="note">게임을 시작하면 점수와 최고기록이 화면에 표시됩니다. 게임이 끝나면 다시 시작 버튼을 눌러 바로 다시 플레이할 수 있습니다.</p>
+</main>
+<footer>너와 아케이드. 모든 게임은 서버나 로그인 없이 브라우저에서 바로 실행됩니다.</footer>
 </body>
 </html>

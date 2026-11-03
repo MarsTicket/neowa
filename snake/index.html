@@ -3,598 +3,391 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0c14">
-<title>스네이크 - 너와 아케이드</title>
-<meta name="description" content="3D 스네이크. 방향키, 스와이프, 화면 방향 버튼으로 플레이하세요.">
+<meta name="theme-color" content="#05060c">
+<title>네온 스네이크 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 스네이크. 스와이프와 방향키로 움직이고, 벽을 넘으면 반대편으로 나옵니다. 황금 먹이를 노려 최고기록에 도전하세요.">
+<meta property="og:title" content="네온 스네이크 · 너와 아케이드">
+<meta property="og:description" content="스와이프 한 번으로 하는 네온 스네이크. 황금 먹이를 노려 최고기록에 도전하세요.">
+<meta property="og:image" content="https://neowa.kr/assets/snake-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#7dff9b;--accent-ink:#04170a;--ar:125,255,155}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){window.dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-T386KYRRLK');
-</script>
-<script src="../assets/three.min.js"></script>
-<style>
-:root{
-  --bg:#0a0c14;--surface:#12152a;--surface-2:#181c36;--line:#232744;--line-2:#3a4066;
-  --text:#f2f3f7;--sub:#c8cdea;--muted:#9aa1c2;--blue:#3182f6;--red:#ff5a5a;
-  --r-lg:20px;--r-md:14px;--shadow:0 20px 50px rgba(0,0,0,.45);
-  --chrome:96px;
-}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(800px 420px at 80% -10%,var(--glow),transparent 60%);z-index:-1}
-a{color:inherit;text-decoration:none}
-.app{max-width:1180px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-.topbar{display:flex;align-items:center;gap:12px;min-height:60px;padding:4px 0 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
-.back{display:inline-flex;align-items:center;white-space:pre;padding:0 16px;border:1px solid var(--line-2);border-radius:999px;font-size:14px;font-weight:800;min-height:44px;color:var(--sub);flex:none}
-.back:active{background:var(--surface)}
-.title{flex:1;min-width:0}
-.title .eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--accent);margin:0 0 2px}
-.title h1{font-size:22px;margin:0;letter-spacing:-.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chip{display:inline-flex;align-items:center;gap:8px;padding:0 14px;min-height:34px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:800;color:var(--sub);flex:none}
-.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
-body[data-state="playing"] .chip{color:#7ee787}
-body[data-state="playing"] .chip::before{background:#7ee787;box-shadow:0 0 0 4px rgba(126,231,135,.18)}
-body[data-state="paused"] .chip{color:#ffb020}
-body[data-state="paused"] .chip::before{background:#ffb020}
-body[data-state="over"] .chip{color:var(--red)}
-body[data-state="over"] .chip::before{background:var(--red)}
-body[data-state="clear"] .chip{color:#7ee0ff}
-body[data-state="clear"] .chip::before{background:#7ee0ff}
-button{font:inherit;border:0;border-radius:999px;padding:0 20px;font-size:15px;font-weight:800;min-height:48px;cursor:pointer;touch-action:manipulation;transition:transform .1s ease,opacity .15s ease,background .15s ease}
-button:active{transform:scale(.96)}
-button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-button.primary{background:#fff;color:#0a0c14}
-button.accent{background:var(--blue);color:#fff}
-button.secondary{background:transparent;color:var(--text);border:1px solid var(--line-2)}
-button.sm{min-height:44px;padding:0 16px;font-size:14px}
-.game{display:flex;flex-direction:column;gap:14px}
-.stage{position:relative;container-type:inline-size;width:100%;margin:0 auto;border-radius:var(--r-lg);box-shadow:var(--shadow);background:var(--board-bg)}
-canvas{display:block;width:100%;height:auto;aspect-ratio:var(--ar);background:var(--board-bg);border:1px solid var(--line);border-radius:var(--r-lg);touch-action:none}
-body[data-state="playing"] canvas{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
-.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:var(--r-lg);background:rgba(6,8,16,.55);pointer-events:none;opacity:1;transition:opacity .2s ease}
-.overlay.hidden{opacity:0;visibility:hidden}
-body[data-state="ready"] .overlay{background:linear-gradient(180deg,rgba(6,8,16,.1),rgba(6,8,16,.6))}
-body[data-state="over"] .overlay{background:rgba(30,6,10,.62)}
-body[data-state="clear"] .overlay{background:rgba(6,20,32,.6)}
-.ov-card{pointer-events:auto;text-align:center;background:rgba(18,21,42,.92);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:20px 24px;max-width:340px;width:100%;box-shadow:var(--shadow);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.ov-kicker{margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:1.2px;color:var(--accent)}
-body[data-state="over"] .ov-kicker{color:var(--red)}
-.ov-card h2{margin:0 0 8px;font-size:26px;letter-spacing:-.5px}
-.ov-text{margin:0 0 16px;color:var(--sub);font-size:14px;line-height:1.6}
-.ov-text b{color:var(--text)}
-.ov-badge{display:inline-block;margin:0 0 10px;padding:4px 10px;border-radius:999px;background:var(--accent);color:#0a0c14;font-size:12px;font-weight:900}
-.ov-card button{width:100%}
-.toast{position:absolute;left:50%;top:14px;transform:translate(-50%,-8px);padding:8px 16px;border-radius:999px;background:rgba(10,12,20,.8);border:1px solid var(--line-2);font-size:14px;font-weight:900;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;white-space:nowrap}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.toast.warn{color:var(--red)}
-@container (max-width:460px){
-  .ov-card{padding:12px 16px;max-width:280px}
-  .ov-card h2{font-size:20px;margin-bottom:4px}
-  .ov-text{font-size:13px;margin-bottom:10px}
-  .ov-text .more{display:none}
-  .ov-badge{margin-bottom:6px}
-  .ov-card button{min-height:44px}
-}
-@container (max-width:300px){
-  .ov-kicker,.ov-text{display:none}
-}
-.panel{display:flex;flex-direction:column;gap:12px;min-width:0}
-.hud{display:grid;grid-template-columns:repeat(var(--hud-cols,4),minmax(0,1fr));gap:8px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 12px;min-width:0}
-.stat .label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px;white-space:nowrap}
-.stat .value{display:block;font-size:22px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat.score{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
-.stat.score .value{color:var(--accent);font-size:26px}
-.pips{display:flex;gap:4px;margin-top:4px}
-.pips i{width:12px;height:5px;border-radius:3px;background:var(--line-2)}
-.pips i.on{background:var(--red)}
-.msg{font-weight:800;font-size:14px;line-height:1.5;min-height:44px;color:var(--sub);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:11px 14px;display:flex;align-items:center}
-.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.controls .wide{grid-column:1/-1}
-body:not([data-state="playing"]) .needs-play{opacity:.4}
-.hint{margin:0;color:var(--muted);line-height:1.6;font-size:13px}
-/* 가로 화면, 넓은 화면: 게임판 + 오른쪽 패널 */
-@media (min-width:760px),(orientation:landscape) and (min-width:560px){
-  .game{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,290px);align-items:start;gap:16px}
-  .stage{width:min(100%,calc((100vh - var(--chrome)) * var(--arn)));width:min(100%,calc((100dvh - var(--chrome)) * var(--arn)))}
-  .hud{--hud-cols:2}
-  .stat.score{grid-column:1/-1}
-}
-/* 낮은 가로 화면(휴대폰 가로): 상단 압축 */
-@media (orientation:landscape) and (max-height:520px){
-  :root{--chrome:76px}
-  .app{padding-top:6px;padding-bottom:6px}
-  .topbar{min-height:48px;padding:0 0 6px;margin-bottom:8px}
-  .title .eyebrow{display:none}
-  .title h1{font-size:18px}
-  .chip{min-height:30px;padding:0 10px;font-size:12px}
-  .panel{gap:8px}
-  .stat{padding:5px 10px}
-  .stat .label{font-size:11px;margin-bottom:0}
-  .stat .value{font-size:18px}
-  .stat.score .value{font-size:20px}
-  .msg{min-height:44px;padding:6px 12px;font-size:13px}
-  .controls button{min-height:44px;font-size:14px}
-  .hint{display:none}
-  .stat.score{grid-column:auto}
-  .controls .wide{grid-column:auto}
-  .pips{margin-top:2px}
-  .ov-card{padding:14px 18px}
-  .ov-card h2{font-size:22px}
-  .ov-text{margin-bottom:10px}
-}
-@media (max-width:480px){
-  .topbar{gap:8px}
-  .back .long{display:none}
-  .chip{display:none}
-  .hud{--hud-cols:2}
-}
-:root{--accent:#7ee787;--glow:rgba(126,231,135,.10);--board-bg:#07130a;--ar:1/1;--arn:1;--pad:64px}
-.game.snake{display:flex;flex-direction:column;gap:12px}
-.snake .stage{width:min(100%,560px)}
-.act{display:flex;gap:14px;align-items:center;justify-content:center}
-.act .side-controls{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;max-width:260px}
-.act .controls{grid-template-columns:1fr}
-.pad{display:grid;grid-template-columns:repeat(3,var(--pad));grid-template-rows:repeat(3,var(--pad));gap:8px;flex:none}
-.pad button{width:var(--pad);height:var(--pad);padding:0;border-radius:18px;font-size:22px;background:var(--surface-2);border:1px solid var(--line-2);color:var(--text);box-shadow:0 4px 0 #0b0e1c}
-.pad button:active,.pad button.hit{background:var(--accent);color:#0a0c14;border-color:var(--accent);transform:translateY(2px);box-shadow:0 2px 0 #0b0e1c}
-.pad .dot{display:grid;place-items:center}
-.pad .dot::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--line-2)}
-body[data-state="playing"] .pad .dot::before{background:var(--accent);box-shadow:0 0 12px var(--accent)}
-.snake .hud{--hud-cols:3}
-.snake .stat.score{grid-column:auto}
-@media (orientation:landscape) and (min-width:560px){
-  .game.snake{display:grid;grid-template-columns:minmax(150px,240px) auto minmax(196px,250px);align-items:start;justify-content:center;gap:16px}
-  .snake .stage{width:min(calc(100vh - var(--chrome)),calc(100vw - 480px),640px);width:min(calc(100dvh - var(--chrome)),calc(100vw - 480px),640px)}
-  .snake .hud{--hud-cols:1}
-  .act{flex-direction:column;align-items:stretch}
-  .act .pad{align-self:center}
-  .act .side-controls{max-width:none}
-}
-@media (orientation:landscape) and (max-height:520px){
-  :root{--pad:58px}
-  .snake .hud{--hud-cols:1;gap:6px}
-  .act{gap:10px}
-}
-@media (max-width:480px){
-  .snake .hud{--hud-cols:3}
-  :root{--pad:60px}
-}
-</style>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
 </head>
-<body data-state="ready">
-<div class="app">
-<header class="topbar">
-<a class="back" href="../" aria-label="허브로 돌아가기">← 허브<span class="long">로 돌아가기</span></a>
-<div class="title">
-<p class="eyebrow">SNAKE</p>
-<h1>스네이크</h1>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 02</small>네온 스네이크</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>↑↓←→</kbd><kbd>WASD</kbd> 방향</div>
+          <div class="t-only"><kbd>스와이프</kbd> 화면을 밀어 방향 전환</div>
+          <div class="t-only"><kbd>▲</kbd> 방향 버튼도 사용 가능</div>
+          <div class="k-only"><kbd>스와이프</kbd> 터치 조작</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div><kbd>⇄</kbd> 벽 통과 가능</div>
+          <div><kbd style="color:#ffd166">★</kbd> 황금 먹이는 5배 점수</div>
+          <div><kbd style="color:#8a90b8">■</kbd> 레벨 3부터 바위 등장</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hScore">0</span></div>
+        <div class="h-box c"><span class="h-lb">LEVEL</span><span class="h-v sm" id="hLevel">1</span><div class="h-bar"><i id="hProg"></i></div></div>
+        <div class="h-box r"><span class="h-lb">LENGTH</span><span class="h-v sm" id="hLen">4</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 02</p>
+        <h1 class="ov-title">네온 스네이크</h1>
+        <p class="ov-desc">먹을수록 길어지고, 길어질수록 빨라집니다. 내 꼬리만 피하면 벽은 통과해도 괜찮아요.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>스와이프 · 방향키</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>황금 먹이 5배</span>
+        </div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span class="grow"><b>네온 브레이커</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span><b>네온 브레이커</b><span>벽돌깨기</span></span></a>
+      </div>
+    </aside>
+  </main>
+
+  <div class="g-pad">
+    <div class="pad" aria-label="방향 버튼">
+      <button class="u" data-dir="0,-1" aria-label="위"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button>
+      <button class="l" data-dir="-1,0" aria-label="왼쪽"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
+      <button class="d" data-dir="0,1" aria-label="아래"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button class="r" data-dir="1,0" aria-label="오른쪽"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+  </div>
 </div>
-<span class="chip" id="stateChip">대기 중</span>
-<button id="soundBtn" class="secondary sm">소리 끄기</button>
-</header>
-<main class="game snake">
-<aside class="panel info">
-<div class="hud">
-<div class="stat score"><span class="label">점수</span><span class="value" id="score">0</span></div>
-<div class="stat"><span class="label">속도 단계</span><span class="value" id="speed">1</span></div>
-<div class="stat"><span class="label">최고기록</span><span class="value" id="best">0</span></div>
-</div>
-<div class="msg" id="msg" role="status" aria-live="polite">시작 버튼을 누르거나 게임판을 터치하세요.</div>
-</aside>
-<div class="stage">
-<canvas id="game" width="600" height="600"></canvas>
-<div class="overlay" id="overlay">
-<div class="ov-card">
-<p class="ov-kicker" id="ovKicker">SNAKE</p>
-<span class="ov-badge" id="ovBadge" hidden>신기록</span>
-<h2 id="ovTitle">스네이크</h2>
-<p class="ov-text" id="ovText">스와이프나 방향 버튼으로 움직입니다.</p>
-<button id="ovBtn" class="primary">게임 시작</button>
-</div>
-</div>
-<div class="toast" id="toast"></div>
-</div>
-<div class="act">
-<div class="pad" role="group" aria-label="방향 버튼">
-<span></span><button data-dir="up" aria-label="위">▲</button><span></span>
-<button data-dir="left" aria-label="왼쪽">◀</button><span class="dot" aria-hidden="true"></span><button data-dir="right" aria-label="오른쪽">▶</button>
-<span></span><button data-dir="down" aria-label="아래">▼</button><span></span>
-</div>
-<div class="side-controls">
-<div class="controls">
-<button id="startBtn" class="primary">게임 시작</button>
-<button id="pauseBtn" class="secondary needs-play">일시정지</button>
-</div>
-<p class="hint">벽은 반대쪽으로 이어집니다. 자기 몸에 부딪히면 끝납니다.</p>
-</div>
-</div>
-</main>
-</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
 <script>
-"use strict";
-var canvas = document.getElementById("game");
-var scoreEl = document.getElementById("score");
-var speedEl = document.getElementById("speed");
-var bestEl = document.getElementById("best");
-var msgEl = document.getElementById("msg");
-var pauseBtn = document.getElementById("pauseBtn");
-var startBtn = document.getElementById("startBtn");
-var chipEl = document.getElementById("stateChip");
-var overlayEl = document.getElementById("overlay");
-var ovKicker = document.getElementById("ovKicker");
-var ovBadge = document.getElementById("ovBadge");
-var ovTitle = document.getElementById("ovTitle");
-var ovText = document.getElementById("ovText");
-var ovBtn = document.getElementById("ovBtn");
-var toastEl = document.getElementById("toast");
-var BEST_KEY = "neowa_hub_snake_high";
-var best = 0;
-try { best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { best = 0; }
-bestEl.textContent = best;
-var bestAtStart = best;
-var STATE_LABEL = { ready: "대기 중", playing: "플레이 중", paused: "일시정지", over: "게임 오버", clear: "클리어" };
-function setUI(s, ov) {
-  document.body.setAttribute("data-state", s);
-  chipEl.textContent = STATE_LABEL[s] || "";
-  pauseBtn.textContent = s === "paused" ? "계속하기" : "일시정지";
-  startBtn.textContent = s === "ready" ? "게임 시작" : "다시 시작";
-  if (s !== "playing") { clearTimeout(toastTimer); toastEl.classList.remove("show"); }
-  if (!ov) { overlayEl.classList.add("hidden"); return; }
-  ovKicker.textContent = ov.kicker;
-  ovTitle.textContent = ov.title;
-  ovText.innerHTML = ov.text;
-  ovBtn.textContent = ov.btn;
-  ovBadge.hidden = !ov.badge;
-  overlayEl.classList.remove("hidden");
-}
-var toastTimer = null;
-function showToast(text, warn) {
-  toastEl.textContent = text;
-  toastEl.classList.toggle("warn", !!warn);
-  toastEl.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1300);
-}
-var soundOn = true;
-var sounds = {};
-["coin", "gameover", "click"].forEach(function (n) {
-  var a = new Audio("../assets/sounds/" + n + ".wav");
-  a.preload = "auto";
-  sounds[n] = a;
-});
-function playSound(n) {
-  if (!soundOn) return;
-  try {
-    var a = sounds[n];
-    if (!a) return;
-    a.currentTime = 0;
-    a.play().catch(function () {});
-  } catch (e) {}
-}
-document.getElementById("soundBtn").addEventListener("click", function (ev) {
-  soundOn = !soundOn;
-  ev.currentTarget.textContent = soundOn ? "소리 끄기" : "소리 켜기";
-});
-if (typeof THREE === "undefined") {
-  msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요.";
-}
-var COLS = 20, ROWS = 20;
-var scene = null, camera = null, renderer = null;
-var snakeGroup = null, foodMesh = null, foodRing = null, flashMesh = null;
-var flashUntil = 0, flashX = 0, flashY = 0;
-var bodyGeo = null, headGeo = null, foodGeo = null;
-var headGroup = null, headMat = null, bodyMats = [], segPool = [];
-function makeCheckerTexture() {
-  var c = document.createElement("canvas");
-  c.width = COLS; c.height = ROWS;
-  var g = c.getContext("2d");
-  for (var y = 0; y < ROWS; y++) {
-    for (var x = 0; x < COLS; x++) {
-      g.fillStyle = (x + y) % 2 === 0 ? "#0e2416" : "#0b1d12";
-      g.fillRect(x, y, 1, 1);
+(function () {
+  'use strict';
+  var A = Arcade;
+  var COLS = 20, ROWS = 22, CELL = 30, TOP = 60, W = COLS * CELL, H = ROWS * CELL + TOP;
+  var fx = new A.FX();
+  var snake, prev, dir, queue, food, gold, rocks, acc, interval, score, level, eaten, dying, dieT, dieIdx, grow, goldCount, maxLen;
+
+  var BG = A.sprite('snbg', W, H, function (x) {
+    x.fillStyle = '#04070a'; x.fillRect(0, 0, W, H);
+    var g = x.createRadialGradient(W / 2, H * 0.55, 0, W / 2, H * 0.55, H * 0.7);
+    g.addColorStop(0, 'rgba(40,120,70,.22)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+      x.fillStyle = (r + c) % 2 ? 'rgba(125,255,155,.025)' : 'rgba(125,255,155,.05)';
+      x.fillRect(c * CELL, TOP + r * CELL, CELL, CELL);
     }
-  }
-  var tex = new THREE.CanvasTexture(c);
-  tex.magFilter = THREE.NearestFilter;
-  tex.minFilter = THREE.NearestFilter;
-  return tex;
-}
-function dashedFrame(half, y, color) {
-  var g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute([-half, y, -half, half, y, -half, half, y, half, -half, y, half, -half, y, -half], 3));
-  var line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: color, dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.8 }));
-  line.computeLineDistances();
-  return line;
-}
-function init3D() {
-  if (typeof THREE === "undefined") return false;
-  if (renderer) return true;
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x07130a);
-  scene.fog = new THREE.Fog(0x07130a, 30, 50);
-  camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  camera.position.set(0, 25, 11);
-  camera.lookAt(0, 0, 1.5);
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "low-power" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(600, 600, false);
-  } catch (e) {
-    renderer = null;
+    x.fillStyle = 'rgba(125,255,155,.18)';
+    for (r = 0; r <= ROWS; r++) for (c = 0; c <= COLS; c++) x.fillRect(c * CELL - 1, TOP + r * CELL - 1, 2, 2);
+    x.strokeStyle = 'rgba(125,255,155,.35)'; x.lineWidth = 2; x.setLineDash([6, 8]);
+    x.strokeRect(1, TOP + 1, W - 2, H - TOP - 2);
+  });
+  var ROCK = A.sprite('rock', CELL, CELL, function (x) {
+    var g = x.createLinearGradient(0, 0, 0, CELL); g.addColorStop(0, '#5b6188'); g.addColorStop(1, '#262a44');
+    x.fillStyle = g; A.rr(x, 2, 2, CELL - 4, CELL - 4, 6); x.fill();
+    x.strokeStyle = 'rgba(255,255,255,.25)'; x.lineWidth = 1.5; A.rr(x, 3, 3, CELL - 6, CELL - 6, 5); x.stroke();
+    x.strokeStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.moveTo(9, 10); x.lineTo(15, 16); x.lineTo(13, 22); x.stroke();
+  });
+
+  function cx(c) { return c * CELL + CELL / 2; }
+  function cy(r) { return TOP + r * CELL + CELL / 2; }
+  function occupied(c, r) {
+    for (var i = 0; i < snake.length; i++) if (snake[i].x === c && snake[i].y === r) return true;
+    for (i = 0; i < rocks.length; i++) if (rocks[i].x === c && rocks[i].y === r) return true;
+    if (food && food.x === c && food.y === r) return true;
+    if (gold && gold.x === c && gold.y === r) return true;
     return false;
   }
-  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-  scene.add(new THREE.HemisphereLight(0xd8ffe0, 0x0a1a10, 0.8));
-  var dir = new THREE.DirectionalLight(0xffffff, 1.0);
-  dir.position.set(5, 10, 5);
-  scene.add(dir);
-  var ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x06100a, roughness: 1 }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.7;
-  scene.add(ground);
-  var plinth = new THREE.Mesh(new THREE.BoxGeometry(21, 0.4, 21), new THREE.MeshStandardMaterial({ color: 0x12301c, roughness: 0.9 }));
-  plinth.position.y = -0.75;
-  scene.add(plinth);
-  var board = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ map: makeCheckerTexture(), roughness: 1 }));
-  board.rotation.x = -Math.PI / 2;
-  board.position.y = -0.54;
-  scene.add(board);
-  var grid = new THREE.GridHelper(20, 20, 0x2a4a3a, 0x1a2a22);
-  grid.position.y = -0.5;
-  grid.material.transparent = true;
-  grid.material.opacity = 0.5;
-  scene.add(grid);
-  scene.add(dashedFrame(10.25, -0.48, 0x7ee787));
-  bodyGeo = new THREE.BoxGeometry(0.86, 0.8, 0.86);
-  headGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
-  foodGeo = new THREE.IcosahedronGeometry(0.55, 0);
-  var shades = [0x5fd36e, 0x4cc25d, 0x3db04f, 0x33a045, 0x2b8f3c, 0x247e34];
-  shades.forEach(function (c) {
-    bodyMats.push(new THREE.MeshStandardMaterial({ color: c, emissive: 0x0a2a12, emissiveIntensity: 0.4, roughness: 0.45, flatShading: true }));
-  });
-  snakeGroup = new THREE.Group();
-  scene.add(snakeGroup);
-  headGroup = new THREE.Group();
-  headMat = new THREE.MeshStandardMaterial({ color: 0x7ee787, emissive: 0x2a5a2a, emissiveIntensity: 0.4, roughness: 0.4, flatShading: true });
-  headGroup.add(new THREE.Mesh(headGeo, headMat));
-  var eyeGeo = new THREE.BoxGeometry(0.16, 0.2, 0.2);
-  var eyeMat = new THREE.MeshBasicMaterial({ color: 0x0a0c14 });
-  [-0.24, 0.24].forEach(function (ez) {
-    var eye = new THREE.Mesh(eyeGeo, eyeMat);
-    eye.position.set(0.46, 0.2, ez);
-    headGroup.add(eye);
-  });
-  scene.add(headGroup);
-  foodMesh = new THREE.Mesh(foodGeo, new THREE.MeshStandardMaterial({ color: 0xff5a5a, emissive: 0xff2222, emissiveIntensity: 0.7, roughness: 0.3, flatShading: true }));
-  scene.add(foodMesh);
-  foodRing = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.62, 20), new THREE.MeshBasicMaterial({ color: 0xff7a7a, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-  foodRing.rotation.x = -Math.PI / 2;
-  scene.add(foodRing);
-  flashMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffff99, emissive: 0xffff66, emissiveIntensity: 1.2, transparent: true, opacity: 0.9 }));
-  flashMesh.visible = false;
-  scene.add(flashMesh);
-  return true;
-}
-function animateFood() {
-  if (!foodMesh || !food) return;
-  var t = performance.now() / 1000;
-  foodMesh.position.set(food.x - 10 + 0.5, 0.1 + Math.sin(t * 4) * 0.12, food.y - 10 + 0.5);
-  foodMesh.rotation.y = t * 1.5;
-  foodRing.position.set(food.x - 10 + 0.5, -0.47, food.y - 10 + 0.5);
-  foodRing.scale.setScalar(1 + (Math.sin(t * 4) + 1) * 0.12);
-}
-function draw() {
-  if (!renderer) return;
-  var bodyCount = Math.max(0, snake.length - 1);
-  while (segPool.length < bodyCount) {
-    var seg = new THREE.Mesh(bodyGeo, bodyMats[0]);
-    snakeGroup.add(seg);
-    segPool.push(seg);
+  function freeCell(awayFromHead) {
+    for (var t = 0; t < 500; t++) {
+      var c = A.irand(0, COLS - 1), r = A.irand(0, ROWS - 1);
+      if (occupied(c, r)) continue;
+      if (awayFromHead && Math.abs(c - snake[0].x) + Math.abs(r - snake[0].y) < 6) continue;
+      return { x: c, y: r };
+    }
+    return null;
   }
-  for (var i = 0; i < segPool.length; i++) {
-    var m = segPool[i];
-    if (i < bodyCount) {
-      var s = snake[i + 1];
-      m.visible = true;
-      m.material = bodyMats[Math.min(bodyMats.length - 1, Math.floor(i * bodyMats.length / Math.max(bodyCount, 6)))];
-      m.position.set(s.x - 10 + 0.5, -0.05, s.y - 10 + 0.5);
-    } else {
-      m.visible = false;
+
+  function reset() {
+    var sx = 6, sy = 11;
+    snake = [{ x: sx, y: sy }, { x: sx - 1, y: sy }, { x: sx - 2, y: sy }, { x: sx - 3, y: sy }];
+    prev = snake.map(function (s) { return { x: s.x, y: s.y }; });
+    dir = { x: 1, y: 0 }; queue = []; rocks = []; food = null; gold = null;
+    acc = 0; score = 0; level = 1; eaten = 0; dying = false; grow = 0; goldCount = 0; maxLen = 4;
+    interval = speedFor(1);
+    fx.clear();
+    food = freeCell(false);
+    hud();
+  }
+  function speedFor(lv) { return Math.max(0.055, 0.135 - (lv - 1) * 0.01); }
+
+  function turn(dx, dy) {
+    if (S.state !== 'playing' || dying) return;
+    var last = queue.length ? queue[queue.length - 1] : dir;
+    if (last.x === dx && last.y === dy) return;
+    if (last.x === -dx && last.y === -dy) return;
+    if (queue.length < 3) { queue.push({ x: dx, y: dy }); A.sfx('turn'); }
+  }
+
+  function step() {
+    if (queue.length) dir = queue.shift();
+    prev = snake.map(function (s) { return { x: s.x, y: s.y }; });
+    var h = snake[0], nx = (h.x + dir.x + COLS) % COLS, ny = (h.y + dir.y + ROWS) % ROWS;
+    // 충돌 (꼬리 끝은 이번 틱에 비켜나므로 제외)
+    var tailMoves = grow === 0;
+    for (var i = 0; i < snake.length - (tailMoves ? 1 : 0); i++) if (snake[i].x === nx && snake[i].y === ny) return die();
+    for (i = 0; i < rocks.length; i++) if (rocks[i].x === nx && rocks[i].y === ny) return die();
+    // 각 마디는 앞 마디 자리로 이동: 이전 위치(prev[i])는 자기 원래 자리
+    snake.unshift({ x: nx, y: ny });
+    if (grow > 0) { grow--; var tl = prev[prev.length - 1]; prev.push({ x: tl.x, y: tl.y }); } else snake.pop();
+    // 먹이
+    if (food && nx === food.x && ny === food.y) {
+      eaten++; grow += 1; goldCount++;
+      var pts = 10 * level; score += pts;
+      fx.burst(cx(nx), cy(ny), '#ff5d8f', 18, 260, 0.5, 3); fx.ring(cx(nx), cy(ny), '#ff5d8f', 60, 0.35);
+      fx.text(cx(nx), cy(ny) - 20, '+' + pts, '#ffd0dc', 18);
+      A.sfx('eat', 1 + Math.min(eaten % 6, 5) * 0.06); A.vibrate(12);
+      food = freeCell(false);
+      if (!gold && goldCount >= 5) { goldCount = 0; gold = freeCell(true); if (gold) { gold.t = 6; A.sfx('coin'); } }
+      if (eaten % 6 === 0) levelUp();
+    }
+    if (gold && nx === gold.x && ny === gold.y) {
+      var gp = 50 * level + Math.ceil(gold.t) * 10 * level; score += gp; grow += 2;
+      fx.burst(cx(nx), cy(ny), '#ffd166', 36, 380, 0.7, 4); fx.ring(cx(nx), cy(ny), '#ffd166', 110, 0.5);
+      fx.text(cx(nx), cy(ny) - 24, '+' + gp, '#ffd166', 24); fx.shake(4, 0.2);
+      A.sfx('gold'); A.vibrate([15, 30, 15]);
+      gold = null;
+    }
+    maxLen = Math.max(maxLen, snake.length + grow);
+    hud();
+  }
+  function levelUp() {
+    level++; interval = speedFor(level);
+    S.banner('LEVEL ' + level, level >= 3 ? '바위 조심' : 'SPEED UP'); A.sfx('level');
+    if (level >= 3 && rocks.length < 16) {
+      for (var i = 0; i < 2; i++) { var c = freeCell(true); if (c) { rocks.push(c); fx.burst(cx(c.x), cy(c.y), '#8a90b8', 14, 200, 0.5, 3); } }
     }
   }
-  if (snake.length) {
-    headGroup.position.set(snake[0].x - 10 + 0.5, 0, snake[0].y - 10 + 0.5);
-    headGroup.rotation.y = -Math.atan2(dir.y, dir.x);
+  function die() {
+    dying = true; dieT = 0; dieIdx = 0;
+    fx.shake(10, 0.45); fx.flashIt('#ff2244', 0.6); A.sfx('hurt'); A.vibrate(180);
+    prev = snake.map(function (s) { return { x: s.x, y: s.y }; });
   }
-  animateFood();
-  if (flashMesh) {
-    flashMesh.visible = Date.now() < flashUntil;
-    if (flashMesh.visible) flashMesh.position.set(flashX - 10 + 0.5, 0, flashY - 10 + 0.5);
+
+  function update(dt) {
+    fx.update(dt);
+    if (dying) {
+      dieT += dt;
+      while (dieIdx < snake.length && dieT > dieIdx * 0.035) {
+        var s = snake[dieIdx];
+        fx.burst(cx(s.x), cy(s.y), segColor(dieIdx, snake.length), 10, 240, 0.6, 3);
+        if (dieIdx % 3 === 0) A.sfx('hit', 1 + dieIdx * 0.02);
+        dieIdx++;
+      }
+      if (dieT > snake.length * 0.035 + 0.7) S.gameOver(score, [['레벨', String(level)], ['최대 길이', String(maxLen)], ['먹이', String(eaten)]]);
+      return;
+    }
+    if (gold) { gold.t -= dt; if (gold.t <= 0) { fx.burst(cx(gold.x), cy(gold.y), '#ffd166', 10, 120, 0.4, 2); gold = null; } }
+    acc += dt;
+    while (acc >= interval) { acc -= interval; step(); if (dying) break; }
   }
-  renderer.render(scene, camera);
-}
-function renderLoop() {
-  if (state !== "playing" || !renderer) return;
-  animateFood();
-  if (flashMesh) flashMesh.visible = Date.now() < flashUntil;
-  renderer.render(scene, camera);
-  requestAnimationFrame(renderLoop);
-}
-var state = "ready";
-var snake = [], dir = { x: 1, y: 0 }, nextDir = { x: 1, y: 0 }, food = null, score = 0, timer = null;
-function speedMs() { return Math.max(70, 160 - Math.floor(score / 10) * 10); }
-function speedLevel() { return 1 + Math.floor(score / 10); }
-function placeFood() {
-  while (true) {
-    var f = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
-    var onSnake = snake.some(function (s) { return s.x === f.x && s.y === f.y; });
-    if (!onSnake) { food = f; return; }
+
+  function segColor(i, n) {
+    var t = n > 1 ? i / (n - 1) : 0;
+    var h = 135 - t * 45, l = 68 - t * 18;
+    return hsl(h, 100, l);
   }
-}
-function resetGame() {
-  snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
-  dir = { x: 1, y: 0 }; nextDir = { x: 1, y: 0 };
-  score = 0;
-  if (headMat) { headMat.color.setHex(0x7ee787); headMat.emissive.setHex(0x2a5a2a); }
-  placeFood();
-  updateHud();
-  draw();
-}
-function updateHud() {
-  scoreEl.textContent = score;
-  speedEl.textContent = speedLevel();
-  if (score > best) {
-    best = score;
-    try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) {}
+  function hsl(h, s, l) {
+    s /= 100; l /= 100;
+    var k = function (n) { return (n + h / 30) % 12; }, a = s * Math.min(l, 1 - l);
+    var f = function (n) { return Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))))); };
+    return '#' + [f(0), f(8), f(4)].map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join('');
   }
-  bestEl.textContent = best;
-}
-function step() {
-  if (state !== "playing") return;
-  dir = nextDir;
-  var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-  if (head.x < 0) head.x = COLS - 1;
-  if (head.x >= COLS) head.x = 0;
-  if (head.y < 0) head.y = ROWS - 1;
-  if (head.y >= ROWS) head.y = 0;
-  if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
-    gameOver();
-    return;
+
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    c.drawImage(BG, 0, 0, W, H);
+    if (!snake) { c.restore(); return; }
+    var t = S.time;
+    // 바위
+    for (var i = 0; i < rocks.length; i++) c.drawImage(ROCK, rocks[i].x * CELL, TOP + rocks[i].y * CELL, CELL, CELL);
+    // 먹이
+    if (food) {
+      var pulse = 1 + Math.sin(t * 6) * 0.12;
+      c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ff5d8f', 6), cx(food.x), cy(food.y), pulse * 1.2); c.restore();
+      c.fillStyle = '#ff7aa3'; c.beginPath(); c.arc(cx(food.x), cy(food.y), 8 * pulse, 0, Math.PI * 2); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(cx(food.x) - 3, cy(food.y) - 3, 2.5, 0, Math.PI * 2); c.fill();
+    }
+    if (gold) {
+      var gx = cx(gold.x), gy = cy(gold.y), blink = gold.t < 1.5 && Math.floor(gold.t * 8) % 2 === 0;
+      if (!blink) {
+        c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ffd166', 7), gx, gy, 1.4); c.restore();
+        star(c, gx, gy, 12, 5.5, t * 2, '#ffe28a');
+      }
+      c.strokeStyle = 'rgba(255,209,102,.8)'; c.lineWidth = 2.5; c.beginPath();
+      c.arc(gx, gy, 18, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (gold.t / 6)); c.stroke();
+    }
+    // 뱀 (틱 사이를 부드럽게 보간)
+    var k = dying ? 1 : Math.min(1, acc / interval);
+    var n = snake.length, pts = [];
+    for (i = 0; i < n; i++) {
+      if (dying && i < dieIdx) { pts.push(null); continue; }
+      var a = prev[i] || snake[i], b = snake[i];
+      var x, y;
+      if (Math.abs(a.x - b.x) > 1 || Math.abs(a.y - b.y) > 1) { x = cx(b.x); y = cy(b.y); }
+      else { x = A.lerp(cx(a.x), cx(b.x), k); y = A.lerp(cy(a.y), cy(b.y), k); }
+      pts.push({ x: x, y: y });
+    }
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    // 빛 번짐
+    c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.18; c.lineWidth = CELL * 1.25;
+    for (i = n - 1; i > 0; i--) seg(c, pts[i], pts[i - 1], segColor(i, n));
+    c.restore();
+    c.lineWidth = CELL * 0.74;
+    for (i = n - 1; i > 0; i--) seg(c, pts[i], pts[i - 1], segColor(i, n));
+    c.lineWidth = CELL * 0.22; c.globalAlpha = 0.35;
+    for (i = n - 1; i > 0; i--) seg(c, offsetPt(pts[i]), offsetPt(pts[i - 1]), '#ffffff');
+    c.globalAlpha = 1;
+    // 머리
+    var hd = pts[0];
+    if (hd) {
+      c.fillStyle = segColor(0, n); c.beginPath(); c.arc(hd.x, hd.y, CELL * 0.46, 0, Math.PI * 2); c.fill();
+      var ex = dir.x, ey = dir.y, px = -ey, py = ex;
+      for (var s = -1; s <= 1; s += 2) {
+        var ox = hd.x + ex * 5 + px * 7 * s, oy = hd.y + ey * 5 + py * 7 * s;
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(ox, oy, 4.6, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#062010'; c.beginPath(); c.arc(ox + ex * 1.6, oy + ey * 1.6, 2.4, 0, Math.PI * 2); c.fill();
+      }
+      if (S.state === 'playing' && !dying && Math.sin(t * 9) > 0.7) {
+        c.strokeStyle = '#ff5d8f'; c.lineWidth = 2.4; c.beginPath();
+        c.moveTo(hd.x + ex * 14, hd.y + ey * 14); c.lineTo(hd.x + ex * 21, hd.y + ey * 21); c.stroke();
+      }
+    }
+    fx.draw(c);
+    c.restore();
+    fx.drawFlash(c, W, H);
   }
-  snake.unshift(head);
-  if (food && head.x === food.x && head.y === food.y) {
-    var prevLevel = speedLevel();
-    score += 10;
-    playSound("coin");
-    flashX = food.x; flashY = food.y; flashUntil = Date.now() + 300;
-    placeFood();
-    if (speedLevel() > prevLevel) showToast("속도 " + speedLevel() + "단계");
-  } else {
-    snake.pop();
+  function offsetPt(p) { return p ? { x: p.x - 3, y: p.y - 4 } : null; }
+  function seg(c, a, b, col) {
+    if (!a || !b) return;
+    if (Math.abs(a.x - b.x) > CELL * 1.5 || Math.abs(a.y - b.y) > CELL * 1.5) return;
+    c.strokeStyle = col; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
   }
-  updateHud();
-  draw();
-  clearInterval(timer);
-  timer = setInterval(step, speedMs());
-}
-function startGame() {
-  if (!init3D()) { msgEl.textContent = "3D 엔진 로딩에 실패했습니다. 페이지를 새로고침하세요."; return; }
-  var wasRunning = state === "playing";
-  playSound("click");
-  bestAtStart = best;
-  resetGame();
-  state = "playing";
-  setUI("playing");
-  msgEl.textContent = "플레이 중입니다.";
-  clearInterval(timer);
-  timer = setInterval(step, speedMs());
-  if (!wasRunning) requestAnimationFrame(renderLoop);
-}
-function gameOver() {
-  state = "over";
-  clearInterval(timer);
-  playSound("gameover");
-  if (headMat) { headMat.color.setHex(0xff5a5a); headMat.emissive.setHex(0x5a1010); }
-  msgEl.textContent = "게임 오버! 점수 " + score + "점, 최고기록 " + best + "점. 시작 버튼을 눌러 다시 플레이하세요.";
-  setUI("over", {
-    kicker: "GAME OVER", title: "게임 오버",
-    text: "점수 <b>" + score + "점</b> · 길이 <b>" + snake.length + "</b><br>최고기록 " + best + "점",
-    btn: "다시 시작", badge: score > bestAtStart && score > 0
+  function star(c, x, y, R, r, rot, col) {
+    c.save(); c.translate(x, y); c.rotate(rot * 0.3); c.fillStyle = col; c.beginPath();
+    for (var i = 0; i < 10; i++) { var rad = i % 2 ? r : R, a = i / 10 * Math.PI * 2 - Math.PI / 2; c.lineTo(Math.cos(a) * rad, Math.sin(a) * rad); }
+    c.closePath(); c.fill(); c.restore();
+  }
+
+  function hud() {
+    document.getElementById('hScore').textContent = A.fmt(score);
+    document.getElementById('hLevel').textContent = level;
+    document.getElementById('hLen').textContent = snake.length + grow;
+    document.getElementById('hProg').style.width = ((eaten % 6) / 6 * 100) + '%';
+  }
+
+  /* ---------- 입력 ---------- */
+  var KEYMAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0], W: [0, -1], S: [0, 1], A: [-1, 0], D: [1, 0] };
+  var stage = document.getElementById('stage'), sw = null;
+  stage.addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return;
+    sw = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    try { stage.setPointerCapture(e.pointerId); } catch (er) {}
   });
-  draw();
-}
-function setDir(x, y) {
-  if (state !== "playing") return;
-  if (x === -dir.x && y === -dir.y) return;
-  if (x === dir.x && y === dir.y) return;
-  nextDir = { x: x, y: y };
-}
-function togglePause() {
-  if (state === "playing") {
-    state = "paused";
-    clearInterval(timer);
-    msgEl.textContent = "일시정지했습니다. 계속하기 버튼을 누르면 이어서 플레이합니다.";
-    setUI("paused", { kicker: "PAUSED", title: "일시정지", text: "점수 <b>" + score + "점</b> · 속도 <b>" + speedLevel() + "단계</b>", btn: "계속하기" });
-  } else if (state === "paused") {
-    state = "playing";
-    setUI("playing");
-    timer = setInterval(step, speedMs());
-    requestAnimationFrame(renderLoop);
-    msgEl.textContent = "플레이 중입니다.";
-  }
-}
-startBtn.addEventListener("click", startGame);
-pauseBtn.addEventListener("click", togglePause);
-ovBtn.addEventListener("click", function () {
-  if (state === "paused") togglePause();
-  else startGame();
-});
-overlayEl.querySelector(".ov-card").addEventListener("click", function (ev) {
-  if (ev.target !== ovBtn && state === "ready") startGame();
-});
-document.addEventListener("visibilitychange", function () {
-  if (document.hidden && state === "playing") togglePause();
-});
-function padDir(d) {
-  if (d === "up") setDir(0, -1);
-  if (d === "down") setDir(0, 1);
-  if (d === "left") setDir(-1, 0);
-  if (d === "right") setDir(1, 0);
-}
-document.querySelectorAll(".pad button").forEach(function (btn) {
-  var d = btn.getAttribute("data-dir");
-  btn.addEventListener("pointerdown", function (ev) {
-    ev.preventDefault();
-    padDir(d);
-    btn.classList.add("hit");
-    setTimeout(function () { btn.classList.remove("hit"); }, 120);
+  stage.addEventListener('pointermove', function (e) {
+    if (!sw || sw.id !== e.pointerId) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y, th = 22;
+    if (Math.abs(dx) < th && Math.abs(dy) < th) return;
+    if (Math.abs(dx) > Math.abs(dy)) turn(dx > 0 ? 1 : -1, 0); else turn(0, dy > 0 ? 1 : -1);
+    sw.x = e.clientX; sw.y = e.clientY; // 손을 떼지 않고 연속 스와이프
   });
-  btn.addEventListener("click", function () { padDir(d); });
-});
-window.addEventListener("keydown", function (ev) {
-  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].indexOf(ev.key) >= 0) ev.preventDefault();
-  if (ev.key === "ArrowUp" || ev.key === "w") setDir(0, -1);
-  if (ev.key === "ArrowDown" || ev.key === "s") setDir(0, 1);
-  if (ev.key === "ArrowLeft" || ev.key === "a") setDir(-1, 0);
-  if (ev.key === "ArrowRight" || ev.key === "d") setDir(1, 0);
-  if (ev.key === "Enter" && (state === "ready" || state === "over")) startGame();
-  if (ev.key === "p" || ev.key === "P") togglePause();
-});
-var touchX = null, touchY = null;
-canvas.addEventListener("touchstart", function (ev) {
-  var t = ev.touches[0];
-  touchX = t.clientX; touchY = t.clientY;
-  if (state === "ready") startGame();
-}, { passive: true });
-canvas.addEventListener("touchend", function (ev) {
-  if (touchX === null) return;
-  var t = ev.changedTouches[0];
-  var dx = t.clientX - touchX, dy = t.clientY - touchY;
-  touchX = null; touchY = null;
-  if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
-  if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
-  else setDir(0, dy > 0 ? 1 : -1);
-});
-var READY_OV = { kicker: "SNAKE", title: "스네이크", text: "스와이프나 방향 버튼으로 움직입니다.<span class=\"more\"><br>벽은 반대쪽으로 이어집니다.</span>", btn: "게임 시작" };
-if (typeof THREE !== "undefined") {
-  if (init3D()) {
-    resetGame();
-    state = "ready";
-    setUI("ready", READY_OV);
-  } else {
-    msgEl.textContent = "WebGL을 사용할 수 없어 3D 게임을 실행할 수 없습니다. 브라우저에서 WebGL을 켜고 페이지를 새로고침하세요.";
-    setUI("ready", { kicker: "안내", title: "3D를 켤 수 없음", text: "브라우저에서 WebGL을 켜고 새로고침하세요.", btn: "다시 시도" });
-    updateHud();
-  }
-} else {
-  setUI("ready", { kicker: "안내", title: "로딩 실패", text: "3D 엔진을 불러오지 못했습니다. 새로고침하세요.", btn: "다시 시도" });
-  updateHud();
-}
+  function endSw() { sw = null; }
+  stage.addEventListener('pointerup', endSw); stage.addEventListener('pointercancel', endSw);
+  document.querySelectorAll('.pad [data-dir]').forEach(function (b) {
+    b.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      if (S.state === 'ready' || S.state === 'over') { S.start(); return; }
+      var d = b.getAttribute('data-dir').split(',');
+      turn(+d[0], +d[1]);
+      b.classList.add('hit'); setTimeout(function () { b.classList.remove('hit'); }, 120);
+    });
+  });
+
+  var S = new A.Shell({
+    id: 'snake', W: W, H: H,
+    init: function () {
+      // 시작 화면용 장식 뱀
+      rocks = []; dir = { x: 1, y: 0 };
+      snake = []; for (var i = 0; i < 9; i++) snake.push({ x: 13 - i, y: 15 });
+      prev = snake.map(function (s) { return { x: s.x, y: s.y }; });
+      food = { x: 15, y: 15 }; gold = null; acc = 0; interval = 0.2;
+    },
+    reset: reset,
+    update: update,
+    idle: function (dt) { fx.update(dt); },
+    render: render,
+    keydown: function (e) { var m = KEYMAP[e.key]; if (m) { e.preventDefault(); turn(m[0], m[1]); } }
+  });
+})();
 </script>
 </body>
 </html>

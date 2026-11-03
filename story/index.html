@@ -25,8 +25,9 @@
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans:ital,wght@0,400;0,700;1,400&family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css?v=20261020">
+<link rel="stylesheet" href="assets/story-v2.css?v=1">
 <script>
 /* 광고와 통계 설정: 코드가 비어 있으면 해당 기능은 동작하지 않습니다. */
 window.NEOWA_CONFIG = {
@@ -54,22 +55,29 @@ window.NEOWA_CONFIG = {
     <img class="titleArt" src="assets/images/title_key.webp" alt="방과 후, 너와 대표 이미지">
     <div class="titleShade"></div>
     <div class="titleBox">
+      <span class="kick">VISUAL NOVEL · 너와 아케이드</span>
       <h1>방과 후, 너와</h1>
       <p class="tagline" id="taglineText">전학 첫 학기. 방과 후의 선택이, 그녀들과의 거리를 바꿉니다.</p>
       <label class="nameLabel"><span id="nameLabelText">주인공 이름</span>
         <input id="nameInput" type="text" maxlength="10" placeholder="김도현">
       </label>
       <button id="newGameBtn" class="mainBtn">새 게임</button>
-      <button id="continueBtn" class="subBtn">이어하기</button>
-      <button id="galleryBtn" class="subBtn">갤러리</button>
+      <div class="btnRow">
+        <button id="continueBtn" class="subBtn">이어하기</button>
+        <button id="galleryBtn" class="subBtn">갤러리</button>
+      </div>
       <div id="langBar" class="langBar" aria-label="Language"></div>
       <p class="crawlIntro" id="crawlIntro">전학 첫 학기, 닷새 동안의 방과 후를 고르는 이야기입니다. 반장 한서연, 도서 위원 문채린, 방송부 노아린. 선택에 따라 엔딩은 일곱으로 갈라집니다.</p>
+      <details class="titleMore">
+        <summary>이용 안내</summary>
       <p class="notice" id="noticeText">15세 이용가 수준의 학원 드라마입니다. 한 회 약 40–70분, 엔딩 7개.</p>
       <p class="notice" id="autosaveHint">이어하기는 약 5초마다 남는 자동 저장을 불러옵니다. 슬롯 저장과는 별개입니다.</p>
       <p class="notice" id="updateNoticeText">업데이트: 축제 당일 이야기(Day 5)가 추가됐습니다. 이전 버전의 진행 중 저장은 초기화되고, 갤러리와 본 엔딩 기록은 그대로 유지됩니다.</p>
+      </details>
       <p id="titleMsg" class="notice" role="status"></p>
       <div id="adTitle" class="adSlot hidden"></div>
       <nav class="footLinks" aria-label="사이트">
+        <a class="home" href="./">← 아케이드</a>
         <a id="linkAbout" href="about.html">소개</a>
         <a id="linkChars" href="characters.html">등장인물</a>
         <a id="linkContact" href="contact.html">문의</a>
@@ -85,14 +93,16 @@ window.NEOWA_CONFIG = {
     <img id="charImg" class="charImg hidden" alt="" width="1280" height="1920">
     <div id="choiceBox" class="choiceBox hidden" aria-live="polite"></div>
     <div class="topBar">
-      <button id="saveBtn" type="button">저장</button>
-      <button id="loadBtn" type="button">불러오기</button>
-      <button id="backlogBtn" type="button">백로그</button>
       <button id="autoBtn" type="button" data-on="0" aria-pressed="false">자동</button>
       <button id="skipBtn" type="button" data-on="0" aria-pressed="false">스킵</button>
-      <button id="settingsBtn" type="button">설정</button>
-      <button id="galBtn2" type="button">갤러리</button>
-      <button id="titleBtn" type="button">타이틀</button>
+      <button id="backlogBtn" type="button">백로그</button>
+      <span class="spacer"></span>
+      <button id="saveBtn" class="sec" type="button">저장</button>
+      <button id="loadBtn" class="sec" type="button">불러오기</button>
+      <button id="settingsBtn" class="sec" type="button">설정</button>
+      <button id="galBtn2" class="sec" type="button">갤러리</button>
+      <button id="titleBtn" class="sec" type="button">타이틀</button>
+      <button id="menuBtn" type="button" aria-expanded="false">메뉴</button>
     </div>
     <div id="dialogueBox" class="dialogueBox">
       <div id="dialogueLive" aria-live="polite" aria-atomic="true">
@@ -158,5 +168,19 @@ window.NEOWA_CONFIG = {
 </div>
 <script src="assets/scenario.js"></script>
 <script src="assets/engine.js?v=20261020"></script>
+<script>
+/* 화면 다듬기용 보조 스크립트 (엔진은 그대로) */
+(function () {
+  var bar = document.querySelector('.topBar'), menu = document.getElementById('menuBtn');
+  function setOpen(o) { bar.classList.toggle('open', o); menu.setAttribute('aria-expanded', o ? 'true' : 'false'); menu.textContent = o ? '닫기' : '메뉴'; }
+  menu.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!bar.classList.contains('open')); });
+  bar.querySelectorAll('.sec').forEach(function (b) { b.addEventListener('click', function () { setOpen(false); }); });
+  // 화자에 따라 이름표 색 바꾸기
+  var box = document.getElementById('dialogueBox'), sp = document.getElementById('speakerName');
+  function paint() { box.setAttribute('data-sp', (sp.textContent || '').trim()); }
+  new MutationObserver(paint).observe(sp, { childList: true, characterData: true, subtree: true });
+  paint();
+})();
+</script>
 </body>
 </html>

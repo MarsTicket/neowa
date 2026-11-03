@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/runner.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>네온 대시 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 원탭 러너. 탭 한 번으로 점프, 두 번이면 이단 점프. 끝없이 이어지는 네온 도시를 얼마나 멀리 달릴 수 있을까요?">
+<meta property="og:title" content="네온 대시 · 너와 아케이드">
+<meta property="og:description" content="탭 한 번으로 하는 네온 러너. 가시와 낭떠러지를 넘어 끝까지 달려 보세요.">
+<meta property="og:image" content="https://neowa.kr/assets/runner-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#b48cff;--accent-ink:#16062e;--ar:180,140,255}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 04</small>네온 대시</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>Space</kbd><kbd>↑</kbd> 점프</div>
+          <div class="t-only"><kbd>탭</kbd> 화면 어디든 탭하면 점프</div>
+          <div><kbd>길게</kbd> 누르면 더 높이</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div><kbd style="color:#ff4d6d">▲</kbd> 가시·톱날에 닿으면 끝</div>
+          <div><kbd>⬛</kbd> 블록 위는 밟을 수 있음</div>
+          <div><kbd style="color:#ffd166">●</kbd> 코인 10점</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">DISTANCE</span><span class="h-v sm" id="hB">0m</span></div>
+        <div class="h-box r"><span class="h-lb">COIN</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 04</p>
+        <h1 class="ov-title">네온 대시</h1>
+        <p class="ov-desc">탭하면 점프, 공중에서 한 번 더 탭하면 이단 점프. 길게 누를수록 높이 뜁니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭 점프 · 이단 점프</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>코인 10점</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>달리기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../tower/"><img src="../assets/tower-card.jpg" alt=""><span class="grow"><b>하늘 탑 쌓기</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../tower/"><img src="../assets/tower-card.jpg" alt=""><span><b>하늘 탑 쌓기</b><span>타이밍</span></span></a>
+        <a class="g-more" href="../blocks/"><img src="../assets/blocks-card.jpg" alt=""><span><b>네온 블록</b><span>블록 퍼즐</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, G = 720;           // G = 바닥 높이
+  var fx = new A.FX();
+  var P, obs, coins, speed, dist, coinN, score, nextX, holding, dyingT, groundOff, keyHeld, runT;
+
+  var BG = A.sprite('rbg', W, H, function (x) {
+    var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0d0620'); g.addColorStop(0.7, '#24103f'); g.addColorStop(1, '#090410');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    var s = x.createRadialGradient(W * 0.7, 300, 0, W * 0.7, 300, 240); s.addColorStop(0, 'rgba(255,122,168,.55)'); s.addColorStop(0.3, 'rgba(180,140,255,.25)'); s.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = s; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#ff9ecf'; x.beginPath(); x.arc(W * 0.7, 330, 90, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#24103f'; for (var i = 0; i < 7; i++) x.fillRect(W * 0.7 - 100, 330 + i * 14, 200, 4 + i);
+    for (i = 0; i < 70; i++) { x.fillStyle = 'rgba(255,255,255,' + Math.random() * 0.6 + ')'; x.fillRect(Math.random() * W, Math.random() * 420, 1.5, 1.5); }
+  });
+  function skyline(seed, col, minH, maxH, wmin, wmax) {
+    return A.sprite('sky' + seed, W * 2, 400, function (x) {
+      var px = 0, r = seed;
+      function rnd() { r = (r * 9301 + 49297) % 233280; return r / 233280; }
+      while (px < W * 2) {
+        var w = wmin + rnd() * (wmax - wmin), h = minH + rnd() * (maxH - minH);
+        x.fillStyle = col; x.fillRect(px, 400 - h, w - 4, h);
+        x.fillStyle = 'rgba(255,220,255,.18)';
+        for (var yy = 400 - h + 10; yy < 390; yy += 16) for (var xx = px + 6; xx < px + w - 10; xx += 12) if (rnd() < 0.35) x.fillRect(xx, yy, 5, 7);
+        px += w;
+      }
+    });
+  }
+  var SKY1 = skyline(7, '#1c0d33', 120, 300, 50, 110), SKY2 = skyline(3, '#120822', 60, 200, 40, 90);
+  var COIN = A.glowDot('#ffd166', 6);
+
+  function reset() {
+    P = { x: 140, y: G, vy: 0, ground: true, jumps: 0, rot: 0, squash: 0 };
+    obs = []; coins = []; speed = 330; dist = 0; coinN = 0; score = 0; nextX = W + 200; holding = false; dyingT = 0; groundOff = 0; runT = 0;
+    fx.clear(); hud();
+  }
+  function jump() {
+    if (S.state !== 'playing' || dyingT > 0) return;
+    if (P.ground) { P.vy = -980; P.ground = false; P.jumps = 1; A.sfx('bounce', 1.4); fx.burst(P.x, P.y, '#b48cff', 8, 160, 0.3, 2.5); }
+    else if (P.jumps < 2) { P.vy = -860; P.jumps = 2; A.sfx('bounce', 1.8); fx.ring(P.x, P.y - 20, '#b48cff', 50, 0.3); }
+    holding = true;
+  }
+  function release() { holding = false; if (P && P.vy < -380) P.vy = -380; }
+
+  // 지형 생성: 속도가 빠를수록 간격을 넓혀 공정하게
+  function gen() {
+    var gap = speed * A.rand(0.7, 1.15) + 120;
+    var lv = Math.min(1, dist / 4000), r = Math.random(), x = nextX;
+    if (r < 0.3) { var n = Math.random() < 0.3 + lv * 0.4 ? 2 : 1; for (var i = 0; i < n; i++) obs.push({ t: 'spike', x: x + i * 38, w: 38, h: 40 }); arcCoins(x - 30, n * 38 + 60); nextX = x + n * 38 + gap; }
+    else if (r < 0.52) { var bh = A.pick([60, 90, 120]), bw = A.rand(90, 180); obs.push({ t: 'block', x: x, w: bw, h: bh }); lineCoins(x + 10, G - bh - 40, bw - 20); if (Math.random() < lv) obs.push({ t: 'spike', x: x + bw + 40, w: 38, h: 40 }); nextX = x + bw + gap; }
+    else if (r < 0.72) { var pw = A.rand(90, 120 + lv * 70); obs.push({ t: 'pit', x: x, w: pw }); arcCoins(x - 20, pw + 40); nextX = x + pw + gap; }
+    else if (r < 0.86 && dist > 600) { obs.push({ t: 'saw', x: x + 40, y: G - A.pick([40, 150]), r: 26 }); nextX = x + 80 + gap; }
+    else { var sx = x; for (var k = 0; k < 3; k++) { var h2 = 50 + k * 45; obs.push({ t: 'block', x: sx, w: 90, h: h2 }); sx += 90; } lineCoins(x, G - 230, 270); nextX = sx + gap; }
+  }
+  function arcCoins(x, w) { for (var i = 0; i < 5; i++) { var t = i / 4; coins.push({ x: x + w * t, y: G - 70 - Math.sin(t * Math.PI) * 150 }); } }
+  function lineCoins(x, y, w) { for (var i = 0; i < Math.floor(w / 40); i++) coins.push({ x: x + i * 40 + 20, y: y }); }
+
+  function groundAt(x) {
+    for (var i = 0; i < obs.length; i++) { var o = obs[i]; if (o.t === 'pit' && x > o.x + 10 && x < o.x + o.w - 10) return false; }
+    return true;
+  }
+  function die() {
+    if (dyingT > 0) return;
+    dyingT = 1.1; fx.burst(P.x, P.y - 20, '#b48cff', 40, 420, 0.8, 4); fx.burst(P.x, P.y - 20, '#fff', 12, 300, 0.4, 2.5);
+    fx.shake(12, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(160);
+  }
+
+  function update(dt) {
+    fx.update(dt);
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['코인', String(coinN)], ['최고 속도', Math.round(speed / 10) + '']]); return; }
+    runT += dt;
+    speed = Math.min(820, 330 + runT * 7);
+    var dx = speed * dt; dist += dx; groundOff = (groundOff + dx) % 60;
+    for (var i = obs.length - 1; i >= 0; i--) { obs[i].x -= dx; if (obs[i].x + (obs[i].w || 60) < -80) obs.splice(i, 1); }
+    for (i = coins.length - 1; i >= 0; i--) { coins[i].x -= dx; if (coins[i].x < -30) coins.splice(i, 1); }
+    nextX -= dx; while (nextX < W + 300) gen();
+
+    // 물리
+    var g = holding && P.vy < 0 ? 2300 : 3400;
+    P.vy += g * dt; var py = P.y; P.y += P.vy * dt;
+    P.ground = false;
+    var floor = groundAt(P.x) ? G : 99999;
+    for (i = 0; i < obs.length; i++) {
+      var o = obs[i];
+      if (o.t === 'block' && P.x + 18 > o.x && P.x - 18 < o.x + o.w) {
+        var top = G - o.h;
+        if (py <= top + 2 && P.y >= top) floor = Math.min(floor, top);
+        else if (P.y > top + 6) die(); // 옆면 충돌
+      }
+    }
+    if (P.y >= floor) { if (!P.ground && P.vy > 400) { P.squash = 0.12; fx.burst(P.x, floor, '#b48cff', 6, 120, 0.25, 2); } P.y = floor; P.vy = 0; P.ground = true; P.jumps = 0; }
+    if (P.y > H + 60) die();
+    P.rot = P.ground ? 0 : P.rot + dt * 9;
+    if (P.squash > 0) P.squash -= dt;
+    // 위험물
+    for (i = 0; i < obs.length; i++) {
+      o = obs[i];
+      if (o.t === 'spike' && P.x + 14 > o.x + 6 && P.x - 14 < o.x + o.w - 6 && P.y > G - o.h + 12) die();
+      if (o.t === 'saw' && Math.hypot(P.x - o.x, P.y - 22 - o.y) < o.r + 16) die();
+    }
+    // 코인
+    for (i = coins.length - 1; i >= 0; i--) {
+      var c = coins[i];
+      if (Math.abs(c.x - P.x) < 30 && Math.abs(c.y - (P.y - 22)) < 34) { coins.splice(i, 1); coinN++; fx.burst(c.x, c.y, '#ffd166', 8, 160, 0.35, 2.4); A.sfx('coin'); }
+    }
+    if (P.ground && Math.random() < 0.5) fx.spark(P.x - 16, P.y - 4, '#b48cff', -speed * 0.3, A.rand(-60, -10), 0.25, 2);
+    score = Math.floor(dist / 10) + coinN * 10;
+    hud();
+  }
+
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.drawImage(BG, -10, -10, W + 20, H + 20);
+    var d = dist || t * 120;
+    c.drawImage(SKY2, -((d * 0.12) % W), G - 380, W * 2, 400);
+    c.drawImage(SKY1, -((d * 0.3) % W), G - 330, W * 2, 400);
+    // 바닥
+    var g = c.createLinearGradient(0, G, 0, H); g.addColorStop(0, '#2a1450'); g.addColorStop(1, '#07030d');
+    c.fillStyle = g; c.fillRect(0, G, W, H - G);
+    c.strokeStyle = 'rgba(180,140,255,.25)'; c.lineWidth = 1;
+    var off = (dist ? groundOff : (t * 120) % 60);
+    for (var x = -off; x < W; x += 60) { c.beginPath(); c.moveTo(x, G); c.lineTo(W / 2 + (x - W / 2) * 3, H); c.stroke(); }
+    for (var k = 1; k < 6; k++) { var yy = G + Math.pow(k / 6, 2) * (H - G); c.beginPath(); c.moveTo(0, yy); c.lineTo(W, yy); c.stroke(); }
+    c.fillStyle = '#d6bfff'; c.fillRect(0, G - 2, W, 3);
+    if (obs) {
+      for (var i = 0; i < obs.length; i++) {
+        var b = obs[i];
+        if (b.t === 'pit') { c.fillStyle = '#05020a'; c.fillRect(b.x, G - 2, b.w, H - G + 2); c.fillStyle = 'rgba(255,77,109,.5)'; c.fillRect(b.x, G - 2, 3, 30); c.fillRect(b.x + b.w - 3, G - 2, 3, 30); }
+        else if (b.t === 'block') {
+          var bg = c.createLinearGradient(0, G - b.h, 0, G); bg.addColorStop(0, '#5b3a9a'); bg.addColorStop(1, '#2a1650');
+          c.fillStyle = bg; c.fillRect(b.x, G - b.h, b.w, b.h); c.fillStyle = '#d6bfff'; c.fillRect(b.x, G - b.h, b.w, 3);
+          c.strokeStyle = 'rgba(214,191,255,.35)'; c.strokeRect(b.x + 0.5, G - b.h + 0.5, b.w - 1, b.h - 1);
+        } else if (b.t === 'spike') {
+          c.fillStyle = '#ff4d6d'; c.beginPath(); c.moveTo(b.x + 2, G); c.lineTo(b.x + b.w / 2, G - b.h); c.lineTo(b.x + b.w - 2, G); c.fill();
+          c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ff4d6d', 6), b.x + b.w / 2, G - b.h / 2, 0.8); c.restore();
+        } else if (b.t === 'saw') {
+          c.save(); c.translate(b.x, b.y); c.rotate(t * 10); c.fillStyle = '#ff7a45';
+          c.beginPath(); for (var s = 0; s < 16; s++) { var a = s / 16 * Math.PI * 2, rr = s % 2 ? b.r * 0.7 : b.r; c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } c.fill();
+          c.fillStyle = '#2a0d05'; c.beginPath(); c.arc(0, 0, 6, 0, 7); c.fill(); c.restore();
+        }
+      }
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (i = 0; i < coins.length; i++) A.draw(c, COIN, coins[i].x, coins[i].y + Math.sin(t * 6 + i) * 3, 0.9);
+      c.restore();
+    }
+    // 플레이어 (빛나는 큐브)
+    var px = P ? P.x : 140, py = P ? P.y : G, rot = P ? P.rot : 0, sq = P && P.squash > 0 ? P.squash / 0.12 : 0;
+    if (!P || dyingT <= 0) {
+      c.save(); c.translate(px, py - 22); c.rotate(rot); c.scale(1 + sq * 0.25, 1 - sq * 0.25);
+      c.shadowColor = '#b48cff'; c.shadowBlur = 18; c.fillStyle = '#e9dcff'; A.rr(c, -18, -18, 36, 36, 7); c.fill();
+      c.shadowBlur = 0; c.fillStyle = '#7d4fd6'; A.rr(c, -11, -11, 22, 22, 4); c.fill();
+      c.fillStyle = '#fff'; c.fillRect(2, -6, 5, 6); c.restore();
+    }
+    fx.draw(c);
+    c.restore(); fx.drawFlash(c, W, H);
+  }
+  var lastHud = '';
+  function hud() {
+    var k = score + '|' + coinN; if (k === lastHud) return; lastHud = k;
+    document.getElementById('hA').textContent = A.fmt(score);
+    document.getElementById('hB').textContent = Math.floor(dist / 10) + 'm';
+    document.getElementById('hC').textContent = coinN;
+  }
+
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) { if (S.state === 'playing') { e.preventDefault(); jump(); } });
+  window.addEventListener('pointerup', release); window.addEventListener('pointercancel', release);
+
+  var S = new A.Shell({
+    id: 'runner', W: W, H: H,
+    reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { if ((e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat) jump(); },
+    keyup: function (e) { if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') release(); }
+  });
+})();
+
+</script>
+</body>
+</html>

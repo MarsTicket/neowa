@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/orbit.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>오빗 점프 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 원탭 우주 게임. 행성 주위를 도는 우주선을 알맞은 순간에 탭해 다음 행성으로 날려 보내세요. 소행성 띠를 피해 얼마나 높이 갈 수 있을까요?">
+<meta property="og:title" content="오빗 점프 · 너와 아케이드">
+<meta property="og:description" content="탭 한 번으로 행성 사이를 점프하는 우주 게임.">
+<meta property="og:image" content="https://neowa.kr/assets/orbit-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff7a45;--accent-ink:#2a0d00;--ar:255,122,69}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 06</small>오빗 점프</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>Space</kbd><kbd>↑</kbd> 발사</div>
+          <div class="t-only"><kbd>탭</kbd> 화면 어디든 탭하면 발사</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>다음 행성의 중력권에 들어가면 붙잡힘</div>
+          <div><kbd style="color:#ff4d6d">●</kbd> 소행성에 닿으면 끝</div>
+          <div><kbd style="color:#ffd166">★</kbd> 별 50점, 빨리 갈수록 보너스</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">PLANET</span><span class="h-v sm" id="hB">0</span></div>
+        <div class="h-box r"><span class="h-lb">STAR</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 06</p>
+        <h1 class="ov-title">오빗 점프</h1>
+        <p class="ov-desc">우주선은 행성 주위를 돕니다. 다음 행성을 향할 때 탭하면 그 방향으로 날아갑니다. 빗나가면 우주 미아!</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭으로 발사</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>별 50점</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>발사 준비</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../dodge/"><img src="../assets/dodge-card.jpg" alt=""><span class="grow"><b>네온 회피</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../dodge/"><img src="../assets/dodge-card.jpg" alt=""><span><b>네온 회피</b><span>생존</span></span></a>
+        <a class="g-more" href="../sudoku/"><img src="../assets/sudoku-card.jpg" alt=""><span><b>스도쿠</b><span>숫자 퍼즐</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960;
+  var fx = new A.FX();
+  var planets = [], ship, cam = 0, camT = 0, score = 0, hops = 0, starN = 0, dyingT = 0, flyT = 0, nextY, stars = [], trail = [], bgStars = [];
+  var PAL = ['#ff7a45', '#5ee7ff', '#b48cff', '#7dff9b', '#ffd166', '#ff7aa8'];
+  for (var i = 0; i < 140; i++) bgStars.push({ x: Math.random() * W, y: Math.random() * H, z: Math.random() });
+
+  function planetSprite(color, r) {
+    return A.sprite('pl' + color + r, r * 2 + 40, r * 2 + 40, function (x, w) {
+      var c = w / 2;
+      var halo = x.createRadialGradient(c, c, r * 0.8, c, c, r + 20); halo.addColorStop(0, A.hexA(color, 0.45)); halo.addColorStop(1, A.hexA(color, 0));
+      x.fillStyle = halo; x.fillRect(0, 0, w, w);
+      var g = x.createRadialGradient(c - r * 0.35, c - r * 0.35, r * 0.1, c, c, r); g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, color); g.addColorStop(1, A.hexA(color, 0.35));
+      x.fillStyle = g; x.beginPath(); x.arc(c, c, r, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.25)'; x.lineWidth = 3; x.beginPath(); x.ellipse(c, c, r * 1.35, r * 0.35, -0.4, 0, Math.PI * 2); x.stroke();
+    });
+  }
+  function addPlanet(y, first) {
+    var lv = Math.min(1, hops / 40);
+    var r = first ? 46 : A.rand(40 - lv * 14, 54 - lv * 16);
+    var p = { x: first ? W / 2 : A.rand(r + 50, W - r - 50), y: y, r: r, c: A.pick(PAL), spin: (Math.random() < 0.5 ? -1 : 1) * A.rand(1.6, 2.2 + lv * 1.4), rocks: [], mv: 0 };
+    if (!first && hops > 6 && Math.random() < 0.25 + lv * 0.35) { // 소행성 띠
+      var n = A.irand(2, 3 + Math.floor(lv * 3)), rr = r + 74;
+      for (var k = 0; k < n; k++) p.rocks.push({ a: k / n * Math.PI * 2, d: rr });
+      p.rockSpin = (Math.random() < 0.5 ? -1 : 1) * A.rand(0.8, 1.5);
+    }
+    if (!first && hops > 12 && Math.random() < 0.3 * lv + 0.1) p.mv = A.rand(40, 90) * (Math.random() < 0.5 ? -1 : 1); // 좌우로 움직이는 행성
+    p.spr = planetSprite(p.c, Math.round(r));
+    planets.push(p);
+    if (!first && Math.random() < 0.7) stars.push({ x: A.rand(60, W - 60), y: y + A.rand(80, 160), got: false });
+  }
+  function reset() {
+    planets = []; stars = []; trail = []; hops = 0; starN = 0; score = 0; dyingT = 0; flyT = 0; cam = 0; camT = 0;
+    addPlanet(700, true); nextY = 700;
+    for (var i = 0; i < 5; i++) { nextY -= A.rand(230, 300); addPlanet(nextY); }
+    var p = planets[0];
+    ship = { p: p, a: -Math.PI / 2, x: 0, y: 0, vx: 0, vy: 0, fly: false };
+    placeShip(); fx.clear(); hud();
+  }
+  function orbitR(p) { return p.r + 28; }
+  function placeShip() { var p = ship.p, R = orbitR(p); ship.x = p.x + Math.cos(ship.a) * R; ship.y = p.y + Math.sin(ship.a) * R; }
+  function launch() {
+    if (S.state !== 'playing' || dyingT > 0 || ship.fly) return;
+    var p = ship.p, dir = Math.sign(p.spin), spd = 620 + Math.min(260, hops * 6);
+    // 접선 방향
+    ship.vx = -Math.sin(ship.a) * dir * spd; ship.vy = Math.cos(ship.a) * dir * spd;
+    ship.fly = true; ship.from = p; flyT = 0; A.sfx('shoot', 0.6); fx.burst(ship.x, ship.y, p.c, 10, 200, 0.3, 2.5);
+  }
+  function die() {
+    if (dyingT > 0) return;
+    dyingT = 1.2; fx.burst(ship.x, ship.y, '#ff7a45', 40, 420, 0.8, 4); fx.burst(ship.x, ship.y, '#fff', 14, 300, 0.4, 2.4);
+    fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.4); A.sfx('bigboom'); A.vibrate(160);
+  }
+  function update(dt) {
+    fx.update(dt);
+    camT = Math.max(camT, 700 - (ship.fly ? ship.from.y : ship.p.y)); // 현재 행성을 화면 아래쪽(y=700)에
+    cam = A.lerp(cam, camT, Math.min(1, dt * 3));
+    planets.forEach(function (p) {
+      if (p.mv) { p.x += p.mv * dt; if (p.x < p.r + 30 || p.x > W - p.r - 30) p.mv *= -1; }
+      p.rocks.forEach(function (r) { r.a += p.rockSpin * dt; });
+    });
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['행성', String(hops)], ['별', String(starN)], ['최고 높이', Math.floor(cam / 10) + 'km']]); return; }
+    if (!ship.fly) {
+      ship.a += ship.p.spin * dt * (1 + Math.min(0.8, hops * 0.02)); placeShip();
+    } else {
+      flyT += dt; ship.x += ship.vx * dt; ship.y += ship.vy * dt;
+      trail.push({ x: ship.x, y: ship.y }); if (trail.length > 14) trail.shift();
+      for (var i = 0; i < planets.length; i++) {
+        var p = planets[i]; if (p === ship.from) continue;
+        var d = Math.hypot(ship.x - p.x, ship.y - p.y);
+        if (d < orbitR(p) + 6) { // 포획
+          var a = Math.atan2(ship.y - p.y, ship.x - p.x);
+          var cross = (ship.x - p.x) * ship.vy - (ship.y - p.y) * ship.vx;
+          p.spin = Math.abs(p.spin) * (cross > 0 ? 1 : -1);
+          ship.p = p; ship.a = a; ship.fly = false; trail = [];
+          if (p.y < ship.from.y - 10) {
+            hops++; var bonus = Math.max(0, Math.round((1.2 - flyT) * 50));
+            score += 100 + bonus; fx.text(p.x, p.y - p.r - 40, '+' + (100 + bonus), '#fff', 20);
+            if (hops % 10 === 0) { S.banner(hops + ' 행성', '더 깊은 우주로'); A.sfx('level'); }
+          }
+          A.sfx('power'); fx.ring(p.x, p.y, p.c, p.r * 2.4, 0.5); A.vibrate(15);
+          // 행성 보충
+          while (nextY > p.y - 1400) { nextY -= A.rand(230, 300 + Math.min(80, hops * 2)); addPlanet(nextY); }
+          planets = planets.filter(function (q) { return q.y < p.y + 900; });
+          stars = stars.filter(function (s) { return s.y < p.y + 900; });
+          break;
+        }
+      }
+      if (ship.x < -40 || ship.x > W + 40 || ship.y + cam > H + 60 || ship.y + cam < -120 || flyT > 2.4) die();
+    }
+    // 소행성 충돌
+    planets.forEach(function (p) {
+      p.rocks.forEach(function (r) {
+        var rx = p.x + Math.cos(r.a) * r.d, ry = p.y + Math.sin(r.a) * r.d;
+        if (Math.hypot(rx - ship.x, ry - ship.y) < 22) die();
+      });
+    });
+    stars.forEach(function (s) {
+      if (!s.got && Math.hypot(s.x - ship.x, s.y - ship.y) < 34) { s.got = true; starN++; score += 50; fx.burst(s.x, s.y, '#ffd166', 14, 220, 0.5, 3); fx.text(s.x, s.y - 20, '+50', '#ffd166', 18); A.sfx('coin'); }
+    });
+    hud();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#04030c'); g.addColorStop(1, '#12081f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    for (var i = 0; i < bgStars.length; i++) { var s = bgStars[i], yy = ((s.y + cam * (0.1 + s.z * 0.3)) % H + H) % H; c.globalAlpha = 0.3 + s.z * 0.7; c.fillStyle = '#fff'; c.fillRect(s.x, yy, 1 + s.z * 1.4, 1 + s.z * 1.4); }
+    c.globalAlpha = 1;
+    c.save(); c.translate(0, cam);
+    if (!ship) { // 시작 화면 장식
+      A.draw(c, planetSprite('#ff7a45', 46), W / 2, 700); A.draw(c, planetSprite('#5ee7ff', 40), 150, 430); A.draw(c, planetSprite('#b48cff', 44), 400, 170);
+      var a0 = t * 2; c.fillStyle = '#fff'; c.beginPath(); c.arc(W / 2 + Math.cos(a0) * 74, 700 + Math.sin(a0) * 74, 8, 0, 7); c.fill();
+    } else {
+      planets.forEach(function (p) {
+        c.strokeStyle = A.hexA(p.c, 0.25); c.setLineDash([4, 8]); c.lineWidth = 2; c.beginPath(); c.arc(p.x, p.y, orbitR(p), 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
+        A.draw(c, p.spr, p.x, p.y);
+        p.rocks.forEach(function (r) {
+          var rx = p.x + Math.cos(r.a) * r.d, ry = p.y + Math.sin(r.a) * r.d;
+          c.fillStyle = '#6b5a7a'; c.beginPath(); c.arc(rx, ry, 14, 0, 7); c.fill(); c.strokeStyle = '#ff4d6d'; c.lineWidth = 2; c.stroke();
+        });
+      });
+      c.save(); c.globalCompositeOperation = 'lighter';
+      stars.forEach(function (s) { if (!s.got) A.draw(c, A.glowDot('#ffd166', 7), s.x, s.y + Math.sin(t * 4 + s.x) * 4, 1.1); });
+      for (i = 0; i < trail.length; i++) { c.globalAlpha = i / trail.length * 0.6; A.draw(c, A.glowDot('#ff7a45', 5), trail[i].x, trail[i].y, 0.6 + i / trail.length * 0.5); }
+      c.restore();
+      if (dyingT <= 0) {
+        // 조준선: 지금 발사하면 날아갈 방향
+        if (!ship.fly && S.state === 'playing') {
+          var dir = Math.sign(ship.p.spin), tx = -Math.sin(ship.a) * dir, ty = Math.cos(ship.a) * dir;
+          c.strokeStyle = 'rgba(255,255,255,.35)'; c.setLineDash([3, 9]); c.lineWidth = 2; c.beginPath(); c.moveTo(ship.x, ship.y); c.lineTo(ship.x + tx * 160, ship.y + ty * 160); c.stroke(); c.setLineDash([]);
+        }
+        var ang = ship.fly ? Math.atan2(ship.vy, ship.vx) : ship.a + Math.PI / 2 * Math.sign(ship.p.spin);
+        c.save(); c.translate(ship.x, ship.y); c.rotate(ang);
+        c.shadowColor = '#ffb08a'; c.shadowBlur = 14; c.fillStyle = '#fff';
+        c.beginPath(); c.moveTo(14, 0); c.lineTo(-10, -9); c.lineTo(-5, 0); c.lineTo(-10, 9); c.closePath(); c.fill(); c.restore();
+      }
+    }
+    fx.draw(c);
+    c.restore(); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() {
+    document.getElementById('hA').textContent = A.fmt(score);
+    document.getElementById('hB').textContent = hops;
+    document.getElementById('hC').textContent = starN;
+  }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state === 'playing') { e.preventDefault(); launch(); } });
+  var S = new A.Shell({
+    id: 'orbit', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { if ((e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat) launch(); }
+  });
+})();
+
+</script>
+</body>
+</html>

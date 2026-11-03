@@ -878,5 +878,125 @@
   "new": true,
   "art": "capture",
   "maxScore": 1000000
+ },
+ {
+  "id": "reaction",
+  "name": "반응 속도",
+  "genre": "REACTION",
+  "kgenre": "반응",
+  "cat": "두뇌",
+  "accent": "#ff4d6d",
+  "rgb": "255,77,109",
+  "ink": "#2a0410",
+  "desc": "화면이 초록으로 바뀌는 순간 탭! 5번 측정한 평균 반응 속도로 점수가 매겨집니다. 너무 빨리 누르면 실격.",
+  "tags": [
+   "탭",
+   "5회 평균",
+   "ms 측정"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000
+ },
+ {
+  "id": "math",
+  "name": "암산 레이스",
+  "genre": "MENTAL MATH",
+  "kgenre": "암산",
+  "cat": "두뇌",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "60초 동안 계산 문제를 최대한 많이 푸세요. 맞히면 시간 +2초, 틀리면 -3초. 연속 정답일수록 어려워집니다.",
+  "tags": [
+   "숫자 입력",
+   "60초",
+   "콤보"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "stroop",
+  "name": "색깔 함정",
+  "genre": "STROOP",
+  "kgenre": "집중력",
+  "cat": "두뇌",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "글자의 뜻이 아니라 글자의 색을 고르세요! 머리와 눈이 싸우는 집중력 게임. 45초 동안 최대한 많이.",
+  "tags": [
+   "색 고르기",
+   "45초",
+   "집중력"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "aim",
+  "name": "에임 트레이너",
+  "genre": "AIM TRAINER",
+  "kgenre": "에임",
+  "cat": "두뇌",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "나타났다 사라지는 과녁을 재빨리 탭하세요. 가운데를 맞힐수록 고득점, 30초 동안 정확도와 속도를 모두 잡아라!",
+  "tags": [
+   "탭",
+   "30초",
+   "정확도"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "oddcolor",
+  "name": "다른 색 찾기",
+  "genre": "ODD COLOR",
+  "kgenre": "색감",
+  "cat": "두뇌",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "타일 중 딱 하나만 색이 미묘하게 다릅니다. 찾아서 탭! 단계가 오를수록 칸은 많아지고 색 차이는 작아집니다.",
+  "tags": [
+   "탭",
+   "색감 테스트",
+   "단계 상승"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "schulte",
+  "name": "숫자 순서 찾기",
+  "genre": "SCHULTE TABLE",
+  "kgenre": "집중력",
+  "cat": "두뇌",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "흩어진 숫자를 1부터 차례대로 빠르게 누르세요. 5×5 판의 1~25를 몇 초 만에 찾을 수 있나요?",
+  "tags": [
+   "탭",
+   "시간 기록",
+   "집중력"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
  }
 ]

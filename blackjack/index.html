@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/blackjack.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>블랙잭 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 블랙잭. 가상 칩 1000개로 딜러와 21 승부를 겨루세요. 실제 돈은 쓰이지 않습니다.">
+<meta property="og:title" content="블랙잭 · 너와 아케이드">
+<meta property="og:description" content="가상 칩으로 즐기는 블랙잭 (실제 돈 없음).">
+<meta property="og:image" content="https://neowa.kr/assets/blackjack-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#4dffd2;--accent-ink:#00241b;--ar:77,255,210}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 43</small>블랙잭</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>H</kbd> 히트 <kbd>S</kbd> 스탠드 <kbd>D</kbd> 더블</div>
+          <div class="k-only"><kbd>←→</kbd> 베팅액 <kbd>Space</kbd> 시작</div>
+          <div><kbd>탭</kbd> 화면 버튼</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>칩 0개가 되면 끝</div>
+          <div>20판 후 남은 칩이 점수</div>
+          <div>딜러는 17 이상에서 멈춤</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">CHIPS</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">ROUND</span><span class="h-v sm" id="hB">1/20</span></div>
+        <div class="h-box r"><span class="h-lb">BET</span><span class="h-v sm" id="hC">100</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 43</p>
+        <h1 class="ov-title">블랙잭</h1>
+        <p class="ov-desc">카드 합이 21에 가까운 쪽이 이깁니다. 21을 넘으면 버스트. A는 1 또는 11, 그림 카드는 10. 가상 칩만 쓰며 실제 돈은 없습니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>버튼으로 진행</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>블랙잭 = 1.5배</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../baseball/"><img src="../assets/baseball-card.jpg" alt=""><span class="grow"><b>숫자 야구</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../baseball/"><img src="../assets/baseball-card.jpg" alt=""><span><b>숫자 야구</b><span>숫자 추리</span></span></a>
+        <a class="g-more" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span><b>네온 브레이커</b><span>벽돌깨기</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, CW = 78, CH = 110;
+  var SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  var fx = new A.FX();
+  var shoe, chips, bet, round, MAXR = 20, phase, me, dl, msg, msgC, doubled, endT, btns = [];
+  function newShoe() { shoe = []; for (var d = 0; d < 4; d++) for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) shoe.push({ s: s, r: r }); for (var i = shoe.length - 1; i > 0; i--) { var j = A.irand(0, i), t = shoe[i]; shoe[i] = shoe[j]; shoe[j] = t; } }
+  function drawC(up) { if (shoe.length < 30) newShoe(); var c = shoe.pop(); c.up = up !== false; c.t = 0; return c; }
+  function val(h) { var v = 0, aces = 0; h.forEach(function (c) { if (!c.up) return; if (c.r === 0) { aces++; v += 11; } else v += Math.min(10, c.r + 1); }); while (v > 21 && aces) { v -= 10; aces--; } return v; }
+  function bj(h) { return h.length === 2 && val(h) === 21; }
+  function reset() { newShoe(); chips = 1000; bet = 100; round = 1; phase = 'bet'; me = []; dl = []; msg = '베팅액을 정하고 시작하세요'; msgC = '#fff'; endT = 0; fx.clear(); hud(); }
+  function deal() {
+    if (phase !== 'bet' || S.state !== 'playing') return; bet = Math.min(bet, chips); if (bet <= 0) return;
+    chips -= bet; doubled = false; me = [drawC(), drawC()]; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('click');
+    if (bj(me)) { stand(); } hud();
+  }
+  function hit() { if (phase !== 'play') return; me.push(drawC()); A.sfx('click', 1.2); if (val(me) > 21) finish(); else if (val(me) === 21) stand(); hud(); }
+  function stand() { if (phase !== 'play') return; phase = 'dealer'; dl[1].up = true; dealerT = 0.6; hud(); }
+  function dbl() { if (phase !== 'play' || me.length !== 2 || chips < bet) { A.sfx('wall'); return; } chips -= bet; bet *= 2; doubled = true; me.push(drawC()); A.sfx('coin'); if (val(me) > 21) finish(); else stand(); hud(); }
+  var dealerT = 0;
+  function finish() {
+    dl.forEach(function (c) { c.up = true; }); var mv = val(me), dv = val(dl), win = 0;
+    if (mv > 21) { msg = '버스트! 패배'; msgC = '#ff4d6d'; }
+    else if (bj(me) && !bj(dl)) { win = Math.floor(bet * 2.5); msg = '블랙잭! +' + Math.floor(bet * 1.5); msgC = '#ffd166'; }
+    else if (dv > 21 || mv > dv) { win = bet * 2; msg = '승리! +' + bet; msgC = '#4dffd2'; }
+    else if (mv === dv) { win = bet; msg = '무승부 (푸시)'; msgC = '#fff'; }
+    else { msg = '딜러 승'; msgC = '#ff4d6d'; }
+    chips += win; phase = 'result'; endT = 1.4;
+    if (win > bet) { A.sfx(win >= bet * 2.5 ? 'gold' : 'coin'); fx.burst(W / 2, 640, '#4dffd2', 24, 300, 0.6, 3.5); } else if (!win) { A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
+    if (doubled) bet = Math.floor(bet / 2);
+    hud();
+  }
+  function update(dt) {
+    fx.update(dt); me.concat(dl).forEach(function (c) { c.t = Math.min(1, (c.t || 0) + dt * 5); });
+    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17 && val(me) <= 21) { dl.push(drawC()); A.sfx('click', 0.9); dealerT = 0.55; } else finish(); } }
+    if (phase === 'result') { endT -= dt; if (endT <= 0) {
+      if (chips <= 0) { S.gameOver(0, [['라운드', String(round)]]); return; }
+      if (round >= MAXR) { S.gameOver(chips, [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)]], { kick: 'FINISH', win: chips > 1000 }); return; }
+      round++; phase = 'bet'; me = []; dl = []; bet = Math.min(bet, chips); msg = ''; hud(); } }
+  }
+  function cardDraw(c, cd, x, y) {
+    var e = cd.t == null ? 1 : cd.t; y += (1 - e) * -200; c.globalAlpha = e;
+    if (!cd.up) { var g = c.createLinearGradient(x, y, x, y + CH); g.addColorStop(0, '#1a8a6a'); g.addColorStop(1, '#0a4a3a'); c.fillStyle = g; A.rr(c, x, y, CW, CH, 9); c.fill(); c.strokeStyle = 'rgba(255,255,255,.35)'; A.rr(c, x + 6, y + 6, CW - 12, CH - 12, 6); c.stroke(); c.globalAlpha = 1; return; }
+    c.fillStyle = '#fbfbf7'; A.rr(c, x, y, CW, CH, 9); c.fill();
+    var col = cd.s === 1 || cd.s === 2 ? '#d6284f' : '#1a1a2a'; c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'top'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText(RANKS[cd.r], x + 7, y + 6); c.font = '700 18px system-ui'; c.fillText(SUITS[cd.s], x + 7, y + 30);
+    c.font = '700 44px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(SUITS[cd.s], x + CW / 2, y + CH * 0.6); c.globalAlpha = 1;
+  }
+  function hand(c, h, y, label) {
+    var n = h.length, step = Math.min(CW + 8, (W - 80 - CW) / Math.max(1, n - 1)), x0 = W / 2 - ((n - 1) * step + CW) / 2;
+    h.forEach(function (cd, i) { cardDraw(c, cd, x0 + i * step, y); });
+    if (n) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label + ' ' + val(h), W / 2, y - 22); }
+  }
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    var g = c.createRadialGradient(W / 2, 420, 60, W / 2, 420, 700); g.addColorStop(0, '#0f5a46'); g.addColorStop(1, '#03160f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    c.strokeStyle = 'rgba(255,209,102,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(W / 2, -200, 640, 0.4, Math.PI - 0.4); c.stroke();
+    c.fillStyle = 'rgba(255,209,102,.5)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('딜러는 16 이하에서 받고 17 이상에서 멈춥니다 · 블랙잭 1.5배', W / 2, 415);
+    if (dl) hand(c, dl, 170, '딜러');
+    if (me) hand(c, me, 470, '나');
+    if (msg) { c.fillStyle = msgC; c.font = '400 34px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, W / 2, 640); }
+    btns = [];
+    if (S.state === 'playing') {
+      if (phase === 'bet') {
+        c.fillStyle = '#fff'; c.font = '700 22px "Chakra Petch",system-ui'; c.fillText('베팅 ' + A.fmt(Math.min(bet, chips)), W / 2, 720);
+        btns.push(['−', 60, 760, 90, 'minus'], ['+', 390, 760, 90, 'plus'], ['딜 (Space)', 170, 760, 200, 'deal']);
+      } else if (phase === 'play') btns.push(['히트 H', 30, 760, 150, 'hit'], ['스탠드 S', 195, 760, 150, 'stand'], ['더블 D', 360, 760, 150, 'dbl']);
+      btns.forEach(function (b) { var on = !(b[4] === 'dbl' && (me.length !== 2 || chips < bet)); c.fillStyle = b[4] === 'deal' ? '#4dffd2' : on ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; A.rr(c, b[1], b[2], b[3], 66, 16); c.fill(); c.fillStyle = b[4] === 'deal' ? '#00241b' : on ? '#fff' : 'rgba(255,255,255,.3)'; c.font = '700 20px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + b[3] / 2, b[2] + 34); });
+    }
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 12px "Pretendard Variable",system-ui'; c.fillText('가상 칩만 사용합니다. 실제 돈은 쓰이지 않습니다.', W / 2, 920);
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() { document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(bet); }
+  function act(a) { if (a === 'minus') { bet = Math.max(10, bet - 50); A.sfx('tick'); hud(); } if (a === 'plus') { bet = Math.min(chips, bet + 50); A.sfx('tick'); hud(); } if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); btns.forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + 66) act(b[4]); }); });
+  var S = new A.Shell({ id: 'blackjack', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { var k = e.key.toLowerCase(); if (e.repeat) return; if (k === 'h') hit(); if (k === 's') stand(); if (k === 'd') dbl(); if (k === ' ' || k === 'enter') deal(); if (k === 'arrowleft') act('minus'); if (k === 'arrowright') act('plus'); } });
+})();
+
+</script>
+</body>
+</html>

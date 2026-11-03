@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/flood.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>색 채우기 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 색 채우기 퍼즐. 색을 골라 왼쪽 위부터 판 전체를 한 색으로 물들이세요.">
+<meta property="og:title" content="색 채우기 · 너와 아케이드">
+<meta property="og:description" content="색을 골라 판을 물들이는 전략 퍼즐.">
+<meta property="og:image" content="https://neowa.kr/assets/flood-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff5ec4;--accent-ink:#2a0420;--ar:255,94,196}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 37</small>색 채우기</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>1</kbd>~<kbd>6</kbd> 색 고르기</div>
+          <div><kbd>탭</kbd> 색 버튼 또는 판의 칸</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>횟수 안에 한 색으로</div>
+          <div>남은 횟수만큼 보너스</div>
+          <div>연속 성공하면 단계 상승</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">MOVES</span><span class="h-v sm" id="hB">0/0</span></div>
+        <div class="h-box r"><span class="h-lb">WIN</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 37</p>
+        <h1 class="ov-title">색 채우기</h1>
+        <p class="ov-desc">아래 색 버튼을 누르면 왼쪽 위 덩어리가 그 색으로 바뀌며 같은 색 이웃을 흡수합니다. 횟수 안에 판 전체를 한 색으로!</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>색 버튼 탭</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>남은 횟수 = 보너스</span>
+        </div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">쉬움</button><button type="button" data-diff="1">보통</button><button type="button" data-diff="2">어려움</button></div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../pairs/"><img src="../assets/pairs-card.jpg" alt=""><span class="grow"><b>타일 짝 잇기</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../pairs/"><img src="../assets/pairs-card.jpg" alt=""><span><b>타일 짝 잇기</b><span>짝 잇기</span></span></a>
+        <a class="g-more" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span><b>네온 브레이커</b><span>벽돌깨기</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, NC = 6;
+  var COLS = ['#ff5ec4', '#5ee7ff', '#ffd166', '#7dff9b', '#b48cff', '#ff7a45'];
+  var CFG = [{ n: 10, m: 18, b: 100 }, { n: 14, m: 25, b: 250 }, { n: 18, m: 32, b: 500 }];
+  var diff = +A.get('neowa_flood_diff', '0') || 0;
+  var fx = new A.FX();
+  var N, CS, GX, GY, grid, moves, maxM, wins, score, region, ripple, dyingT, nextT;
+  function setup() { var cf = CFG[diff]; N = cf.n; maxM = cf.m; CS = Math.floor(500 / N); GX = (W - N * CS) / 2; GY = 130 + (560 - N * CS) / 2; grid = []; for (var i = 0; i < N * N; i++) grid.push(A.irand(0, NC - 1)); moves = 0; ripple = {}; calc(); }
+  function calc() { region = {}; var c = grid[0], q = [0]; region[0] = 0; while (q.length) { var i = q.shift(), x = i % N, y = Math.floor(i / N); [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { var nx = x + d[0], ny = y + d[1], ni = ny * N + nx; if (nx < 0 || ny < 0 || nx >= N || ny >= N || region[ni] != null || grid[ni] !== c) return; region[ni] = region[i] + 1; q.push(ni); }); } }
+  function reset() { wins = 0; score = 0; dyingT = 0; nextT = 0; setup(); fx.clear(); hud(); }
+  function pick(col) {
+    if (S.state !== 'playing' || dyingT > 0 || nextT > 0 || col === grid[0]) return;
+    var before = Object.keys(region).length;
+    Object.keys(region).forEach(function (k) { grid[k] = col; ripple[k] = region[k] * 0.012; });
+    moves++; calc(); var gained = Object.keys(region).length - before; A.sfx('eat', 0.8 + Math.min(1, gained / 20));
+    Object.keys(region).forEach(function (k) { if (ripple[k] == null) ripple[k] = region[k] * 0.012; });
+    if (Object.keys(region).length === N * N) { var pts = CFG[diff].b + (maxM - moves) * 30; score += pts; wins++; nextT = 1.2; A.sfx('level'); fx.text(W / 2, GY - 30, '완성! +' + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), COLS[col], 20, 300, 0.7, 4); }
+    else if (moves >= maxM) { dyingT = 1.2; A.sfx('hurt'); fx.flashIt('#ff2244', 0.4); }
+    hud();
+  }
+  function update(dt) {
+    fx.update(dt); for (var k in ripple) { ripple[k] -= dt; if (ripple[k] < -0.3) delete ripple[k]; }
+    if (nextT > 0) { nextT -= dt; if (nextT <= 0) { setup(); S.banner(wins + 1 + '번째 판', '연속 도전'); hud(); } }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['완성한 판', String(wins)], ['크기', N + '×' + N]]); }
+  }
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#0c0410'; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!grid) setup();
+    for (var i = 0; i < N * N; i++) {
+      var x = i % N, y = Math.floor(i / N), r = ripple[i], s = r != null && r < 0 ? 1 + Math.sin(-r / 0.3 * Math.PI) * 0.18 : 1;
+      c.fillStyle = COLS[grid[i]]; var sz = CS * s; c.fillRect(GX + x * CS + (CS - sz) / 2, GY + y * CS + (CS - sz) / 2, sz + 0.5, sz + 0.5);
+    }
+    c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3; c.strokeRect(GX - 2, GY - 2, N * CS + 4, N * CS + 4);
+    // 색 버튼
+    for (var k = 0; k < NC; k++) { var bx = 30 + k * 82, by = 760, cur = grid[0] === k; c.save(); if (!cur) { c.shadowColor = COLS[k]; c.shadowBlur = 14; } c.fillStyle = COLS[k]; c.globalAlpha = cur ? 0.25 : 1; A.rr(c, bx, by, 70, 70, 18); c.fill(); c.restore();
+      c.fillStyle = 'rgba(0,0,0,.45)'; c.font = '700 16px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(k + 1), bx + 35, by + 35); }
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('왼쪽 위부터 같은 색이 퍼져 나갑니다', W / 2, 870);
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); var m = document.getElementById('hB'); m.textContent = moves + '/' + maxM; m.style.color = maxM - moves <= 3 ? '#ff4d6d' : ''; document.getElementById('hC').textContent = wins; }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return; var p = S.toLocal(e);
+    if (p.y > 760 && p.y < 830) { var k = Math.floor((p.x - 30) / 82); if (k >= 0 && k < NC && (p.x - 30) % 82 < 72) pick(k); return; }
+    var x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); if (x >= 0 && y >= 0 && x < N && y < N) pick(grid[y * N + x]);
+  });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flood_diff', diff); A.sfx('click'); paint(); grid = null; }); }); paint();
+  var S = new A.Shell({ id: 'flood', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { if (/^[1-6]$/.test(e.key) && !e.repeat) pick(+e.key - 1); } });
+})();
+
+</script>
+</body>
+</html>

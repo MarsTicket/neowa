@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/defense.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>도시 방어 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 도시 방어 게임. 떨어지는 미사일을 탭해서 요격하세요. 연쇄 폭발로 한꺼번에!">
+<meta property="og:title" content="도시 방어 · 너와 아케이드">
+<meta property="og:description" content="탭으로 요격하는 도시 방어전.">
+<meta property="og:image" content="https://neowa.kr/assets/defense-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff7a45;--accent-ink:#2a0d00;--ar:255,122,69}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 23</small>도시 방어</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>↑↓←→</kbd> 조준점 <kbd>Space</kbd> 발사</div>
+          <div><kbd>탭</kbd> 그 자리에 폭발</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>도시 6곳 모두 파괴되면 끝</div>
+          <div>한 번에 여러 개 = 연쇄 보너스</div>
+          <div>웨이브 클리어 시 남은 도시 보너스</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">WAVE</span><span class="h-v sm" id="hB">1</span></div>
+        <div class="h-box r"><span class="h-lb">CITY</span><span class="h-v sm" id="hC">6</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 23</p>
+        <h1 class="ov-title">도시 방어</h1>
+        <p class="ov-desc">미사일이 지나갈 곳을 탭하면 그 자리에서 폭발합니다. 도시 6곳이 모두 파괴되면 끝.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭으로 요격</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>연쇄 폭발 보너스</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, GY = 880;
+  var fx = new A.FX();
+  var cities, missiles, blasts, shots, wave, score, toSpawn, spawnT, dyingT, cur = { x: W / 2, y: 500 }, kbd = false, chainCount, waveT, ammo;
+  var BASE = { x: W / 2, y: GY - 10 };
+  function reset() { cities = []; for (var i = 0; i < 6; i++) cities.push({ x: 50 + i * 88 + (i >= 3 ? 0 : 0), alive: true }); missiles = []; blasts = []; shots = []; wave = 0; score = 0; dyingT = 0; waveT = 0; nextWave(); fx.clear(); hud(); }
+  function nextWave() { wave++; toSpawn = 6 + wave * 3; spawnT = 1; ammo = toSpawn + 10; S.banner('WAVE ' + wave, '미사일 접근'); if (wave > 1) A.sfx('level'); }
+  function spawn() {
+    var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) return;
+    var tg = A.pick(alive), sx = A.rand(0, W), sp = 50 + wave * 9 + A.rand(0, 30);
+    var a = Math.atan2(GY - 80, tg.x - sx);
+    missiles.push({ x: sx, y: 70, sx: sx, sy: 70, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, split: wave >= 3 && Math.random() < 0.2, tg: tg });
+    toSpawn--; spawnT = Math.max(0.35, 1.6 - wave * 0.12) * A.rand(0.6, 1.3);
+  }
+  function fire(x, y) {
+    if (S.state !== 'playing' || dyingT > 0 || ammo <= 0) return; y = Math.min(y, GY - 60);
+    ammo--; shots.push({ x: BASE.x, y: BASE.y, tx: x, ty: y, sp: 900 }); A.sfx('shoot', 0.7); hud();
+  }
+  function explode(x, y, chain) { blasts.push({ x: x, y: y, r: 0, max: 62, t: 0, chain: chain }); A.sfx(chain ? 'boom' : 'hit', chain ? 1.3 : 1); }
+  function update(dt) {
+    fx.update(dt);
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)]]); return; }
+    if (toSpawn > 0) { spawnT -= dt; if (spawnT <= 0) spawn(); }
+    var i, j;
+    for (i = shots.length - 1; i >= 0; i--) { var s = shots[i], dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), st = s.sp * dt; if (d <= st) { shots.splice(i, 1); explode(s.tx, s.ty, false); } else { s.x += dx / d * st; s.y += dy / d * st; } }
+    for (i = blasts.length - 1; i >= 0; i--) { var b = blasts[i]; b.t += dt; b.r = b.t < 0.35 ? b.max * (b.t / 0.35) : b.max * Math.max(0, 1 - (b.t - 0.35) / 0.5); if (b.t > 0.85) blasts.splice(i, 1); }
+    for (i = missiles.length - 1; i >= 0; i--) {
+      var m = missiles[i]; m.x += m.vx * dt; m.y += m.vy * dt;
+      var hit = false; for (j = 0; j < blasts.length; j++) if (Math.hypot(m.x - blasts[j].x, m.y - blasts[j].y) < blasts[j].r) { hit = true; break; }
+      if (hit) { missiles.splice(i, 1); chainCount++; var pts = 25 * chainCount; score += pts; fx.text(m.x, m.y - 20, (chainCount > 1 ? chainCount + '연쇄 ' : '') + '+' + pts, chainCount > 1 ? '#ffd166' : '#fff', 18); fx.burst(m.x, m.y, '#ff7a45', 14, 240, 0.5, 3); explode(m.x, m.y, true); continue; }
+      if (m.split && m.y > 300 && !m.didSplit) { m.didSplit = true; for (var k = 0; k < 2; k++) { var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) break; var tg = A.pick(alive), a = Math.atan2(GY - m.y, tg.x - m.x), sp = Math.hypot(m.vx, m.vy); missiles.push({ x: m.x, y: m.y, sx: m.x, sy: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, tg: tg }); } }
+      if (m.y >= GY - 20) {
+        missiles.splice(i, 1); fx.burst(m.x, GY - 20, '#ff4d6d', 30, 320, 0.7, 4); fx.shake(8, 0.3); A.sfx('bigboom'); A.vibrate(120);
+        cities.forEach(function (c) { if (c.alive && Math.abs(c.x - m.x) < 46) { c.alive = false; fx.text(c.x, GY - 60, '도시 파괴', '#ff4d6d', 18); } });
+        if (!cities.some(function (c) { return c.alive; })) { dyingT = 1.4; fx.flashIt('#ff2244', 0.7); }
+      }
+    }
+    if (blasts.length === 0) chainCount = 0;
+    if (toSpawn <= 0 && !missiles.length && dyingT <= 0) { waveT += dt; if (waveT > 1.2) { waveT = 0; var alive = cities.filter(function (c) { return c.alive; }).length, bonus = alive * 100 + ammo * 5; score += bonus; fx.text(W / 2, H / 2, '도시 ' + alive + '곳 보너스 +' + bonus, '#ffd166', 22); if (wave % 3 === 0) cities.forEach(function (c) { if (!c.alive && Math.random() < 0.5) { c.alive = true; } }); nextWave(); } }
+    hud();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#080418'); g.addColorStop(1, '#2a0d1a'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    for (var i = 0; i < 60; i++) { c.fillStyle = 'rgba(255,255,255,.4)'; c.fillRect((i * 151) % W, (i * 97) % 600, 1.5, 1.5); }
+    c.fillStyle = '#1a0d14'; c.fillRect(0, GY, W, H - GY);
+    (cities || [0, 1, 2, 3, 4, 5].map(function (k) { return { x: 50 + k * 88, alive: true }; })).forEach(function (ct) {
+      if (ct.alive) { c.fillStyle = '#5ee7ff'; [[-26, 30], [-10, 46], [6, 36], [18, 24]].forEach(function (b) { c.fillRect(ct.x + b[0], GY - b[1], 14, b[1]); }); c.fillStyle = 'rgba(255,255,200,.7)'; c.fillRect(ct.x - 6, GY - 40, 3, 3); c.fillRect(ct.x + 10, GY - 28, 3, 3); }
+      else { c.fillStyle = '#3a2a2a'; c.fillRect(ct.x - 26, GY - 8, 52, 8); }
+    });
+    c.fillStyle = '#ff7a45'; c.beginPath(); c.moveTo(BASE.x - 30, GY); c.lineTo(BASE.x, GY - 34); c.lineTo(BASE.x + 30, GY); c.fill();
+    (missiles || []).forEach(function (m) { c.strokeStyle = 'rgba(255,77,109,.6)'; c.lineWidth = 2; c.beginPath(); c.moveTo(m.sx, m.sy); c.lineTo(m.x, m.y); c.stroke(); c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ff4d6d', 4), m.x, m.y, 0.9); c.restore(); });
+    (shots || []).forEach(function (s) { c.strokeStyle = 'rgba(94,231,255,.7)'; c.lineWidth = 2; c.beginPath(); c.moveTo(BASE.x, BASE.y); c.lineTo(s.x, s.y); c.stroke(); c.strokeStyle = '#5ee7ff'; c.beginPath(); c.moveTo(s.tx - 8, s.ty); c.lineTo(s.tx + 8, s.ty); c.moveTo(s.tx, s.ty - 8); c.lineTo(s.tx, s.ty + 8); c.stroke(); });
+    c.save(); c.globalCompositeOperation = 'lighter';
+    (blasts || []).forEach(function (b) { var gr = c.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r + 1); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.5, b.chain ? 'rgba(255,122,69,.7)' : 'rgba(94,231,255,.7)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.beginPath(); c.arc(b.x, b.y, b.r + 1, 0, 7); c.fill(); });
+    c.restore();
+    if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(cur.x, cur.y, 16, 0, 7); c.moveTo(cur.x - 24, cur.y); c.lineTo(cur.x + 24, cur.y); c.moveTo(cur.x, cur.y - 24); c.lineTo(cur.x, cur.y + 24); c.stroke(); }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var last = '';
+  function hud() { var alive = cities ? cities.filter(function (c) { return c.alive; }).length : 6; var k = score + '|' + wave + '|' + alive + '|' + ammo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = alive; document.getElementById('hMult').textContent = '요격탄 ' + ammo; }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e); fire(p.x, p.y); });
+  var keys = {};
+  var S = new A.Shell({ id: 'defense', W: W, H: H, reset: function () { chainCount = 0; reset(); }, render: render, idle: function (dt) { fx.update(dt); },
+    update: function (dt) { var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0); if (kx || ky) { kbd = true; cur.x = A.clamp(cur.x + kx * 600 * dt, 10, W - 10); cur.y = A.clamp(cur.y + ky * 600 * dt, 90, GY - 60); } update(dt); },
+    keydown: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keys[k] = true; if ((k === ' ' || k === 'Enter') && !e.repeat) { kbd = true; fire(cur.x, cur.y); } }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+})();
+
+</script>
+</body>
+</html>

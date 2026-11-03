@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/reversi.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>리버시 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 리버시. 상대 돌을 사이에 끼워 뒤집고, 판이 찼을 때 더 많은 쪽이 이깁니다.">
+<meta property="og:title" content="리버시 · 너와 아케이드">
+<meta property="og:description" content="끼워서 뒤집는 리버시 한 판.">
+<meta property="og:image" content="https://neowa.kr/assets/reversi-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#7dff9b;--accent-ink:#04170a;--ar:125,255,155}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 41</small>리버시</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>↑↓←→</kbd> 이동 <kbd>Space</kbd> 두기</div>
+          <div><kbd>탭</kbd> 표시된 칸</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>판이 다 차면 많은 쪽 승리</div>
+          <div>네 모서리가 중요</div>
+          <div>둘 곳이 없으면 패스</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">ME : CPU</span><span class="h-v sm" id="hB">2 : 2</span></div>
+        <div class="h-box r"><span class="h-lb">WIN</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 41</p>
+        <h1 class="ov-title">리버시</h1>
+        <p class="ov-desc">놓을 수 있는 자리는 점으로 표시됩니다. 상대 돌을 가로·세로·대각선으로 끼우면 뒤집혀요. 놓을 곳이 없으면 차례가 넘어갑니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>표시된 곳 탭</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>모서리는 뒤집히지 않음</span>
+        </div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">쉬움</button><button type="button" data-diff="1">보통</button><button type="button" data-diff="2">어려움</button></div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../solitaire/"><img src="../assets/solitaire-card.jpg" alt=""><span class="grow"><b>솔리테어</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../solitaire/"><img src="../assets/solitaire-card.jpg" alt=""><span><b>솔리테어</b><span>카드</span></span></a>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, N = 8, CS = 60, GX = (540 - 480) / 2, GY = 230;
+  var fx = new A.FX();
+  var diff = +A.get('neowa_reversi_diff', '1') || 0;
+  var WT = [100, -20, 10, 5, 5, 10, -20, 100, -20, -50, -2, -2, -2, -2, -50, -20, 10, -2, 1, 1, 1, 1, -2, 10, 5, -2, 1, 0, 0, 1, -2, 5, 5, -2, 1, 0, 0, 1, -2, 5, 10, -2, 1, 1, 1, 1, -2, 10, -20, -50, -2, -2, -2, -2, -50, -20, 100, -20, 10, 5, 5, 10, -20, 100];
+  var bd, turn, wins, score, thinking, endT, flips = {}, cur = { x: 3, y: 2 }, kbd = false, passMsg = 0, lastMv = null;
+  function newGame() { bd = []; for (var i = 0; i < 64; i++) bd.push(0); bd[27] = 2; bd[28] = 1; bd[35] = 1; bd[36] = 2; turn = 1; thinking = 0; endT = 0; flips = {}; lastMv = null; }
+  function reset() { wins = 0; score = 0; newGame(); fx.clear(); hud(); }
+  function flipsFor(b, i, p) {
+    if (b[i]) return []; var x = i % N, y = Math.floor(i / N), out = [];
+    [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (d) {
+      var line = [], k = 1; while (true) { var nx = x + d[0] * k, ny = y + d[1] * k; if (nx < 0 || ny < 0 || nx >= N || ny >= N) { line = []; break; } var v = b[ny * N + nx]; if (v === 3 - p) { line.push(ny * N + nx); k++; } else { if (v !== p) line = []; break; } }
+      out = out.concat(line);
+    });
+    return out;
+  }
+  function moves(b, p) { var r = []; for (var i = 0; i < 64; i++) if (!b[i]) { var f = flipsFor(b, i, p); if (f.length) r.push({ i: i, f: f }); } return r; }
+  function apply(b, m, p) { var nb = b.slice(); nb[m.i] = p; m.f.forEach(function (k) { nb[k] = p; }); return nb; }
+  function evalB(b) { var s = 0; for (var i = 0; i < 64; i++) if (b[i] === 2) s += WT[i]; else if (b[i] === 1) s -= WT[i]; return s + (moves(b, 2).length - moves(b, 1).length) * 3; }
+  function aiPick(ms) {
+    if (diff === 0) return Math.random() < 0.5 ? A.pick(ms) : ms.reduce(function (a, b) { return b.f.length > a.f.length ? b : a; });
+    if (diff === 1) return ms.reduce(function (a, m) { var v = WT[m.i] + m.f.length; return v > a.v ? { v: v, m: m } : a; }, { v: -1e9 }).m;
+    var best = null, bv = -1e9;
+    ms.forEach(function (m) { var b1 = apply(bd, m, 2), opp = moves(b1, 1), worst = 1e9;
+      if (!opp.length) worst = evalB(b1); else opp.forEach(function (o) { var b2 = apply(b1, o, 1), mine = moves(b2, 2), bestR = -1e9; if (!mine.length) bestR = evalB(b2); else mine.forEach(function (q) { bestR = Math.max(bestR, evalB(apply(b2, q, 2))); }); worst = Math.min(worst, bestR); });
+      if (worst > bv) { bv = worst; best = m; } });
+    return best;
+  }
+  function play(m, p) {
+    bd = apply(bd, m, p); lastMv = m.i; m.f.forEach(function (k, n) { flips[k] = -n * 0.04; }); flips[m.i] = 0;
+    A.sfx('tick', p === 1 ? 1.3 : 0.9); if (m.f.length >= 4) A.sfx('coin', 1 + m.f.length * 0.03);
+    next(3 - p);
+  }
+  function next(p) {
+    if (moves(bd, p).length) { turn = p; if (p === 2) thinking = 0.5; }
+    else if (moves(bd, 3 - p).length) { turn = 3 - p; passMsg = 1.2; if (turn === 2) thinking = 0.6; }
+    else { turn = 0; endT = 1.5; }
+    hud();
+  }
+  function cnt(p) { return bd.filter(function (v) { return v === p; }).length; }
+  function human(i) { if (S.state !== 'playing' || turn !== 1 || thinking > 0 || endT > 0) return; var f = flipsFor(bd, i, 1); if (!f.length) { A.sfx('wall'); return; } play({ i: i, f: f }, 1); }
+  function update(dt) {
+    fx.update(dt); for (var k in flips) { flips[k] += dt; if (flips[k] > 0.35) delete flips[k]; } if (passMsg > 0) passMsg -= dt;
+    if (endT > 0) { endT -= dt; if (endT <= 0) { var me = cnt(1), cp = cnt(2);
+      if (me > cp) { wins++; var pts = (me - cp) * 10 * (diff + 1) + 100 * (diff + 1); score += pts; S.banner(wins + '승! ' + me + ':' + cp, '+' + pts); A.sfx('level'); newGame(); hud(); }
+      else if (me === cp) { score += 50; S.banner('무승부', '+50'); newGame(); hud(); }
+      else S.gameOver(score, [['연승', String(wins)], ['마지막', me + ' : ' + cp]]); } return; }
+    if (thinking > 0) { thinking -= dt; if (thinking <= 0 && turn === 2) { var ms = moves(bd, 2); if (ms.length) play(aiPick(ms), 2); else next(1); } }
+  }
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#031008'; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!bd) newGame();
+    c.fillStyle = '#0d4a26'; A.rr(c, GX - 10, GY - 10, 500, 500, 16); c.fill();
+    var legal = S.state === 'playing' && turn === 1 && thinking <= 0 ? moves(bd, 1).map(function (m) { return m.i; }) : [];
+    for (var i = 0; i < 64; i++) {
+      var x = GX + (i % N) * CS, y = GY + Math.floor(i / N) * CS;
+      c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1.5; c.strokeRect(x, y, CS, CS);
+      if (legal.indexOf(i) >= 0) { c.fillStyle = 'rgba(125,255,155,.35)'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, 7, 0, 7); c.fill(); }
+      if (bd[i]) {
+        var f = flips[i], sx = f != null && f > 0 ? Math.abs(Math.cos(Math.min(1, f / 0.35) * Math.PI)) : 1, col = bd[i] === 1 ? '#111' : '#f4f5fb';
+        if (f != null && f > 0 && f < 0.175) col = bd[i] === 1 ? '#f4f5fb' : '#111';
+        if (f != null && f < 0) col = bd[i] === 1 ? '#f4f5fb' : '#111';
+        c.save(); c.translate(x + CS / 2, y + CS / 2); c.scale(Math.max(0.08, sx), 1); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 5; c.shadowOffsetY = 2; c.fillStyle = col; c.beginPath(); c.arc(0, 0, CS * 0.4, 0, 7); c.fill(); c.restore();
+      }
+      if (lastMv === i) { c.fillStyle = '#ff4d6d'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, 4, 0, 7); c.fill(); }
+    }
+    if (kbd && S.state === 'playing') { c.strokeStyle = '#7dff9b'; c.lineWidth = 3; c.strokeRect(GX + cur.x * CS + 2, GY + cur.y * CS + 2, CS - 4, CS - 4); }
+    c.fillStyle = '#7dff9b'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(passMsg > 0 ? '둘 곳이 없어 차례가 넘어갑니다' : S.state === 'playing' ? (turn === 1 ? '나(흑) 차례' : turn === 2 ? '컴퓨터 생각 중…' : '') : '', W / 2, GY - 60);
+    c.font = '700 24px "Pretendard Variable",system-ui'; c.fillStyle = '#fff'; c.fillText('나(흑) ' + cnt(1) + '  :  ' + cnt(2) + ' 컴퓨터(백)', W / 2, GY + 540);
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = cnt(1) + ' : ' + cnt(2); document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff]; }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); if (x >= 0 && y >= 0 && x < N && y < N) human(y * N + x); });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_reversi_diff', diff); A.sfx('click'); pd(); }); }); pd();
+  var S = new A.Shell({ id: 'reversi', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { kbd = true; var k = e.key;
+      if (k === 'ArrowLeft' || k === 'a') cur.x = Math.max(0, cur.x - 1); if (k === 'ArrowRight' || k === 'd') cur.x = Math.min(N - 1, cur.x + 1); if (k === 'ArrowUp' || k === 'w') cur.y = Math.max(0, cur.y - 1); if (k === 'ArrowDown' || k === 's') cur.y = Math.min(N - 1, cur.y + 1);
+      if ((k === ' ' || k === 'Enter') && !e.repeat) human(cur.y * N + cur.x); } });
+})();
+
+</script>
+</body>
+</html>

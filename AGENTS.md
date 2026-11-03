@@ -3,6 +3,7 @@
 이 저장소는 **너와 아케이드(neowa.kr)** 정적 웹사이트입니다. 서버·빌드 도구 없이 GitHub Pages로 배포됩니다.
 
 ## 먼저 읽을 것
+- **다음에 만들 게임 기획안(게임 51~70): [`docs/GAME_PLANS.md`](docs/GAME_PLANS.md)**
 - **새 게임을 만들거나 게임을 고친다면 → [`docs/GAME_GUIDE.md`](docs/GAME_GUIDE.md) 를 처음부터 끝까지 읽으세요.**
 - 새 게임은 생성기(`docs/tools/make_game_page.py`)로 만드는 것을 권장합니다. 방법은 지침서 2장. 견본 `_template/`도 있습니다.
 

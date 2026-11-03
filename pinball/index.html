@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/pinball.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>네온 핀볼 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 핀볼. 화면 왼쪽·오른쪽을 눌러 플리퍼를 움직여 공을 튕기세요.">
+<meta property="og:title" content="네온 핀볼 · 너와 아케이드">
+<meta property="og:description" content="좌우 탭으로 하는 네온 핀볼.">
+<meta property="og:image" content="https://neowa.kr/assets/pinball-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff5ec4;--accent-ink:#2a0420;--ar:255,94,196}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 28</small>네온 핀볼</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>←</kbd><kbd>Z</kbd> 왼쪽 <kbd>→</kbd><kbd>/</kbd> 오른쪽</div>
+          <div class="t-only"><kbd>누르기</kbd> 화면 왼쪽/오른쪽</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>공 3개</div>
+          <div>범퍼 100점, 타깃 250점</div>
+          <div>타깃 3개 모두 켜면 배율 UP</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">BALL</span><span class="h-v sm" id="hB">3</span></div>
+        <div class="h-box r"><span class="h-lb">MULTI</span><span class="h-v sm" id="hC">×1</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 28</p>
+        <h1 class="ov-title">네온 핀볼</h1>
+        <p class="ov-desc">화면 왼쪽을 누르면 왼쪽 플리퍼, 오른쪽은 오른쪽 플리퍼. 공이 아래로 빠지면 다음 공. 공은 3개.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>좌우 누르기</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>타깃 3개 = 배율 UP</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, R = 13, G = 900;
+  var fx = new A.FX();
+  var ball, balls, score, mult, lit, flip, dyingT, launchT, keysL = false, keysR = false, touchL = false, touchR = false, saveT;
+  // 벽 선분 [x1,y1,x2,y2]
+  var WALLS = [[30, 960, 30, 230], [30, 230, 120, 110], [120, 110, 420, 110], [420, 110, 510, 230], [510, 230, 510, 960],
+    [30, 760, 150, 850], [510, 760, 390, 850], [70, 640, 70, 740], [470, 640, 470, 740], [70, 740, 140, 790], [470, 740, 400, 790]];
+  var BUMPERS = [{ x: 190, y: 300, r: 34 }, { x: 350, y: 300, r: 34 }, { x: 270, y: 420, r: 30 }, { x: 140, y: 500, r: 24 }, { x: 400, y: 500, r: 24 }];
+  var TARGETS = [{ x: 170, y: 170 }, { x: 270, y: 155 }, { x: 370, y: 170 }];
+  var FL = { L: { x: 150, y: 850, len: 95, rest: 0.45, up: -0.5, a: 0.45, prev: 0.45 }, R: { x: 390, y: 850, len: 95, rest: Math.PI - 0.45, up: Math.PI + 0.5, a: Math.PI - 0.45, prev: Math.PI - 0.45 } };
+  function newBall() { ball = { x: A.rand(200, 340), y: 150, vx: A.rand(-120, 120), vy: 0 }; saveT = 4; A.sfx('start'); }
+  function reset() { balls = 3; score = 0; mult = 1; lit = [false, false, false]; dyingT = 0; FL.L.a = FL.L.rest; FL.R.a = FL.R.rest; newBall(); fx.clear(); hud(); }
+  function seg(px, py, x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy, t = A.clamp(((px - x1) * dx + (py - y1) * dy) / l, 0, 1); return { x: x1 + dx * t, y: y1 + dy * t, t: t }; }
+  function bounce(nx, ny, e, extraVx, extraVy) {
+    var vx = ball.vx - (extraVx || 0), vy = ball.vy - (extraVy || 0), dot = vx * nx + vy * ny;
+    if (dot < 0) { ball.vx -= (1 + e) * dot * nx; ball.vy -= (1 + e) * dot * ny; }
+  }
+  function collideSeg(x1, y1, x2, y2, e, vx, vy) {
+    var q = seg(ball.x, ball.y, x1, y1, x2, y2), dx = ball.x - q.x, dy = ball.y - q.y, d = Math.hypot(dx, dy);
+    if (d < R && d > 0.001) { var nx = dx / d, ny = dy / d; ball.x = q.x + nx * R; ball.y = q.y + ny * R; bounce(nx, ny, e, vx || 0, vy || 0); return q; }
+    return null;
+  }
+  function update(dt) {
+    fx.update(dt);
+    var lUp = keysL || touchL, rUp = keysR || touchR;
+    ['L', 'R'].forEach(function (k) { var f = FL[k], up = k === 'L' ? lUp : rUp, target = up ? f.up : f.rest; f.prev = f.a; var sp = 22 * dt; f.a += A.clamp(target - f.a, -sp, sp); });
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최고 배율', '×' + bestMult]]); return; }
+    if (!ball) { launchT -= dt; if (launchT <= 0) newBall(); return; }
+    if (saveT > 0) saveT -= dt;
+    var steps = 8, h = dt / steps;
+    for (var s = 0; s < steps; s++) {
+      ball.vy += G * h; ball.x += ball.vx * h; ball.y += ball.vy * h;
+      WALLS.forEach(function (w) { collideSeg(w[0], w[1], w[2], w[3], 0.5); });
+      if (saveT > 0) collideSeg(150, 900, 390, 900, 0.6);
+      BUMPERS.forEach(function (b) { var dx = ball.x - b.x, dy = ball.y - b.y, d = Math.hypot(dx, dy); if (d < b.r + R) { var nx = dx / d, ny = dy / d; ball.x = b.x + nx * (b.r + R); ball.y = b.y + ny * (b.r + R); bounce(nx, ny, 0.9); ball.vx += nx * 260; ball.vy += ny * 260; b.hit = 0.15; score += 100 * mult; A.sfx('bounce', 1.3); fx.burst(ball.x, ball.y, '#ff5ec4', 8, 200, 0.3, 2.5); A.vibrate(10); } });
+      TARGETS.forEach(function (tg, i) { if (!lit[i] && Math.hypot(ball.x - tg.x, ball.y - tg.y) < R + 16) { lit[i] = true; score += 250 * mult; A.sfx('coin'); fx.text(tg.x, tg.y + 30, '+' + 250 * mult, '#ffd166', 18);
+        if (lit.every(Boolean)) { mult++; bestMult = Math.max(bestMult, mult); lit = [false, false, false]; S.banner('×' + mult, '배율 UP'); A.sfx('level'); } } });
+      ['L', 'R'].forEach(function (k) {
+        var f = FL[k], ex = f.x + Math.cos(f.a) * f.len, ey = f.y + Math.sin(f.a) * f.len;
+        var q = seg(ball.x, ball.y, f.x, f.y, ex, ey), dx = ball.x - q.x, dy = ball.y - q.y, d = Math.hypot(dx, dy);
+        if (d < R + 8 && d > 0.001) {
+          var nx = dx / d, ny = dy / d, w = (f.a - f.prev) / dt, r = q.t * f.len, svx = -Math.sin(f.a) * w * r, svy = Math.cos(f.a) * w * r;
+          ball.x = q.x + nx * (R + 8); ball.y = q.y + ny * (R + 8); bounce(nx, ny, 0.4, svx, svy);
+          if (Math.abs(w) > 1) A.sfx('wall', 1.4);
+        }
+      });
+      var sp = Math.hypot(ball.vx, ball.vy); if (sp > 2200) { ball.vx *= 2200 / sp; ball.vy *= 2200 / sp; }
+    }
+    if (ball.y > H + 30) {
+      balls--; ball = null; fx.shake(6, 0.3); A.sfx('hurt'); hud();
+      if (balls <= 0) dyingT = 1; else { launchT = 1.2; mult = 1; S.banner('남은 공 ' + balls, 'BALL LOST'); }
+    }
+    BUMPERS.forEach(function (b) { if (b.hit > 0) b.hit -= dt; });
+    hud();
+  }
+  var bestMult = 1;
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1a0526'); g.addColorStop(1, '#07020c'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    c.save(); c.shadowColor = '#ff5ec4'; c.shadowBlur = 12; c.strokeStyle = '#ff9ee0'; c.lineWidth = 6; c.lineCap = 'round';
+    WALLS.forEach(function (w) { c.beginPath(); c.moveTo(w[0], w[1]); c.lineTo(w[2], w[3]); c.stroke(); }); c.restore();
+    if (saveT > 0 && ball) { c.strokeStyle = 'rgba(94,231,255,' + (0.4 + Math.sin(t * 12) * 0.3) + ')'; c.lineWidth = 4; c.beginPath(); c.moveTo(150, 900); c.lineTo(390, 900); c.stroke(); }
+    BUMPERS.forEach(function (b) { c.save(); c.shadowColor = '#ff5ec4'; c.shadowBlur = b.hit > 0 ? 40 : 16; c.fillStyle = b.hit > 0 ? '#fff' : '#ff5ec4'; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.fill(); c.restore(); c.fillStyle = '#2a0420'; c.beginPath(); c.arc(b.x, b.y, b.r * 0.5, 0, 7); c.fill(); });
+    TARGETS.forEach(function (tg, i) { c.fillStyle = lit && lit[i] ? '#ffd166' : 'rgba(255,209,102,.25)'; A.rr(c, tg.x - 18, tg.y - 8, 36, 16, 6); c.fill(); });
+    ['L', 'R'].forEach(function (k) { var f = FL[k]; c.save(); c.shadowColor = '#5ee7ff'; c.shadowBlur = 14; c.strokeStyle = '#5ee7ff'; c.lineWidth = 16; c.lineCap = 'round'; c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x + Math.cos(f.a) * f.len, f.y + Math.sin(f.a) * f.len); c.stroke(); c.restore(); });
+    var bl = ball || (!balls ? { x: 270 + Math.sin(t) * 120, y: 600 } : null);
+    if (bl) { c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; var gr = c.createRadialGradient(bl.x - 4, bl.y - 4, 2, bl.x, bl.y, R); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#9aa'); c.fillStyle = gr; c.beginPath(); c.arc(bl.x, bl.y, R, 0, 7); c.fill(); c.restore(); }
+    if (S.state === 'playing' && document.body.classList.contains('touch')) { c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(0, 880, W / 2 - 2, 80); c.fillRect(W / 2 + 2, 880, W / 2, 80); }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var last = '';
+  function hud() { var k = score + '|' + balls + '|' + mult; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = balls; document.getElementById('hC').textContent = '×' + mult; }
+  var stage = document.getElementById('stage'), ptrs = {};
+  function refresh() { touchL = false; touchR = false; for (var k in ptrs) { if (ptrs[k] < W / 2) touchL = true; else touchR = true; } }
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; e.preventDefault(); ptrs[e.pointerId] = S.toLocal(e).x; refresh(); });
+  function up(e) { delete ptrs[e.pointerId]; refresh(); } stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up); stage.addEventListener('pointerleave', up);
+  var S = new A.Shell({ id: 'pinball', W: W, H: H, reset: function () { bestMult = 1; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'z' || k === 'Z' || k === 'a' || k === 'Shift') keysL = true; if (k === 'ArrowRight' || k === '/' || k === 'l' || k === 'd') keysR = true; if (k === ' ') { keysL = keysR = true; } },
+    keyup: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'z' || k === 'Z' || k === 'a' || k === 'Shift') keysL = false; if (k === 'ArrowRight' || k === '/' || k === 'l' || k === 'd') keysR = false; if (k === ' ') { keysL = keysR = false; } } });
+})();
+
+</script>
+</body>
+</html>

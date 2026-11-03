@@ -10,6 +10,8 @@ const path=require('path');
 const OUT=path.join(__dirname,'..','..','assets')+'/';
 const BASE=process.env.BASE||'http://localhost:8765/';
 const ONLY=process.argv.slice(2);
+const CAT=JSON.parse(fs.readFileSync(path.join(__dirname,'catalog.json'),'utf8'));
+const DEF={acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(1400);},cy:0.5};
 const G={
  runner:{acts:async(p,b)=>{await p.keyboard.press('Space');for(let i=0;i<6;i++){await p.waitForTimeout(260);await p.keyboard.down('ArrowUp');await p.waitForTimeout(120);await p.keyboard.up('ArrowUp');}}, cy:0.62, acc:'#b48cff'},
  tower:{acts:async(p)=>{}, cy:0.66, acc:'#ffe066'},
@@ -20,8 +22,9 @@ const G={
  sudoku:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of ['h','ArrowDown','ArrowRight','ArrowRight','h','ArrowDown','h'])await p.keyboard.press(k);await p.waitForTimeout(250);}, cy:0.36, acc:'#c3ff5e'},
 };
 (async()=>{const br=await chromium.launch();
-for(const [id,g] of Object.entries(G)){
- if(ONLY.length&&ONLY.indexOf(id)<0)continue;
+for(const cat of CAT){
+ const id=cat.id; if(cat.art!=='capture')continue; if(ONLY.length&&ONLY.indexOf(id)<0)continue;
+ const g=Object.assign({},DEF,G[id]||{}); g.acc=g.acc||cat.accent;
  const p=await br.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:2});
  await p.goto(BASE+id+'/');await p.waitForTimeout(800);
  const b=await p.locator('#stage').boundingBox();

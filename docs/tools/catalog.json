@@ -1,0 +1,1002 @@
+[
+ {
+  "id": "shooting",
+  "name": "별빛 수호대",
+  "genre": "SHOOTING",
+  "kgenre": "슈팅",
+  "cat": "액션",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "발사는 자동, 당신은 피하기만. 파워업을 모아 5방향 탄을 완성하고 5웨이브마다 나오는 보스를 잡으세요.",
+  "tags": [
+   "드래그 이동",
+   "보스전",
+   "콤보 ×8"
+  ],
+  "made": "hand",
+  "new": false,
+  "art": "illust",
+  "maxScore": 10000000
+ },
+ {
+  "id": "snake",
+  "name": "네온 스네이크",
+  "genre": "PUZZLE ACTION",
+  "kgenre": "퍼즐 액션",
+  "cat": "액션",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "먹을수록 길어지고 빨라집니다. 벽은 통과, 내 꼬리와 바위만 조심. 사라지기 전에 황금 먹이를 노리세요.",
+  "tags": [
+   "스와이프",
+   "벽 통과",
+   "황금 먹이"
+  ],
+  "made": "hand",
+  "new": false,
+  "art": "illust",
+  "maxScore": 10000000
+ },
+ {
+  "id": "breakout",
+  "name": "네온 브레이커",
+  "genre": "BREAKOUT",
+  "kgenre": "벽돌깨기",
+  "cat": "액션",
+  "accent": "#ffb547",
+  "rgb": "255,181,71",
+  "ink": "#241400",
+  "desc": "패들 끝으로 받아 각도를 노리세요. 멀티볼과 관통하는 불꽃공으로 8개 스테이지를 시원하게 깨부숩니다.",
+  "tags": [
+   "드래그 패들",
+   "아이템 5종",
+   "8 스테이지"
+  ],
+  "made": "hand",
+  "new": false,
+  "art": "illust",
+  "maxScore": 10000000
+ },
+ {
+  "id": "runner",
+  "name": "네온 대시",
+  "genre": "ONE-TAP RUNNER",
+  "kgenre": "원탭 러너",
+  "cat": "원탭",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "탭 한 번에 점프, 두 번에 이단 점프. 끝없이 새로 만들어지는 네온 도시를 점점 빠르게 달립니다.",
+  "tags": [
+   "원탭",
+   "끝없는 맵",
+   "코인"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "tower",
+  "name": "하늘 탑 쌓기",
+  "genre": "TIMING",
+  "kgenre": "타이밍",
+  "cat": "원탭",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "움직이는 블록을 딱 맞는 순간에 탭. 어긋나면 잘리고, 완벽하면 다시 넓어집니다. 구름 위까지!",
+  "tags": [
+   "원탭",
+   "완벽 콤보",
+   "무한 층"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "orbit",
+  "name": "오빗 점프",
+  "genre": "ONE-TAP SPACE",
+  "kgenre": "원탭 우주",
+  "cat": "원탭",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "행성 주위를 도는 우주선을 알맞은 순간에 발사. 소행성 띠와 움직이는 행성을 넘어 더 깊은 우주로.",
+  "tags": [
+   "원탭",
+   "중력 포획",
+   "별 수집"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "dodge",
+  "name": "네온 회피",
+  "genre": "SURVIVAL",
+  "kgenre": "생존",
+  "cat": "액션",
+  "accent": "#ff4d6d",
+  "rgb": "255,77,109",
+  "ink": "#2a0410",
+  "desc": "추적탄, 레이저, 탄막을 손가락 하나로 피하세요. 한 번 맞으면 끝. 버틴 시간이 곧 점수입니다.",
+  "tags": [
+   "드래그",
+   "패턴 6종",
+   "폭탄"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "blocks",
+  "name": "네온 블록",
+  "genre": "BLOCK PUZZLE",
+  "kgenre": "블록 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "조각을 8×8 판에 끌어다 놓고 가로·세로 줄을 채워 지우세요. 여러 줄을 한 번에 지우면 점수 폭발.",
+  "tags": [
+   "끌어다 놓기",
+   "콤보",
+   "시간 제한 없음"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "mines",
+  "name": "지뢰 탐색",
+  "genre": "CLASSIC PUZZLE",
+  "kgenre": "클래식 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "숫자를 단서로 지뢰를 피해 모든 칸을 여세요. 첫 칸은 항상 안전, 길게 누르면 깃발. 3단계 난이도.",
+  "tags": [
+   "탭·길게 누르기",
+   "3단계",
+   "최단 기록"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "sudoku",
+  "name": "스도쿠",
+  "genre": "NUMBER PUZZLE",
+  "kgenre": "숫자 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "매번 새로 만들어지는, 답이 하나뿐인 퍼즐. 메모와 힌트로 차근차근, 실수는 3번까지.",
+  "tags": [
+   "매번 새 퍼즐",
+   "메모·힌트",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "cave",
+  "name": "네온 동굴",
+  "genre": "HOLD & FLY",
+  "kgenre": "원탭 비행",
+  "cat": "원탭",
+  "accent": "#5effc8",
+  "rgb": "94,255,200",
+  "ink": "#00241a",
+  "desc": "누르고 있으면 떠오르고, 떼면 내려갑니다. 점점 좁아지는 동굴 벽과 기둥 사이를 아슬아슬하게 빠져나가세요.",
+  "tags": [
+   "누르기",
+   "좁아지는 동굴",
+   "크리스털"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 200000
+ },
+ {
+  "id": "ring",
+  "name": "타이밍 링",
+  "genre": "TIMING",
+  "kgenre": "타이밍",
+  "cat": "원탭",
+  "accent": "#ff9ecf",
+  "rgb": "255,158,207",
+  "ink": "#2a0517",
+  "desc": "돌아가는 바늘이 빛나는 구간에 들어왔을 때 탭! 맞힐 때마다 구간은 좁아지고 바늘은 빨라지고 방향이 바뀝니다.",
+  "tags": [
+   "원탭",
+   "반응 속도",
+   "방향 전환"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 20000
+ },
+ {
+  "id": "archery",
+  "name": "바람 궁수",
+  "genre": "ARCHERY",
+  "kgenre": "양궁",
+  "cat": "액션",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "활을 당겨 각도와 힘을 정하고 놓으세요. 바람과 거리가 매번 바뀌는 과녁, 화살 10발로 최고 점수에 도전!",
+  "tags": [
+   "당겨서 쏘기",
+   "바람",
+   "10발"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 5000
+ },
+ {
+  "id": "lanes",
+  "name": "네온 하이웨이",
+  "genre": "LANE RACER",
+  "kgenre": "레이싱",
+  "cat": "원탭",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "왼쪽·오른쪽을 탭해 차선을 바꾸세요. 점점 빨라지는 고속도로에서 차를 피하고 연료와 코인을 모읍니다.",
+  "tags": [
+   "좌우 탭",
+   "3차선",
+   "니어미스"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "gravity",
+  "name": "중력 반전",
+  "genre": "GRAVITY FLIP",
+  "kgenre": "원탭 러너",
+  "cat": "원탭",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "탭하면 중력이 뒤집혀 바닥과 천장을 오갑니다. 위아래 가시와 낭떠러지를 피해 끝없이 달려 보세요.",
+  "tags": [
+   "원탭",
+   "위아래 뒤집기",
+   "끝없는 맵"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 200000
+ },
+ {
+  "id": "rocks",
+  "name": "우주 광부",
+  "genre": "SPACE MINER",
+  "kgenre": "우주 슈팅",
+  "cat": "액션",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "드래그한 방향으로 우주선이 날아가며 자동으로 쏩니다. 운석을 부수면 작게 쪼개져요. 광석을 모아 업그레이드!",
+  "tags": [
+   "드래그 비행",
+   "자동 사격",
+   "운석 분열"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
+ },
+ {
+  "id": "slash",
+  "name": "네온 슬래시",
+  "genre": "SLICE",
+  "kgenre": "베기",
+  "cat": "액션",
+  "accent": "#ff5ec4",
+  "rgb": "255,94,196",
+  "ink": "#2a0420",
+  "desc": "튀어 오르는 도형을 손가락으로 그어 베세요. 한 번에 여러 개를 베면 콤보, 폭탄은 절대 건드리지 말 것!",
+  "tags": [
+   "스와이프",
+   "콤보 베기",
+   "폭탄 주의"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "hockey",
+  "name": "에어 하키",
+  "genre": "AIR HOCKEY",
+  "kgenre": "대전",
+  "cat": "액션",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "컴퓨터와 하는 에어 하키. 말렛을 끌어 퍽을 쳐 넣으세요. 7점 먼저 내면 승리, 이길수록 상대가 강해집니다.",
+  "tags": [
+   "드래그",
+   "컴퓨터 대전",
+   "7점 승부"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "keeper",
+  "name": "골키퍼",
+  "genre": "GOALKEEPER",
+  "kgenre": "막기",
+  "cat": "액션",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "날아오는 슛을 손가락으로 막으세요. 곡선 슛, 빠른 슛, 페인트까지. 몇 골이나 막을 수 있을까요?",
+  "tags": [
+   "드래그",
+   "곡선 슛",
+   "3골 실점 끝"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000
+ },
+ {
+  "id": "whack",
+  "name": "두더지 탭",
+  "genre": "WHACK",
+  "kgenre": "반응",
+  "cat": "두뇌",
+  "accent": "#ffb547",
+  "rgb": "255,181,71",
+  "ink": "#241400",
+  "desc": "구멍에서 튀어나오는 두더지를 재빨리 탭! 황금 두더지는 3배, 폭탄 두더지는 피하세요. 60초 승부.",
+  "tags": [
+   "탭",
+   "60초",
+   "황금 두더지"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 20000
+ },
+ {
+  "id": "racer",
+  "name": "탑뷰 레이서",
+  "genre": "TOP-DOWN RACE",
+  "kgenre": "레이싱",
+  "cat": "액션",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "드래그로 핸들을 꺾어 구불구불한 도로를 달리세요. 길 밖으로 나가면 감속, 장애물은 피하고 부스터는 챙기고!",
+  "tags": [
+   "드래그 조향",
+   "구불길",
+   "부스터"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
+ },
+ {
+  "id": "fishy",
+  "name": "큰 물고기",
+  "genre": "GROW FISH",
+  "kgenre": "성장",
+  "cat": "액션",
+  "accent": "#4dd8ff",
+  "rgb": "77,216,255",
+  "ink": "#002030",
+  "desc": "나보다 작은 물고기를 먹고 점점 커지세요. 나보다 큰 물고기에게 먹히면 끝. 바다의 왕이 되어 보세요!",
+  "tags": [
+   "드래그",
+   "성장",
+   "먹이 사슬"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "defense",
+  "name": "도시 방어",
+  "genre": "MISSILE DEFENSE",
+  "kgenre": "방어",
+  "cat": "액션",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "떨어지는 미사일을 탭해서 공중 폭발로 막으세요. 폭발에 휘말린 미사일도 함께 터집니다. 도시를 지켜라!",
+  "tags": [
+   "탭 요격",
+   "연쇄 폭발",
+   "웨이브"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "survivor",
+  "name": "네온 서바이버",
+  "genre": "SURVIVOR",
+  "kgenre": "생존 슈팅",
+  "cat": "액션",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "몰려드는 적 사이에서 버티세요. 공격은 자동, 레벨업마다 능력 3개 중 하나를 골라 점점 강해집니다.",
+  "tags": [
+   "드래그 이동",
+   "자동 공격",
+   "능력 선택"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000000
+ },
+ {
+  "id": "maze",
+  "name": "네온 미로",
+  "genre": "MAZE",
+  "kgenre": "미로",
+  "cat": "퍼즐",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "매번 새로 만들어지는 미로를 빠져나가세요. 별을 모으면 보너스, 단계가 올라갈수록 미로가 커지고 시간은 빠듯해집니다.",
+  "tags": [
+   "스와이프",
+   "무한 미로",
+   "시간 제한"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 200000
+ },
+ {
+  "id": "jumper",
+  "name": "구름 점프",
+  "genre": "SKY JUMPER",
+  "kgenre": "점프",
+  "cat": "액션",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "발판을 밟고 통통 튀어 하늘 높이 올라가세요. 좌우로 끌어 방향을 잡고, 스프링과 로켓으로 한 번에 쭉!",
+  "tags": [
+   "좌우 드래그",
+   "무한 상승",
+   "스프링·로켓"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "artillery",
+  "name": "포격전",
+  "genre": "ARTILLERY",
+  "kgenre": "포격",
+  "cat": "액션",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "언덕 너머 적 포대를 맞혀라! 각도와 힘을 정해 쏘고, 바람과 지형을 읽어야 합니다. 이길수록 적이 정확해져요.",
+  "tags": [
+   "각도·힘 조절",
+   "바람",
+   "턴제 대결"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "pinball",
+  "name": "네온 핀볼",
+  "genre": "PINBALL",
+  "kgenre": "핀볼",
+  "cat": "액션",
+  "accent": "#ff5ec4",
+  "rgb": "255,94,196",
+  "ink": "#2a0420",
+  "desc": "화면 왼쪽·오른쪽을 눌러 플리퍼를 치세요. 범퍼와 타깃을 맞혀 점수를 쌓고, 공 3개로 최고 기록 도전!",
+  "tags": [
+   "좌우 탭",
+   "범퍼 콤보",
+   "공 3개"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 50000000
+ },
+ {
+  "id": "slide",
+  "name": "숫자 밀기",
+  "genre": "SLIDING PUZZLE",
+  "kgenre": "슬라이드 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "빈칸 옆 숫자 조각을 밀어 1부터 순서대로 맞추세요. 3×3부터 5×5까지, 적은 횟수로 빨리 풀수록 고득점.",
+  "tags": [
+   "탭으로 밀기",
+   "3단계",
+   "최소 이동"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "lights",
+  "name": "불 끄기",
+  "genre": "LIGHTS OUT",
+  "kgenre": "논리 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "칸을 누르면 그 칸과 상하좌우가 함께 켜지고 꺼집니다. 모든 불을 끄세요! 단계가 오를수록 판이 커집니다.",
+  "tags": [
+   "탭",
+   "논리",
+   "무한 단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "gems",
+  "name": "보석 매치",
+  "genre": "MATCH 3",
+  "kgenre": "매치 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "옆 보석과 자리를 바꿔 같은 색 3개를 이으세요. 4개는 줄 폭탄, 5개는 색 폭탄! 30번 안에 최고 점수.",
+  "tags": [
+   "스와이프",
+   "연쇄",
+   "특수 보석"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "memory",
+  "name": "카드 짝 맞추기",
+  "genre": "MEMORY",
+  "kgenre": "기억력",
+  "cat": "두뇌",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "카드를 두 장씩 뒤집어 같은 그림을 찾으세요. 단계가 오를수록 카드가 많아집니다. 기억력 테스트!",
+  "tags": [
+   "탭",
+   "기억력",
+   "단계 상승"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "sequence",
+  "name": "빛 순서 기억",
+  "genre": "SEQUENCE",
+  "kgenre": "기억력",
+  "cat": "두뇌",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "빛나는 순서를 기억했다가 똑같이 누르세요. 한 단계마다 하나씩 길어집니다. 몇 개까지 기억할 수 있나요?",
+  "tags": [
+   "탭",
+   "순서 기억",
+   "소리"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "pipes",
+  "name": "파이프 연결",
+  "genre": "PIPE PUZZLE",
+  "kgenre": "연결 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#5effc8",
+  "rgb": "94,255,200",
+  "ink": "#00241a",
+  "desc": "파이프 조각을 돌려 물이 모든 집에 닿게 연결하세요. 매번 새로운 판, 판이 점점 커집니다.",
+  "tags": [
+   "탭으로 회전",
+   "연결",
+   "무한 단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "nonogram",
+  "name": "네모 로직",
+  "genre": "NONOGRAM",
+  "kgenre": "그림 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "줄마다 적힌 숫자를 단서로 칸을 칠해 숨은 그림을 완성하세요. 5×5부터 10×10까지 매번 새 퍼즐.",
+  "tags": [
+   "논리",
+   "칠하기",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "bubbles",
+  "name": "버블 팡",
+  "genre": "BUBBLE SHOOTER",
+  "kgenre": "버블 슈터",
+  "cat": "퍼즐",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "조준해서 버블을 쏘아 같은 색 3개 이상을 터뜨리세요. 매달린 버블은 한꺼번에 떨어집니다. 천장이 내려오기 전에!",
+  "tags": [
+   "조준·발사",
+   "연쇄 낙하",
+   "천장 하강"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "flood",
+  "name": "색 채우기",
+  "genre": "FLOOD FILL",
+  "kgenre": "색 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff5ec4",
+  "rgb": "255,94,196",
+  "ink": "#2a0420",
+  "desc": "왼쪽 위에서 시작해 색을 바꿔 판 전체를 한 색으로 채우세요. 정해진 횟수 안에 해내야 합니다.",
+  "tags": [
+   "색 고르기",
+   "전략",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "pairs",
+  "name": "타일 짝 잇기",
+  "genre": "TILE MATCH",
+  "kgenre": "짝 잇기",
+  "cat": "퍼즐",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "같은 그림 타일 두 개를 선으로 이어 지우세요. 선은 두 번까지만 꺾일 수 있어요. 시간 안에 판을 비우세요!",
+  "tags": [
+   "탭",
+   "두 번 꺾기",
+   "셔플"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "dots",
+  "name": "점과 상자",
+  "genre": "DOTS & BOXES",
+  "kgenre": "두뇌 대전",
+  "cat": "보드·카드",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "점 사이에 선을 하나씩 그어 상자를 완성하세요. 상자를 닫으면 한 번 더! 컴퓨터보다 많은 상자를 차지하면 승리.",
+  "tags": [
+   "탭으로 선 긋기",
+   "컴퓨터 대전",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "gomoku",
+  "name": "오목",
+  "genre": "GOMOKU",
+  "kgenre": "오목",
+  "cat": "보드·카드",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "가로·세로·대각선으로 5개를 먼저 놓으면 승리! 컴퓨터는 공격과 수비를 모두 계산합니다. 3단계 난이도.",
+  "tags": [
+   "탭으로 두기",
+   "컴퓨터 대전",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "reversi",
+  "name": "리버시",
+  "genre": "REVERSI",
+  "kgenre": "뒤집기",
+  "cat": "보드·카드",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "상대 돌을 내 돌 사이에 가두면 내 색으로 뒤집힙니다. 판이 다 찼을 때 돌이 많은 쪽이 승리.",
+  "tags": [
+   "탭",
+   "뒤집기",
+   "컴퓨터 대전"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "solitaire",
+  "name": "솔리테어",
+  "genre": "SOLITAIRE",
+  "kgenre": "카드",
+  "cat": "보드·카드",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "카드를 색을 번갈아 내림차순으로 쌓고, 무늬별로 A부터 K까지 모으세요. 끌어다 놓거나 탭하면 자동 이동!",
+  "tags": [
+   "탭·드래그",
+   "클론다이크",
+   "자동 정리"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "blackjack",
+  "name": "블랙잭",
+  "genre": "BLACKJACK",
+  "kgenre": "카드",
+  "cat": "보드·카드",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "딜러보다 21에 가깝게! 칩 1000개로 시작해 베팅하고, 히트·스탠드·더블로 승부하세요. 칩이 바닥나면 끝.",
+  "tags": [
+   "베팅",
+   "히트·스탠드",
+   "칩 모으기"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "baseball",
+  "name": "숫자 야구",
+  "genre": "BULLS & COWS",
+  "kgenre": "숫자 추리",
+  "cat": "두뇌",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "숨겨진 서로 다른 숫자 3개(또는 4개)를 맞히세요. 자리까지 맞으면 스트라이크, 숫자만 맞으면 볼! 적게 물어볼수록 고득점.",
+  "tags": [
+   "추리",
+   "3·4자리",
+   "기록"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "reaction",
+  "name": "반응 속도",
+  "genre": "REACTION",
+  "kgenre": "반응",
+  "cat": "두뇌",
+  "accent": "#ff4d6d",
+  "rgb": "255,77,109",
+  "ink": "#2a0410",
+  "desc": "화면이 초록으로 바뀌는 순간 탭! 5번 측정한 평균 반응 속도로 점수가 매겨집니다. 너무 빨리 누르면 실격.",
+  "tags": [
+   "탭",
+   "5회 평균",
+   "ms 측정"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000
+ },
+ {
+  "id": "math",
+  "name": "암산 레이스",
+  "genre": "MENTAL MATH",
+  "kgenre": "암산",
+  "cat": "두뇌",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "60초 동안 계산 문제를 최대한 많이 푸세요. 맞히면 시간 +2초, 틀리면 -3초. 연속 정답일수록 어려워집니다.",
+  "tags": [
+   "숫자 입력",
+   "60초",
+   "콤보"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "stroop",
+  "name": "색깔 함정",
+  "genre": "STROOP",
+  "kgenre": "집중력",
+  "cat": "두뇌",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "글자의 뜻이 아니라 글자의 색을 고르세요! 머리와 눈이 싸우는 집중력 게임. 45초 동안 최대한 많이.",
+  "tags": [
+   "색 고르기",
+   "45초",
+   "집중력"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "aim",
+  "name": "에임 트레이너",
+  "genre": "AIM TRAINER",
+  "kgenre": "에임",
+  "cat": "두뇌",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "나타났다 사라지는 과녁을 재빨리 탭하세요. 가운데를 맞힐수록 고득점, 30초 동안 정확도와 속도를 모두 잡아라!",
+  "tags": [
+   "탭",
+   "30초",
+   "정확도"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "oddcolor",
+  "name": "다른 색 찾기",
+  "genre": "ODD COLOR",
+  "kgenre": "색감",
+  "cat": "두뇌",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "타일 중 딱 하나만 색이 미묘하게 다릅니다. 찾아서 탭! 단계가 오를수록 칸은 많아지고 색 차이는 작아집니다.",
+  "tags": [
+   "탭",
+   "색감 테스트",
+   "단계 상승"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "schulte",
+  "name": "숫자 순서 찾기",
+  "genre": "SCHULTE TABLE",
+  "kgenre": "집중력",
+  "cat": "두뇌",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "흩어진 숫자를 1부터 차례대로 빠르게 누르세요. 5×5 판의 1~25를 몇 초 만에 찾을 수 있나요?",
+  "tags": [
+   "탭",
+   "시간 기록",
+   "집중력"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ }
+]

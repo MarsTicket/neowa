@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/schulte.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>숫자 순서 찾기 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 숫자 순서 찾기(슐테 테이블). 1부터 25까지 순서대로 빠르게 누르세요.">
+<meta property="og:title" content="숫자 순서 찾기 · 너와 아케이드">
+<meta property="og:description" content="1부터 25까지, 몇 초 만에 찾나요?">
+<meta property="og:image" content="https://neowa.kr/assets/schulte-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff9e4d;--accent-ink:#2a1200;--ar:255,158,77}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 50</small>숫자 순서 찾기</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>숫자</kbd> 다음 숫자를 키보드로 입력</div>
+          <div><kbd>탭</kbd> 숫자 누르기</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>1부터 순서대로</div>
+          <div>틀리면 +1초</div>
+          <div>난이도: 4×4 · 5×5 · 6×6</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">NEXT</span><span class="h-v sm" id="hB">1</span></div>
+        <div class="h-box r"><span class="h-lb">TIME</span><span class="h-v sm" id="hC">0.0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 50</p>
+        <h1 class="ov-title">숫자 순서 찾기</h1>
+        <p class="ov-desc">판에 흩어진 숫자를 1부터 순서대로 누르세요. 틀린 숫자를 누르면 +1초 벌칙. 빠를수록 고득점.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>순서대로 탭</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>시간 기록</span>
+        </div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">4×4</button><button type="button" data-diff="1">5×5</button><button type="button" data-diff="2">6×6</button></div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960;
+  var fx = new A.FX();
+  var diff = +A.get('neowa_schulte_diff', '1') || 0, n, nums, nextN, time, endT, done, flashI = {}, kbdBuf = '';
+  var PAL = ['#ff9e4d', '#5ee7ff', '#7dff9b', '#ff7aa8', '#b48cff', '#ffd166'];
+  function reset() { n = 4 + diff; nums = []; for (var i = 1; i <= n * n; i++) nums.push(i); for (i = nums.length - 1; i > 0; i--) { var j = A.irand(0, i), t = nums[i]; nums[i] = nums[j]; nums[j] = t; } nextN = 1; time = 0; endT = 0; done = {}; flashI = {}; fx.clear(); hud(); }
+  function cs() { return 480 / n; }
+  function tap(i) {
+    if (S.state !== 'playing' || endT > 0 || done[i]) return;
+    if (nums[i] === nextN) { done[i] = 1; flashI[i] = 0.3; nextN++; A.sfx('tick', 1 + nextN * 0.02);
+      if (nextN > n * n) { endT = 1; A.sfx('level'); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), '#ff9e4d', 20, 300, 0.7, 4); } }
+    else { time += 1; flashI[i] = -0.3; A.sfx('wall'); fx.text(W / 2, 150, '+1초', '#ff4d6d', 22); }
+    hud();
+  }
+  function score() { var par = [12, 22, 40][diff]; return Math.max(10, Math.round(1000 * (diff + 1) * par / Math.max(par * 0.3, time))); }
+  function update(dt) {
+    fx.update(dt); for (var k in flashI) { flashI[k] += flashI[k] > 0 ? -dt : dt; if (Math.abs(flashI[k]) < 0.02) delete flashI[k]; }
+    if (endT > 0) { endT -= dt; if (endT <= 0) { var key = 'neowa_schulte_time_' + diff, b = parseFloat(A.get(key, '0')); if (!b || time < b) A.set(key, time.toFixed(2)); S.gameOver(score(), [['기록', time.toFixed(2) + '초'], ['최단', parseFloat(A.get(key, '0')).toFixed(2) + '초']], { kick: 'CLEAR!', win: true }); } return; }
+    time += dt; hud();
+  }
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#0f0802'; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!nums) { n = 5; nums = []; for (var q = 1; q <= 25; q++) nums.push((q * 7) % 25 + 1); done = {}; }
+    var s = cs(), x0 = (W - 480) / 2, y0 = 220;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (var i = 0; i < n * n; i++) { var x = x0 + (i % n) * s, y = y0 + Math.floor(i / n) * s, f = flashI[i];
+      c.fillStyle = done[i] ? 'rgba(255,158,77,.08)' : f < 0 ? '#5a1a22' : '#1e1408'; A.rr(c, x + 3, y + 3, s - 6, s - 6, 12); c.fill();
+      if (!done[i]) { c.fillStyle = PAL[nums[i] % PAL.length]; c.font = '700 ' + Math.round(s * 0.42) + 'px "Chakra Petch",system-ui'; c.fillText(String(nums[i]), x + s / 2, y + s / 2 + 2); }
+      if (f > 0) { c.fillStyle = 'rgba(255,255,255,' + f * 2 + ')'; A.rr(c, x + 3, y + 3, s - 6, s - 6, 12); c.fill(); } }
+    c.fillStyle = '#ffd6b0'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText(nextN && nextN <= n * n ? '다음: ' + nextN : '', W / 2, 170);
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var last = '';
+  function hud() { var k = nextN + '|' + Math.floor(time * 10); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = Math.min(nextN, n * n); document.getElementById('hC').textContent = time.toFixed(1); document.getElementById('hMult').textContent = n + '×' + n; }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), s = cs(), x = Math.floor((p.x - (W - 480) / 2) / s), y = Math.floor((p.y - 220) / s); if (x >= 0 && y >= 0 && x < n && y < n) tap(y * n + x); });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_schulte_diff', diff); A.sfx('click'); pd(); nums = null; }); }); pd();
+  var S = new A.Shell({ id: 'schulte', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { if (!/^[0-9]$/.test(e.key)) return; kbdBuf = (kbdBuf + e.key).slice(-2); var want = String(nextN); if (kbdBuf.slice(-want.length) === want) { var i = nums.indexOf(nextN); tap(i); kbdBuf = ''; } } });
+})();
+
+</script>
+</body>
+</html>

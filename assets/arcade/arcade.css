@@ -182,3 +182,20 @@ body.won[data-state="over"] #ovOver .ov-kick{color:var(--gold)}
 .ov-diff{display:flex;gap:6px;justify-content:center;margin:0 0 20px;flex-wrap:wrap}
 .ov-diff button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.06);font-weight:700;font-size:14px;color:var(--sub)}
 .ov-diff button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* 온라인 랭킹 (종료 화면) */
+.g-ov#ovOver{overflow-y:auto;justify-content:center;justify-content:safe center}
+.rk{width:min(300px,100%);margin:0 0 14px;text-align:left}
+.rk-form{display:flex;gap:6px}
+.rk-form input{flex:1;min-width:0;height:46px;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.07);color:var(--ink);padding:0 12px;font:inherit;font-size:15px;-webkit-user-select:text;user-select:text}
+.rk-form input:focus{outline:2px solid var(--accent);outline-offset:0}
+.rk-form .btn{min-height:46px;padding:0 14px;font-size:14px;border-radius:12px}
+.rk.sent .rk-form{display:none}
+.rk-msg{margin:8px 0 6px;font-size:13px;color:var(--sub);min-height:18px}
+.rk-list{list-style:none;margin:0;padding:0;font-size:13px}
+.rk-list li{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:8px;color:var(--sub)}
+.rk-list li:nth-child(odd){background:rgba(255,255,255,.04)}
+.rk-list li.me{background:rgba(var(--ar),.18);color:var(--ink);font-weight:700}
+.rk-list b{font-family:var(--f-num);color:var(--ink)}
+.rk-more{display:inline-block;margin-top:6px;font-size:12px;color:var(--accent)}
+@container (max-height:640px){.rk-list li:nth-child(n+4){display:none}}

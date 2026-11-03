@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../assets/arcade/arcade.css?v=2">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
 <!-- TODO: 게임 대표색. --accent(색), --accent-ink(버튼 글자색, 아주 어두운 색), --ar(같은 색의 R,G,B 숫자) 세 개를 반드시 같이 바꾸세요 -->
 <style>:root{--accent:#ff7aa8;--accent-ink:#22040f;--ar:255,122,168}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
@@ -32,7 +32,7 @@
   <!-- 상단 바: 그대로 두고 이름만 바꾸세요 -->
   <header class="g-top">
     <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
-    <div class="g-name"><small>STAGE 04</small>별 줍기</div><!-- TODO: 번호와 이름 -->
+    <div class="g-name"><small>STAGE 11</small>별 줍기</div><!-- TODO: 번호와 이름 -->
     <div class="g-icons">
       <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
       <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
@@ -72,7 +72,7 @@
 
       <!-- 시작 화면 (id 고정: ovStart) -->
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
-        <p class="ov-kick">NEOWA ARCADE · 04</p>
+        <p class="ov-kick">NEOWA ARCADE · 11</p>
         <h1 class="ov-title">별 줍기</h1>
         <p class="ov-desc">떨어지는 별은 받고, 빨간 폭탄은 피하세요. 레벨이 오를수록 빨라집니다.</p>
         <div class="ov-ctrl">
@@ -125,7 +125,7 @@
   <div></div><!-- 방향 패드가 필요하면 snake/index.html 의 .g-pad 를 여기에 넣으세요 -->
 </div>
 
-<script src="../assets/arcade/arcade.js?v=2"></script>
+<script src="../assets/arcade/arcade.js?v=3"></script>
 <script>
 (function () {
   'use strict';

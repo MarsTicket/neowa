@@ -4,7 +4,7 @@
 
 ## 먼저 읽을 것
 - **새 게임을 만들거나 게임을 고친다면 → [`docs/GAME_GUIDE.md`](docs/GAME_GUIDE.md) 를 처음부터 끝까지 읽으세요.**
-- 새 게임은 [`_template/`](_template/index.html) 폴더를 복사해서 시작합니다.
+- 새 게임은 생성기(`docs/tools/make_game_page.py`)로 만드는 것을 권장합니다. 방법은 지침서 2장. 견본 `_template/`도 있습니다.
 
 ## 핵심 규칙 요약
 1. 답변·문서·커밋 메시지는 한국어로, 쉬운 말로.

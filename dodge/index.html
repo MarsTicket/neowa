@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/dodge.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>네온 회피 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 생존 게임. 손가락으로 빛나는 점을 움직여 추적탄, 레이저, 탄막을 피하세요. 오래 버틸수록 패턴이 사나워집니다.">
+<meta property="og:title" content="네온 회피 · 너와 아케이드">
+<meta property="og:description" content="얼마나 오래 버틸 수 있나요? 드래그 하나로 하는 네온 생존 게임.">
+<meta property="og:image" content="https://neowa.kr/assets/dodge-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff4d6d;--accent-ink:#2a0410;--ar:255,77,109}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 07</small>네온 회피</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>↑↓←→</kbd><kbd>WASD</kbd> 이동</div>
+          <div class="k-only"><kbd>드래그</kbd> 마우스로 이동</div>
+          <div class="t-only"><kbd>드래그</kbd> 화면 어디서든 끌면 이동</div>
+          <div class="k-only"><kbd>X</kbd><kbd>B</kbd> 폭탄</div>
+          <div class="t-only"><kbd>두 번 탭</kbd> 폭탄</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>한 번 맞으면 끝</div>
+          <div><kbd style="color:#ff4d6d">━</kbd> 레이저는 깜빡인 뒤 발사</div>
+          <div><kbd style="color:#ffd166">●</kbd> 에너지 +100, 5개 모으면 폭탄</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">TIME</span><span class="h-v sm" id="hB">0.0</span></div>
+        <div class="h-box r"><span class="h-lb">BOMB</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 07</p>
+        <h1 class="ov-title">네온 회피</h1>
+        <p class="ov-desc">드래그로 움직여 모든 공격을 피하세요. 한 번만 맞아도 끝. 노란 에너지를 모으면 보너스, 버틴 시간이 점수입니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>드래그로 이동</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>버틴 시간 = 점수</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>버티기 시작</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../blocks/"><img src="../assets/blocks-card.jpg" alt=""><span class="grow"><b>네온 블록</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../blocks/"><img src="../assets/blocks-card.jpg" alt=""><span><b>네온 블록</b><span>블록 퍼즐</span></span></a>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, TOP = 70;
+  var fx = new A.FX();
+  var P, foes = [], shots = [], lasers = [], orbs = [], time = 0, score = 0, orbN = 0, bombs = 0, dirT = 0, dyingT = 0, keys = {}, drag = null, orbT = 0, grid = [];
+
+  function reset() {
+    P = { x: W / 2, y: H * 0.65, r: 10, inv: 1 };
+    foes = []; shots = []; lasers = []; orbs = []; time = 0; score = 0; orbN = 0; bombs = 0; dirT = 1.2; dyingT = 0; orbT = 2; keys = {}; drag = null;
+    fx.clear(); hud();
+  }
+  // 공격 패턴 감독: 시간이 갈수록 강하고 자주
+  function director() {
+    var lv = Math.min(1, time / 90), r = Math.random();
+    var opts = ['rain', 'seeker'];
+    if (time > 8) opts.push('laser');
+    if (time > 15) opts.push('ring');
+    if (time > 25) opts.push('cross', 'seeker');
+    if (time > 40) opts.push('spiral');
+    var k = A.pick(opts);
+    if (k === 'rain') { var n = 6 + Math.floor(lv * 8), side = A.irand(0, 3); for (var i = 0; i < n; i++) edgeShot(side, i / n); }
+    if (k === 'seeker') { for (var j = 0; j < 1 + Math.floor(lv * 2); j++) foes.push({ x: A.rand(40, W - 40), y: TOP - 20, vx: 0, vy: 0, life: 6 + lv * 3, sp: 150 + lv * 90 }); }
+    if (k === 'laser') { var cnt = 1 + Math.floor(lv * 2.5); for (var q = 0; q < cnt; q++) { var hor = Math.random() < 0.5; lasers.push({ hor: hor, pos: hor ? A.rand(TOP + 40, H - 40) : A.rand(30, W - 30), warn: 1.1 - lv * 0.35, on: 0.45, w: 26 }); } }
+    if (k === 'ring') { var cx = A.rand(80, W - 80), cy = A.rand(TOP + 80, H * 0.45), m = 12 + Math.floor(lv * 10); for (var z = 0; z < m; z++) { var a = z / m * Math.PI * 2; shots.push({ x: cx, y: cy, vx: Math.cos(a) * 190, vy: Math.sin(a) * 190, r: 8, delay: 0.5 }); } fx.ring(cx, cy, '#ff4d6d', 90, 0.5); }
+    if (k === 'cross') { [[0, TOP], [W, TOP], [0, H], [W, H]].forEach(function (c) { var a = Math.atan2(P.y - c[1], P.x - c[0]); for (var s = -1; s <= 1; s++) shots.push({ x: c[0], y: c[1], vx: Math.cos(a + s * 0.15) * 260, vy: Math.sin(a + s * 0.15) * 260, r: 8 }); }); }
+    if (k === 'spiral') { var sx = W / 2, sy = TOP + 120; for (var u = 0; u < 36; u++) (function (u2) { setTimeout(function () { if (S.state !== 'playing' || dyingT > 0) return; var a2 = u2 * 0.5; shots.push({ x: sx, y: sy, vx: Math.cos(a2) * 210, vy: Math.sin(a2) * 210, r: 8 }); }, u2 * 70); })(u); }
+    dirT = Math.max(0.55, 2.0 - lv * 1.4) * A.rand(0.8, 1.2);
+  }
+  function edgeShot(side, f) {
+    var sp = 230 + Math.min(1, time / 90) * 160, x, y, vx = 0, vy = 0;
+    if (side === 0) { x = f * W + 20; y = TOP - 10; vy = sp; }
+    else if (side === 1) { x = W + 10; y = TOP + f * (H - TOP); vx = -sp; }
+    else if (side === 2) { x = f * W + 20; y = H + 10; vy = -sp; }
+    else { x = -10; y = TOP + f * (H - TOP); vx = sp; }
+    shots.push({ x: x, y: y, vx: vx, vy: vy, r: 9, delay: f * 0.6 });
+  }
+  function bomb() {
+    if (bombs <= 0 || dyingT > 0) return;
+    bombs--; fx.ring(P.x, P.y, '#ffd166', 700, 0.8); fx.flashIt('#ffd166', 0.5); fx.shake(8, 0.3); A.sfx('bigboom');
+    shots.forEach(function (s) { fx.burst(s.x, s.y, '#ff8fb8', 3, 120, 0.3, 2); }); foes.forEach(function (f) { fx.burst(f.x, f.y, '#ff4d6d', 10, 200, 0.4, 3); });
+    score += (shots.length + foes.length * 5) * 5; shots = []; foes = []; lasers = []; P.inv = 1; hud();
+  }
+  function die() {
+    if (dyingT > 0 || P.inv > 0) return;
+    dyingT = 1.2; fx.burst(P.x, P.y, '#ffffff', 30, 420, 0.9, 4); fx.burst(P.x, P.y, '#ff4d6d', 40, 380, 0.8, 4);
+    fx.shake(12, 0.5); fx.flashIt('#ff2244', 0.6); A.sfx('hurt'); A.vibrate(200);
+  }
+  function update(dt) {
+    fx.update(dt);
+    if (dyingT > 0) {
+      dyingT -= dt; moveAll(dt);
+      if (dyingT <= 0) S.gameOver(score, [['버틴 시간', time.toFixed(1) + '초'], ['에너지', String(orbN)], ['폭탄 사용', String(usedBombs)]]);
+      return;
+    }
+    time += dt; score += dt * 10;
+    if (P.inv > 0) P.inv -= dt;
+    var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
+    if (kx || ky) { var l = Math.hypot(kx, ky); P.x += kx / l * 420 * dt; P.y += ky / l * 420 * dt; }
+    P.x = A.clamp(P.x, 14, W - 14); P.y = A.clamp(P.y, TOP + 14, H - 14);
+    dirT -= dt; if (dirT <= 0) director();
+    orbT -= dt; if (orbT <= 0) { orbs.push({ x: A.rand(40, W - 40), y: A.rand(TOP + 60, H - 60), t: 0 }); orbT = A.rand(2.5, 4); }
+    moveAll(dt);
+    // 충돌
+    var i;
+    for (i = 0; i < shots.length; i++) { var s = shots[i]; if (s.delay > 0) continue; if (Math.hypot(s.x - P.x, s.y - P.y) < s.r + P.r - 3) die(); }
+    for (i = 0; i < foes.length; i++) if (Math.hypot(foes[i].x - P.x, foes[i].y - P.y) < 22) die();
+    for (i = 0; i < lasers.length; i++) { var L = lasers[i]; if (L.warn <= 0 && L.on > 0) { if (L.hor ? Math.abs(P.y - L.pos) < L.w / 2 + P.r - 4 : Math.abs(P.x - L.pos) < L.w / 2 + P.r - 4) die(); } }
+    for (i = orbs.length - 1; i >= 0; i--) {
+      var o = orbs[i]; o.t += dt;
+      if (Math.hypot(o.x - P.x, o.y - P.y) < 30) {
+        orbs.splice(i, 1); orbN++; score += 100; fx.burst(o.x, o.y, '#ffd166', 14, 220, 0.5, 3); fx.text(o.x, o.y - 20, '+100', '#ffd166', 18); A.sfx('coin');
+        if (orbN % 5 === 0) { bombs++; fx.text(P.x, P.y - 40, '폭탄 +1 (두 번 탭)', '#ffd166', 18); A.sfx('power'); }
+      } else if (o.t > 6) orbs.splice(i, 1);
+    }
+    if (Math.floor(time) % 30 === 0 && Math.floor(time - dt) % 30 !== 0 && time > 1) { S.banner(Math.floor(time) + '초', '더 거세집니다'); A.sfx('level'); }
+    hud();
+  }
+  var usedBombs = 0;
+  function moveAll(dt) {
+    var i;
+    for (i = shots.length - 1; i >= 0; i--) { var s = shots[i]; if (s.delay > 0) { s.delay -= dt; continue; } s.x += s.vx * dt; s.y += s.vy * dt; if (s.x < -40 || s.x > W + 40 || s.y < TOP - 60 || s.y > H + 40) shots.splice(i, 1); }
+    for (i = foes.length - 1; i >= 0; i--) {
+      var f = foes[i], a = Math.atan2(P.y - f.y, P.x - f.x);
+      f.vx = A.lerp(f.vx, Math.cos(a) * f.sp, dt * 1.6); f.vy = A.lerp(f.vy, Math.sin(a) * f.sp, dt * 1.6);
+      f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt;
+      if (Math.random() < 0.4) fx.spark(f.x, f.y, '#ff4d6d', -f.vx * 0.2, -f.vy * 0.2, 0.3, 2);
+      if (f.life <= 0) { fx.burst(f.x, f.y, '#ff4d6d', 12, 200, 0.4, 3); A.sfx('boom', 1.4); foes.splice(i, 1); score += 20; }
+    }
+    for (i = lasers.length - 1; i >= 0; i--) {
+      var L = lasers[i];
+      if (L.warn > 0) { L.warn -= dt; if (L.warn <= 0) { A.sfx('hurt', 1.6); fx.shake(4, 0.15); } }
+      else { L.on -= dt; if (L.on <= 0) lasers.splice(i, 1); }
+    }
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#07040b'; c.fillRect(-10, -10, W + 20, H + 20);
+    // 맥박치는 격자
+    var pulse = 0.06 + Math.sin(t * 2) * 0.02 + (time > 0 ? Math.min(0.08, time / 1000) : 0);
+    c.strokeStyle = 'rgba(255,77,109,' + pulse + ')'; c.lineWidth = 1;
+    for (var x = 0; x <= W; x += 45) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+    for (var y = 0; y <= H; y += 45) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    var i;
+    // 레이저
+    for (i = 0; i < lasers.length; i++) {
+      var L = lasers[i];
+      if (L.warn > 0) {
+        c.globalAlpha = 0.25 + (Math.floor(t * 14) % 2) * 0.35; c.fillStyle = '#ff4d6d';
+        if (L.hor) c.fillRect(0, L.pos - 1.5, W, 3); else c.fillRect(L.pos - 1.5, 0, 3, H);
+        c.globalAlpha = 1;
+      } else {
+        c.save(); c.globalCompositeOperation = 'lighter';
+        var g = L.hor ? c.createLinearGradient(0, L.pos - L.w, 0, L.pos + L.w) : c.createLinearGradient(L.pos - L.w, 0, L.pos + L.w, 0);
+        g.addColorStop(0, 'rgba(255,77,109,0)'); g.addColorStop(0.5, 'rgba(255,230,235,1)'); g.addColorStop(1, 'rgba(255,77,109,0)');
+        c.fillStyle = g; if (L.hor) c.fillRect(0, L.pos - L.w, W, L.w * 2); else c.fillRect(L.pos - L.w, 0, L.w * 2, H);
+        c.restore();
+      }
+    }
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (i = 0; i < orbs.length; i++) { var ob = orbs[i]; c.globalAlpha = ob.t > 5 ? (Math.floor(t * 10) % 2 ? 0.3 : 1) : 1; A.draw(c, A.glowDot('#ffd166', 7), ob.x, ob.y, 1 + Math.sin(t * 6) * 0.1); }
+    c.globalAlpha = 1;
+    var SH = A.glowDot('#ff4d8b', 5);
+    for (i = 0; i < shots.length; i++) { var s = shots[i]; if (s.delay > 0) { c.globalAlpha = 0.3; } A.draw(c, SH, s.x, s.y, s.r / 8); c.globalAlpha = 1; }
+    for (i = 0; i < foes.length; i++) { var f = foes[i]; A.draw(c, A.glowDot('#ff4d6d', 8), f.x, f.y, 1.2); }
+    c.restore();
+    for (i = 0; i < foes.length; i++) { var ff = foes[i]; c.save(); c.translate(ff.x, ff.y); c.rotate(Math.atan2(ff.vy, ff.vx)); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(12, 0); c.lineTo(-8, -8); c.lineTo(-8, 8); c.fill(); c.restore(); }
+    // 플레이어
+    var px = P ? P.x : W / 2, py = P ? P.y : H * 0.65 + Math.sin(t * 2) * 10;
+    if (!P || dyingT <= 0) {
+      if (!(P && P.inv > 0 && Math.floor(P.inv * 14) % 2)) {
+        c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#5ee7ff', 8), px, py, 1.4); c.restore();
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill();
+      }
+    }
+    fx.draw(c);
+    c.restore(); fx.drawFlash(c, W, H);
+  }
+  var lastHud = '';
+  function hud() {
+    var k = Math.floor(score) + '|' + Math.floor(time * 10) + '|' + bombs; if (k === lastHud) return; lastHud = k;
+    document.getElementById('hA').textContent = A.fmt(score);
+    document.getElementById('hB').textContent = time.toFixed(1);
+    document.getElementById('hC').textContent = bombs;
+    document.getElementById('hMult').textContent = bombs > 0 ? '두 번 탭 = 폭탄' : '';
+  }
+  var stage = document.getElementById('stage'), lastTap = 0;
+  stage.addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return;
+    var now = performance.now(); if (now - lastTap < 300) { if (bombs > 0) usedBombs++; bomb(); } lastTap = now;
+    var p = S.toLocal(e); drag = { id: e.pointerId, sx: p.x, sy: p.y, px: P.x, py: P.y };
+    try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!drag || drag.id !== e.pointerId || S.state !== 'playing' || dyingT > 0) return;
+    var p = S.toLocal(e), k = e.pointerType === 'mouse' ? 1 : 1.3;
+    P.x = A.clamp(drag.px + (p.x - drag.sx) * k, 14, W - 14); P.y = A.clamp(drag.py + (p.y - drag.sy) * k, TOP + 14, H - 14);
+  });
+  function end(e) { if (drag && drag.id === e.pointerId) drag = null; }
+  stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  var S = new A.Shell({
+    id: 'dodge', W: W, H: H, reset: function () { usedBombs = 0; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) {
+      var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keys[k] = true;
+      if ((k === 'b' || k === 'x' || k === 'Shift') && bombs > 0) { usedBombs++; bomb(); }
+    },
+    keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; }
+  });
+})();
+
+</script>
+</body>
+</html>

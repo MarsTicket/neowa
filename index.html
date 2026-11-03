@@ -125,6 +125,22 @@ h2{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4vw,44px);l
 .gc .cover{position:absolute;top:0;right:0;bottom:0;left:0;z-index:2}
 .gc .play{position:relative;z-index:3}
 
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 22px}
+.filters button{font:inherit;color:var(--sub);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;min-height:44px;padding:0 18px;font-weight:700;font-size:14px;cursor:pointer}
+.filters button b{font-family:var(--f-num);color:var(--mute);margin-left:4px}
+.filters button.on{background:var(--ink);color:#05060c;border-color:var(--ink)}
+.filters button.on b{color:#05060c}
+.gc[hidden]{display:none}
+@media (min-width:981px){
+  .games:not(.filtered) .gc:last-child:nth-child(3n+1){grid-column:1/-1;display:grid;grid-template-columns:1.2fr 1fr}
+  .games:not(.filtered) .gc:last-child:nth-child(3n+1) .gc-art{aspect-ratio:auto;min-height:300px}
+  .games:not(.filtered) .gc:last-child:nth-child(3n+1) .gc-art::after{background:linear-gradient(90deg,transparent 55%,var(--card))}
+  .games:not(.filtered) .gc:last-child:nth-child(3n+1) .gc-body{margin-top:0;padding:30px 30px 26px;justify-content:center}
+}
+.gc-new,.gc-today{position:absolute;top:14px;z-index:1;font-family:var(--f-num);font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 10px;border-radius:10px}
+.gc-new{right:14px;background:var(--c);color:#05060c}
+.gc-today{left:62px;background:rgba(255,209,102,.95);color:#2a1a00;font-family:var(--f-body);letter-spacing:0}
+
 /* 스토리 배너 */
 .story{position:relative;border-radius:28px;overflow:hidden;border:1px solid rgba(255,122,168,.25);background:#1a0f1c;display:grid;grid-template-columns:1.15fr .85fr;min-height:420px;isolation:isolate}
 .story-bg{position:absolute;top:0;right:0;bottom:0;left:0;z-index:-2}
@@ -158,7 +174,6 @@ footer nav a:hover{color:var(--ink)}
   .hero-grid{grid-template-columns:1fr}
   .stack{display:none}
   .games{grid-template-columns:1fr 1fr}
-  .games .gc:last-child{grid-column:1/-1}
   .feats{grid-template-columns:1fr 1fr}
 }
 @media (max-width:680px){
@@ -206,7 +221,7 @@ footer nav a:hover{color:var(--ink)}
       <div>
         <p class="kicker" id="kicker"><b></b>무료 · 설치 없음 · 로그인 없음</p>
         <h1>탭 한 번이면<br><em>바로 한 판.</em></h1>
-        <p class="lead">브라우저에서 바로 켜지는 아케이드 게임 3종과 비주얼노벨 한 편. 휴대폰은 터치로, PC는 키보드로 지금 바로 시작하세요.</p>
+        <p class="lead">브라우저에서 바로 켜지는 게임 10종과 비주얼노벨 한 편. 매번 새로 만들어지는 맵과 퍼즐이라 질리지 않아요. 휴대폰은 터치로, PC는 키보드로 지금 바로 시작하세요.</p>
         <p class="tesla-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg><span>테슬라 화면에 맞춰 보여 드립니다. 게임은 <b>주차(P) 상태에서만</b> 즐겨 주세요.</span></p>
         <div class="cta">
           <a class="btn btn-p" id="quickPlay" href="shooting/"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>바로 플레이</a>
@@ -225,39 +240,45 @@ footer nav a:hover{color:var(--ink)}
   <section id="games">
     <div class="wrap">
       <div class="sec-head">
-        <div><p class="eyebrow">ARCADE · 3 GAMES</p><h2>오늘은 뭘 할까요?</h2></div>
-        <p class="sec-note k-only">키보드 <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 으로 바로 시작</p>
+        <div><p class="eyebrow">ARCADE · 10 GAMES</p><h2>오늘은 뭘 할까요?</h2></div>
+        <p class="sec-note k-only">키보드 <kbd>1</kbd>~<kbd>9</kbd>, <kbd>0</kbd> 으로 바로 시작</p>
+      </div>
+      <div class="filters" role="tablist" aria-label="게임 종류">
+        <button class="on" data-f="all" role="tab" aria-selected="true">전체 <b>10</b></button>
+        <button data-f="액션" role="tab" aria-selected="false">액션 <b>4</b></button>
+        <button data-f="원탭" role="tab" aria-selected="false">원탭 <b>3</b></button>
+        <button data-f="퍼즐" role="tab" aria-selected="false">퍼즐 <b>3</b></button>
       </div>
       <div class="games">
-        <article class="gc" style="--c:var(--cyan);--cr:94,231,255">
+        <article class="gc" data-cat="액션" style="--c:#5ee7ff;--cr:94,231,255">
           <a class="cover" href="shooting/" aria-label="별빛 수호대 플레이"></a>
           <div class="gc-art"><span class="gc-no">01</span><img src="assets/shooting-card.jpg" alt="별빛 수호대: 우주 전투기가 적 함대를 향해 레이저를 쏘는 장면" loading="lazy"></div>
           <div class="gc-body">
             <p class="gc-genre">SHOOTING</p>
             <h3>별빛 수호대</h3>
             <p>발사는 자동, 당신은 피하기만. 파워업을 모아 5방향 탄을 완성하고 5웨이브마다 나오는 보스를 잡으세요.</p>
-            <ul class="tags"><li>드래그 이동</li><li>보스전</li><li>콤보 최대 ×8</li></ul>
+            <ul class="tags"><li>드래그 이동</li><li>보스전</li><li>콤보 ×8</li></ul>
             <div class="gc-foot">
               <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_shooting_high">0</b></div>
               <a class="play" href="shooting/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
             </div>
           </div>
         </article>
-        <article class="gc" style="--c:var(--lime);--cr:125,255,155">
+        <article class="gc" data-cat="액션" style="--c:#7dff9b;--cr:125,255,155">
           <a class="cover" href="snake/" aria-label="네온 스네이크 플레이"></a>
           <div class="gc-art"><span class="gc-no">02</span><img src="assets/snake-card.jpg" alt="네온 스네이크: 빛나는 초록 뱀이 사과를 향해 가는 장면" loading="lazy"></div>
           <div class="gc-body">
             <p class="gc-genre">PUZZLE ACTION</p>
             <h3>네온 스네이크</h3>
             <p>먹을수록 길어지고 빨라집니다. 벽은 통과, 내 꼬리와 바위만 조심. 사라지기 전에 황금 먹이를 노리세요.</p>
-            <ul class="tags"><li>스와이프</li><li>벽 통과</li><li>황금 먹이 5배</li></ul>
+            <ul class="tags"><li>스와이프</li><li>벽 통과</li><li>황금 먹이</li></ul>
             <div class="gc-foot">
               <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_snake_high">0</b></div>
               <a class="play" href="snake/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
             </div>
           </div>
         </article>
-        <article class="gc" style="--c:var(--amber);--cr:255,181,71">
+        <article class="gc" data-cat="액션" style="--c:#ffb547;--cr:255,181,71">
           <a class="cover" href="breakout/" aria-label="네온 브레이커 플레이"></a>
           <div class="gc-art"><span class="gc-no">03</span><img src="assets/breakout-card.jpg" alt="네온 브레이커: 빛나는 공이 무지개색 벽돌을 깨는 장면" loading="lazy"></div>
           <div class="gc-body">
@@ -268,6 +289,104 @@ footer nav a:hover{color:var(--ink)}
             <div class="gc-foot">
               <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_breakout_high">0</b></div>
               <a class="play" href="breakout/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="원탭" style="--c:#b48cff;--cr:180,140,255">
+          <a class="cover" href="runner/" aria-label="네온 대시 플레이"></a>
+          <div class="gc-art"><span class="gc-no">04</span><span class="gc-new">NEW</span><img src="assets/runner-card.jpg" alt="네온 대시: 보라색 큐브가 네온 도시를 달리는 장면" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">ONE-TAP RUNNER</p>
+            <h3>네온 대시</h3>
+            <p>탭 한 번에 점프, 두 번에 이단 점프. 끝없이 새로 만들어지는 네온 도시를 점점 빠르게 달립니다.</p>
+            <ul class="tags"><li>원탭</li><li>끝없는 맵</li><li>코인</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_runner_high">0</b></div>
+              <a class="play" href="runner/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="원탭" style="--c:#ffe066;--cr:255,224,102">
+          <a class="cover" href="tower/" aria-label="하늘 탑 쌓기 플레이"></a>
+          <div class="gc-art"><span class="gc-no">05</span><span class="gc-new">NEW</span><img src="assets/tower-card.jpg" alt="하늘 탑 쌓기: 노을 하늘로 쌓아 올린 블록 탑" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">TIMING</p>
+            <h3>하늘 탑 쌓기</h3>
+            <p>움직이는 블록을 딱 맞는 순간에 탭. 어긋나면 잘리고, 완벽하면 다시 넓어집니다. 구름 위까지!</p>
+            <ul class="tags"><li>원탭</li><li>완벽 콤보</li><li>무한 층</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_tower_high">0</b></div>
+              <a class="play" href="tower/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="원탭" style="--c:#ff7a45;--cr:255,122,69">
+          <a class="cover" href="orbit/" aria-label="오빗 점프 플레이"></a>
+          <div class="gc-art"><span class="gc-no">06</span><span class="gc-new">NEW</span><img src="assets/orbit-card.jpg" alt="오빗 점프: 빛나는 행성들 사이를 나는 우주선" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">ONE-TAP SPACE</p>
+            <h3>오빗 점프</h3>
+            <p>행성 주위를 도는 우주선을 알맞은 순간에 발사. 소행성 띠와 움직이는 행성을 넘어 더 깊은 우주로.</p>
+            <ul class="tags"><li>원탭</li><li>중력 포획</li><li>별 수집</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_orbit_high">0</b></div>
+              <a class="play" href="orbit/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="액션" style="--c:#ff4d6d;--cr:255,77,109">
+          <a class="cover" href="dodge/" aria-label="네온 회피 플레이"></a>
+          <div class="gc-art"><span class="gc-no">07</span><span class="gc-new">NEW</span><img src="assets/dodge-card.jpg" alt="네온 회피: 붉은 탄막 사이를 피하는 빛나는 점" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">SURVIVAL</p>
+            <h3>네온 회피</h3>
+            <p>추적탄, 레이저, 탄막을 손가락 하나로 피하세요. 한 번 맞으면 끝. 버틴 시간이 곧 점수입니다.</p>
+            <ul class="tags"><li>드래그</li><li>패턴 6종</li><li>폭탄</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_dodge_high">0</b></div>
+              <a class="play" href="dodge/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="퍼즐" style="--c:#7aa2ff;--cr:122,162,255">
+          <a class="cover" href="blocks/" aria-label="네온 블록 플레이"></a>
+          <div class="gc-art"><span class="gc-no">08</span><span class="gc-new">NEW</span><img src="assets/blocks-card.jpg" alt="네온 블록: 8x8 판 위에 놓인 색색의 블록 조각" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">BLOCK PUZZLE</p>
+            <h3>네온 블록</h3>
+            <p>조각을 8×8 판에 끌어다 놓고 가로·세로 줄을 채워 지우세요. 여러 줄을 한 번에 지우면 점수 폭발.</p>
+            <ul class="tags"><li>끌어다 놓기</li><li>콤보</li><li>시간 제한 없음</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_blocks_high">0</b></div>
+              <a class="play" href="blocks/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="퍼즐" style="--c:#4dffd2;--cr:77,255,210">
+          <a class="cover" href="mines/" aria-label="지뢰 탐색 플레이"></a>
+          <div class="gc-art"><span class="gc-no">09</span><span class="gc-new">NEW</span><img src="assets/mines-card.jpg" alt="지뢰 탐색: 숫자가 적힌 민트색 격자판" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">CLASSIC PUZZLE</p>
+            <h3>지뢰 탐색</h3>
+            <p>숫자를 단서로 지뢰를 피해 모든 칸을 여세요. 첫 칸은 항상 안전, 길게 누르면 깃발. 3단계 난이도.</p>
+            <ul class="tags"><li>탭·길게 누르기</li><li>3단계</li><li>최단 기록</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_mines_high">0</b></div>
+              <a class="play" href="mines/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
+        <article class="gc" data-cat="퍼즐" style="--c:#c3ff5e;--cr:195,255,94">
+          <a class="cover" href="sudoku/" aria-label="스도쿠 플레이"></a>
+          <div class="gc-art"><span class="gc-no">10</span><span class="gc-new">NEW</span><img src="assets/sudoku-card.jpg" alt="스도쿠: 숫자가 채워진 9x9 격자" loading="lazy"></div>
+          <div class="gc-body">
+            <p class="gc-genre">NUMBER PUZZLE</p>
+            <h3>스도쿠</h3>
+            <p>매번 새로 만들어지는, 답이 하나뿐인 퍼즐. 메모와 힌트로 차근차근, 실수는 3번까지.</p>
+            <ul class="tags"><li>매번 새 퍼즐</li><li>메모·힌트</li><li>3단계</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_sudoku_high">0</b></div>
+              <a class="play" href="sudoku/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
             </div>
           </div>
         </article>
@@ -329,7 +448,7 @@ footer nav a:hover{color:var(--ink)}
     document.documentElement.classList.add('tesla');
     document.getElementById('kicker').lastChild.textContent = '테슬라 차량 브라우저 최적화 · 무료';
   }
-  var NAMES = { shooting: '별빛 수호대', snake: '네온 스네이크', breakout: '네온 브레이커' };
+  var NAMES = {shooting: '별빛 수호대', snake: '네온 스네이크', breakout: '네온 브레이커', runner: '네온 대시', tower: '하늘 탑 쌓기', orbit: '오빗 점프', dodge: '네온 회피', blocks: '네온 블록', mines: '지뢰 탐색', sudoku: '스도쿠'};
 
   // 최고기록
   document.querySelectorAll('[data-key]').forEach(function (el) {
@@ -348,10 +467,27 @@ footer nav a:hover{color:var(--ink)}
     r.classList.add('on');
   }
 
+  // 종류 필터
+  var fbtns = document.querySelectorAll('.filters button');
+  fbtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var f = b.getAttribute('data-f');
+      fbtns.forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      document.querySelectorAll('.gc').forEach(function (c) { c.hidden = f !== 'all' && c.getAttribute('data-cat') !== f; });
+      document.querySelector('.games').classList.toggle('filtered', f !== 'all');
+    });
+  });
+
+  // 오늘의 추천 (날짜마다 바뀜)
+  var ids = Object.keys(NAMES), d = new Date(), today = ids[(d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % ids.length];
+  var pickEl = document.querySelector('.gc .cover[href="' + today + '/"]');
+  if (pickEl) { var badge = document.createElement('span'); badge.className = 'gc-today'; badge.textContent = '오늘의 추천'; pickEl.parentNode.querySelector('.gc-art').appendChild(badge); }
+  if (!NAMES[get('neowa_last')]) document.getElementById('quickPlay').href = today + '/';
+
   // 숫자키 1·2·3 바로 시작
   window.addEventListener('keydown', function (e) {
     if (e.target.closest && e.target.closest('input,textarea')) return;
-    var m = { '1': 'shooting/', '2': 'snake/', '3': 'breakout/' }[e.key];
+    var m = {'1': 'shooting/', '2': 'snake/', '3': 'breakout/', '4': 'runner/', '5': 'tower/', '6': 'orbit/', '7': 'dodge/', '8': 'blocks/', '9': 'mines/', '0': 'sudoku/'}[e.key];
     if (m) location.href = m;
   });
 

@@ -120,6 +120,7 @@ body[data-state="ready"] #ovStart{background:radial-gradient(85% 42% at 50% 50%,
 .ov-meta{display:flex;gap:18px;justify-content:center;margin:0 0 22px;color:var(--sub);font-size:13px}
 .ov-meta b{display:block;font-family:var(--f-num);font-size:18px;color:var(--ink)}
 body[data-state="over"] #ovOver .ov-kick{color:var(--red)}
+body.won[data-state="over"] #ovOver .ov-kick{color:var(--gold)}
 .ov-next{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:10px 12px 10px 10px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:13px;color:var(--sub)}
 .ov-next img{width:52px;height:36px;object-fit:cover;border-radius:8px}
 .ov-next b{color:var(--ink);font-size:14px;display:block}
@@ -176,3 +177,8 @@ body[data-state="over"] #ovOver .ov-kick{color:var(--red)}
   .g-back span{display:none}
   .g-name{font-size:18px}
 }
+
+/* 시작 화면 난이도 선택 칩 (퍼즐 게임) */
+.ov-diff{display:flex;gap:6px;justify-content:center;margin:0 0 20px;flex-wrap:wrap}
+.ov-diff button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.06);font-weight:700;font-size:14px;color:var(--sub)}
+.ov-diff button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}

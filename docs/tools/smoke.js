@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE = process.env.BASE || 'http://localhost:8765/';
-const GAMES = process.argv.slice(2).length ? process.argv.slice(2) : ['shooting', 'snake', 'breakout'];
+const GAMES = process.argv.slice(2).length ? process.argv.slice(2) : ['shooting', 'snake', 'breakout', 'runner', 'tower', 'orbit', 'dodge', 'blocks', 'mines', 'sudoku', 'story'];
 const OUT = path.join(__dirname, 'shots');
 const TESLA_UA = 'Mozilla/5.0 (X11; GNU/Linux) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/109.0 Chrome/109.0 Safari/537.36 Tesla/2024.20';
 const DEVICES = [
@@ -41,6 +41,7 @@ const DEVICES = [
       await p.screenshot({ path: path.join(OUT, tag + '-0.png') });
       if (page) {
         // 시작 → 이리저리 조작 → 상태 확인
+        if (page === 'story/') { await p.click('#newGameBtn'); for (let i = 0; i < 6; i++) { await p.click('#dialogueBox'); await p.waitForTimeout(150); } await p.screenshot({ path: path.join(OUT, tag + '-1.png') }); if (errs.length) { failed++; console.log('✗', tag, errs.slice(0, 5)); } else console.log('✓', tag); await p.close(); continue; }
         await p.keyboard.press('Space');
         const box = await p.locator('#stage').boundingBox();
         await p.mouse.move(box.x + box.width / 2, box.y + box.height * 0.8);

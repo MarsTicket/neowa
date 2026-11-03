@@ -290,8 +290,13 @@
     S.resume = function () { if (S.state !== 'paused') return; setState('playing'); A.sfx('click'); last = performance.now(); };
     S.togglePause = function () { if (S.state === 'playing') S.pause(); else if (S.state === 'paused') S.resume(); };
 
-    S.gameOver = function (score, meta) {
+    // opts: { kick: 'CLEAR!', win: true }  → 퍼즐을 풀었을 때처럼 '승리' 종료 화면
+    var kickEl = document.querySelector('#ovOver .ov-kick'), kickDefault = kickEl ? kickEl.textContent : '';
+    S.gameOver = function (score, meta, opts) {
       if (S.state !== 'playing') return;
+      opts = opts || {};
+      if (kickEl) kickEl.textContent = opts.kick || kickDefault;
+      body.classList.toggle('won', !!opts.win);
       setState('over');
       S.overAt = performance.now();
       var isNew = score > S.best && score > 0;
@@ -342,7 +347,7 @@
     });
     // 시작 화면은 어디를 눌러도 시작
     var ovStart = document.getElementById('ovStart');
-    ovStart.addEventListener('click', function (e) { if (S.state === 'ready' && !e.target.closest('a')) S.start(); });
+    ovStart.addEventListener('click', function (e) { if (S.state === 'ready' && !e.target.closest('a,[data-nostart]')) S.start(); });
 
     // 키보드
     window.addEventListener('keydown', function (e) {

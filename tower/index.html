@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/tower.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>하늘 탑 쌓기 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 탑 쌓기. 좌우로 움직이는 블록을 정확한 순간에 탭해 쌓으세요. 삐져나간 부분은 잘려 나갑니다. 구름 위까지 올라가 보세요.">
+<meta property="og:title" content="하늘 탑 쌓기 · 너와 아케이드">
+<meta property="og:description" content="탭 한 번 타이밍 게임. 블록을 딱 맞게 쌓아 하늘까지 올라가 보세요.">
+<meta property="og:image" content="https://neowa.kr/assets/tower-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ffe066;--accent-ink:#221a00;--ar:255,224,102}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 05</small>하늘 탑 쌓기</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>Space</kbd><kbd>↓</kbd> 내려놓기</div>
+          <div class="t-only"><kbd>탭</kbd> 화면 어디든 탭</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>어긋난 부분은 잘려 나감</div>
+          <div><kbd style="color:#ffe066">★</kbd> 완벽하게 맞추면 콤보</div>
+          <div>블록을 놓치면 끝</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">FLOOR</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">PERFECT</span><span class="h-v sm" id="hB">0</span></div>
+        <div class="h-box r"><span class="h-lb">COMBO</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 05</p>
+        <h1 class="ov-title">하늘 탑 쌓기</h1>
+        <p class="ov-desc">움직이는 블록을 아래층과 딱 맞을 때 탭하세요. 어긋난 만큼 잘려 나가고, 완벽하게 맞추면 다시 넓어집니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭으로 내려놓기</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>완벽 3연속 = 블록 확장</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>쌓기 시작</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../orbit/"><img src="../assets/orbit-card.jpg" alt=""><span class="grow"><b>오빗 점프</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../orbit/"><img src="../assets/orbit-card.jpg" alt=""><span><b>오빗 점프</b><span>원탭 우주</span></span></a>
+        <a class="g-more" href="../mines/"><img src="../assets/mines-card.jpg" alt=""><span><b>지뢰 탐색</b><span>클래식 퍼즐</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, BH = 44, DEPTH = 22;   // 블록 높이, 윗면 깊이(입체감)
+  var fx = new A.FX();
+  var stack, cur, cam = 0, camT = 0, chips = [], perfects = 0, combo = 0, floors = 0, dyingT = 0, dir = 1, spd = 0;
+
+  var BG = A.sprite('tbg', W, H, function (x) {
+    var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0a0f2c'); g.addColorStop(0.55, '#3b2a6b'); g.addColorStop(1, '#ff9e6b');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 90; i++) { x.globalAlpha = Math.random() * 0.7; x.fillStyle = '#fff'; x.fillRect(Math.random() * W, Math.random() * H * 0.5, 1.6, 1.6); }
+  });
+  function hueFor(n) { return (n * 9 + 40) % 360; }
+  function col(n, l) { return 'hsl(' + hueFor(n) + ',85%,' + l + '%)'; }
+
+  function reset() {
+    stack = [{ x: W / 2 - 110, w: 220, n: 0 }]; // 맨 아래 받침
+    chips = []; perfects = 0; combo = 0; floors = 0; dyingT = 0; cam = 0; camT = 0;
+    spawn(); fx.clear(); hud();
+  }
+  function topY(i) { return 760 - i * BH; } // i층 블록의 윗면 y (월드 좌표)
+  function spawn() {
+    var last = stack[stack.length - 1];
+    spd = Math.min(560, 230 + floors * 9);
+    dir = floors % 2 ? -1 : 1;
+    cur = { x: dir > 0 ? -last.w : W, w: last.w, n: stack.length };
+  }
+  function drop() {
+    if (S.state !== 'playing' || dyingT > 0 || !cur) return;
+    var last = stack[stack.length - 1], off = cur.x - last.x;
+    if (Math.abs(off) < 7) { // 완벽
+      cur.x = last.x; combo++; perfects++;
+      var grow = combo >= 3 ? Math.min(14, 260 - cur.w) : 0;
+      if (grow > 0) { cur.x -= grow / 2; cur.w += grow; fx.text(W / 2, sy(topY(cur.n)) - 50, '넓어짐!', '#ffe066', 20); }
+      fx.ring(cur.x + cur.w / 2, sy(topY(cur.n)) + BH / 2, '#ffe066', cur.w * 0.7, 0.45);
+      A.sfx('coin', 1 + Math.min(combo, 10) * 0.08); A.vibrate(15);
+      fx.text(cur.x + cur.w / 2, sy(topY(cur.n)) - 20, combo > 1 ? 'PERFECT ×' + combo : 'PERFECT', '#fff', 20);
+    } else {
+      combo = 0;
+      var nx = Math.max(cur.x, last.x), nr = Math.min(cur.x + cur.w, last.x + last.w), nw = nr - nx;
+      if (nw <= 0) { // 완전히 빗나감
+        chips.push({ x: cur.x, w: cur.w, y: topY(cur.n), vy: 0, vx: dir * 60, n: cur.n, rot: 0 });
+        cur = null; dyingT = 1.2; A.sfx('hurt'); fx.shake(8, 0.4); A.vibrate(150); return;
+      }
+      var cx = off > 0 ? nr : cur.x, cw = cur.w - nw; // 잘려 나가는 조각
+      chips.push({ x: cx, w: cw, y: topY(cur.n), vy: 0, vx: off > 0 ? 80 : -80, n: cur.n, rot: 0 });
+      cur.x = nx; cur.w = nw; A.sfx('brick', 0.8);
+      fx.burst(off > 0 ? nr : nx, sy(topY(cur.n)) + BH / 2, col(cur.n, 70), 10, 200, 0.4, 2.5);
+    }
+    stack.push({ x: cur.x, w: cur.w, n: cur.n }); floors++;
+    fx.shake(2, 0.08);
+    if (floors % 10 === 0) { S.banner(floors + '층', '계속 올라가요'); A.sfx('level'); }
+    spawn(); hud();
+  }
+  function sy(wy) { return wy + cam; } // 월드 → 화면
+
+  function update(dt) {
+    fx.update(dt);
+    // 카메라: 탑 꼭대기가 화면 40% 지점에 오도록
+    camT = Math.max(0, (stack.length - 8) * BH);
+    cam = A.lerp(cam, camT, Math.min(1, dt * 5));
+    for (var i = chips.length - 1; i >= 0; i--) { var c = chips[i]; c.vy += 1800 * dt; c.y += c.vy * dt; c.x += c.vx * dt; c.rot += c.vx * 0.002 * dt * 10; if (sy(c.y) > H + 200) chips.splice(i, 1); }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(floors * 10 + perfects * 5, [['층수', String(floors)], ['완벽', String(perfects)], ['최대 콤보', String(maxCombo)]]); return; }
+    if (cur) {
+      cur.x += dir * spd * dt;
+      var last = stack[stack.length - 1];
+      if (dir > 0 && cur.x > W - cur.w * 0.15) dir = -1;
+      if (dir < 0 && cur.x < -cur.w * 0.85) dir = 1;
+      void last;
+    }
+    maxCombo = Math.max(maxCombo, combo);
+  }
+  var maxCombo = 0;
+
+  function block(c, x, y, w, n, alpha) {
+    c.globalAlpha = alpha == null ? 1 : alpha;
+    // 윗면
+    c.fillStyle = col(n, 72); c.beginPath(); c.moveTo(x, y); c.lineTo(x + DEPTH, y - DEPTH); c.lineTo(x + w + DEPTH, y - DEPTH); c.lineTo(x + w, y); c.closePath(); c.fill();
+    // 앞면
+    var g = c.createLinearGradient(0, y, 0, y + BH); g.addColorStop(0, col(n, 58)); g.addColorStop(1, col(n, 40));
+    c.fillStyle = g; c.fillRect(x, y, w, BH);
+    // 옆면
+    c.fillStyle = col(n, 30); c.beginPath(); c.moveTo(x + w, y); c.lineTo(x + w + DEPTH, y - DEPTH); c.lineTo(x + w + DEPTH, y + BH - DEPTH); c.lineTo(x + w, y + BH); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(x, y, w, 2);
+    c.globalAlpha = 1;
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    // 배경은 높이에 따라 천천히 올라감(하늘 → 우주)
+    var par = Math.min(H, (cam || 0) * 0.25);
+    c.drawImage(BG, -10, -10 - (H * 0.4) + par * 0.4, W + 20, H * 1.4);
+    // 구름
+    c.fillStyle = 'rgba(255,255,255,.08)';
+    for (var k = 0; k < 6; k++) { var cy = ((k * 230 + (cam || 0) * 0.6) % (H + 200)) - 100, cx = ((k * 157 + t * 12) % (W + 200)) - 100; c.beginPath(); c.ellipse(cx, cy, 120, 26, 0, 0, Math.PI * 2); c.fill(); }
+    var st = stack || [{ x: W / 2 - 110, w: 220, n: 0 }];
+    // 땅
+    c.fillStyle = '#1a1030'; c.fillRect(0, sy(topY(0)) + BH, W, H);
+    for (var i = 0; i < st.length; i++) { var b = st[i], y = sy(topY(b.n)); if (y > H + 50 || y < -80) continue; block(c, b.x, y, b.w, b.n); }
+    if (cur) {
+      var yy = sy(topY(cur.n));
+      // 그림자 가이드
+      var last = st[st.length - 1];
+      c.fillStyle = 'rgba(255,255,255,.07)'; c.fillRect(last.x, yy, last.w, BH);
+      block(c, cur.x, yy, cur.w, cur.n);
+    }
+    for (i = 0; i < chips.length; i++) { var ch = chips[i]; c.save(); c.translate(ch.x + ch.w / 2, sy(ch.y) + BH / 2); c.rotate(ch.rot); block(c, -ch.w / 2, -BH / 2, ch.w, ch.n, 0.9); c.restore(); }
+    if (!stack) { for (var d = 1; d < 9; d++) block(c, W / 2 - 110 + Math.sin(d * 1.3) * 8, topY(d), 220 - d * 6, d); }
+    fx.draw(c);
+    c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() {
+    document.getElementById('hA').textContent = floors;
+    document.getElementById('hB').textContent = perfects;
+    document.getElementById('hC').textContent = combo;
+    document.getElementById('hMult').textContent = combo >= 2 ? 'PERFECT ×' + combo : '';
+  }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state === 'playing') { e.preventDefault(); drop(); } });
+  var S = new A.Shell({
+    id: 'tower', W: W, H: H,
+    reset: function () { maxCombo = 0; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { if ((e.key === ' ' || e.key === 'ArrowDown' || e.key === 'Enter') && !e.repeat) drop(); }
+  });
+})();
+
+</script>
+</body>
+</html>

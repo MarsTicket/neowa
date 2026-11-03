@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/racer.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>탑뷰 레이서 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 레이싱 게임. 드래그로 차를 조종해 구불구불한 도로를 최대한 멀리 달리세요.">
+<meta property="og:title" content="탑뷰 레이서 · 너와 아케이드">
+<meta property="og:description" content="드래그로 조종하는 탑뷰 레이싱.">
+<meta property="og:image" content="https://neowa.kr/assets/racer-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ffe066;--accent-ink:#221a00;--ar:255,224,102}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 21</small>탑뷰 레이서</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>←→</kbd><kbd>AD</kbd> 조향</div>
+          <div><kbd>드래그</kbd> 좌우 조향</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>연료가 0이 되면 끝</div>
+          <div>도로 밖 = 감속 + 연료 소모</div>
+          <div>장애물에 부딪히면 연료 -15</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">FUEL</span><span class="h-v sm" id="hB">100</span></div>
+        <div class="h-box r"><span class="h-lb">KM</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 21</p>
+        <h1 class="ov-title">탑뷰 레이서</h1>
+        <p class="ov-desc">좌우로 끌어 차를 움직이세요. 도로 밖은 느려지고 연료가 빨리 닳아요. 연료가 떨어지면 끝.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>좌우 드래그</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>연료 통 챙기기</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../fishy/"><img src="../assets/fishy-card.jpg" alt=""><span class="grow"><b>큰 물고기</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../fishy/"><img src="../assets/fishy-card.jpg" alt=""><span><b>큰 물고기</b><span>성장</span></span></a>
+        <a class="g-more" href="../snake/"><img src="../assets/snake-card.jpg" alt=""><span><b>네온 스네이크</b><span>퍼즐 액션</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, PY = 760, RW = 250;
+  var fx = new A.FX();
+  var car, road, obs, cans, boosts, dist, speed, fuel, score, boostT, dyingT, keys = {}, drag = null, phase, curv;
+  // 도로 중심선: 거리(px) → x 좌표 (부드러운 곡선)
+  function cx(d) { return W / 2 + Math.sin(d * 0.0021) * 110 + Math.sin(d * 0.0007 + 1) * 70 + Math.sin(d * 0.0047) * 30 * Math.min(1, d / 20000); }
+  function reset() { car = { x: cx(0), vx: 0 }; obs = []; cans = []; boosts = []; dist = 0; speed = 420; fuel = 100; score = 0; boostT = 0; dyingT = 0; keys = {}; drag = null; nextObj = 600; fx.clear(); hud(); }
+  var nextObj = 600;
+  function spawn() {
+    var d = dist + H + 100, off = A.rand(-RW / 2 + 30, RW / 2 - 30), r = Math.random();
+    if (r < 0.55) obs.push({ d: d, off: off, hit: false });
+    else if (r < 0.8) cans.push({ d: d, off: off });
+    else boosts.push({ d: d, off: off });
+    nextObj = dist + A.rand(220, 420) - Math.min(150, dist / 400);
+  }
+  function update(dt) {
+    fx.update(dt);
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', (dist / 1000).toFixed(1) + 'km'], ['최고 속도', Math.round(maxSp / 5) + '']]); return; }
+    var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0);
+    if (drag) car.x = A.lerp(car.x, drag.tx, Math.min(1, dt * 10));
+    else car.x += kx * 420 * dt;
+    car.x = A.clamp(car.x, 30, W - 30);
+    var c0 = cx(dist + (H - PY)), off = Math.abs(car.x - c0), onRoad = off < RW / 2 - 14;
+    var target = (boostT > 0 ? 1.6 : 1) * Math.min(1050, 420 + dist / 90) * (onRoad ? 1 : 0.5);
+    speed = A.lerp(speed, target, Math.min(1, dt * 2)); maxSp = Math.max(maxSp, speed);
+    dist += speed * dt; if (boostT > 0) boostT -= dt;
+    fuel -= dt * (onRoad ? 3.2 : 9) * (1 + dist / 80000);
+    if (!onRoad && Math.random() < 0.6) fx.spark(car.x + A.rand(-16, 16), PY + 40, '#8a6a3a', A.rand(-60, 60), 120, 0.4, 3);
+    if (dist > nextObj) spawn();
+    function sy(d) { return PY - (d - dist - (H - PY)) ; }
+    obs.forEach(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (!o.hit && Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { o.hit = true; fuel -= 15; speed *= 0.45; fx.burst(x, y, '#ff4d6d', 24, 300, 0.5, 3.5); fx.shake(9, 0.3); A.sfx('hurt'); A.vibrate(120); fx.text(car.x, PY - 70, '연료 -15', '#ff4d6d', 20); } });
+    cans = cans.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { fuel = Math.min(100, fuel + 22); score += 100; fx.burst(x, y, '#7dff9b', 14, 220, 0.4, 3); fx.text(x, y - 40, '연료 +22', '#7dff9b', 18); A.sfx('power'); return false; } return y < H + 60; });
+    boosts = boosts.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { boostT = 2.5; score += 50; fx.ring(car.x, PY, '#ffe066', 120, 0.5); A.sfx('level'); return false; } return y < H + 60; });
+    obs = obs.filter(function (o) { return sy(o.d) < H + 60; });
+    score += speed * dt / 30;
+    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.sfx('over'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
+    hud();
+  }
+  var maxSp = 0;
+  function render(c) {
+    var o = fx.offset(), t = S.time, d0 = dist || t * 300;
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#0f1a0c'; c.fillRect(-10, -10, W + 20, H + 20);
+    // 도로를 가로 띠로 그림
+    for (var y = -10; y < H + 10; y += 10) {
+      var d = d0 + (PY - y) + (H - PY), x = cx(d), stripe = Math.floor(d / 60) % 2;
+      c.fillStyle = stripe ? '#1a2a14' : '#152211'; c.fillRect(0, y, W, 10);
+      c.fillStyle = stripe ? '#ff4d6d' : '#f4f5fb'; c.fillRect(x - RW / 2 - 12, y, 12, 10); c.fillRect(x + RW / 2, y, 12, 10);
+      c.fillStyle = '#2a2a33'; c.fillRect(x - RW / 2, y, RW, 10);
+      if (stripe) { c.fillStyle = 'rgba(255,224,102,.7)'; c.fillRect(x - 3, y, 6, 10); }
+    }
+    function sy(dd) { return PY - (dd - d0 - (H - PY)); }
+    (obs || []).forEach(function (ob) { var yy = sy(ob.d), xx = cx(ob.d) + ob.off; c.fillStyle = ob.hit ? '#555' : '#ff7a45'; c.beginPath(); c.moveTo(xx, yy - 26); c.lineTo(xx + 20, yy + 18); c.lineTo(xx - 20, yy + 18); c.fill(); c.fillStyle = '#fff'; c.fillRect(xx - 12, yy, 24, 5); });
+    c.save(); c.globalCompositeOperation = 'lighter';
+    (cans || []).forEach(function (cn) { A.draw(c, A.glowDot('#7dff9b', 6), cx(cn.d) + cn.off, sy(cn.d), 1.1); });
+    (boosts || []).forEach(function (b) { A.draw(c, A.glowDot('#ffe066', 7), cx(b.d) + b.off, sy(b.d), 1.2); });
+    c.restore();
+    (cans || []).forEach(function (cn) { c.fillStyle = '#04170a'; c.font = '700 14px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('F', cx(cn.d) + cn.off, sy(cn.d)); });
+    var carX = car ? car.x : cx(d0 + (H - PY));
+    if (!car || dyingT <= 0 || true) {
+      c.save(); c.translate(carX, PY); c.shadowColor = boostT > 0 ? '#ffe066' : '#ff7a45'; c.shadowBlur = 18; c.fillStyle = '#ffe066'; A.rr(c, -22, -40, 44, 80, 12); c.fill();
+      c.shadowBlur = 0; c.fillStyle = '#221a00'; A.rr(c, -16, -24, 32, 20, 5); c.fill(); c.fillStyle = '#ff4d6d'; c.fillRect(-18, 36, 10, 4); c.fillRect(8, 36, 10, 4); c.restore();
+      if (boostT > 0) fx.spark(carX + A.rand(-10, 10), PY + 44, A.pick(['#ffe066', '#ff7a45']), 0, 300, 0.25, 3);
+    }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var last = '';
+  function hud() { var k = Math.floor(score) + '|' + Math.ceil(fuel) + '|' + Math.floor(dist / 100); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); var f = document.getElementById('hB'); f.textContent = Math.ceil(fuel); f.style.color = fuel < 25 ? '#ff4d6d' : ''; document.getElementById('hC').textContent = (dist / 1000).toFixed(1); }
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); drag = { id: e.pointerId, sx: p.x, cx: car.x, tx: car.x, m: e.pointerType === 'mouse' }; if (drag.m) drag.tx = p.x; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); if (e.pointerType === 'mouse') { if (!drag) drag = { m: true }; drag.tx = p.x; return; } if (drag && drag.id === e.pointerId) drag.tx = drag.cx + (p.x - drag.sx) * 1.4; });
+  stage.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') drag = null; });
+  stage.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') drag = null; });
+  var S = new A.Shell({ id: 'racer', W: W, H: H, reset: function () { maxSp = 0; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { drag = null; keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+})();
+
+</script>
+</body>
+</html>

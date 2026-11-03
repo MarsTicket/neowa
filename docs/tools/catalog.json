@@ -298,5 +298,265 @@
   "new": true,
   "art": "capture",
   "maxScore": 200000
+ },
+ {
+  "id": "rocks",
+  "name": "우주 광부",
+  "genre": "SPACE MINER",
+  "kgenre": "우주 슈팅",
+  "cat": "액션",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "드래그한 방향으로 우주선이 날아가며 자동으로 쏩니다. 운석을 부수면 작게 쪼개져요. 광석을 모아 업그레이드!",
+  "tags": [
+   "드래그 비행",
+   "자동 사격",
+   "운석 분열"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
+ },
+ {
+  "id": "slash",
+  "name": "네온 슬래시",
+  "genre": "SLICE",
+  "kgenre": "베기",
+  "cat": "액션",
+  "accent": "#ff5ec4",
+  "rgb": "255,94,196",
+  "ink": "#2a0420",
+  "desc": "튀어 오르는 도형을 손가락으로 그어 베세요. 한 번에 여러 개를 베면 콤보, 폭탄은 절대 건드리지 말 것!",
+  "tags": [
+   "스와이프",
+   "콤보 베기",
+   "폭탄 주의"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "hockey",
+  "name": "에어 하키",
+  "genre": "AIR HOCKEY",
+  "kgenre": "대전",
+  "cat": "액션",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "컴퓨터와 하는 에어 하키. 말렛을 끌어 퍽을 쳐 넣으세요. 7점 먼저 내면 승리, 이길수록 상대가 강해집니다.",
+  "tags": [
+   "드래그",
+   "컴퓨터 대전",
+   "7점 승부"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "keeper",
+  "name": "골키퍼",
+  "genre": "GOALKEEPER",
+  "kgenre": "막기",
+  "cat": "액션",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "날아오는 슛을 손가락으로 막으세요. 곡선 슛, 빠른 슛, 페인트까지. 몇 골이나 막을 수 있을까요?",
+  "tags": [
+   "드래그",
+   "곡선 슛",
+   "3골 실점 끝"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000
+ },
+ {
+  "id": "whack",
+  "name": "두더지 탭",
+  "genre": "WHACK",
+  "kgenre": "반응",
+  "cat": "두뇌",
+  "accent": "#ffb547",
+  "rgb": "255,181,71",
+  "ink": "#241400",
+  "desc": "구멍에서 튀어나오는 두더지를 재빨리 탭! 황금 두더지는 3배, 폭탄 두더지는 피하세요. 60초 승부.",
+  "tags": [
+   "탭",
+   "60초",
+   "황금 두더지"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 20000
+ },
+ {
+  "id": "racer",
+  "name": "탑뷰 레이서",
+  "genre": "TOP-DOWN RACE",
+  "kgenre": "레이싱",
+  "cat": "액션",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "드래그로 핸들을 꺾어 구불구불한 도로를 달리세요. 길 밖으로 나가면 감속, 장애물은 피하고 부스터는 챙기고!",
+  "tags": [
+   "드래그 조향",
+   "구불길",
+   "부스터"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
+ },
+ {
+  "id": "fishy",
+  "name": "큰 물고기",
+  "genre": "GROW FISH",
+  "kgenre": "성장",
+  "cat": "액션",
+  "accent": "#4dd8ff",
+  "rgb": "77,216,255",
+  "ink": "#002030",
+  "desc": "나보다 작은 물고기를 먹고 점점 커지세요. 나보다 큰 물고기에게 먹히면 끝. 바다의 왕이 되어 보세요!",
+  "tags": [
+   "드래그",
+   "성장",
+   "먹이 사슬"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "defense",
+  "name": "도시 방어",
+  "genre": "MISSILE DEFENSE",
+  "kgenre": "방어",
+  "cat": "액션",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "떨어지는 미사일을 탭해서 공중 폭발로 막으세요. 폭발에 휘말린 미사일도 함께 터집니다. 도시를 지켜라!",
+  "tags": [
+   "탭 요격",
+   "연쇄 폭발",
+   "웨이브"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "survivor",
+  "name": "네온 서바이버",
+  "genre": "SURVIVOR",
+  "kgenre": "생존 슈팅",
+  "cat": "액션",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "몰려드는 적 사이에서 버티세요. 공격은 자동, 레벨업마다 능력 3개 중 하나를 골라 점점 강해집니다.",
+  "tags": [
+   "드래그 이동",
+   "자동 공격",
+   "능력 선택"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000000
+ },
+ {
+  "id": "maze",
+  "name": "네온 미로",
+  "genre": "MAZE",
+  "kgenre": "미로",
+  "cat": "퍼즐",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "매번 새로 만들어지는 미로를 빠져나가세요. 별을 모으면 보너스, 단계가 올라갈수록 미로가 커지고 시간은 빠듯해집니다.",
+  "tags": [
+   "스와이프",
+   "무한 미로",
+   "시간 제한"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 200000
+ },
+ {
+  "id": "jumper",
+  "name": "구름 점프",
+  "genre": "SKY JUMPER",
+  "kgenre": "점프",
+  "cat": "액션",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "발판을 밟고 통통 튀어 하늘 높이 올라가세요. 좌우로 끌어 방향을 잡고, 스프링과 로켓으로 한 번에 쭉!",
+  "tags": [
+   "좌우 드래그",
+   "무한 상승",
+   "스프링·로켓"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "artillery",
+  "name": "포격전",
+  "genre": "ARTILLERY",
+  "kgenre": "포격",
+  "cat": "액션",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "언덕 너머 적 포대를 맞혀라! 각도와 힘을 정해 쏘고, 바람과 지형을 읽어야 합니다. 이길수록 적이 정확해져요.",
+  "tags": [
+   "각도·힘 조절",
+   "바람",
+   "턴제 대결"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "pinball",
+  "name": "네온 핀볼",
+  "genre": "PINBALL",
+  "kgenre": "핀볼",
+  "cat": "액션",
+  "accent": "#ff5ec4",
+  "rgb": "255,94,196",
+  "ink": "#2a0420",
+  "desc": "화면 왼쪽·오른쪽을 눌러 플리퍼를 치세요. 범퍼와 타깃을 맞혀 점수를 쌓고, 공 3개로 최고 기록 도전!",
+  "tags": [
+   "좌우 탭",
+   "범퍼 콤보",
+   "공 3개"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 50000000
  }
 ]

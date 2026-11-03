@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/rocks.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>우주 광부 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 우주 운석 슈팅. 드래그한 쪽으로 날아가며 자동 사격, 큰 운석은 부수면 작게 쪼개집니다.">
+<meta property="og:title" content="우주 광부 · 너와 아케이드">
+<meta property="og:description" content="드래그로 날며 운석을 부수는 우주 광부.">
+<meta property="og:image" content="https://neowa.kr/assets/rocks-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#9be7ff;--accent-ink:#03141c;--ar:155,231,255}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 16</small>우주 광부</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>↑↓←→</kbd> 이동 (자동 조준)</div>
+          <div><kbd>드래그</kbd> 끄는 방향으로 비행</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>큰 운석 → 중간 → 작은 조각</div>
+          <div><kbd style="color:#ffd166">◆</kbd> 광석 5개마다 화력 UP</div>
+          <div>화면 끝은 반대편과 이어짐</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">WAVE</span><span class="h-v sm" id="hB">1</span></div>
+        <div class="h-box r"><span class="h-lb">LIFE</span><span class="h-v sm" id="hC">3</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 16</p>
+        <h1 class="ov-title">우주 광부</h1>
+        <p class="ov-desc">손가락을 끄는 방향으로 우주선이 날아가고 그쪽으로 자동 발사합니다. 운석에 부딪히면 목숨이 줄어요.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>드래그로 비행</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>광석 모으면 화력 UP</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../slash/"><img src="../assets/slash-card.jpg" alt=""><span class="grow"><b>네온 슬래시</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../slash/"><img src="../assets/slash-card.jpg" alt=""><span><b>네온 슬래시</b><span>베기</span></span></a>
+        <a class="g-more" href="../whack/"><img src="../assets/whack-card.jpg" alt=""><span><b>두더지 탭</b><span>반응</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, TOP = 70;
+  var fx = new A.FX();
+  var P, rocks, shots, ores, wave, score, lives, power, oreN, dyingT, drag = null, keys = {}, nextWaveT;
+  function wrap(o) { if (o.x < -40) o.x += W + 80; if (o.x > W + 40) o.x -= W + 80; if (o.y < TOP - 40) o.y += H - TOP + 80; if (o.y > H + 40) o.y -= H - TOP + 80; }
+  function rockShape(r) { var pts = [], n = 11; for (var i = 0; i < n; i++) pts.push(r * A.rand(0.72, 1.08)); return pts; }
+  function addRock(x, y, size) { var r = [0, 18, 32, 52][size], a = Math.random() * Math.PI * 2, sp = A.rand(40, 90) * (4 - size) * 0.5 + wave * 6; rocks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: r, size: size, hp: size, rot: 0, vr: A.rand(-1, 1), shape: rockShape(r), hit: 0 }); }
+  function startWave() {
+    wave++; var n = 2 + wave;
+    for (var i = 0; i < n; i++) { var side = Math.random() < 0.5; addRock(side ? (Math.random() < 0.5 ? -30 : W + 30) : A.rand(0, W), side ? A.rand(TOP, H) : (Math.random() < 0.5 ? TOP - 30 : H + 30), 3); }
+    S.banner('WAVE ' + wave, '운석 접근'); if (wave > 1) A.sfx('level');
+  }
+  function reset() { P = { x: W / 2, y: H * 0.6, vx: 0, vy: 0, a: -Math.PI / 2, inv: 2, fire: 0 }; rocks = []; shots = []; ores = []; wave = 0; score = 0; lives = 3; power = 1; oreN = 0; dyingT = 0; nextWaveT = 0; drag = null; keys = {}; startWave(); fx.clear(); hud(); }
+  function hurt() {
+    if (P.inv > 0 || dyingT > 0) return; lives--; P.inv = 2.2; power = Math.max(1, power - 1);
+    fx.burst(P.x, P.y, '#9be7ff', 30, 380, 0.7, 3.5); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(150);
+    if (lives <= 0) { dyingT = 1.3; A.sfx('bigboom'); } hud();
+  }
+  function breakRock(r, i) {
+    rocks.splice(i, 1); score += [0, 100, 50, 20][r.size];
+    fx.burst(r.x, r.y, '#b8a48c', 10 + r.size * 6, 200 + r.size * 40, 0.6, 3); fx.ring(r.x, r.y, '#9be7ff', r.r * 2, 0.3);
+    A.sfx(r.size > 1 ? 'boom' : 'hit', 1 + (3 - r.size) * 0.2); fx.shake(r.size * 1.5, 0.12);
+    if (r.size > 1) { addRock(r.x, r.y, r.size - 1); addRock(r.x, r.y, r.size - 1); }
+    if (Math.random() < 0.18 + (r.size === 3 ? 0.3 : 0)) ores.push({ x: r.x, y: r.y, t: 0 });
+  }
+  function update(dt) {
+    fx.update(dt);
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['광석', String(oreN)], ['화력', 'LV ' + power]]); return; }
+    var tx = 0, ty = 0;
+    if (drag) { tx = drag.x - P.x; ty = drag.y - P.y; var d = Math.hypot(tx, ty); if (d > 20) { tx /= d; ty /= d; } else { tx = 0; ty = 0; } }
+    var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
+    if (kx || ky) { var l = Math.hypot(kx, ky); tx = kx / l; ty = ky / l; }
+    P.vx += tx * 900 * dt; P.vy += ty * 900 * dt; P.vx *= 1 - 1.6 * dt; P.vy *= 1 - 1.6 * dt;
+    var sp = Math.hypot(P.vx, P.vy); if (sp > 360) { P.vx *= 360 / sp; P.vy *= 360 / sp; }
+    P.x += P.vx * dt; P.y += P.vy * dt; wrap(P);
+    // 조준: 가장 가까운 운석 (없으면 진행 방향)
+    var best = null, bd = 1e9; rocks.forEach(function (r) { var dd = Math.hypot(r.x - P.x, r.y - P.y); if (dd < bd) { bd = dd; best = r; } });
+    var want = best ? Math.atan2(best.y - P.y, best.x - P.x) : (sp > 30 ? Math.atan2(P.vy, P.vx) : P.a);
+    var da = Math.atan2(Math.sin(want - P.a), Math.cos(want - P.a)); P.a += A.clamp(da, -8 * dt, 8 * dt);
+    if (P.inv > 0) P.inv -= dt;
+    if (tx || ty) fx.spark(P.x - Math.cos(Math.atan2(ty, tx)) * 16, P.y - Math.sin(Math.atan2(ty, tx)) * 16, A.pick(['#9be7ff', '#ffd166']), -tx * 200, -ty * 200, 0.25, 2.4);
+    P.fire -= dt;
+    if (P.fire <= 0 && rocks.length) {
+      P.fire = Math.max(0.09, 0.2 - power * 0.02);
+      var spread = power >= 3 ? [-0.12, 0, 0.12] : power >= 2 ? [-0.06, 0.06] : [0];
+      spread.forEach(function (s) { shots.push({ x: P.x + Math.cos(P.a) * 18, y: P.y + Math.sin(P.a) * 18, vx: Math.cos(P.a + s) * 760, vy: Math.sin(P.a + s) * 760, life: 0.75 }); });
+      A.sfx('shoot');
+    }
+    var i, j;
+    for (i = shots.length - 1; i >= 0; i--) { var s = shots[i]; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; wrap(s); if (s.life <= 0) shots.splice(i, 1); }
+    for (i = rocks.length - 1; i >= 0; i--) {
+      var r = rocks[i]; r.x += r.vx * dt; r.y += r.vy * dt; r.rot += r.vr * dt; wrap(r); if (r.hit > 0) r.hit -= dt;
+      for (j = shots.length - 1; j >= 0; j--) { if (Math.hypot(shots[j].x - r.x, shots[j].y - r.y) < r.r) { shots.splice(j, 1); r.hp--; r.hit = 0.08; if (r.hp <= 0) { breakRock(r, i); break; } else A.sfx('hit'); } }
+      if (rocks[i] === r && Math.hypot(r.x - P.x, r.y - P.y) < r.r * 0.85 + 12) hurt();
+    }
+    for (i = ores.length - 1; i >= 0; i--) {
+      var o = ores[i]; o.t += dt; var od = Math.hypot(P.x - o.x, P.y - o.y);
+      if (od < 140) { o.x += (P.x - o.x) * 5 * dt; o.y += (P.y - o.y) * 5 * dt; }
+      if (od < 26) { ores.splice(i, 1); oreN++; score += 30; A.sfx('coin'); if (oreN % 5 === 0 && power < 4) { power++; fx.text(P.x, P.y - 40, '화력 UP', '#ffd166', 20); A.sfx('power'); } }
+      else if (o.t > 9) ores.splice(i, 1);
+    }
+    if (!rocks.length) { nextWaveT += dt; if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2, 'CLEAR +' + wave * 200, '#ffd166', 24); startWave(); } }
+    hud();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#03060f'; c.fillRect(-10, -10, W + 20, H + 20);
+    for (var i = 0; i < 90; i++) { c.globalAlpha = 0.2 + (i % 7) / 10; c.fillStyle = '#fff'; c.fillRect((i * 97) % W, (i * 233) % H, 1.5, 1.5); } c.globalAlpha = 1;
+    (rocks || []).forEach(function (r) {
+      c.save(); c.translate(r.x, r.y); c.rotate(r.rot); c.beginPath();
+      r.shape.forEach(function (d, k) { var a = k / r.shape.length * Math.PI * 2; c[k ? 'lineTo' : 'moveTo'](Math.cos(a) * d, Math.sin(a) * d); }); c.closePath();
+      c.fillStyle = r.hit > 0 ? '#fff' : '#3a3240'; c.fill(); c.strokeStyle = '#b8a48c'; c.lineWidth = 2.5; c.stroke(); c.restore();
+    });
+    c.save(); c.globalCompositeOperation = 'lighter';
+    (ores || []).forEach(function (or) { A.draw(c, A.glowDot('#ffd166', 5), or.x, or.y, 1); });
+    (shots || []).forEach(function (s) { A.draw(c, A.glowDot('#9be7ff', 4), s.x, s.y, 0.9); });
+    c.restore();
+    if (P && (dyingT <= 0) && !(P.inv > 0 && Math.floor(P.inv * 14) % 2)) {
+      c.save(); c.translate(P.x, P.y); c.rotate(P.a); c.shadowColor = '#9be7ff'; c.shadowBlur = 16; c.fillStyle = '#e8fbff';
+      c.beginPath(); c.moveTo(20, 0); c.lineTo(-14, -13); c.lineTo(-8, 0); c.lineTo(-14, 13); c.closePath(); c.fill(); c.restore();
+    } else if (!P) { c.fillStyle = '#e8fbff'; c.beginPath(); c.arc(W / 2, H * 0.6, 10, 0, 7); c.fill(); }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var last = '';
+  function hud() { var k = score + '|' + wave + '|' + lives + power; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = lives; document.getElementById('hMult').textContent = '화력 LV ' + power; }
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointermove', function (e) { if (drag && drag.id === e.pointerId) { var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; } });
+  function end() { drag = null; } stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  var S = new A.Shell({ id: 'rocks', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+})();
+
+</script>
+</body>
+</html>

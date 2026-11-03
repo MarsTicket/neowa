@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/hockey.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>에어 하키 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 에어 하키. 손가락으로 말렛을 움직여 컴퓨터와 대결하세요.">
+<meta property="og:title" content="에어 하키 · 너와 아케이드">
+<meta property="og:description" content="손가락으로 하는 네온 에어 하키 대결.">
+<meta property="og:image" content="https://neowa.kr/assets/hockey-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#5ee7ff;--accent-ink:#03161c;--ar:94,231,255}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 18</small>에어 하키</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>↑↓←→</kbd> 말렛 이동</div>
+          <div><kbd>드래그</kbd> 말렛 이동</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>7점 먼저 내면 승리</div>
+          <div>내 진영(아래 절반)만 이동 가능</div>
+          <div>승리하면 다음 상대</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">ME : CPU</span><span class="h-v sm" id="hB">0 : 0</span></div>
+        <div class="h-box r"><span class="h-lb">ROUND</span><span class="h-v sm" id="hC">1</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 18</p>
+        <h1 class="ov-title">에어 하키</h1>
+        <p class="ov-desc">아래쪽 내 말렛을 끌어 퍽을 치세요. 7점을 먼저 내면 승리하고 다음 상대(더 강함)와 붙습니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>드래그로 말렛</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>이길수록 강한 상대</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../keeper/"><img src="../assets/keeper-card.jpg" alt=""><span class="grow"><b>골키퍼</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../keeper/"><img src="../assets/keeper-card.jpg" alt=""><span><b>골키퍼</b><span>막기</span></span></a>
+        <a class="g-more" href="../fishy/"><img src="../assets/fishy-card.jpg" alt=""><span><b>큰 물고기</b><span>성장</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, TOP = 90, BOT = 930, GW = 180, MR = 38, PR = 24;
+  var fx = new A.FX();
+  var me, cpu, puck, sMe, sCpu, round, score, pauseT, dyingT, target = null, keys = {}, lvl;
+  function resetPuck(toMe) { puck = { x: W / 2, y: (TOP + BOT) / 2 + (toMe ? 120 : -120), vx: 0, vy: 0 }; pauseT = 0.8; }
+  function newRound() { me = { x: W / 2, y: BOT - 120, vx: 0, vy: 0 }; cpu = { x: W / 2, y: TOP + 120, vx: 0, vy: 0 }; sMe = 0; sCpu = 0; lvl = Math.min(1, (round - 1) / 6); resetPuck(true); }
+  function reset() { round = 1; score = 0; dyingT = 0; target = null; keys = {}; newRound(); fx.clear(); hud(); }
+  function collide(m, pr) {
+    var dx = puck.x - m.x, dy = puck.y - m.y, d = Math.hypot(dx, dy);
+    if (d < MR + PR && d > 0) {
+      var nx = dx / d, ny = dy / d; puck.x = m.x + nx * (MR + PR); puck.y = m.y + ny * (MR + PR);
+      var rv = (puck.vx - m.vx) * nx + (puck.vy - m.vy) * ny;
+      if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('bounce', pr ? 1.2 : 0.9); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
+      var sp = Math.hypot(puck.vx, puck.vy); if (sp > 1500) { puck.vx *= 1500 / sp; puck.vy *= 1500 / sp; }
+    }
+  }
+  function goal(mine) {
+    if (mine) { sMe++; score += 100 * round; fx.text(W / 2, TOP + 80, 'GOAL!', '#5ee7ff', 34); A.sfx('gold'); fx.burst(W / 2, TOP, '#5ee7ff', 40, 400, 0.8, 4); }
+    else { sCpu++; fx.text(W / 2, BOT - 80, '실점', '#ff4d6d', 30); A.sfx('hurt'); fx.shake(8, 0.3); A.vibrate(120); }
+    if (sMe >= 7) { score += 500 * round; round++; S.banner('ROUND ' + round, '더 강한 상대'); A.sfx('level'); newRound(); }
+    else if (sCpu >= 7) { dyingT = 1; }
+    else resetPuck(!mine);
+    hud();
+  }
+  function moveMallet(m, tx, ty, maxSp, dt, minY, maxY) {
+    tx = A.clamp(tx, MR, W - MR); ty = A.clamp(ty, minY, maxY);
+    var dx = tx - m.x, dy = ty - m.y, d = Math.hypot(dx, dy), step = Math.min(d, maxSp * dt);
+    var nx = d ? m.x + dx / d * step : m.x, ny = d ? m.y + dy / d * step : m.y;
+    m.vx = (nx - m.x) / dt; m.vy = (ny - m.y) / dt; m.x = nx; m.y = ny;
+  }
+  function update(dt) {
+    fx.update(dt);
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['라운드', String(round)], ['마지막 점수', sMe + ' : ' + sCpu]]); return; }
+    var mid = (TOP + BOT) / 2;
+    // 내 말렛
+    var tx = target ? target.x : me.x, ty = target ? target.y : me.y;
+    var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
+    if (kx || ky) { tx = me.x + kx * 60; ty = me.y + ky * 60; }
+    moveMallet(me, tx, ty, 2600, dt, mid + MR, BOT - MR);
+    // 컴퓨터: 퍽이 자기 진영이면 공격, 아니면 골문 앞 수비
+    var cspd = 520 + lvl * 700, cx, cy;
+    if (puck.y < mid + 40) { cx = puck.x + (puck.x - W / 2) * 0.1; cy = puck.y - 30; if (puck.y < cpu.y) { cy = TOP + MR; } }
+    else { cx = W / 2 + (puck.x - W / 2) * (0.35 + lvl * 0.3); cy = TOP + 110; }
+    moveMallet(cpu, cx + Math.sin(S.time * 3) * (1 - lvl) * 20, cy, cspd, dt, TOP + MR, mid - MR);
+    if (pauseT > 0) { pauseT -= dt; hud(); return; }
+    // 퍽
+    var steps = 3;
+    for (var s = 0; s < steps; s++) {
+      var h = dt / steps; puck.x += puck.vx * h; puck.y += puck.vy * h;
+      if (puck.x < PR) { puck.x = PR; puck.vx = Math.abs(puck.vx) * 0.92; A.sfx('wall'); }
+      if (puck.x > W - PR) { puck.x = W - PR; puck.vx = -Math.abs(puck.vx) * 0.92; A.sfx('wall'); }
+      var inGoal = Math.abs(puck.x - W / 2) < GW / 2;
+      if (puck.y < TOP + PR) { if (inGoal && puck.y < TOP - PR) { goal(true); return; } if (!inGoal) { puck.y = TOP + PR; puck.vy = Math.abs(puck.vy) * 0.92; A.sfx('wall'); } }
+      if (puck.y > BOT - PR) { if (inGoal && puck.y > BOT + PR) { goal(false); return; } if (!inGoal) { puck.y = BOT - PR; puck.vy = -Math.abs(puck.vy) * 0.92; A.sfx('wall'); } }
+      collide(me, true); collide(cpu, false);
+    }
+    puck.vx *= 1 - 0.25 * dt; puck.vy *= 1 - 0.25 * dt;
+    if (Math.hypot(puck.vx, puck.vy) > 500) fx.spark(puck.x, puck.y, '#ffffff', 0, 0, 0.2, 2);
+    hud();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#060a16'; c.fillRect(-10, -10, W + 20, H + 20);
+    c.fillStyle = '#0c1630'; A.rr(c, 6, TOP - 6, W - 12, BOT - TOP + 12, 30); c.fill();
+    c.strokeStyle = 'rgba(94,231,255,.5)'; c.lineWidth = 3; c.stroke();
+    var mid = (TOP + BOT) / 2; c.strokeStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.moveTo(6, mid); c.lineTo(W - 6, mid); c.stroke(); c.beginPath(); c.arc(W / 2, mid, 70, 0, 7); c.stroke();
+    c.fillStyle = '#ff4d6d'; c.fillRect(W / 2 - GW / 2, TOP - 8, GW, 6); c.fillStyle = '#5ee7ff'; c.fillRect(W / 2 - GW / 2, BOT + 2, GW, 6);
+    c.font = '700 120px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = 'rgba(255,255,255,.05)';
+    c.fillText(String(sCpu || 0), W / 2, mid - 160); c.fillText(String(sMe || 0), W / 2, mid + 160);
+    function mallet(m, col) { c.save(); c.shadowColor = col; c.shadowBlur = 20; c.fillStyle = col; c.beginPath(); c.arc(m.x, m.y, MR, 0, 7); c.fill(); c.shadowBlur = 0; c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(m.x, m.y, MR * 0.55, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.arc(m.x, m.y, MR * 0.3, 0, 7); c.fill(); c.restore(); }
+    mallet(cpu || { x: W / 2, y: TOP + 120 }, '#ff4d6d'); mallet(me || { x: W / 2, y: BOT - 120 }, '#5ee7ff');
+    var pk = puck || { x: W / 2 + Math.sin(t) * 80, y: mid };
+    c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; c.fillStyle = '#f4f5fb'; c.beginPath(); c.arc(pk.x, pk.y, PR, 0, 7); c.fill(); c.restore();
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = sMe + ' : ' + sCpu; document.getElementById('hC').textContent = round; }
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; target = S.toLocal(e); target.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing') return; if (e.pointerType === 'mouse' || (target && target.id === e.pointerId)) { var p = S.toLocal(e); target = { x: p.x, y: p.y - (e.pointerType === 'mouse' ? 0 : 50), id: e.pointerId }; } });
+  stage.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') target = null; });
+  var S = new A.Shell({ id: 'hockey', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { target = null; keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+})();
+
+</script>
+</body>
+</html>

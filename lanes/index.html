@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/lanes.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>네온 하이웨이 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 차선 바꾸기 레이싱. 화면 왼쪽·오른쪽을 탭해 차를 피하세요. 아슬아슬하게 피하면 보너스!">
+<meta property="og:title" content="네온 하이웨이 · 너와 아케이드">
+<meta property="og:description" content="좌우 탭으로 하는 네온 고속도로 레이싱.">
+<meta property="og:image" content="https://neowa.kr/assets/lanes-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#ff7a45;--accent-ink:#2a0d00;--ar:255,122,69}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 14</small>네온 하이웨이</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>←→</kbd><kbd>AD</kbd> 차선 이동</div>
+          <div class="t-only"><kbd>탭</kbd> 화면 왼쪽/오른쪽</div>
+          <div class="t-only"><kbd>스와이프</kbd>도 가능</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>차에 부딪히면 끝</div>
+          <div><kbd style="color:#ffd166">●</kbd> 코인 50점</div>
+          <div>옆 차선 차를 스치면 +30</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">SPEED</span><span class="h-v sm" id="hB">0</span></div>
+        <div class="h-box r"><span class="h-lb">COIN</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 14</p>
+        <h1 class="ov-title">네온 하이웨이</h1>
+        <p class="ov-desc">화면 왼쪽을 탭하면 왼쪽 차선, 오른쪽을 탭하면 오른쪽 차선. 차에 부딪히면 끝, 아슬아슬하게 피하면 보너스.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>좌우 탭</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>니어미스 보너스</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>출발</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../gravity/"><img src="../assets/gravity-card.jpg" alt=""><span class="grow"><b>중력 반전</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../gravity/"><img src="../assets/gravity-card.jpg" alt=""><span><b>중력 반전</b><span>원탭 러너</span></span></a>
+        <a class="g-more" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span><b>네온 브레이커</b><span>벽돌깨기</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, LX = [150, 270, 390], PY = 780;
+  var fx = new A.FX();
+  var lane, px, cars, coins, speed, dist, score, coinN, nearN, spawnT, dyingT, road;
+  var CARC = ['#5ee7ff', '#b48cff', '#7dff9b', '#ffe066', '#ff9ecf'];
+  function carSprite(col, me) {
+    return A.sprite('car' + col + (me ? 'm' : ''), 72, 120, function (x) {
+      x.translate(36, 60); x.shadowColor = col; x.shadowBlur = 14;
+      x.fillStyle = col; A.rr(x, -26, -50, 52, 100, 14); x.fill(); x.shadowBlur = 0;
+      x.fillStyle = 'rgba(5,10,20,.8)'; A.rr(x, -19, me ? -30 : 4, 38, 24, 6); x.fill();
+      x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(-20, me ? -48 : 44, 10, 4); x.fillRect(10, me ? -48 : 44, 10, 4);
+      x.fillStyle = me ? '#ff4d6d' : '#fff'; x.fillRect(-22, me ? 44 : -48, 12, 4); x.fillRect(10, me ? 44 : -48, 12, 4);
+    });
+  }
+  function reset() { lane = 1; px = LX[1]; cars = []; coins = []; speed = 420; dist = 0; score = 0; coinN = 0; nearN = 0; spawnT = 0.6; dyingT = 0; road = 0; fx.clear(); hud(); }
+  function move(d) { if (S.state !== 'playing' || dyingT > 0) return; var n = A.clamp(lane + d, 0, 2); if (n !== lane) { lane = n; A.sfx('turn', 1.4); } }
+  function spawn() {
+    var lv = Math.min(1, dist / 30000), free = [0, 1, 2], block = Math.random() < 0.25 + lv * 0.35 ? 2 : 1;
+    for (var i = 0; i < block; i++) { var k = free.splice(A.irand(0, free.length - 1), 1)[0]; cars.push({ l: k, y: -80, v: A.rand(0.25, 0.55) * speed, c: A.pick(CARC), near: false }); }
+    if (Math.random() < 0.6) { var cl = A.pick(free); for (var j = 0; j < 4; j++) coins.push({ l: cl, y: -60 - j * 70 }); }
+    spawnT = Math.max(0.42, 1.0 - lv * 0.5) * A.rand(0.85, 1.2);
+  }
+  function crash() {
+    if (dyingT > 0) return; dyingT = 1.2; fx.burst(px, PY, '#ff7a45', 50, 460, 0.9, 4); fx.burst(px, PY, '#fff', 14, 300, 0.5, 2.4);
+    fx.shake(14, 0.5); fx.flashIt('#ff2244', 0.6); A.sfx('bigboom'); A.vibrate(200);
+  }
+  function update(dt) {
+    fx.update(dt);
+    px = A.lerp(px, LX[lane], Math.min(1, dt * 16));
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', (dist / 1000).toFixed(1) + 'km'], ['코인', String(coinN)], ['니어미스', String(nearN)]]); return; }
+    speed = Math.min(1100, 420 + dist / 70); dist += speed * dt; road = (road + speed * dt) % 80;
+    spawnT -= dt; if (spawnT <= 0) spawn();
+    for (var i = cars.length - 1; i >= 0; i--) {
+      var c = cars[i]; c.y += (speed - c.v) * dt;
+      if (Math.abs(c.y - PY) < 100 && Math.abs(LX[c.l] - px) < 52) crash();
+      if (!c.near && c.y > PY + 60 && Math.abs(c.l - lane) === 1) { c.near = true; nearN++; score += 30; fx.text(LX[lane], PY - 80, '아슬아슬 +30', '#ff9ecf', 18); A.sfx('tick'); }
+      if (c.y > H + 100) cars.splice(i, 1);
+    }
+    for (i = coins.length - 1; i >= 0; i--) {
+      var o = coins[i]; o.y += speed * dt;
+      if (o.l === lane && Math.abs(o.y - PY) < 60) { coins.splice(i, 1); coinN++; score += 50; fx.burst(LX[o.l], o.y, '#ffd166', 10, 180, 0.35, 2.5); A.sfx('coin'); }
+      else if (o.y > H + 40) coins.splice(i, 1);
+    }
+    score += speed * dt / 40;
+    if (Math.random() < 0.5) fx.spark(px + A.rand(-14, 14), PY + 56, '#ff7a45', 0, speed * 0.3, 0.2, 2);
+    hud();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#0a0612'; c.fillRect(-10, -10, W + 20, H + 20);
+    var rg = c.createLinearGradient(80, 0, 460, 0); rg.addColorStop(0, '#1a1024'); rg.addColorStop(0.5, '#221430'); rg.addColorStop(1, '#1a1024');
+    c.fillStyle = rg; c.fillRect(90, 0, 360, H);
+    c.fillStyle = '#ff7a45'; c.fillRect(88, 0, 4, H); c.fillRect(448, 0, 4, H);
+    var off = road != null ? road : (t * 300) % 80;
+    c.fillStyle = 'rgba(255,255,255,.35)'; for (var y = -80 + off; y < H; y += 80) { c.fillRect(208, y, 4, 40); c.fillRect(328, y, 4, 40); }
+    // 가로수 불빛
+    for (y = -120 + (off * 1.5) % 120; y < H; y += 120) { c.fillStyle = 'rgba(255,122,69,.5)'; c.fillRect(40, y, 6, 30); c.fillRect(494, y, 6, 30); }
+    c.save(); c.globalCompositeOperation = 'lighter';
+    (coins || []).forEach(function (cn) { A.draw(c, A.glowDot('#ffd166', 6), LX[cn.l], cn.y, 1); });
+    c.restore();
+    (cars || []).forEach(function (cr) { A.draw(c, carSprite(cr.c), LX[cr.l], cr.y, 1, Math.PI); });
+    if (!cars || dyingT <= 0) A.draw(c, carSprite('#ff7a45', true), px || LX[1], PY, 1, (px != null ? (LX[lane] - px) * -0.004 : 0));
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var last = '';
+  function hud() { var k = Math.floor(score) + '|' + Math.floor(speed / 10) + '|' + coinN; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.round(speed / 5); document.getElementById('hC').textContent = coinN; }
+  var stage = document.getElementById('stage'), sw = null;
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); sw = { x: e.clientX, done: false, lx: p.x }; });
+  stage.addEventListener('pointermove', function (e) { if (!sw || sw.done) return; var dx = e.clientX - sw.x; if (Math.abs(dx) > 30) { move(dx > 0 ? 1 : -1); sw.done = true; } });
+  stage.addEventListener('pointerup', function () { if (sw && !sw.done) move(sw.lx < W / 2 ? -1 : 1); sw = null; });
+  var S = new A.Shell({ id: 'lanes', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); road = ((road || 0) + 200 * dt) % 80; }, render: render,
+    keydown: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'a') move(-1); if (k === 'ArrowRight' || k === 'd') move(1); } });
+})();
+
+</script>
+</body>
+</html>

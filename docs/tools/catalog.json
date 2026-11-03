@@ -198,5 +198,105 @@
   "new": false,
   "art": "capture",
   "maxScore": 10000000
+ },
+ {
+  "id": "cave",
+  "name": "네온 동굴",
+  "genre": "HOLD & FLY",
+  "kgenre": "원탭 비행",
+  "cat": "원탭",
+  "accent": "#5effc8",
+  "rgb": "94,255,200",
+  "ink": "#00241a",
+  "desc": "누르고 있으면 떠오르고, 떼면 내려갑니다. 점점 좁아지는 동굴 벽과 기둥 사이를 아슬아슬하게 빠져나가세요.",
+  "tags": [
+   "누르기",
+   "좁아지는 동굴",
+   "크리스털"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 200000
+ },
+ {
+  "id": "ring",
+  "name": "타이밍 링",
+  "genre": "TIMING",
+  "kgenre": "타이밍",
+  "cat": "원탭",
+  "accent": "#ff9ecf",
+  "rgb": "255,158,207",
+  "ink": "#2a0517",
+  "desc": "돌아가는 바늘이 빛나는 구간에 들어왔을 때 탭! 맞힐 때마다 구간은 좁아지고 바늘은 빨라지고 방향이 바뀝니다.",
+  "tags": [
+   "원탭",
+   "반응 속도",
+   "방향 전환"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 20000
+ },
+ {
+  "id": "archery",
+  "name": "바람 궁수",
+  "genre": "ARCHERY",
+  "kgenre": "양궁",
+  "cat": "액션",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "활을 당겨 각도와 힘을 정하고 놓으세요. 바람과 거리가 매번 바뀌는 과녁, 화살 10발로 최고 점수에 도전!",
+  "tags": [
+   "당겨서 쏘기",
+   "바람",
+   "10발"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 5000
+ },
+ {
+  "id": "lanes",
+  "name": "네온 하이웨이",
+  "genre": "LANE RACER",
+  "kgenre": "레이싱",
+  "cat": "원탭",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "왼쪽·오른쪽을 탭해 차선을 바꾸세요. 점점 빨라지는 고속도로에서 차를 피하고 연료와 코인을 모읍니다.",
+  "tags": [
+   "좌우 탭",
+   "3차선",
+   "니어미스"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "gravity",
+  "name": "중력 반전",
+  "genre": "GRAVITY FLIP",
+  "kgenre": "원탭 러너",
+  "cat": "원탭",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "탭하면 중력이 뒤집혀 바닥과 천장을 오갑니다. 위아래 가시와 낭떠러지를 피해 끝없이 달려 보세요.",
+  "tags": [
+   "원탭",
+   "위아래 뒤집기",
+   "끝없는 맵"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 200000
  }
 ]

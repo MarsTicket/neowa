@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/sequence.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>빛 순서 기억 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 순서 기억 게임. 빛나는 패드의 순서를 기억했다가 똑같이 누르세요.">
+<meta property="og:title" content="빛 순서 기억 · 너와 아케이드">
+<meta property="og:description" content="빛과 소리의 순서를 기억하라.">
+<meta property="og:image" content="https://neowa.kr/assets/sequence-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#4dffd2;--accent-ink:#00241b;--ar:77,255,210}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 33</small>빛 순서 기억</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> 패드 누르기</div>
+          <div><kbd>탭</kbd> 패드 누르기</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>한 번 틀리면 끝</div>
+          <div>소리도 힌트가 됨</div>
+          <div>10단계부터 6색</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">LEVEL</span><span class="h-v sm" id="hB">1</span></div>
+        <div class="h-box r"><span class="h-lb">BEST</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 33</p>
+        <h1 class="ov-title">빛 순서 기억</h1>
+        <p class="ov-desc">패드가 빛나는 순서를 잘 보고, 끝나면 같은 순서로 누르세요. 한 번 틀리면 끝. 단계마다 한 개씩 늘어납니다.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>순서대로 탭</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>10단계마다 속도 UP</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../pipes/"><img src="../assets/pipes-card.jpg" alt=""><span class="grow"><b>파이프 연결</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../pipes/"><img src="../assets/pipes-card.jpg" alt=""><span><b>파이프 연결</b><span>연결 퍼즐</span></span></a>
+        <a class="g-more" href="../flood/"><img src="../assets/flood-card.jpg" alt=""><span><b>색 채우기</b><span>색 퍼즐</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, CX = W / 2, CY = 520;
+  var fx = new A.FX();
+  var COLS = ['#4dffd2', '#ff4d6d', '#ffd166', '#7aa2ff', '#ff9ecf', '#c3ff5e'], NOTES = [1, 1.26, 1.5, 1.68, 2, 2.24];
+  var seq, step, mode, showI, showT, lit = {}, level, score, dyingT, pads;
+  function layoutPads() {
+    var n = level >= 10 ? 6 : 4; pads = [];
+    for (var i = 0; i < n; i++) { var a = -Math.PI / 2 + i / n * Math.PI * 2; pads.push({ a0: a - Math.PI / n + 0.04, a1: a + Math.PI / n - 0.04, i: i }); }
+  }
+  function reset() { seq = []; level = 0; score = 0; dyingT = 0; lit = {}; nextLevel(); fx.clear(); hud(); }
+  function nextLevel() { level++; layoutPads(); seq.push(A.irand(0, pads.length - 1)); seq = seq.map(function (v) { return v % pads.length; }); mode = 'show'; showI = -1; showT = 0.7; step = 0; hud(); }
+  function light(i, dur) { lit[i] = dur; A.sfx('eat', NOTES[i]); }
+  function press(i) {
+    if (S.state !== 'playing' || mode !== 'input' || dyingT > 0 || i >= pads.length) return;
+    light(i, 0.25);
+    if (seq[step] === i) {
+      step++; if (step >= seq.length) { score += level * 10; fx.text(CX, CY, '+' + level * 10, '#4dffd2', 26); mode = 'wait'; setTimeout(function () { if (S.state === 'playing') { if (level % 5 === 0) { S.banner('LEVEL ' + (level + 1), level + 1 >= 10 ? '6색 모드' : '더 빠르게'); A.sfx('level'); } nextLevel(); } }, 700); }
+    } else { mode = 'over'; dyingT = 1.2; fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(160); lit[seq[step]] = 1.2; }
+    hud();
+  }
+  function update(dt) {
+    fx.update(dt); for (var k in lit) { lit[k] -= dt; if (lit[k] <= 0) delete lit[k]; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) { var best = Math.max(A.getInt('neowa_seq_best'), level - 1); A.set('neowa_seq_best', best); S.gameOver(score, [['기억한 길이', String(level - 1)], ['내 최장', String(best)]]); } return; }
+    if (mode === 'show') {
+      showT -= dt;
+      if (showT <= 0) { showI++; if (showI >= seq.length) { mode = 'input'; step = 0; hud(); return; } var gap = Math.max(0.28, 0.65 - level * 0.02); light(seq[showI], gap * 0.7); showT = gap; }
+    }
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    var g = c.createRadialGradient(CX, CY, 0, CX, CY, 600); g.addColorStop(0, '#062a24'); g.addColorStop(1, '#020a08'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!pads) { level = 1; layoutPads(); }
+    pads.forEach(function (p) {
+      var on = lit[p.i] > 0 || (!seq && Math.floor(t * 2) % pads.length === p.i);
+      c.save(); if (on) { c.shadowColor = COLS[p.i]; c.shadowBlur = 40; }
+      c.fillStyle = on ? COLS[p.i] : A.hexA(COLS[p.i], 0.22);
+      c.beginPath(); c.arc(CX, CY, 220, p.a0, p.a1); c.arc(CX, CY, 90, p.a1, p.a0, true); c.closePath(); c.fill(); c.restore();
+      var m = (p.a0 + p.a1) / 2; c.fillStyle = 'rgba(255,255,255,.3)'; c.font = '700 16px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(p.i + 1), CX + Math.cos(m) * 155, CY + Math.sin(m) * 155);
+    });
+    c.fillStyle = '#04120f'; c.beginPath(); c.arc(CX, CY, 84, 0, 7); c.fill();
+    c.fillStyle = '#fff'; c.font = '700 48px "Chakra Petch",system-ui'; c.fillText(String(level || 0), CX, CY - 6);
+    c.font = '600 15px "Pretendard Variable",system-ui'; c.fillStyle = mode === 'input' ? '#4dffd2' : 'rgba(255,255,255,.5)';
+    c.fillText(mode === 'show' ? '잘 보세요' : mode === 'input' ? '따라 누르세요 ' + step + '/' + seq.length : '', CX, CY + 34);
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = level; document.getElementById('hC').textContent = Math.max(A.getInt('neowa_seq_best'), 0); }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return; var p = S.toLocal(e), dx = p.x - CX, dy = p.y - CY, d = Math.hypot(dx, dy); if (d < 80 || d > 260) return;
+    var a = Math.atan2(dy, dx); pads.forEach(function (pd) { var aa = a; while (aa < pd.a0) aa += Math.PI * 2; while (aa > pd.a0 + Math.PI * 2) aa -= Math.PI * 2; if (aa <= pd.a1 + 0.04) press(pd.i); });
+  });
+  var S = new A.Shell({ id: 'sequence', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { if (/^[1-6]$/.test(e.key) && !e.repeat) press(+e.key - 1); } });
+})();
+
+</script>
+</body>
+</html>

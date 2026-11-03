@@ -1,0 +1,117 @@
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960;
+  var fx = new A.FX();
+  var diff = +A.get('neowa_nonogram_diff', '0') || 0, SIZES = [5, 8, 10];
+  var N, sol, st, rowC, colC, CS, GX, GY, mistakes, time, xMode, done, dyingT, cur = { x: 0, y: 0 }, kbd = false, paint = null;
+  function clues(line) { var r = [], run = 0; line.forEach(function (v) { if (v) run++; else if (run) { r.push(run); run = 0; } }); if (run) r.push(run); return r.length ? r : [0]; }
+  // 줄 풀이: 단서와 현재 알려진 칸(1 칠함, -1 빈칸, 0 모름)으로 가능한 배치를 모두 따져 확정 칸을 찾음
+  function lineSolve(cl, known) {
+    var n = known.length, can1 = new Array(n).fill(false), can0 = new Array(n).fill(false), any = false;
+    if (cl.length === 1 && cl[0] === 0) cl = [];
+    var cur = new Array(n).fill(0);
+    (function rec(k, pos) {
+      if (k === cl.length) { for (var i = pos; i < n; i++) if (known[i] === 1) return; for (i = pos; i < n; i++) cur[i] = 0; any = true; for (i = 0; i < n; i++) { if (cur[i]) can1[i] = true; else can0[i] = true; } return; }
+      var len = cl[k], rest = 0; for (var j = k + 1; j < cl.length; j++) rest += cl[j] + 1;
+      for (var s = pos; s + len + rest <= n; s++) {
+        var ok = true; for (var i = pos; i < s; i++) if (known[i] === 1) { ok = false; break; } if (!ok) break;
+        for (i = s; i < s + len; i++) if (known[i] === -1) { ok = false; break; }
+        if (ok && s + len < n && known[s + len] === 1) ok = false;
+        if (!ok) continue;
+        for (i = pos; i < s; i++) cur[i] = 0; for (i = s; i < s + len; i++) cur[i] = 1; if (s + len < n) cur[s + len] = 0;
+        rec(k + 1, s + len + 1);
+      }
+    })(0, 0);
+    if (!any) return null;
+    return known.map(function (v, i) { return v !== 0 ? v : can1[i] && !can0[i] ? 1 : can0[i] && !can1[i] ? -1 : 0; });
+  }
+  function uniqueByLines(rc, cc) {
+    var g = []; for (var i = 0; i < N * N; i++) g.push(0);
+    for (var it = 0; it < 60; it++) {
+      var changed = false;
+      for (var r = 0; r < N; r++) { var row = g.slice(r * N, r * N + N), nr = lineSolve(rc[r], row); if (!nr) return false; for (var x = 0; x < N; x++) if (nr[x] !== row[x]) { g[r * N + x] = nr[x]; changed = true; } }
+      for (var c = 0; c < N; c++) { var col = []; for (var y = 0; y < N; y++) col.push(g[y * N + c]); var nc = lineSolve(cc[c], col); if (!nc) return false; for (y = 0; y < N; y++) if (nc[y] !== col[y]) { g[y * N + c] = nc[y]; changed = true; } }
+      if (!changed) break;
+    }
+    return g.every(function (v) { return v !== 0; });
+  }
+  function setup() {
+    N = SIZES[diff];
+    for (var tries = 0; tries < 80; tries++) {
+      sol = []; for (var i = 0; i < N * N; i++) sol.push(Math.random() < 0.58 ? 1 : 0);
+      rowC = []; colC = []; for (var r = 0; r < N; r++) rowC.push(clues(sol.slice(r * N, r * N + N)));
+      for (var c = 0; c < N; c++) { var col = []; for (var y = 0; y < N; y++) col.push(sol[y * N + c]); colC.push(clues(col)); }
+      if (uniqueByLines(rowC, colC)) break;
+    }
+    var maxR = Math.max.apply(null, rowC.map(function (a) { return a.length; })), maxC = Math.max.apply(null, colC.map(function (a) { return a.length; }));
+    CS = Math.floor(Math.min(500 / (N + maxR * 0.55), 640 / (N + maxC * 0.75)));
+    GX = Math.round((W - N * CS - maxR * CS * 0.55) / 2 + maxR * CS * 0.55); GY = Math.round(110 + maxC * CS * 0.75 + 10);
+    st = []; for (i = 0; i < N * N; i++) st.push(0);
+  }
+  function reset() { mistakes = 0; time = 0; xMode = false; done = 0; dyingT = 0; setup(); fx.clear(); hud(); }
+  function lineDone(i) { // 줄 완성 시 남은 칸 X 자동
+    var x = i % N, y = Math.floor(i / N), k;
+    var rowOk = true; for (k = 0; k < N; k++) if (sol[y * N + k] && st[y * N + k] !== 1) rowOk = false;
+    if (rowOk) for (k = 0; k < N; k++) if (!st[y * N + k]) st[y * N + k] = -1;
+    var colOk = true; for (k = 0; k < N; k++) if (sol[k * N + x] && st[k * N + x] !== 1) colOk = false;
+    if (colOk) for (k = 0; k < N; k++) if (!st[k * N + x]) st[k * N + x] = -1;
+  }
+  function act(i, asX) {
+    if (S.state !== 'playing' || done || dyingT > 0 || st[i] !== 0) return false;
+    if (asX) { if (sol[i]) { mistake(i, 1); } else { st[i] = -1; A.sfx('tick', 0.9); } }
+    else { if (!sol[i]) { mistake(i, -1); } else { st[i] = 1; A.sfx('tick', 1.4); lineDone(i); } }
+    if (sol.every(function (v, k) { return !v || st[k] === 1; })) { done = 1.4; A.sfx('level'); st = st.map(function (v, k) { return sol[k] ? 1 : -1; }); for (var j = 0; j < 4; j++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), '#ff9e4d', 20, 300, 0.7, 4); }
+    hud(); return true;
+  }
+  function mistake(i, val) { mistakes++; st[i] = val; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2); fx.text(GX + (i % N + 0.5) * CS, GY + Math.floor(i / N) * CS, '✕', '#ff4d6d', 24); if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.4); } }
+  function score() { var b = [300, 1200, 3000][diff]; return Math.max(50, Math.round(b * 2 - time * b / 300 - mistakes * b * 0.2)); }
+  function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function update(dt) {
+    fx.update(dt);
+    if (done > 0) { done -= dt; if (done <= 0) S.gameOver(score(), [['크기', N + '×' + N], ['시간', fmt(time)], ['실수', String(mistakes)]], { kick: 'SOLVED!', win: true }); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) { var got = st.filter(function (v, k) { return v === 1 && sol[k]; }).length, need = sol.filter(Boolean).length; S.gameOver(Math.round(got / need * [100, 300, 600][diff]), [['크기', N + '×' + N], ['칠한 칸', got + '/' + need]]); } return; }
+    time += dt; hud();
+  }
+  function render(c) {
+    var o = fx.offset();
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#100802'; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!sol) setup();
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 ' + Math.max(11, Math.round(CS * 0.4)) + 'px "Chakra Petch",system-ui';
+    var demo = !st || S.state === 'ready';
+    rowC.forEach(function (cl, y) { var ok = !demo && cl.join() === clues(st.slice(y * N, y * N + N).map(function (v) { return v === 1 ? 1 : 0; })).join(); c.fillStyle = ok ? 'rgba(255,158,77,.4)' : '#ffd6b0'; cl.slice().reverse().forEach(function (v, k) { c.fillText(String(v), GX - CS * 0.35 - k * CS * 0.55, GY + (y + 0.5) * CS); }); });
+    colC.forEach(function (cl, x) { var col = []; for (var y = 0; y < N; y++) col.push(st[y * N + x] === 1 ? 1 : 0); var ok = !demo && cl.join() === clues(col).join(); c.fillStyle = ok ? 'rgba(255,158,77,.4)' : '#ffd6b0'; cl.slice().reverse().forEach(function (v, k) { c.fillText(String(v), GX + (x + 0.5) * CS, GY - CS * 0.4 - k * CS * 0.72); }); });
+    for (var i = 0; i < N * N; i++) {
+      var x = i % N, y = Math.floor(i / N), px = GX + x * CS, py = GY + y * CS, v = st[i];
+      c.fillStyle = (x + y) % 2 ? '#1e140a' : '#24180c'; c.fillRect(px, py, CS, CS);
+      if (v === 1) { c.fillStyle = sol[i] ? '#ff9e4d' : '#ff4d6d'; c.fillRect(px + 2, py + 2, CS - 4, CS - 4); }
+      if (v === -1) { c.strokeStyle = sol[i] ? '#ff4d6d' : 'rgba(255,214,176,.4)'; c.lineWidth = 2; c.beginPath(); c.moveTo(px + CS * 0.3, py + CS * 0.3); c.lineTo(px + CS * 0.7, py + CS * 0.7); c.moveTo(px + CS * 0.7, py + CS * 0.3); c.lineTo(px + CS * 0.3, py + CS * 0.7); c.stroke(); }
+    }
+    c.strokeStyle = 'rgba(255,214,176,.25)'; c.lineWidth = 1;
+    for (i = 0; i <= N; i++) { c.lineWidth = i % 5 === 0 ? 2.5 : 1; c.beginPath(); c.moveTo(GX + i * CS, GY); c.lineTo(GX + i * CS, GY + N * CS); c.stroke(); c.beginPath(); c.moveTo(GX, GY + i * CS); c.lineTo(GX + N * CS, GY + i * CS); c.stroke(); }
+    if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 3; c.strokeRect(GX + cur.x * CS + 1, GY + cur.y * CS + 1, CS - 2, CS - 2); }
+    var by = Math.max(GY + N * CS + 30, 800);
+    [['칠하기', !xMode], ['✕ 빈칸 표시', xMode]].forEach(function (b, k) { var bx = W / 2 - 200 + k * 205; c.fillStyle = b[1] ? '#ff9e4d' : 'rgba(255,255,255,.06)'; A.rr(c, bx, by, 195, 60, 16); c.fill(); c.fillStyle = b[1] ? '#2a1200' : '#ffd6b0'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(b[0], bx + 97, by + 31); });
+    btnY = by;
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var btnY = 800;
+  function hud() { document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = mistakes + '/3'; document.getElementById('hC').textContent = fmt(time); document.getElementById('hMult').textContent = N + '×' + N; }
+  var stage = document.getElementById('stage');
+  function cellAt(p) { var x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); return x >= 0 && y >= 0 && x < N && y < N ? y * N + x : -1; }
+  stage.addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e);
+    if (p.y > btnY && p.y < btnY + 60) { xMode = p.x > W / 2; A.sfx('click'); return; }
+    var i = cellAt(p); if (i < 0) return; paint = { id: e.pointerId, x: e.button === 2 || xMode }; act(i, paint.x); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+  });
+  stage.addEventListener('pointermove', function (e) { if (!paint || paint.id !== e.pointerId) return; var i = cellAt(S.toLocal(e)); if (i >= 0) act(i, paint.x); });
+  stage.addEventListener('pointerup', function () { paint = null; }); stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_nonogram_diff', diff); A.sfx('click'); pd(); sol = null; st = null; }); }); pd();
+  var S = new A.Shell({ id: 'nonogram', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { kbd = true; var k = e.key;
+      if (k === 'ArrowLeft' || k === 'a') cur.x = Math.max(0, cur.x - 1); if (k === 'ArrowRight' || k === 'd') cur.x = Math.min(N - 1, cur.x + 1);
+      if (k === 'ArrowUp' || k === 'w') cur.y = Math.max(0, cur.y - 1); if (k === 'ArrowDown' || k === 's') cur.y = Math.min(N - 1, cur.y + 1);
+      if ((k === ' ' || k === 'Enter') && !e.repeat) act(cur.y * N + cur.x, false); if ((k === 'x' || k === 'X') && !e.repeat) act(cur.y * N + cur.x, true); } });
+})();

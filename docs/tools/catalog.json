@@ -558,5 +558,205 @@
   "new": true,
   "art": "capture",
   "maxScore": 50000000
+ },
+ {
+  "id": "slide",
+  "name": "숫자 밀기",
+  "genre": "SLIDING PUZZLE",
+  "kgenre": "슬라이드 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "빈칸 옆 숫자 조각을 밀어 1부터 순서대로 맞추세요. 3×3부터 5×5까지, 적은 횟수로 빨리 풀수록 고득점.",
+  "tags": [
+   "탭으로 밀기",
+   "3단계",
+   "최소 이동"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "lights",
+  "name": "불 끄기",
+  "genre": "LIGHTS OUT",
+  "kgenre": "논리 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "칸을 누르면 그 칸과 상하좌우가 함께 켜지고 꺼집니다. 모든 불을 끄세요! 단계가 오를수록 판이 커집니다.",
+  "tags": [
+   "탭",
+   "논리",
+   "무한 단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "gems",
+  "name": "보석 매치",
+  "genre": "MATCH 3",
+  "kgenre": "매치 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "옆 보석과 자리를 바꿔 같은 색 3개를 이으세요. 4개는 줄 폭탄, 5개는 색 폭탄! 30번 안에 최고 점수.",
+  "tags": [
+   "스와이프",
+   "연쇄",
+   "특수 보석"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "memory",
+  "name": "카드 짝 맞추기",
+  "genre": "MEMORY",
+  "kgenre": "기억력",
+  "cat": "두뇌",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "카드를 두 장씩 뒤집어 같은 그림을 찾으세요. 단계가 오를수록 카드가 많아집니다. 기억력 테스트!",
+  "tags": [
+   "탭",
+   "기억력",
+   "단계 상승"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "sequence",
+  "name": "빛 순서 기억",
+  "genre": "SEQUENCE",
+  "kgenre": "기억력",
+  "cat": "두뇌",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "빛나는 순서를 기억했다가 똑같이 누르세요. 한 단계마다 하나씩 길어집니다. 몇 개까지 기억할 수 있나요?",
+  "tags": [
+   "탭",
+   "순서 기억",
+   "소리"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "pipes",
+  "name": "파이프 연결",
+  "genre": "PIPE PUZZLE",
+  "kgenre": "연결 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#5effc8",
+  "rgb": "94,255,200",
+  "ink": "#00241a",
+  "desc": "파이프 조각을 돌려 물이 모든 집에 닿게 연결하세요. 매번 새로운 판, 판이 점점 커집니다.",
+  "tags": [
+   "탭으로 회전",
+   "연결",
+   "무한 단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "nonogram",
+  "name": "네모 로직",
+  "genre": "NONOGRAM",
+  "kgenre": "그림 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "줄마다 적힌 숫자를 단서로 칸을 칠해 숨은 그림을 완성하세요. 5×5부터 10×10까지 매번 새 퍼즐.",
+  "tags": [
+   "논리",
+   "칠하기",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "bubbles",
+  "name": "버블 팡",
+  "genre": "BUBBLE SHOOTER",
+  "kgenre": "버블 슈터",
+  "cat": "퍼즐",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "조준해서 버블을 쏘아 같은 색 3개 이상을 터뜨리세요. 매달린 버블은 한꺼번에 떨어집니다. 천장이 내려오기 전에!",
+  "tags": [
+   "조준·발사",
+   "연쇄 낙하",
+   "천장 하강"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "flood",
+  "name": "색 채우기",
+  "genre": "FLOOD FILL",
+  "kgenre": "색 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff5ec4",
+  "rgb": "255,94,196",
+  "ink": "#2a0420",
+  "desc": "왼쪽 위에서 시작해 색을 바꿔 판 전체를 한 색으로 채우세요. 정해진 횟수 안에 해내야 합니다.",
+  "tags": [
+   "색 고르기",
+   "전략",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "pairs",
+  "name": "타일 짝 잇기",
+  "genre": "TILE MATCH",
+  "kgenre": "짝 잇기",
+  "cat": "퍼즐",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "같은 그림 타일 두 개를 선으로 이어 지우세요. 선은 두 번까지만 꺾일 수 있어요. 시간 안에 판을 비우세요!",
+  "tags": [
+   "탭",
+   "두 번 꺾기",
+   "셔플"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
  }
 ]

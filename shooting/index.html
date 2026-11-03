@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
-<style>:root{--accent:#5ee7ff;--accent-ink:#03161c;--ar:94,231,255}</style>
+<style>:root{--accent:#5ee7ff;--accent-ink:#03161c;--ar:94,231,255}.boss-portrait{position:absolute;left:12px;right:12px;top:64px;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:rgba(10,6,20,.85);border:1px solid #7a2a4a;pointer-events:none;z-index:4}.boss-portrait img{width:96px;height:54px;object-fit:cover;border-radius:8px;flex:none}.boss-portrait b{display:block;font-size:14px}.boss-portrait span{font-size:12px;color:#c8cdea}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
 </head>
@@ -59,6 +59,7 @@
         <div class="h-box r"><span class="h-lb">LIFE</span><div class="h-lives" id="hLives"></div><span class="h-lb" id="hPow" style="margin-top:4px">POWER 1</span></div>
       </div>
       <div class="g-banner" id="banner"></div>
+      <div class="boss-portrait" id="bossPortrait" hidden><img src="../assets/shooting-boss.jpg" alt="보스 전함 아트"><div><b>보스: 심연의 전함</b><span>5웨이브마다 출현, 처치 시 5000점</span></div></div>
 
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 01</p>
@@ -212,7 +213,7 @@
     if (e.m === 'dive') { e.vy = 260 * sp; e.vx = (P.x - e.x) * 0.25; }
     if (e.m === 'hover') { e.vy = 160; e.ty = A.rand(150, 300); }
     if (e.m === 'slow') e.vy = 60 * sp;
-    if (s.type === 'boss') { e.vy = 70; e.ty = 200; e.phase = 0; boss = e; document.getElementById('hBossBar').hidden = false; A.sfx('bigboom'); fx.shake(6, 0.6); }
+    if (s.type === 'boss') { e.vy = 70; e.ty = 200; e.phase = 0; boss = e; document.getElementById('hBossBar').hidden = false; var bp = document.getElementById('bossPortrait'); if (bp) { bp.hidden = false; if (window.__bpT) clearTimeout(window.__bpT); window.__bpT = setTimeout(function () { bp.hidden = true; }, 5000); } A.sfx('bigboom'); fx.shake(6, 0.6); }
     enemies.push(e);
   }
 
@@ -220,7 +221,7 @@
   function reset() {
     P = { x: W / 2, y: H - 150, inv: 2, pow: 1, shield: 0, fireT: 0, tilt: 0 };
     bullets = []; enemies = []; ebullets = []; items = [];
-    score = 0; chain = 0; chainT = 0; lives = 3; kills = 0; dyingT = 0; boss = null; nextWaveT = 0;
+    score = 0; chain = 0; chainT = 0; lives = 3; kills = 0; dyingT = 0; boss = null; nextWaveT = 0; var bp0 = document.getElementById('bossPortrait'); if (bp0) bp0.hidden = true;
     wave = 0; fx.clear(); keys = {}; drag = null;
     nextWave();
     hud();
@@ -259,7 +260,7 @@
     fx.burst(e.x, e.y, '#ffffff', big ? 20 : 6, 260, 0.35, 2.5);
     fx.ring(e.x, e.y, TYPES[e.type].c, e.r * (big ? 5 : 3), big ? 0.6 : 0.35);
     if (e.type === 'boss') {
-      boss = null; document.getElementById('hBossBar').hidden = true;
+      boss = null; document.getElementById('hBossBar').hidden = true; var bp2 = document.getElementById('bossPortrait'); if (bp2) bp2.hidden = true;
       fx.shake(14, 1); fx.flashIt('#ffffff', 0.9); A.sfx('bigboom'); A.vibrate([60, 40, 120]);
       for (var k = 0; k < 6; k++) setTimeout(function () { fx.burst(A.rand(150, 390), A.rand(120, 300), A.pick(['#ff4d6d', '#ffd166', '#fff']), 30, 480, 0.8, 4); A.sfx('boom'); }, k * 120);
       ebullets.length = 0;

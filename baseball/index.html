@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/baseball.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>숫자 야구 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 숫자 야구. 스트라이크와 볼 힌트로 숨은 숫자를 맞히세요.">
+<meta property="og:title" content="숫자 야구 · 너와 아케이드">
+<meta property="og:description" content="스트라이크와 볼로 추리하는 숫자 야구.">
+<meta property="og:image" content="https://neowa.kr/assets/baseball-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<style>:root{--accent:#9be7ff;--accent-ink:#03141c;--ar:155,231,255}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 44</small>숫자 야구</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>0</kbd>~<kbd>9</kbd> 입력 <kbd>Enter</kbd> 확인 <kbd>⌫</kbd> 지우기</div>
+          <div><kbd>탭</kbd> 숫자 버튼</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>같은 숫자는 두 번 안 씀</div>
+          <div>10번 안에 맞히기</div>
+          <div>맞히면 다음 문제로 연속 도전</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">TRY</span><span class="h-v sm" id="hB">0/10</span></div>
+        <div class="h-box r"><span class="h-lb">STREAK</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 44</p>
+        <h1 class="ov-title">숫자 야구</h1>
+        <p class="ov-desc">서로 다른 숫자로 된 비밀 번호를 맞히세요. 숫자와 자리가 맞으면 스트라이크(S), 숫자만 맞으면 볼(B). 10번 안에 맞혀야 해요.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>숫자 버튼</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>적게 물을수록 고득점</span>
+        </div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">3자리</button><button type="button" data-diff="1">4자리</button></div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=3"></script>
+<script>
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960, MAXT = 10;
+  var fx = new A.FX();
+  var diff = +A.get('neowa_baseball_diff', '0') || 0, LEN, secret, input, tries, log, score, streak, solved, endT, shake = 0;
+  function newSecret() { LEN = diff ? 4 : 3; var d = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; for (var i = d.length - 1; i > 0; i--) { var j = A.irand(0, i), t = d[i]; d[i] = d[j]; d[j] = t; } secret = d.slice(0, LEN); input = []; tries = 0; log = []; endT = 0; }
+  function reset() { score = 0; streak = 0; solved = 0; newSecret(); fx.clear(); hud(); }
+  function press(n) { if (S.state !== 'playing' || endT > 0) return; if (input.length >= LEN || input.indexOf(n) >= 0) { A.sfx('wall'); return; } input.push(n); A.sfx('tick', 1 + n * 0.04); }
+  function back() { if (input.length) { input.pop(); A.sfx('click'); } }
+  function submit() {
+    if (S.state !== 'playing' || endT > 0) return; if (input.length !== LEN) { shake = 0.3; A.sfx('wall'); return; }
+    var s = 0, b = 0; input.forEach(function (v, i) { if (secret[i] === v) s++; else if (secret.indexOf(v) >= 0) b++; });
+    tries++; log.push({ g: input.slice(), s: s, b: b }); input = [];
+    if (s === LEN) { var pts = (MAXT - tries + 1) * 50 * (diff + 1); score += pts; streak++; solved++; endT = 1.4; A.sfx('level'); fx.text(W / 2, 330, '정답! +' + pts, '#9be7ff', 30); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(200, 500), '#9be7ff', 20, 300, 0.7, 4); }
+    else if (tries >= MAXT) { endT = 2; A.sfx('over'); }
+    else A.sfx(s ? 'coin' : b ? 'eat' : 'hit', 1 + s * 0.2);
+    hud();
+  }
+  function update(dt) {
+    fx.update(dt); if (shake > 0) shake -= dt;
+    if (endT > 0) { endT -= dt; if (endT <= 0) {
+      if (log.length && log[log.length - 1].s === LEN) { newSecret(); S.banner(solved + 1 + '번째 문제', '연속 ' + streak); hud(); }
+      else S.gameOver(score, [['맞힌 문제', String(solved)], ['정답', secret.join('')]]);
+    } }
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0] + (shake > 0 ? Math.sin(t * 60) * 6 : 0), o[1]);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#04121e'); g.addColorStop(1, '#0a1f30'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!secret) newSecret();
+    // 입력 칸
+    var bw = 74, gx = W / 2 - (LEN * bw + (LEN - 1) * 12) / 2;
+    for (var i = 0; i < LEN; i++) { var x = gx + i * (bw + 12); c.fillStyle = 'rgba(155,231,255,.08)'; A.rr(c, x, 110, bw, 88, 14); c.fill(); c.strokeStyle = i === input.length ? '#9be7ff' : 'rgba(155,231,255,.25)'; c.lineWidth = 2; c.stroke();
+      c.fillStyle = '#fff'; c.font = '700 48px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; var show = endT > 0 && log.length && (log[log.length - 1].s === LEN || tries >= MAXT) ? secret[i] : input[i]; if (show != null) c.fillText(String(show), x + bw / 2, 156); }
+    // 기록
+    c.font = '600 20px "Chakra Petch",system-ui';
+    log.slice(-8).forEach(function (r, k) { var y = 238 + k * 42, n = log.length - Math.min(8, log.length) + k + 1; c.fillStyle = 'rgba(255,255,255,.04)'; A.rr(c, 40, y, W - 80, 36, 10); c.fill();
+      c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,.4)'; c.fillText(n + '.', 56, y + 19); c.fillStyle = '#fff'; c.fillText(r.g.join(' '), 100, y + 19);
+      c.textAlign = 'right'; c.fillStyle = r.s ? '#ffd166' : r.b ? '#9be7ff' : 'rgba(255,255,255,.5)'; c.fillText(r.s || r.b ? r.s + 'S ' + r.b + 'B' : 'OUT', W - 56, y + 19); });
+    // 숫자 패드
+    for (var n = 0; n < 10; n++) { var col = n % 5, row = Math.floor(n / 5), px = 40 + col * 94, py = 600 + row * 86, used = input.indexOf(n) >= 0; c.fillStyle = used ? 'rgba(155,231,255,.35)' : 'rgba(255,255,255,.08)'; A.rr(c, px, py, 84, 74, 14); c.fill(); c.fillStyle = '#fff'; c.font = '700 32px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(n), px + 42, py + 38); }
+    [['지우기', 40, 'rgba(255,255,255,.08)', '#fff'], ['확인', 290, '#9be7ff', '#03141c']].forEach(function (b) { c.fillStyle = b[2]; A.rr(c, b[1], 790, 210, 70, 16); c.fill(); c.fillStyle = b[3]; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + 105, 826); });
+    c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '500 14px "Pretendard Variable",system-ui'; c.fillText('S 스트라이크 = 숫자·자리 모두 맞음 · B 볼 = 숫자만 맞음', W / 2, 900);
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = tries + '/' + MAXT; document.getElementById('hC').textContent = streak; document.getElementById('hMult').textContent = LEN + '자리'; }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return; var p = S.toLocal(e);
+    for (var n = 0; n < 10; n++) { var px = 40 + (n % 5) * 94, py = 600 + Math.floor(n / 5) * 86; if (p.x > px && p.x < px + 84 && p.y > py && p.y < py + 74) { press(n); hud(); return; } }
+    if (p.y > 790 && p.y < 860) { if (p.x > 40 && p.x < 250) back(); if (p.x > 290 && p.x < 500) submit(); }
+  });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_baseball_diff', diff); A.sfx('click'); pd(); secret = null; }); }); pd();
+  var S = new A.Shell({ id: 'baseball', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { var k = e.key; if (/^[0-9]$/.test(k)) press(+k); if (k === 'Backspace' || k === 'Delete') { e.preventDefault(); back(); } if (k === 'Enter' || k === ' ') submit(); } });
+})();
+
+</script>
+</body>
+</html>

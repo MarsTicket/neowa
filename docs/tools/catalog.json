@@ -758,5 +758,125 @@
   "new": true,
   "art": "capture",
   "maxScore": 1000000
+ },
+ {
+  "id": "dots",
+  "name": "점과 상자",
+  "genre": "DOTS & BOXES",
+  "kgenre": "두뇌 대전",
+  "cat": "보드·카드",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "점 사이에 선을 하나씩 그어 상자를 완성하세요. 상자를 닫으면 한 번 더! 컴퓨터보다 많은 상자를 차지하면 승리.",
+  "tags": [
+   "탭으로 선 긋기",
+   "컴퓨터 대전",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "gomoku",
+  "name": "오목",
+  "genre": "GOMOKU",
+  "kgenre": "오목",
+  "cat": "보드·카드",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "가로·세로·대각선으로 5개를 먼저 놓으면 승리! 컴퓨터는 공격과 수비를 모두 계산합니다. 3단계 난이도.",
+  "tags": [
+   "탭으로 두기",
+   "컴퓨터 대전",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "reversi",
+  "name": "리버시",
+  "genre": "REVERSI",
+  "kgenre": "뒤집기",
+  "cat": "보드·카드",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "상대 돌을 내 돌 사이에 가두면 내 색으로 뒤집힙니다. 판이 다 찼을 때 돌이 많은 쪽이 승리.",
+  "tags": [
+   "탭",
+   "뒤집기",
+   "컴퓨터 대전"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "solitaire",
+  "name": "솔리테어",
+  "genre": "SOLITAIRE",
+  "kgenre": "카드",
+  "cat": "보드·카드",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "카드를 색을 번갈아 내림차순으로 쌓고, 무늬별로 A부터 K까지 모으세요. 끌어다 놓거나 탭하면 자동 이동!",
+  "tags": [
+   "탭·드래그",
+   "클론다이크",
+   "자동 정리"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "blackjack",
+  "name": "블랙잭",
+  "genre": "BLACKJACK",
+  "kgenre": "카드",
+  "cat": "보드·카드",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "딜러보다 21에 가깝게! 칩 1000개로 시작해 베팅하고, 히트·스탠드·더블로 승부하세요. 칩이 바닥나면 끝.",
+  "tags": [
+   "베팅",
+   "히트·스탠드",
+   "칩 모으기"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "baseball",
+  "name": "숫자 야구",
+  "genre": "BULLS & COWS",
+  "kgenre": "숫자 추리",
+  "cat": "두뇌",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "숨겨진 서로 다른 숫자 3개(또는 4개)를 맞히세요. 자리까지 맞으면 스트라이크, 숫자만 맞으면 볼! 적게 물어볼수록 고득점.",
+  "tags": [
+   "추리",
+   "3·4자리",
+   "기록"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
  }
 ]

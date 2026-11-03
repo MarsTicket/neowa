@@ -323,6 +323,7 @@
         if (k < 1) requestAnimationFrame(count);
       })();
       if (window.gtag) try { gtag('event', 'game_over', { game_name: cfg.id, score: score }); } catch (e) {}
+      if (A.Rank) A.Rank.onOver(cfg.id, score);
       if (!body.classList.contains('touch')) setTimeout(function () { var b = document.querySelector('#ovOver .btn-p'); if (b) b.focus({ preventScroll: true }); }, 400);
     };
 
@@ -352,6 +353,7 @@
     // 키보드
     window.addEventListener('keydown', function (e) {
       var k = e.key;
+      if (e.target && e.target.tagName === 'INPUT') return; // 닉네임 입력 중에는 단축키 끔
       if (k === ' ' || k === 'Enter') {
         if (e.target.closest && e.target.closest('a,button') && k === 'Enter') return;
         if (S.state === 'ready') { e.preventDefault(); S.start(); return; }
@@ -386,4 +388,88 @@
     if (cfg.init) cfg.init();
     requestAnimationFrame(frame);
   };
+
+  /* ---------- 온라인 랭킹 (assets/arcade/config.js 에 Supabase 주소가 있을 때만 켜짐) ---------- */
+  var BASE = (function () {
+    var sc = document.currentScript || document.querySelector('script[src*="arcade/arcade.js"]');
+    return sc ? sc.src.replace(/arcade\.js.*$/, '') : '../assets/arcade/';
+  })();
+  A.Rank = {
+    cfg: null, ready: false, queue: [],
+    enabled: function () { return !!(this.cfg && this.cfg.url && this.cfg.key); },
+    call: function (fn, body) {
+      var c = this.cfg;
+      return fetch(c.url.replace(/\/$/, '') + '/rest/v1/rpc/' + fn, {
+        method: 'POST',
+        headers: { 'apikey': c.key, 'Authorization': 'Bearer ' + c.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        return r.json().then(function (j) { if (!r.ok) throw new Error((j && (j.message || j.hint)) || ('HTTP ' + r.status)); return j; });
+      });
+    },
+    top: function (game, period, limit) { return this.call('top_scores', { p_game: game, p_period: period || 'all', p_limit: limit || 10 }); },
+    submit: function (game, name, score) { return this.call('submit_score', { p_game: game, p_name: name, p_score: Math.floor(score) }); },
+    nick: function (v) { if (v != null) A.set('neowa_nick', v); return A.get('neowa_nick', ''); },
+    cleanNick: function (v) { return String(v || '').replace(/[<>"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12); },
+    onOver: function (game, score) {
+      var self = this;
+      if (!this.ready) { this.queue.push([game, score]); return; }
+      if (!this.enabled()) return;
+      var box = document.getElementById('rk');
+      if (!box) {
+        box = document.createElement('div'); box.id = 'rk'; box.className = 'rk';
+        box.innerHTML = '<form class="rk-form" data-nostart><input id="rkName" maxlength="12" autocomplete="nickname" placeholder="닉네임 (12자)" aria-label="닉네임"><button class="btn btn-g" type="submit">랭킹 등록</button></form>' +
+          '<p class="rk-msg" id="rkMsg" role="status"></p><ol class="rk-list" id="rkList"></ol>' +
+          '<a class="rk-more" id="rkMore" href="#">전체 랭킹 보기 →</a>';
+        var col = document.querySelector('#ovOver .ov-col');
+        col.parentNode.insertBefore(box, col);
+        box.querySelector('form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var n = self.cleanNick(document.getElementById('rkName').value);
+          if (!n) { msg('닉네임을 적어 주세요.'); return; }
+          self.nick(n);
+          var btn = box.querySelector('button'); btn.disabled = true; msg('등록 중…');
+          self.submit(self.game, n, self.score).then(function (r) {
+            box.classList.add('sent');
+            msg(r && r.rank ? '전체 ' + A.fmt(r.total) + '명 중 ' + A.fmt(r.rank) + '위!' : '등록했어요!');
+            A.sfx('coin'); load(n);
+          }).catch(function (err) {
+            btn.disabled = false;
+            var m = String(err.message || '');
+            msg(/too fast/.test(m) ? '잠시 후 다시 등록해 주세요.' : /bad score/.test(m) ? '이 점수는 등록할 수 없어요.' : /bad name/.test(m) ? '닉네임을 바꿔 주세요.' : '연결이 안 돼요. 잠시 후 다시 시도해 주세요.');
+          });
+        });
+      }
+      function msg(t) { document.getElementById('rkMsg').textContent = t; }
+      function load(me) {
+        self.top(self.game, 'all', 5).then(function (rows) {
+          var ol = document.getElementById('rkList'); ol.innerHTML = '';
+          (rows || []).forEach(function (r, i) {
+            var li = document.createElement('li'); if (me && r.name === me) li.className = 'me';
+            var a = document.createElement('span'); a.textContent = (i + 1) + '. ' + r.name;
+            var b = document.createElement('b'); b.textContent = A.fmt(r.score);
+            li.appendChild(a); li.appendChild(b); ol.appendChild(li);
+          });
+          if (!rows || !rows.length) { var li = document.createElement('li'); li.textContent = '아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!'; ol.appendChild(li); }
+        }).catch(function () {});
+      }
+      this.game = game; this.score = score;
+      box.classList.remove('sent'); box.hidden = false;
+      var btn = box.querySelector('button'); btn.disabled = score <= 0;
+      document.getElementById('rkName').value = this.nick();
+      document.getElementById('rkMore').href = BASE.replace(/assets\/arcade\/$/, '') + 'ranking/?g=' + game;
+      msg(score > 0 ? '내 점수를 랭킹에 올려 보세요.' : '');
+      load(this.nick());
+    }
+  };
+  // 설정 파일 읽기
+  (function () {
+    var s = document.createElement('script');
+    s.src = BASE + 'config.js?v=1';
+    s.onload = s.onerror = function () {
+      A.Rank.cfg = window.NEOWA_RANK || null; A.Rank.ready = true;
+      A.Rank.queue.splice(0).forEach(function (q) { A.Rank.onOver(q[0], q[1]); });
+    };
+    document.head.appendChild(s);
+  })();
 })();

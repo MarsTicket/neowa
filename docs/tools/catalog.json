@@ -1,0 +1,202 @@
+[
+ {
+  "id": "shooting",
+  "name": "별빛 수호대",
+  "genre": "SHOOTING",
+  "kgenre": "슈팅",
+  "cat": "액션",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "발사는 자동, 당신은 피하기만. 파워업을 모아 5방향 탄을 완성하고 5웨이브마다 나오는 보스를 잡으세요.",
+  "tags": [
+   "드래그 이동",
+   "보스전",
+   "콤보 ×8"
+  ],
+  "made": "hand",
+  "new": false,
+  "art": "illust",
+  "maxScore": 10000000
+ },
+ {
+  "id": "snake",
+  "name": "네온 스네이크",
+  "genre": "PUZZLE ACTION",
+  "kgenre": "퍼즐 액션",
+  "cat": "액션",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "먹을수록 길어지고 빨라집니다. 벽은 통과, 내 꼬리와 바위만 조심. 사라지기 전에 황금 먹이를 노리세요.",
+  "tags": [
+   "스와이프",
+   "벽 통과",
+   "황금 먹이"
+  ],
+  "made": "hand",
+  "new": false,
+  "art": "illust",
+  "maxScore": 10000000
+ },
+ {
+  "id": "breakout",
+  "name": "네온 브레이커",
+  "genre": "BREAKOUT",
+  "kgenre": "벽돌깨기",
+  "cat": "액션",
+  "accent": "#ffb547",
+  "rgb": "255,181,71",
+  "ink": "#241400",
+  "desc": "패들 끝으로 받아 각도를 노리세요. 멀티볼과 관통하는 불꽃공으로 8개 스테이지를 시원하게 깨부숩니다.",
+  "tags": [
+   "드래그 패들",
+   "아이템 5종",
+   "8 스테이지"
+  ],
+  "made": "hand",
+  "new": false,
+  "art": "illust",
+  "maxScore": 10000000
+ },
+ {
+  "id": "runner",
+  "name": "네온 대시",
+  "genre": "ONE-TAP RUNNER",
+  "kgenre": "원탭 러너",
+  "cat": "원탭",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "탭 한 번에 점프, 두 번에 이단 점프. 끝없이 새로 만들어지는 네온 도시를 점점 빠르게 달립니다.",
+  "tags": [
+   "원탭",
+   "끝없는 맵",
+   "코인"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "tower",
+  "name": "하늘 탑 쌓기",
+  "genre": "TIMING",
+  "kgenre": "타이밍",
+  "cat": "원탭",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "움직이는 블록을 딱 맞는 순간에 탭. 어긋나면 잘리고, 완벽하면 다시 넓어집니다. 구름 위까지!",
+  "tags": [
+   "원탭",
+   "완벽 콤보",
+   "무한 층"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "orbit",
+  "name": "오빗 점프",
+  "genre": "ONE-TAP SPACE",
+  "kgenre": "원탭 우주",
+  "cat": "원탭",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "행성 주위를 도는 우주선을 알맞은 순간에 발사. 소행성 띠와 움직이는 행성을 넘어 더 깊은 우주로.",
+  "tags": [
+   "원탭",
+   "중력 포획",
+   "별 수집"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "dodge",
+  "name": "네온 회피",
+  "genre": "SURVIVAL",
+  "kgenre": "생존",
+  "cat": "액션",
+  "accent": "#ff4d6d",
+  "rgb": "255,77,109",
+  "ink": "#2a0410",
+  "desc": "추적탄, 레이저, 탄막을 손가락 하나로 피하세요. 한 번 맞으면 끝. 버틴 시간이 곧 점수입니다.",
+  "tags": [
+   "드래그",
+   "패턴 6종",
+   "폭탄"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "blocks",
+  "name": "네온 블록",
+  "genre": "BLOCK PUZZLE",
+  "kgenre": "블록 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "조각을 8×8 판에 끌어다 놓고 가로·세로 줄을 채워 지우세요. 여러 줄을 한 번에 지우면 점수 폭발.",
+  "tags": [
+   "끌어다 놓기",
+   "콤보",
+   "시간 제한 없음"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "mines",
+  "name": "지뢰 탐색",
+  "genre": "CLASSIC PUZZLE",
+  "kgenre": "클래식 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "숫자를 단서로 지뢰를 피해 모든 칸을 여세요. 첫 칸은 항상 안전, 길게 누르면 깃발. 3단계 난이도.",
+  "tags": [
+   "탭·길게 누르기",
+   "3단계",
+   "최단 기록"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ },
+ {
+  "id": "sudoku",
+  "name": "스도쿠",
+  "genre": "NUMBER PUZZLE",
+  "kgenre": "숫자 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "매번 새로 만들어지는, 답이 하나뿐인 퍼즐. 메모와 힌트로 차근차근, 실수는 3번까지.",
+  "tags": [
+   "매번 새 퍼즐",
+   "메모·힌트",
+   "3단계"
+  ],
+  "made": "gen",
+  "new": false,
+  "art": "capture",
+  "maxScore": 10000000
+ }
+]

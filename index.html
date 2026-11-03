@@ -199,6 +199,43 @@ footer nav a:hover{color:var(--ink)}
   .stack{height:470px}.stack a{height:76%}
   .gc-art{height:0;padding-top:62%}.gc-art img{position:absolute;top:0;left:0}
 }
+
+/* 게임이 많아져 카드를 촘촘하게 */
+.games{grid-template-columns:repeat(4,1fr);gap:16px}
+.gc{border-radius:20px}
+.gc-art{aspect-ratio:16/10}
+.gc-body{padding:2px 16px 16px;margin-top:-22px}
+.gc h3{font-size:22px;margin-bottom:6px}
+.gc p{font-size:13.5px;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gc-genre{font-size:10px}
+.tags{margin-bottom:14px}
+.tags li{font-size:11px;padding:4px 8px}
+.gc-foot{padding-top:12px}
+.gc-best b{font-size:18px}
+.play{height:40px;padding:0 14px;font-size:14px}
+.gc-today{left:58px}
+.search{display:flex;align-items:center;gap:8px;min-width:min(320px,100%);height:46px;padding:0 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.search svg{width:18px;height:18px;color:var(--mute);flex:none}
+.search input{flex:1;min-width:0;background:none;border:0;color:var(--ink);font:inherit;font-size:15px;outline:none}
+.search:focus-within{border-color:rgba(94,231,255,.6)}
+.empty{color:var(--sub);text-align:center;padding:40px 0}
+@media (min-width:981px){.games:not(.filtered) .gc:last-child:nth-child(3n+1){grid-column:auto;display:flex}}
+@media (max-width:1180px){.games{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:860px){.games{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){
+  .games{gap:10px}
+  .gc-body{padding:0 12px 12px;margin-top:-16px}
+  .gc h3{font-size:18px}
+  .gc p,.tags,.gc-genre{display:none}
+  .gc-foot{padding-top:10px;border-top:0}
+  .gc-best span{display:none}
+  .gc-best b{font-size:15px}.gc-best b.none{font-size:12px}
+  .play{height:36px;padding:0 10px;font-size:0;gap:0}.play svg{width:14px;height:14px}
+  .gc-no{left:10px;top:10px;font-size:11px;padding:4px 7px}
+  .gc-new{right:10px;top:10px;font-size:10px;padding:4px 7px}
+  .gc-today{left:48px;top:10px;font-size:10px;padding:4px 7px}
+  .search{width:100%}
+}
 @media (prefers-reduced-motion:reduce){.kicker b{animation:none}html{scroll-behavior:auto}}
 </style>
 </head>
@@ -208,6 +245,7 @@ footer nav a:hover{color:var(--ink)}
     <a class="logo" href="./" aria-label="너와 아케이드 홈"><i aria-hidden="true">너</i>너와 <span>아케이드</span></a>
     <nav class="nav" aria-label="바로가기">
       <a class="keep" href="#games">게임</a>
+      <a class="keep" href="ranking/">랭킹</a>
       <a class="keep" href="#story">스토리</a>
       <a href="about.html">소개</a>
     </nav>
@@ -239,20 +277,19 @@ footer nav a:hover{color:var(--ink)}
 
   <section id="games">
     <div class="wrap">
+      <!-- GAMES:START (docs/tools/build_hub.py 가 자동 생성. 직접 고치지 마세요) -->
       <div class="sec-head">
         <div><p class="eyebrow">ARCADE · 10 GAMES</p><h2>오늘은 뭘 할까요?</h2></div>
-        <p class="sec-note k-only">키보드 <kbd>1</kbd>~<kbd>9</kbd>, <kbd>0</kbd> 으로 바로 시작</p>
+        <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="gameSearch" type="search" placeholder="게임 찾기 (예: 퍼즐, 원탭)" aria-label="게임 찾기"></label>
       </div>
       <div class="filters" role="tablist" aria-label="게임 종류">
-        <button class="on" data-f="all" role="tab" aria-selected="true">전체 <b>10</b></button>
-        <button data-f="액션" role="tab" aria-selected="false">액션 <b>4</b></button>
-        <button data-f="원탭" role="tab" aria-selected="false">원탭 <b>3</b></button>
-        <button data-f="퍼즐" role="tab" aria-selected="false">퍼즐 <b>3</b></button>
+        <button class="on" data-f="all" role="tab" aria-selected="true">전체 <b>10</b></button><button data-f="액션" role="tab" aria-selected="false">액션 <b>4</b></button><button data-f="원탭" role="tab" aria-selected="false">원탭 <b>3</b></button><button data-f="퍼즐" role="tab" aria-selected="false">퍼즐 <b>3</b></button>
       </div>
+      <p class="empty" id="emptyMsg" hidden>찾는 게임이 없어요. 다른 말로 찾아보세요.</p>
       <div class="games">
-        <article class="gc" data-cat="액션" style="--c:#5ee7ff;--cr:94,231,255">
+        <article class="gc" data-cat="액션" data-q="별빛 수호대 슈팅 드래그 이동 보스전 콤보 ×8" style="--c:#5ee7ff;--cr:94,231,255">
           <a class="cover" href="shooting/" aria-label="별빛 수호대 플레이"></a>
-          <div class="gc-art"><span class="gc-no">01</span><img src="assets/shooting-card.jpg" alt="별빛 수호대: 우주 전투기가 적 함대를 향해 레이저를 쏘는 장면" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">01</span><img src="assets/shooting-card.jpg" alt="별빛 수호대 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">SHOOTING</p>
             <h3>별빛 수호대</h3>
@@ -264,9 +301,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="액션" style="--c:#7dff9b;--cr:125,255,155">
+        <article class="gc" data-cat="액션" data-q="네온 스네이크 퍼즐 액션 스와이프 벽 통과 황금 먹이" style="--c:#7dff9b;--cr:125,255,155">
           <a class="cover" href="snake/" aria-label="네온 스네이크 플레이"></a>
-          <div class="gc-art"><span class="gc-no">02</span><img src="assets/snake-card.jpg" alt="네온 스네이크: 빛나는 초록 뱀이 사과를 향해 가는 장면" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">02</span><img src="assets/snake-card.jpg" alt="네온 스네이크 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">PUZZLE ACTION</p>
             <h3>네온 스네이크</h3>
@@ -278,9 +315,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="액션" style="--c:#ffb547;--cr:255,181,71">
+        <article class="gc" data-cat="액션" data-q="네온 브레이커 벽돌깨기 드래그 패들 아이템 5종 8 스테이지" style="--c:#ffb547;--cr:255,181,71">
           <a class="cover" href="breakout/" aria-label="네온 브레이커 플레이"></a>
-          <div class="gc-art"><span class="gc-no">03</span><img src="assets/breakout-card.jpg" alt="네온 브레이커: 빛나는 공이 무지개색 벽돌을 깨는 장면" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">03</span><img src="assets/breakout-card.jpg" alt="네온 브레이커 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">BREAKOUT</p>
             <h3>네온 브레이커</h3>
@@ -292,9 +329,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="원탭" style="--c:#b48cff;--cr:180,140,255">
+        <article class="gc" data-cat="원탭" data-q="네온 대시 원탭 러너 원탭 끝없는 맵 코인" style="--c:#b48cff;--cr:180,140,255">
           <a class="cover" href="runner/" aria-label="네온 대시 플레이"></a>
-          <div class="gc-art"><span class="gc-no">04</span><span class="gc-new">NEW</span><img src="assets/runner-card.jpg" alt="네온 대시: 보라색 큐브가 네온 도시를 달리는 장면" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">04</span><img src="assets/runner-card.jpg" alt="네온 대시 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">ONE-TAP RUNNER</p>
             <h3>네온 대시</h3>
@@ -306,9 +343,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="원탭" style="--c:#ffe066;--cr:255,224,102">
+        <article class="gc" data-cat="원탭" data-q="하늘 탑 쌓기 타이밍 원탭 완벽 콤보 무한 층" style="--c:#ffe066;--cr:255,224,102">
           <a class="cover" href="tower/" aria-label="하늘 탑 쌓기 플레이"></a>
-          <div class="gc-art"><span class="gc-no">05</span><span class="gc-new">NEW</span><img src="assets/tower-card.jpg" alt="하늘 탑 쌓기: 노을 하늘로 쌓아 올린 블록 탑" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">05</span><img src="assets/tower-card.jpg" alt="하늘 탑 쌓기 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">TIMING</p>
             <h3>하늘 탑 쌓기</h3>
@@ -320,9 +357,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="원탭" style="--c:#ff7a45;--cr:255,122,69">
+        <article class="gc" data-cat="원탭" data-q="오빗 점프 원탭 우주 원탭 중력 포획 별 수집" style="--c:#ff7a45;--cr:255,122,69">
           <a class="cover" href="orbit/" aria-label="오빗 점프 플레이"></a>
-          <div class="gc-art"><span class="gc-no">06</span><span class="gc-new">NEW</span><img src="assets/orbit-card.jpg" alt="오빗 점프: 빛나는 행성들 사이를 나는 우주선" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">06</span><img src="assets/orbit-card.jpg" alt="오빗 점프 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">ONE-TAP SPACE</p>
             <h3>오빗 점프</h3>
@@ -334,9 +371,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="액션" style="--c:#ff4d6d;--cr:255,77,109">
+        <article class="gc" data-cat="액션" data-q="네온 회피 생존 드래그 패턴 6종 폭탄" style="--c:#ff4d6d;--cr:255,77,109">
           <a class="cover" href="dodge/" aria-label="네온 회피 플레이"></a>
-          <div class="gc-art"><span class="gc-no">07</span><span class="gc-new">NEW</span><img src="assets/dodge-card.jpg" alt="네온 회피: 붉은 탄막 사이를 피하는 빛나는 점" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">07</span><img src="assets/dodge-card.jpg" alt="네온 회피 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">SURVIVAL</p>
             <h3>네온 회피</h3>
@@ -348,9 +385,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="퍼즐" style="--c:#7aa2ff;--cr:122,162,255">
+        <article class="gc" data-cat="퍼즐" data-q="네온 블록 블록 퍼즐 끌어다 놓기 콤보 시간 제한 없음" style="--c:#7aa2ff;--cr:122,162,255">
           <a class="cover" href="blocks/" aria-label="네온 블록 플레이"></a>
-          <div class="gc-art"><span class="gc-no">08</span><span class="gc-new">NEW</span><img src="assets/blocks-card.jpg" alt="네온 블록: 8x8 판 위에 놓인 색색의 블록 조각" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">08</span><img src="assets/blocks-card.jpg" alt="네온 블록 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">BLOCK PUZZLE</p>
             <h3>네온 블록</h3>
@@ -362,9 +399,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="퍼즐" style="--c:#4dffd2;--cr:77,255,210">
+        <article class="gc" data-cat="퍼즐" data-q="지뢰 탐색 클래식 퍼즐 탭·길게 누르기 3단계 최단 기록" style="--c:#4dffd2;--cr:77,255,210">
           <a class="cover" href="mines/" aria-label="지뢰 탐색 플레이"></a>
-          <div class="gc-art"><span class="gc-no">09</span><span class="gc-new">NEW</span><img src="assets/mines-card.jpg" alt="지뢰 탐색: 숫자가 적힌 민트색 격자판" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">09</span><img src="assets/mines-card.jpg" alt="지뢰 탐색 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">CLASSIC PUZZLE</p>
             <h3>지뢰 탐색</h3>
@@ -376,9 +413,9 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="퍼즐" style="--c:#c3ff5e;--cr:195,255,94">
+        <article class="gc" data-cat="퍼즐" data-q="스도쿠 숫자 퍼즐 매번 새 퍼즐 메모·힌트 3단계" style="--c:#c3ff5e;--cr:195,255,94">
           <a class="cover" href="sudoku/" aria-label="스도쿠 플레이"></a>
-          <div class="gc-art"><span class="gc-no">10</span><span class="gc-new">NEW</span><img src="assets/sudoku-card.jpg" alt="스도쿠: 숫자가 채워진 9x9 격자" loading="lazy"></div>
+          <div class="gc-art"><span class="gc-no">10</span><img src="assets/sudoku-card.jpg" alt="스도쿠 게임 화면" loading="lazy" width="1200" height="750"></div>
           <div class="gc-body">
             <p class="gc-genre">NUMBER PUZZLE</p>
             <h3>스도쿠</h3>
@@ -391,6 +428,7 @@ footer nav a:hover{color:var(--ink)}
           </div>
         </article>
       </div>
+      <!-- GAMES:END -->
     </div>
   </section>
 
@@ -427,6 +465,7 @@ footer nav a:hover{color:var(--ink)}
   <div class="wrap">
     <span>© 너와 아케이드 · neowa.kr</span>
     <nav aria-label="사이트 정보">
+      <a href="ranking/">랭킹</a>
       <a href="about.html">소개</a>
       <a href="characters.html">등장인물</a>
       <a href="contact.html">문의</a>
@@ -448,7 +487,7 @@ footer nav a:hover{color:var(--ink)}
     document.documentElement.classList.add('tesla');
     document.getElementById('kicker').lastChild.textContent = '테슬라 차량 브라우저 최적화 · 무료';
   }
-  var NAMES = {shooting: '별빛 수호대', snake: '네온 스네이크', breakout: '네온 브레이커', runner: '네온 대시', tower: '하늘 탑 쌓기', orbit: '오빗 점프', dodge: '네온 회피', blocks: '네온 블록', mines: '지뢰 탐색', sudoku: '스도쿠'};
+  /* NAMES:START */ var NAMES = {"shooting": "별빛 수호대", "snake": "네온 스네이크", "breakout": "네온 브레이커", "runner": "네온 대시", "tower": "하늘 탑 쌓기", "orbit": "오빗 점프", "dodge": "네온 회피", "blocks": "네온 블록", "mines": "지뢰 탐색", "sudoku": "스도쿠"}; /* NAMES:END */
 
   // 최고기록
   document.querySelectorAll('[data-key]').forEach(function (el) {
@@ -467,16 +506,25 @@ footer nav a:hover{color:var(--ink)}
     r.classList.add('on');
   }
 
-  // 종류 필터
-  var fbtns = document.querySelectorAll('.filters button');
+  // 종류 필터 + 검색
+  var fbtns = document.querySelectorAll('.filters button'), cur = 'all', q = '';
+  function applyFilter() {
+    var shown = 0;
+    document.querySelectorAll('.gc').forEach(function (c) {
+      var ok = (cur === 'all' || c.getAttribute('data-cat') === cur) && (!q || c.getAttribute('data-q').toLowerCase().indexOf(q) >= 0);
+      c.hidden = !ok; if (ok) shown++;
+    });
+    document.querySelector('.games').classList.toggle('filtered', cur !== 'all' || !!q);
+    document.getElementById('emptyMsg').hidden = shown > 0;
+  }
   fbtns.forEach(function (b) {
     b.addEventListener('click', function () {
-      var f = b.getAttribute('data-f');
+      cur = b.getAttribute('data-f');
       fbtns.forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
-      document.querySelectorAll('.gc').forEach(function (c) { c.hidden = f !== 'all' && c.getAttribute('data-cat') !== f; });
-      document.querySelector('.games').classList.toggle('filtered', f !== 'all');
+      applyFilter();
     });
   });
+  document.getElementById('gameSearch').addEventListener('input', function (e) { q = e.target.value.trim().toLowerCase(); applyFilter(); });
 
   // 오늘의 추천 (날짜마다 바뀜)
   var ids = Object.keys(NAMES), d = new Date(), today = ids[(d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % ids.length];
@@ -487,7 +535,7 @@ footer nav a:hover{color:var(--ink)}
   // 숫자키 1·2·3 바로 시작
   window.addEventListener('keydown', function (e) {
     if (e.target.closest && e.target.closest('input,textarea')) return;
-    var m = {'1': 'shooting/', '2': 'snake/', '3': 'breakout/', '4': 'runner/', '5': 'tower/', '6': 'orbit/', '7': 'dodge/', '8': 'blocks/', '9': 'mines/', '0': 'sudoku/'}[e.key];
+    var ids10 = Object.keys(NAMES).slice(0, 10), m = /^[0-9]$/.test(e.key) ? ids10[(+e.key + 9) % 10] + '/' : null;
     if (m) location.href = m;
   });
 

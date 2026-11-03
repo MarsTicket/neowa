@@ -11,19 +11,8 @@ import json, sys, os, html
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 GDIR = os.path.join(os.path.dirname(__file__), 'games')
 
-# 사이트 전체 게임 목록 (다음 게임 고리 순서 = 이 순서)
-CATALOG = [
-    ('shooting', '별빛 수호대', '슈팅'),
-    ('snake', '네온 스네이크', '퍼즐 액션'),
-    ('breakout', '네온 브레이커', '벽돌깨기'),
-    ('runner', '네온 대시', '원탭 러너'),
-    ('tower', '하늘 탑 쌓기', '타이밍'),
-    ('orbit', '오빗 점프', '원탭 우주'),
-    ('dodge', '네온 회피', '생존'),
-    ('blocks', '네온 블록', '블록 퍼즐'),
-    ('mines', '지뢰 탐색', '클래식 퍼즐'),
-    ('sudoku', '스도쿠', '숫자 퍼즐'),
-]
+# 사이트 전체 게임 목록은 docs/tools/catalog.json 한 곳에서 관리 (순서 = 다음 게임 고리 순서 = STAGE 번호)
+CATALOG = [(g['id'], g['name'], g['kgenre']) for g in json.load(open(os.path.join(os.path.dirname(__file__), 'catalog.json'), encoding='utf-8'))]
 IDS = [c[0] for c in CATALOG]
 INFO = {c[0]: c for c in CATALOG}
 

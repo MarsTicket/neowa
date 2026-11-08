@@ -69,7 +69,7 @@ def build(gid):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../assets/arcade/arcade.css?v=3">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=4">
 <style>:root{{--accent:{cfg['accent']};--accent-ink:{cfg['ink']};--ar:{cfg['rgb']}}}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
@@ -159,7 +159,7 @@ def build(gid):
   {pad or '<div></div>'}
 </div>
 
-<script src="../assets/arcade/arcade.js?v=3"></script>
+<script src="../assets/arcade/arcade.js?v=4"></script>
 <script>
 {code}
 </script>

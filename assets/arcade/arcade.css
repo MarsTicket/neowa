@@ -39,7 +39,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 .g-ic .off{display:none}
 body.muted .g-ic .on{display:none}
 body.muted .g-ic .off{display:block}
-body:not([data-state="playing"]) .g-ic[data-act="pause"]{opacity:.35;pointer-events:none}
+body:not([data-state="playing"]) .g-ic[data-act="pause"],body:not([data-state="playing"]) .gp-btn[data-act="pause"]{opacity:.35;pointer-events:none}
 
 /* 무대 */
 .g-wrap{position:relative;min-height:0;display:flex;align-items:center;justify-content:center;gap:28px;padding:4px 12px 12px}
@@ -164,14 +164,6 @@ body.won[data-state="over"] #ovOver .ov-kick{color:var(--gold)}
 .is-fs .g-ic .enter{display:none}
 .is-fs .g-ic .exit{display:block}
 
-/* 가로 화면 + 터치 + 방향패드: 패드를 게임판 오른쪽에 크게 */
-.pad-side .g-pad{position:fixed;right:max(32px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);padding:0;z-index:5;display:flex}
-.pad-side .pad{grid-template-columns:repeat(3,var(--pb,84px));grid-template-rows:repeat(3,var(--pb,84px));gap:10px}
-.pad-side .pad .u{grid-column:2;grid-row:1}.pad-side .pad .l{grid-column:1;grid-row:2}
-.pad-side .pad .r{grid-column:3;grid-row:2}.pad-side .pad .d{grid-column:2;grid-row:3}
-.pad-side .pad button{border-radius:22px}
-.pad-side .pad button svg{width:32px;height:32px}
-.pad-side .g-side{display:none!important}
 @media (max-width:440px){
   .g-back{padding:0 10px}
   .g-back span{display:none}
@@ -199,3 +191,64 @@ body.won[data-state="over"] #ovOver .ov-kick{color:var(--gold)}
 .rk-list b{font-family:var(--f-num);color:var(--ink)}
 .rk-more{display:inline-block;margin-top:6px;font-size:12px;color:var(--accent)}
 @container (max-height:640px){.rk-list li:nth-child(n+4){display:none}}
+
+/* ---------- 가로 화면 배치 (테슬라·PC·태블릿 가로) ----------
+   arcade.js 가 가로 화면이면 body 에 .land 를 붙이고, 위 메뉴줄(.g-top)을 오른쪽 패널(.g-panel)로 옮깁니다.
+   게임판은 세로를 꽉 채우고, 오른쪽 패널에 큰 버튼과 설명 카드가 들어갑니다. */
+.g-panel{display:none}
+body.land .g-shell{grid-template-rows:1fr auto}
+body.land .g-wrap{gap:20px;padding:12px 16px}
+body.land .g-side{display:none!important}
+body.land [data-land-hide]{display:none!important}
+body.land .g-panel{display:flex;flex-direction:column;gap:12px;flex:none;width:var(--pw,360px);align-self:stretch;min-height:0;padding:4px 0}
+.g-panel .g-top{flex-wrap:wrap;padding:0;gap:2px 4px}
+.g-panel .g-back{margin-right:auto;margin-left:-10px}
+.g-panel .g-name{order:3;flex-basis:100%;text-align:left;font-size:34px;line-height:1.1;text-shadow:0 0 26px rgba(var(--ar),.45)}
+.g-panel .g-name small{font-size:11px;margin-bottom:4px;text-shadow:none}
+.g-panel .g-ic[data-act="pause"]{display:none}
+.gp-slot{display:flex;flex-direction:column;gap:12px}
+.gp-slot:empty,.gp-padbox:empty{display:none}
+.gp-padbox{display:flex;justify-content:center}
+.g-panel .g-pad{display:flex;padding:0}
+.g-panel .pad{grid-template-columns:repeat(3,var(--pb,84px));grid-template-rows:repeat(3,var(--pb,84px));gap:10px}
+.g-panel .pad .u{grid-column:2;grid-row:1}.g-panel .pad .l{grid-column:1;grid-row:2}
+.g-panel .pad .r{grid-column:3;grid-row:2}.g-panel .pad .d{grid-column:2;grid-row:3}
+.g-panel .pad button{border-radius:22px}
+.g-panel .pad button svg{width:32px;height:32px}
+/* 패널 큰 버튼 (게임별 버튼도 이 모양을 씁니다) */
+.gp-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:18px;font-size:17px;font-weight:800;
+  background:rgba(255,255,255,.07);border:1px solid var(--line-2);transition:transform .1s,background .15s}
+.gp-btn:hover{background:rgba(255,255,255,.11)}
+.gp-btn:active{transform:scale(.97)}
+.gp-btn svg{width:22px;height:22px;flex:none}
+.gp-btn.main{min-height:76px;font-size:19px;background:var(--accent);color:var(--accent-ink);border-color:transparent;
+  box-shadow:0 10px 30px -10px rgba(var(--ar),.8),inset 0 -3px 0 rgba(0,0,0,.18)}
+.gp-btn.main:hover{filter:brightness(1.06)}
+.gp-btn[disabled]{background:rgba(255,255,255,.05);color:var(--mute);box-shadow:none;border-color:var(--line);pointer-events:none}
+.gp-btn .cnt{font-family:var(--f-num);padding:2px 9px;border-radius:999px;background:rgba(0,0,0,.18);font-size:15px}
+.gp-btn[disabled] .cnt{background:rgba(255,255,255,.06)}
+/* 패널 점수판·차례 카드 (게임별로 골라 씀) */
+.g-panel .g-card{padding:14px 16px}
+.gp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gp-stats div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gp-stats span{font-family:var(--f-num);font-size:10px;font-weight:600;letter-spacing:2px;color:var(--mute)}
+.gp-stats b{font-family:var(--f-num);font-size:26px;line-height:1.05;font-variant-numeric:tabular-nums}
+.gp-turn{display:flex;align-items:center;gap:14px}
+.gp-turn b{display:block;font-size:19px;font-weight:800}
+.gp-turn span{font-size:13px;color:var(--sub)}
+.gp-stone{width:40px;height:40px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 35%,#777,#0a0a0a 70%);box-shadow:0 2px 6px rgba(0,0,0,.6),0 0 0 2px rgba(var(--ar),.6)}
+.gp-stone.w{background:radial-gradient(circle at 35% 35%,#fff,#c9c2b0 75%);box-shadow:0 2px 6px rgba(0,0,0,.6)}
+.gp-cards{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(180deg,#000 85%,transparent);mask-image:linear-gradient(180deg,#000 85%,transparent)}
+.gp-cards::-webkit-scrollbar{display:none}
+@media (max-height:560px){
+  .g-panel .g-name{font-size:24px}
+  .g-panel .g-name small{display:none}
+  .gp-cards{display:none}
+  .gp-btn{min-height:52px;font-size:15px}
+  .gp-btn.main{min-height:58px;font-size:16px}
+  .g-panel .g-card{padding:10px 14px}
+  .gp-turn span{display:none}
+  .gp-stats b{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){.gp-btn{transition:none}}

@@ -231,28 +231,61 @@
     });
     A.setMuted(muted);
     setState('ready');
+
+    /* 가로 화면 패널: 가로 화면(테슬라·PC·태블릿 가로)에서는 위 메뉴줄·큰 버튼·설명 카드를
+       게임판 오른쪽 패널로 모으고, 게임판은 세로를 꽉 채웁니다. */
+    var topBar = document.querySelector('.g-top'), shellEl = document.querySelector('.g-shell');
+    var padEl = document.querySelector('.g-pad'), padHome = padEl ? [padEl.parentNode, padEl.nextSibling] : null;
+    var panel = document.createElement('aside');
+    panel.className = 'g-panel'; panel.id = 'panel';
+    panel.innerHTML = '<div class="gp-slot" id="panelSlot"></div><div class="gp-padbox"></div>' +
+      '<button class="gp-btn" data-act="pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>일시정지</button>' +
+      '<div class="gp-cards"></div>';
+    var cardsBox = panel.querySelector('.gp-cards'), padBox = panel.querySelector('.gp-padbox');
+    document.querySelectorAll('.g-side .g-card').forEach(function (c) { cardsBox.appendChild(c.cloneNode(true)); });
+    S.wrap.appendChild(panel);
+    S.panel = panel; S.panelSlot = panel.querySelector('#panelSlot');
+    // 마우스로 누른 패널 버튼이 포커스를 잡으면 스페이스 키가 그 버튼을 또 누르게 되므로 막음
+    panel.addEventListener('mousedown', function (e) { if (e.target.closest('button')) e.preventDefault(); });
+
     S.fit = function () {
-      // 가로 화면 + 터치 + 방향패드(스네이크)면 패드를 오른쪽에 둠
-      var hasPad = !!document.querySelector('.g-pad .pad');
-      var padSide = hasPad && body.classList.contains('touch') && window.innerWidth > window.innerHeight * 1.15;
-      body.classList.toggle('pad-side', padSide);
-      var aw = S.wrap.clientWidth - 24, ah = S.wrap.clientHeight - 16;
-      var ar = S.W / S.H;
-      if (padSide) {
-        var pb = Math.max(56, Math.min(96, Math.floor(window.innerHeight * 0.13)));
-        body.style.setProperty('--pb', pb + 'px');
-        aw -= 2 * (pb * 3 + 20 + 40); // 좌우 대칭으로 패드 자리 비움
+      var land = window.innerWidth > window.innerHeight * 1.15 && !!topBar;
+      body.classList.toggle('land', land);
+      S.land = land;
+      // 메뉴줄 옮기기
+      if (topBar) {
+        if (land && topBar.parentNode !== panel) panel.insertBefore(topBar, panel.firstChild);
+        else if (!land && topBar.parentNode !== shellEl) shellEl.insertBefore(topBar, shellEl.firstChild);
       }
-      var wide = !padSide && aw > 900 && aw - ah * ar > 520;
+      // 방향 패드: 가로 + 터치면 패널 안으로
+      var padIn = land && padEl && body.classList.contains('touch');
+      if (padEl) {
+        if (padIn && padEl.parentNode !== padBox) padBox.appendChild(padEl);
+        else if (!padIn && padEl.parentNode === padBox) padHome[0].insertBefore(padEl, padHome[1]);
+      }
+      body.classList.toggle('pad-in', !!padIn);
+      // 가로 전용 크기(cfg.land = [W, H])가 있는 게임은 가로에서 그 크기로 그립니다 (예: 오목 정사각형 판)
+      var useLand = land && cfg.land;
+      S.W = useLand ? cfg.land[0] : cfg.W; S.H = useLand ? cfg.land[1] : cfg.H;
+      var ar = S.W / S.H, wide = false, aw, ah;
+      if (land) {
+        var pw = Math.max(260, Math.min(420, Math.round(window.innerWidth * 0.32)));
+        body.style.setProperty('--pw', pw + 'px');
+        if (padIn) body.style.setProperty('--pb', Math.max(56, Math.min(96, Math.floor((pw - 20) / 3), Math.floor(window.innerHeight * 0.14))) + 'px');
+        aw = S.wrap.clientWidth - 32 - pw - 20; ah = S.wrap.clientHeight - 24;
+      } else {
+        aw = S.wrap.clientWidth - 24; ah = S.wrap.clientHeight - 16;
+        wide = aw > 900 && aw - ah * ar > 520;
+        if (wide) aw -= 2 * (220 + 28);
+      }
       S.wrap.classList.toggle('wide', wide);
-      if (wide) aw -= 2 * (220 + 28);
       var w = Math.min(aw, ah * ar), h = w / ar;
       w = Math.floor(w); h = Math.floor(h);
       S.stage.style.setProperty('--sw', w + 'px'); S.stage.style.setProperty('--sh', h + 'px');
       var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
       S.canvas.width = Math.round(w * dpr); S.canvas.height = Math.round(h * dpr);
       S.scale = (w * dpr) / S.W; S.cssScale = w / S.W;
-      if (cfg.onResize) cfg.onResize();
+      if (cfg.onResize) cfg.onResize(S);
     };
     window.addEventListener('resize', S.fit);
     window.addEventListener('orientationchange', function () { setTimeout(S.fit, 200); });

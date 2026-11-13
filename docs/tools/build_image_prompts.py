@@ -63,6 +63,7 @@ SCENE = {
  'aim': ('several red-white bullseye targets floating in a dark grid space, a crosshair hitting the center with a golden burst', '과녁 중앙을 맞히는 조준선'),
  'oddcolor': ('a grid of rounded tiles all in the same soft green except one tile in a slightly different shade, subtle glow on the odd one', '하나만 색이 다른 타일 격자'),
  'schulte': ('a 5x5 grid of tiles with scattered colorful abstract numeral shapes, a quick tap trail connecting them in sequence', '흩어진 숫자를 순서대로 찾는 격자'),
+ 'baduk': ('a glowing wooden go board seen from above with black and white stones, a small group of white stones encircled by a pulsing red target ring and a black stone landing to capture them', '표시된 백 돌을 잡는 바둑 수읽기'),
 }
 
 def build():

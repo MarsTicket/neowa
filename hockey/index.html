@@ -116,8 +116,8 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 90, BOT = 930, GW = 180, MR = 38, PR = 24;
   var fx = new A.FX();
-  var me, cpu, puck, sMe, sCpu, round, score, pauseT, dyingT, target = null, keys = {}, lvl;
-  function resetPuck(toMe) { puck = { x: W / 2, y: (TOP + BOT) / 2 + (toMe ? 120 : -120), vx: 0, vy: 0 }; pauseT = 0.8; }
+  var me, cpu, puck, sMe, sCpu, round, score, pauseT, dyingT, target = null, keys = {}, lvl, stuckT = 0;
+  function resetPuck(toMe) { puck = { x: W / 2, y: (TOP + BOT) / 2 + (toMe ? 120 : -120), vx: 0, vy: 0 }; pauseT = 0.8; stuckT = 0; }
   function newRound() { me = { x: W / 2, y: BOT - 120, vx: 0, vy: 0 }; cpu = { x: W / 2, y: TOP + 120, vx: 0, vy: 0 }; sMe = 0; sCpu = 0; lvl = Math.min(1, (round - 1) / 6); resetPuck(true); }
   function reset() { round = 1; score = 0; dyingT = 0; target = null; keys = {}; newRound(); fx.clear(); hud(); }
   function collide(m, pr) {
@@ -128,6 +128,24 @@
       if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('bounce', pr ? 1.2 : 0.9); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
       var sp = Math.hypot(puck.vx, puck.vy); if (sp > 1500) { puck.vx *= 1500 / sp; puck.vy *= 1500 / sp; }
     }
+  }
+  // 퍽이 벽 밖으로 나가지 않게 막기 (골문 구멍은 제외). 벽에 닿았으면 true
+  function walls(sound) {
+    var hit = false;
+    if (puck.x < PR) { puck.x = PR; puck.vx = Math.abs(puck.vx) * 0.92; hit = true; }
+    if (puck.x > W - PR) { puck.x = W - PR; puck.vx = -Math.abs(puck.vx) * 0.92; hit = true; }
+    var inGoal = Math.abs(puck.x - W / 2) < GW / 2;
+    if (!inGoal && puck.y < TOP + PR) { puck.y = TOP + PR; puck.vy = Math.abs(puck.vy) * 0.92; hit = true; }
+    if (!inGoal && puck.y > BOT - PR) { puck.y = BOT - PR; puck.vy = -Math.abs(puck.vy) * 0.92; hit = true; }
+    if (hit && sound) A.sfx('wall');
+    return hit;
+  }
+  // 말렛이 퍽을 벽(구석)으로 밀어붙이면 퍽은 벽 안에 두고 말렛을 밀어낸다
+  function unpin(m) {
+    var dx = puck.x - m.x, dy = puck.y - m.y, d = Math.hypot(dx, dy);
+    if (d >= MR + PR) return;
+    if (d < 0.01) { dx = W / 2 - puck.x; dy = (TOP + BOT) / 2 - puck.y; d = Math.hypot(dx, dy) || 1; dx = -dx; dy = -dy; }
+    m.x = puck.x - dx / d * (MR + PR); m.y = puck.y - dy / d * (MR + PR);
   }
   function goal(mine) {
     if (mine) { sMe++; score += 100 * round; fx.text(W / 2, TOP + 80, 'GOAL!', '#5ee7ff', 34); A.sfx('gold'); fx.burst(W / 2, TOP, '#5ee7ff', 40, 400, 0.8, 4); }
@@ -154,7 +172,7 @@
     moveMallet(me, tx, ty, 2600, dt, mid + MR, BOT - MR);
     // 컴퓨터: 퍽이 자기 진영이면 공격, 아니면 골문 앞 수비
     var cspd = 520 + lvl * 700, cx, cy;
-    if (puck.y < mid + 40) { cx = puck.x + (puck.x - W / 2) * 0.1; cy = puck.y - 30; if (puck.y < cpu.y) { cy = TOP + MR; } }
+    if (puck.y < mid + 40) { cx = puck.x + (puck.x - W / 2) * 0.1; cy = puck.y - 30; if (puck.y < cpu.y) { cy = TOP + MR; cx = puck.x + (puck.x < W / 2 ? 1 : -1) * (MR + PR + 12); } }
     else { cx = W / 2 + (puck.x - W / 2) * (0.35 + lvl * 0.3); cy = TOP + 110; }
     moveMallet(cpu, cx + Math.sin(S.time * 3) * (1 - lvl) * 20, cy, cspd, dt, TOP + MR, mid - MR);
     if (pauseT > 0) { pauseT -= dt; hud(); return; }
@@ -162,12 +180,20 @@
     var steps = 3;
     for (var s = 0; s < steps; s++) {
       var h = dt / steps; puck.x += puck.vx * h; puck.y += puck.vy * h;
-      if (puck.x < PR) { puck.x = PR; puck.vx = Math.abs(puck.vx) * 0.92; A.sfx('wall'); }
-      if (puck.x > W - PR) { puck.x = W - PR; puck.vx = -Math.abs(puck.vx) * 0.92; A.sfx('wall'); }
       var inGoal = Math.abs(puck.x - W / 2) < GW / 2;
-      if (puck.y < TOP + PR) { if (inGoal && puck.y < TOP - PR) { goal(true); return; } if (!inGoal) { puck.y = TOP + PR; puck.vy = Math.abs(puck.vy) * 0.92; A.sfx('wall'); } }
-      if (puck.y > BOT - PR) { if (inGoal && puck.y > BOT + PR) { goal(false); return; } if (!inGoal) { puck.y = BOT - PR; puck.vy = -Math.abs(puck.vy) * 0.92; A.sfx('wall'); } }
+      if (inGoal && puck.y < TOP - PR) { goal(true); return; }
+      if (inGoal && puck.y > BOT + PR) { goal(false); return; }
+      walls(true);
       collide(me, true); collide(cpu, false);
+      // 말렛에 밀려 벽을 뚫고 나가지 않도록 벽을 한 번 더 적용하고, 겹친 말렛은 비켜 준다
+      if (walls(false)) { unpin(me); unpin(cpu); }
+    }
+    // 안전장치: 퍽이 벽·구석에 붙어 거의 멈춘 채 1.5초 넘게 있으면 가운데 쪽으로 살짝 밀어 준다
+    var nearWall = puck.x < PR + 6 || puck.x > W - PR - 6 || puck.y < TOP + PR + 6 || puck.y > BOT - PR - 6;
+    if (nearWall && Math.hypot(puck.vx, puck.vy) < 60) stuckT += dt; else stuckT = 0;
+    if (stuckT > 1.5) {
+      var ex = W / 2 - puck.x, ey = (TOP + BOT) / 2 - puck.y, ed = Math.hypot(ex, ey) || 1;
+      puck.vx = ex / ed * 320; puck.vy = ey / ed * 320; stuckT = 0; A.sfx('wall');
     }
     puck.vx *= 1 - 0.25 * dt; puck.vy *= 1 - 0.25 * dt;
     if (Math.hypot(puck.vx, puck.vy) > 500) fx.spark(puck.x, puck.y, '#ffffff', 0, 0, 0.2, 2);

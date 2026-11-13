@@ -74,7 +74,8 @@ insert into public.score_limits (game, max_score) values
   ('stroop', 100000),
   ('aim', 100000),
   ('oddcolor', 100000),
-  ('schulte', 100000)
+  ('schulte', 100000),
+  ('baduk', 400000)
 on conflict (game) do update set max_score = excluded.max_score;
 
 -- 점수 등록: 이름 정리, 상한 검사, 같은 이름 20초 안 재등록 금지

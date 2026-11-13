@@ -998,5 +998,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 100000
+ },
+ {
+  "id": "baduk",
+  "name": "바둑 묘수풀이",
+  "genre": "GO PUZZLE",
+  "kgenre": "바둑 수읽기",
+  "cat": "보드·카드",
+  "accent": "#f2c879",
+  "rgb": "242,200,121",
+  "ink": "#2a1c04",
+  "desc": "표시된 백 돌을 정해진 수 안에 잡는 첫 수를 찾으세요. 2수 단수 문제부터 4수 수읽기까지 연속으로 도전!",
+  "tags": [
+   "탭",
+   "수읽기",
+   "연속 정답"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 400000
  }
 ]

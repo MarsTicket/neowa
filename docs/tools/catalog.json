@@ -1018,5 +1018,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 400000
+ },
+ {
+  "id": "fall",
+  "name": "떨어지는 블록",
+  "genre": "FALLING BLOCKS",
+  "kgenre": "낙하 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#5ee7ff",
+  "rgb": "94,231,255",
+  "ink": "#03161c",
+  "desc": "떨어지는 블록을 돌려 맞춰 가로 줄을 지우세요. 4줄을 한 번에 지우는 손맛과 연속 콤보에 도전!",
+  "tags": [
+   "밀어서 이동",
+   "보관(홀드)",
+   "콤보"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 10000000
  }
 ]

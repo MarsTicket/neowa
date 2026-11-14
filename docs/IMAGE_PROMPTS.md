@@ -89,6 +89,7 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 49 | 다른 색 찾기 | `assets/oddcolor-card.jpg` | ⬜ 임시 캡처 | 하나만 색이 다른 타일 격자 |
 | 50 | 숫자 순서 찾기 | `assets/schulte-card.jpg` | ⬜ 임시 캡처 | 흩어진 숫자를 순서대로 찾는 격자 |
 | 51 | 바둑 묘수풀이 | `assets/baduk-card.jpg` | ⬜ 임시 캡처 | 표시된 백 돌을 잡는 바둑 수읽기 |
+| 52 | 떨어지는 블록 | `assets/fall-card.jpg` | ⬜ 임시 캡처 | 떨어지는 블록을 돌려 줄을 지우는 퍼즐 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -570,4 +571,14 @@ a 5x5 grid of tiles with scattered colorful abstract numeral shapes, a quick tap
 
 ```
 a glowing wooden go board seen from above with black and white stones, a small group of white stones encircled by a pulsing red target ring and a black stone landing to capture them, dominant glow color #f2c879. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 52. 떨어지는 블록 (`fall`)
+
+- 파일: `assets/fall-card.jpg`
+- 대표색: `#5ee7ff` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 떨어지는 블록을 돌려 줄을 지우는 퍼즐
+
+```
+a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap, dominant glow color #5ee7ff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

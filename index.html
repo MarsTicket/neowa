@@ -279,11 +279,11 @@ footer nav a:hover{color:var(--ink)}
     <div class="wrap">
       <!-- GAMES:START (docs/tools/build_hub.py 가 자동 생성. 직접 고치지 마세요) -->
       <div class="sec-head">
-        <div><p class="eyebrow">ARCADE · 51 GAMES</p><h2>오늘은 뭘 할까요?</h2></div>
+        <div><p class="eyebrow">ARCADE · 52 GAMES</p><h2>오늘은 뭘 할까요?</h2></div>
         <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="gameSearch" type="search" placeholder="게임 찾기 (예: 퍼즐, 원탭)" aria-label="게임 찾기"></label>
       </div>
       <div class="filters" role="tablist" aria-label="게임 종류">
-        <button class="on" data-f="all" role="tab" aria-selected="true">전체 <b>51</b></button><button data-f="액션" role="tab" aria-selected="false">액션 <b>16</b></button><button data-f="원탭" role="tab" aria-selected="false">원탭 <b>7</b></button><button data-f="퍼즐" role="tab" aria-selected="false">퍼즐 <b>12</b></button><button data-f="보드·카드" role="tab" aria-selected="false">보드·카드 <b>6</b></button><button data-f="두뇌" role="tab" aria-selected="false">두뇌 <b>10</b></button>
+        <button class="on" data-f="all" role="tab" aria-selected="true">전체 <b>52</b></button><button data-f="액션" role="tab" aria-selected="false">액션 <b>16</b></button><button data-f="원탭" role="tab" aria-selected="false">원탭 <b>7</b></button><button data-f="퍼즐" role="tab" aria-selected="false">퍼즐 <b>13</b></button><button data-f="보드·카드" role="tab" aria-selected="false">보드·카드 <b>6</b></button><button data-f="두뇌" role="tab" aria-selected="false">두뇌 <b>10</b></button>
       </div>
       <p class="empty" id="emptyMsg" hidden>찾는 게임이 없어요. 다른 말로 찾아보세요.</p>
       <div class="games">
@@ -1001,6 +1001,20 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
+        <article class="gc" data-cat="퍼즐" data-q="떨어지는 블록 낙하 퍼즐 밀어서 이동 보관(홀드) 콤보" style="--c:#5ee7ff;--cr:94,231,255">
+          <a class="cover" href="fall/" aria-label="떨어지는 블록 플레이"></a>
+          <div class="gc-art"><span class="gc-no">52</span><span class="gc-new">NEW</span><img src="assets/fall-card.jpg" alt="떨어지는 블록 게임 화면" loading="lazy" width="1200" height="750"></div>
+          <div class="gc-body">
+            <p class="gc-genre">FALLING BLOCKS</p>
+            <h3>떨어지는 블록</h3>
+            <p>떨어지는 블록을 돌려 맞춰 가로 줄을 지우세요. 4줄을 한 번에 지우는 손맛과 연속 콤보에 도전!</p>
+            <ul class="tags"><li>밀어서 이동</li><li>보관(홀드)</li><li>콤보</li></ul>
+            <div class="gc-foot">
+              <div class="gc-best"><span>BEST</span><b data-key="neowa_hub_fall_high">0</b></div>
+              <a class="play" href="fall/">플레이<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></a>
+            </div>
+          </div>
+        </article>
       </div>
       <!-- GAMES:END -->
     </div>
@@ -1063,7 +1077,7 @@ footer nav a:hover{color:var(--ink)}
     document.documentElement.classList.add('tesla');
     document.getElementById('kicker').lastChild.textContent = '테슬라 차량 브라우저 최적화 · 무료';
   }
-  /* NAMES:START */ var NAMES = {"shooting": "별빛 수호대", "snake": "네온 스네이크", "breakout": "네온 브레이커", "runner": "네온 대시", "tower": "하늘 탑 쌓기", "orbit": "오빗 점프", "dodge": "네온 회피", "blocks": "네온 블록", "mines": "지뢰 탐색", "sudoku": "스도쿠", "cave": "네온 동굴", "ring": "타이밍 링", "archery": "바람 궁수", "lanes": "네온 하이웨이", "gravity": "중력 반전", "rocks": "우주 광부", "slash": "네온 슬래시", "hockey": "에어 하키", "keeper": "골키퍼", "whack": "두더지 탭", "racer": "탑뷰 레이서", "fishy": "큰 물고기", "defense": "도시 방어", "survivor": "네온 서바이버", "maze": "네온 미로", "jumper": "구름 점프", "artillery": "포격전", "pinball": "네온 핀볼", "slide": "숫자 밀기", "lights": "불 끄기", "gems": "보석 매치", "memory": "카드 짝 맞추기", "sequence": "빛 순서 기억", "pipes": "파이프 연결", "nonogram": "네모 로직", "bubbles": "버블 팡", "flood": "색 채우기", "pairs": "타일 짝 잇기", "dots": "점과 상자", "gomoku": "오목", "reversi": "리버시", "solitaire": "솔리테어", "blackjack": "블랙잭", "baseball": "숫자 야구", "reaction": "반응 속도", "math": "암산 레이스", "stroop": "색깔 함정", "aim": "에임 트레이너", "oddcolor": "다른 색 찾기", "schulte": "숫자 순서 찾기", "baduk": "바둑 묘수풀이"}; /* NAMES:END */
+  /* NAMES:START */ var NAMES = {"shooting": "별빛 수호대", "snake": "네온 스네이크", "breakout": "네온 브레이커", "runner": "네온 대시", "tower": "하늘 탑 쌓기", "orbit": "오빗 점프", "dodge": "네온 회피", "blocks": "네온 블록", "mines": "지뢰 탐색", "sudoku": "스도쿠", "cave": "네온 동굴", "ring": "타이밍 링", "archery": "바람 궁수", "lanes": "네온 하이웨이", "gravity": "중력 반전", "rocks": "우주 광부", "slash": "네온 슬래시", "hockey": "에어 하키", "keeper": "골키퍼", "whack": "두더지 탭", "racer": "탑뷰 레이서", "fishy": "큰 물고기", "defense": "도시 방어", "survivor": "네온 서바이버", "maze": "네온 미로", "jumper": "구름 점프", "artillery": "포격전", "pinball": "네온 핀볼", "slide": "숫자 밀기", "lights": "불 끄기", "gems": "보석 매치", "memory": "카드 짝 맞추기", "sequence": "빛 순서 기억", "pipes": "파이프 연결", "nonogram": "네모 로직", "bubbles": "버블 팡", "flood": "색 채우기", "pairs": "타일 짝 잇기", "dots": "점과 상자", "gomoku": "오목", "reversi": "리버시", "solitaire": "솔리테어", "blackjack": "블랙잭", "baseball": "숫자 야구", "reaction": "반응 속도", "math": "암산 레이스", "stroop": "색깔 함정", "aim": "에임 트레이너", "oddcolor": "다른 색 찾기", "schulte": "숫자 순서 찾기", "baduk": "바둑 묘수풀이", "fall": "떨어지는 블록"}; /* NAMES:END */
 
   // 최고기록
   document.querySelectorAll('[data-key]').forEach(function (el) {

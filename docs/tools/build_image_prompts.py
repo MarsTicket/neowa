@@ -64,6 +64,7 @@ SCENE = {
  'oddcolor': ('a grid of rounded tiles all in the same soft green except one tile in a slightly different shade, subtle glow on the odd one', '하나만 색이 다른 타일 격자'),
  'schulte': ('a 5x5 grid of tiles with scattered colorful abstract numeral shapes, a quick tap trail connecting them in sequence', '흩어진 숫자를 순서대로 찾는 격자'),
  'baduk': ('a glowing wooden go board seen from above with black and white stones, a small group of white stones encircled by a pulsing red target ring and a black stone landing to capture them', '표시된 백 돌을 잡는 바둑 수읽기'),
+ 'fall': ('a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap', '떨어지는 블록을 돌려 줄을 지우는 퍼즐'),
 }
 
 def build():

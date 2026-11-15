@@ -167,24 +167,32 @@
     draw: function (ctx) {
       var i, q, t;
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      var hot = this.p.length < 320;
       for (i = 0; i < this.p.length; i++) {
         q = this.p[i]; t = q.life / q.max;
         ctx.globalAlpha = t;
         A.draw(ctx, A.glowDot(q.c, 4), q.x, q.y, (q.r / 4) * (0.5 + t * 0.5));
+        // 막 튄 불티는 하얀 심지를 더해 더 뜨겁게 보이게 (입자가 많을 땐 생략)
+        if (hot && t > 0.6) { ctx.globalAlpha = (t - 0.6) * 2; A.draw(ctx, A.glowDot('#ffffff', 4), q.x, q.y, q.r / 8); }
       }
       for (i = 0; i < this.rings.length; i++) {
         q = this.rings[i]; t = 1 - q.life / q.max;
-        ctx.globalAlpha = (1 - t) * 0.9; ctx.strokeStyle = q.c; ctx.lineWidth = 4 * (1 - t) + 1;
-        ctx.beginPath(); ctx.arc(q.x, q.y, q.r * (0.2 + t * 0.8), 0, Math.PI * 2); ctx.stroke();
+        var rr = q.r * (0.2 + (1 - (1 - t) * (1 - t)) * 0.8); // 처음엔 빠르게, 끝에선 느리게 퍼짐
+        ctx.strokeStyle = q.c;
+        ctx.globalAlpha = (1 - t) * 0.22; ctx.lineWidth = 12 * (1 - t) + 2; ctx.beginPath(); ctx.arc(q.x, q.y, rr, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = (1 - t) * 0.85; ctx.lineWidth = 2.5 * (1 - t) + 0.8; ctx.beginPath(); ctx.arc(q.x, q.y, rr, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.restore();
       ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (i = 0; i < this.texts.length; i++) {
         q = this.texts[i]; t = q.life / q.max;
+        var age = q.max - q.life, pop = age < 0.12 ? 1.35 - age / 0.12 * 0.35 : 1; // 튀어나왔다 자리 잡는 글자
         ctx.globalAlpha = Math.min(1, t * 2.5);
-        ctx.font = '700 ' + q.z + 'px "Chakra Petch", system-ui, sans-serif';
-        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.strokeText(q.s, q.x, q.y);
-        ctx.fillStyle = q.c; ctx.fillText(q.s, q.x, q.y);
+        ctx.save(); ctx.translate(q.x, q.y); if (pop !== 1) ctx.scale(pop, pop);
+        ctx.font = '700 ' + q.z + 'px "Chakra Petch", system-ui, sans-serif'; ctx.lineJoin = 'round';
+        ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.strokeText(q.s, 0, 1);
+        ctx.fillStyle = q.c; ctx.fillText(q.s, 0, 0);
+        ctx.restore();
       }
       ctx.restore();
     },

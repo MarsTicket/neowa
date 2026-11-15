@@ -159,7 +159,7 @@ def build(gid):
   {pad or '<div></div>'}
 </div>
 
-<script src="../assets/arcade/arcade.js?v=4"></script>
+<script src="../assets/arcade/arcade.js?v=5"></script>
 <script>
 {code}
 </script>

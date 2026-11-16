@@ -49,6 +49,9 @@ def build(gid):
     if cfg.get('diff'):
         btns = ''.join(f'<button type="button" data-diff="{i}">{e(d)}</button>' for i, d in enumerate(cfg['diff']))
         diff = f'<div class="ov-diff" data-nostart role="group" aria-label="난이도">{btns}</div>'
+    if cfg.get('modes'):  # 한 화면 2인 모드: [혼자 버튼 글자, 둘이서 버튼 글자]
+        mb = ''.join(f'<button type="button" data-mode="{i}">{e(d)}</button>' for i, d in enumerate(cfg['modes']))
+        diff = f'<div class="ov-diff ov-mode" data-nostart role="group" aria-label="플레이 모드">{mb}</div>\n        ' + diff
     pad = ''
     if cfg.get('pad'):
         pad = open(os.path.join(GDIR, '_pad.html'), encoding='utf-8').read()
@@ -69,7 +72,7 @@ def build(gid):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="../assets/arcade/arcade.css?v=4">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=5">
 <style>:root{{--accent:{cfg['accent']};--accent-ink:{cfg['ink']};--ar:{cfg['rgb']}}}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>

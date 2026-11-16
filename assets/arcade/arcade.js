@@ -98,6 +98,27 @@
   A.lerp = function (a, b, t) { return a + (b - a) * t; };
   A.pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
 
+  /* ---------- 한 화면 2인 모드 ----------
+     시작 화면의 [data-mode] 버튼(0=혼자, 1=둘이서)을 연결합니다. 둘이서면 body에 'duo' 클래스.
+     labels: { solo: [hA, hB, hC 이름], duo: [...] } → 점수판 이름표를 모드에 맞게 바꿈
+     반환값: 지금 둘이서 모드인지 알려 주는 함수 */
+  A.duo = function (id, labels, onChange) {
+    var key = 'neowa_' + id + '_mode', on = A.get(key, '0') === '1', btns = document.querySelectorAll('[data-mode]');
+    function paint() {
+      for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('on', (btns[i].getAttribute('data-mode') === '1') === on);
+      document.body.classList.toggle('duo', on);
+      if (labels) ['hA', 'hB', 'hC'].forEach(function (hid, k) {
+        var v = document.getElementById(hid), lb = v && v.parentNode.querySelector('.h-lb'), txt = (on ? labels.duo : labels.solo)[k];
+        if (lb && txt != null) lb.textContent = txt;
+      });
+    }
+    for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', function (e) {
+      e.stopPropagation(); on = this.getAttribute('data-mode') === '1'; A.set(key, on ? '1' : '0'); A.sfx('click'); paint(); if (onChange) onChange(on);
+    });
+    paint();
+    return function () { return on; };
+  };
+
   /* ---------- 스프라이트 캐시: 빛 번짐(shadowBlur)은 한 번만 그려 둡니다 ---------- */
   var sprites = {};
   A.sprite = function (key, w, h, draw) {
@@ -340,7 +361,7 @@
       body.classList.toggle('won', !!opts.win);
       setState('over');
       S.overAt = performance.now();
-      var isNew = score > S.best && score > 0;
+      var isNew = !opts.noRecord && score > S.best && score > 0; // 2인 대결 등은 기록에 남기지 않음
       if (isNew) { S.best = score; A.set(S.bestKey, score); }
       paintBest();
       var el = document.getElementById('ovScore');
@@ -357,14 +378,16 @@
         });
       }
       A.sfx(isNew ? 'record' : 'over');
+      el.classList.toggle('txt', !!opts.title);
       var t0 = performance.now(), dur = Math.min(1200, 300 + score / 20);
-      (function count() {
+      if (opts.title) el.textContent = opts.title; // 점수 대신 '흑 승리!' 같은 결과 글자
+      else (function count() {
         var k = Math.min(1, (performance.now() - t0) / dur);
         el.textContent = A.fmt(score * (1 - Math.pow(1 - k, 3)));
         if (k < 1) requestAnimationFrame(count);
       })();
       if (window.gtag) try { gtag('event', 'game_over', { game_name: cfg.id, score: score }); } catch (e) {}
-      if (A.Rank) A.Rank.onOver(cfg.id, score);
+      if (A.Rank && !opts.noRecord) A.Rank.onOver(cfg.id, score);
       if (!body.classList.contains('touch')) setTimeout(function () { var b = document.querySelector('#ovOver .btn-p'); if (b) b.focus({ preventScroll: true }); }, 400);
     };
 

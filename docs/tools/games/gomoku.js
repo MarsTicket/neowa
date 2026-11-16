@@ -6,6 +6,8 @@
   // 화면 배치: 세로 화면은 540x960 안에 판·차례·무르기 버튼, 가로 화면은 720x720 정사각형 판만 (버튼은 오른쪽 패널)
   function geo(sh) { land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
     if (land) { CS = W / (N + 1); GX = GY = CS; BP = CS * 0.62; } else { CS = 38; GX = (W - 12 * 38) / 2; GY = 230; BP = 28; } }
+  // 둘이서 모드: 흑·백을 두 사람이 번갈아 둠. tally = [흑 승, 백 승] (이 페이지에 있는 동안 누적)
+  var duo = A.duo('gomoku', { solo: ['SCORE', 'WIN', 'MOVE'], duo: ['흑 : 백', '판', 'MOVE'] }, function () { if (S) hud(); }), tally = [0, 0];
   var bd, turn, moves, hist, wins, score, undo, endT, winLine, thinking, cur = { x: 6, y: 6 }, kbd = false, lastMv = null;
   function reset() { wins = 0; score = 0; newGame(); fx.clear(); hud(); }
   function newGame() { bd = []; for (var i = 0; i < N * N; i++) bd.push(0); turn = 1; moves = 0; hist = []; undo = 3; endT = 0; winLine = null; thinking = 0; lastMv = null; }
@@ -38,15 +40,22 @@
   function put(x, y, p) {
     bd[y * N + x] = p; moves++; hist.push([x, y]); lastMv = [x, y]; A.sfx('tick', p === 1 ? 1.3 : 0.9);
     var w = five(x, y, p);
-    if (w) { winLine = w; endT = 1.6; if (p === 1) { A.sfx('level'); w.forEach(function (q) { fx.burst(GX + q[0] * CS, GY + q[1] * CS, '#ffd166', 10, 200, 0.5, 3); }); } else { A.sfx('hurt'); fx.flashIt('#ff2244', 0.3); } hud(); return; }
+    if (w) { winLine = w; endT = 1.6; if (p === 1 || duo()) { A.sfx('level'); w.forEach(function (q) { fx.burst(GX + q[0] * CS, GY + q[1] * CS, '#ffd166', 10, 200, 0.5, 3); }); } else { A.sfx('hurt'); fx.flashIt('#ff2244', 0.3); } hud(); return; }
     if (moves >= N * N) { endT = 1.2; winLine = []; hud(); return; }
-    turn = p === 1 ? 2 : 1; if (turn === 2) thinking = 0.35; hud();
+    turn = p === 1 ? 2 : 1; if (turn === 2 && !duo()) thinking = 0.35; hud();
   }
-  function human(x, y) { if (S.state !== 'playing' || turn !== 1 || endT > 0 || thinking > 0 || at(x, y) !== 0) return; put(x, y, 1); }
-  function doUndo() { if (S.state !== 'playing' || undo <= 0 || turn !== 1 || hist.length < 2 || endT > 0) { A.sfx('wall'); return; } for (var k = 0; k < 2; k++) { var m = hist.pop(); bd[m[1] * N + m[0]] = 0; moves--; } undo--; score = Math.max(0, score - 30); lastMv = hist[hist.length - 1] || null; A.sfx('click'); hud(); }
+  function human(x, y) { if (S.state !== 'playing' || (turn !== 1 && !duo()) || endT > 0 || thinking > 0 || at(x, y) !== 0) return; put(x, y, duo() ? turn : 1); }
+  function doUndo() {
+    if (duo()) { // 둘이서: 마지막 한 수만 되돌리고 그 사람 차례로
+      if (S.state !== 'playing' || !hist.length || endT > 0) { A.sfx('wall'); return; }
+      var u = hist.pop(); turn = bd[u[1] * N + u[0]]; bd[u[1] * N + u[0]] = 0; moves--; lastMv = hist[hist.length - 1] || null; A.sfx('click'); hud(); return;
+    }
+    if (S.state !== 'playing' || undo <= 0 || turn !== 1 || hist.length < 2 || endT > 0) { A.sfx('wall'); return; } for (var k = 0; k < 2; k++) { var m = hist.pop(); bd[m[1] * N + m[0]] = 0; moves--; } undo--; score = Math.max(0, score - 30); lastMv = hist[hist.length - 1] || null; A.sfx('click'); hud(); }
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) {
+      if (duo()) { var wp = winLine && winLine.length ? bd[winLine[0][1] * N + winLine[0][0]] : 0; if (wp) tally[wp - 1]++; hud();
+        S.gameOver(0, [['흑 승', String(tally[0])], ['백 승', String(tally[1])], ['수', String(moves)]], { title: wp ? (wp === 1 ? '흑' : '백') + ' 승리!' : '무승부', kick: '2인 대결', win: true, noRecord: true }); return; }
       var meWon = winLine && winLine.length && bd[winLine[0][1] * N + winLine[0][0]] === 1;
       if (meWon) { wins++; var pts = Math.max(100, (200 - moves) * 3) * (diff + 1); score += pts; S.banner(wins + '승!', '+' + pts); newGame(); hud(); }
       else if (winLine && !winLine.length) { score += 50; newGame(); hud(); }
@@ -72,19 +81,21 @@
     if (winLine && winLine.length) { c.save(); c.strokeStyle = '#ffd166'; c.lineWidth = 6; c.shadowColor = '#ffd166'; c.shadowBlur = 16; var sorted = winLine.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }); c.beginPath(); c.moveTo(GX + sorted[0][0] * CS, GY + sorted[0][1] * CS); c.lineTo(GX + sorted[sorted.length - 1][0] * CS, GY + sorted[sorted.length - 1][1] * CS); c.stroke(); c.restore(); }
     if (kbd && S.state === 'playing') { c.strokeStyle = '#5ee7ff'; c.lineWidth = 3; c.strokeRect(GX + cur.x * CS - CS / 2 + 2, GY + cur.y * CS - CS / 2 + 2, CS - 4, CS - 4); }
     if (!land) { c.fillStyle = '#ffd166'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(S.state === 'playing' ? (turn === 1 ? '나(흑) 차례' : '컴퓨터(백) 생각 중…') : '', W / 2, GY - 70);
-    var by = GY + 12 * CS + 60; c.fillStyle = undo > 0 ? 'rgba(255,209,102,.15)' : 'rgba(255,255,255,.04)'; A.rr(c, W / 2 - 90, by, 180, 54, 14); c.fill(); c.fillStyle = undo > 0 ? '#ffd166' : 'rgba(255,255,255,.3)'; c.font = '700 17px "Pretendard Variable",system-ui'; c.fillText('무르기 ' + (undo == null ? 3 : undo), W / 2, by + 28); }
+    c.fillText(S.state === 'playing' ? (duo() ? (turn === 1 ? '흑 차례' : '백 차례') : turn === 1 ? '나(흑) 차례' : '컴퓨터(백) 생각 중…') : '', W / 2, GY - 70);
+    var by = GY + 12 * CS + 60; c.fillStyle = undo > 0 || duo() ? 'rgba(255,209,102,.15)' : 'rgba(255,255,255,.04)'; A.rr(c, W / 2 - 90, by, 180, 54, 14); c.fill(); c.fillStyle = undo > 0 || duo() ? '#ffd166' : 'rgba(255,255,255,.3)'; c.font = '700 17px "Pretendard Variable",system-ui'; c.fillText(duo() ? '한 수 무르기' : '무르기 ' + (undo == null ? 3 : undo), W / 2, by + 28); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() {
     document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wins; document.getElementById('hC').textContent = moves; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff];
+    if (duo()) { document.getElementById('hA').textContent = tally[0] + ' : ' + tally[1]; document.getElementById('hB').textContent = tally[0] + tally[1] + 1; document.getElementById('hMult').textContent = '2인'; }
     if (!pEl.turn) return;
-    var me = turn === 1, play = S && S.state === 'playing';
+    var me = turn === 1, play = S && S.state === 'playing', two = duo();
     pEl.stone.className = 'gp-stone' + (me ? '' : ' w');
-    pEl.turn.textContent = !play ? '나는 흑, 먼저 둡니다' : endT > 0 ? '판이 끝났어요' : me ? '내 차례 (흑)' : '컴퓨터 차례 (백)';
-    pEl.sub.textContent = !play ? '시작하기를 누르세요' : endT > 0 ? '잠시 후 다음 판' : me ? '빈 자리를 눌러 돌을 놓으세요' : '생각하는 중…';
-    pEl.score.textContent = A.fmt(score || 0); pEl.win.textContent = wins || 0; pEl.move.textContent = moves || 0; pEl.undo.textContent = undo == null ? 3 : undo;
-    pEl.undoBtn.disabled = !play || !(undo > 0) || turn !== 1 || hist.length < 2 || endT > 0;
+    pEl.turn.textContent = !play ? (two ? '둘이서: 흑이 먼저' : '나는 흑, 먼저 둡니다') : endT > 0 ? '판이 끝났어요' : two ? (me ? '흑 차례' : '백 차례') : me ? '내 차례 (흑)' : '컴퓨터 차례 (백)';
+    pEl.sub.textContent = !play ? '시작하기를 누르세요' : endT > 0 ? '잠시 후 결과' : me || two ? '빈 자리를 눌러 돌을 놓으세요' : '생각하는 중…';
+    pEl.score.textContent = two ? tally[0] + ' : ' + tally[1] : A.fmt(score || 0); pEl.win.textContent = two ? tally[0] + tally[1] + 1 : wins || 0;
+    pEl.scoreL.textContent = two ? '흑 : 백 승' : 'SCORE'; pEl.winL.textContent = two ? '판' : '연승'; pEl.move.textContent = moves || 0; pEl.undo.textContent = two ? '∞' : undo == null ? 3 : undo;
+    pEl.undoBtn.disabled = two ? !play || !hist.length || endT > 0 : !play || !(undo > 0) || turn !== 1 || hist.length < 2 || endT > 0;
   }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), by = GY + 12 * CS + 60;
@@ -102,9 +113,9 @@
   // 가로 화면 오른쪽 패널: 차례·점수·큰 무르기 버튼 (점수판이 패널에 있으니 게임판 위 점수판은 가로에서 숨김)
   document.querySelector('.g-hud').setAttribute('data-land-hide', '');
   S.panelSlot.innerHTML = '<div class="g-card gp-turn"><i class="gp-stone" id="pkStone"></i><div><b id="pkTurn"></b><span id="pkSub"></span></div></div>' +
-    '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>연승</span><b id="pkWin">0</b></div><div><span>수</span><b id="pkMove">0</b></div></div>' +
+    '<div class="g-card gp-stats"><div><span id="pkScoreL">SCORE</span><b id="pkScore">0</b></div><div><span id="pkWinL">연승</span><b id="pkWin">0</b></div><div><span>수</span><b id="pkMove">0</b></div></div>' +
     '<button class="gp-btn main" id="pkUndo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>한 수 무르기 <span class="cnt" id="pkUndoN">3</span></button>';
-  pEl = { stone: document.getElementById('pkStone'), turn: document.getElementById('pkTurn'), sub: document.getElementById('pkSub'), score: document.getElementById('pkScore'), win: document.getElementById('pkWin'), move: document.getElementById('pkMove'), undo: document.getElementById('pkUndoN'), undoBtn: document.getElementById('pkUndo') };
+  pEl = { stone: document.getElementById('pkStone'), turn: document.getElementById('pkTurn'), sub: document.getElementById('pkSub'), score: document.getElementById('pkScore'), win: document.getElementById('pkWin'), move: document.getElementById('pkMove'), undo: document.getElementById('pkUndoN'), undoBtn: document.getElementById('pkUndo'), scoreL: document.getElementById('pkScoreL'), winL: document.getElementById('pkWinL') };
   pEl.undoBtn.addEventListener('click', doUndo);
   // 시작·종료·일시정지 때 패널 글자도 바뀌도록
   new MutationObserver(function () { if (bd) hud(); }).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });

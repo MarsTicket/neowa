@@ -2,6 +2,8 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
+  // 둘이서 모드: 파랑(P1)·빨강(P2)이 번갈아 선을 그음. tally = [P1 승, P2 승]
+  var duo = A.duo('dots', { solo: ['SCORE', 'ME : CPU', 'WIN'], duo: ['P1 : P2 승', '상자', '판'] }, function () { if (S) hud(); }), tally = [0, 0];
   var diff = +A.get('neowa_dots_diff', '1') || 0, B, SP, GX, GY, hL, vL, owner, turn, me, cpu, wins, score, thinking, endT, cur = 0, kbd = false, lastLine = null;
   function setup() {
     B = [4, 5, 6][diff]; SP = Math.floor(440 / B); GX = (W - B * SP) / 2; GY = 200 + (560 - B * SP) / 2;
@@ -22,7 +24,7 @@
     A.sfx(closed ? 'coin' : 'tick', who === 1 ? 1.2 : 0.9);
     if (!allLines().length) { endT = 1.2; return; }
     if (!closed) turn = who === 1 ? 2 : 1;
-    if (turn === 2) thinking = 0.45;
+    if (turn === 2 && !duo()) thinking = 0.45;
     hud();
   }
   function simCount(l) { var c = 0; boxesOf(l).forEach(function (b) { var s = sides(b[0], b[1], hL, vL); if (s === 3) c++; }); return c; }
@@ -49,10 +51,12 @@
     for (i = 0; i < vL.length; i++) { var yy = Math.floor(i / (B + 1)), xx = i % (B + 1), cx2 = GX + xx * SP, cy2 = GY + (yy + 0.5) * SP, d2 = Math.hypot(p.x - cx2, (p.y - cy2) * 0.6); if (Math.abs(p.y - cy2) < SP / 2 && d2 < bd) { bd = d2; best = { t: 'v', i: i }; } }
     return best;
   }
-  function humanPlace(l) { if (!l || turn !== 1 || thinking > 0 || endT > 0 || S.state !== 'playing') return; if ((l.t === 'h' ? hL : vL)[l.i]) { A.sfx('wall'); return; } place(l, 1); }
+  function humanPlace(l) { if (!l || (turn !== 1 && !duo()) || thinking > 0 || endT > 0 || S.state !== 'playing') return; if ((l.t === 'h' ? hL : vL)[l.i]) { A.sfx('wall'); return; } place(l, duo() ? turn : 1); }
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) {
+      if (duo()) { var wp = me > cpu ? 1 : cpu > me ? 2 : 0; if (wp) tally[wp - 1]++; A.sfx('level'); hud();
+        S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['상자', me + ' : ' + cpu]], { title: wp ? 'P' + wp + ' 승리!' : '무승부', kick: '2인 대결', win: true, noRecord: true }); return; }
       if (me > cpu) { wins++; var pts = (me - cpu) * 20 * (diff + 1) + 100 * (diff + 1); score += pts; S.banner('승리 ' + me + ':' + cpu, '+' + pts); A.sfx('level'); setup(); hud(); }
       else if (me === cpu) { score += 50; S.banner('무승부', '+50'); setup(); hud(); }
       else S.gameOver(score, [['이긴 판', String(wins)], ['마지막', me + ' : ' + cpu]]);
@@ -64,21 +68,22 @@
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#040a14'; c.fillRect(-10, -10, W + 20, H + 20);
     if (!hL) setup();
-    for (var i = 0; i < owner.length; i++) if (owner[i]) { var x = i % B, y = Math.floor(i / B); c.fillStyle = owner[i] === 1 ? 'rgba(94,231,255,.25)' : 'rgba(255,77,109,.25)'; c.fillRect(GX + x * SP + 4, GY + y * SP + 4, SP - 8, SP - 8); c.fillStyle = owner[i] === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 ' + Math.round(SP * 0.35) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(owner[i] === 1 ? '나' : 'CPU', GX + (x + 0.5) * SP, GY + (y + 0.5) * SP); }
+    for (var i = 0; i < owner.length; i++) if (owner[i]) { var x = i % B, y = Math.floor(i / B); c.fillStyle = owner[i] === 1 ? 'rgba(94,231,255,.25)' : 'rgba(255,77,109,.25)'; c.fillRect(GX + x * SP + 4, GY + y * SP + 4, SP - 8, SP - 8); c.fillStyle = owner[i] === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 ' + Math.round(SP * 0.35) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(duo() ? (owner[i] === 1 ? 'P1' : 'P2') : owner[i] === 1 ? '나' : 'CPU', GX + (x + 0.5) * SP, GY + (y + 0.5) * SP); }
     c.lineCap = 'round';
     function line(x1, y1, x2, y2, v, isLast) { c.strokeStyle = v === 1 ? '#5ee7ff' : v === 2 ? '#ff4d6d' : 'rgba(255,255,255,.08)'; c.lineWidth = v ? 7 : 4; if (isLast) { c.save(); c.shadowColor = '#fff'; c.shadowBlur = 14; } c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); if (isLast) c.restore(); }
     for (i = 0; i < hL.length; i++) { var hy = Math.floor(i / B), hx = i % B; line(GX + hx * SP + 8, GY + hy * SP, GX + (hx + 1) * SP - 8, GY + hy * SP, hL[i], lastLine && lastLine.t === 'h' && lastLine.i === i); }
     for (i = 0; i < vL.length; i++) { var vy = Math.floor(i / (B + 1)), vx = i % (B + 1); line(GX + vx * SP, GY + vy * SP + 8, GX + vx * SP, GY + (vy + 1) * SP - 8, vL[i], lastLine && lastLine.t === 'v' && lastLine.i === i); }
     c.fillStyle = '#fff'; for (var yy = 0; yy <= B; yy++) for (var xx = 0; xx <= B; xx++) { c.beginPath(); c.arc(GX + xx * SP, GY + yy * SP, 6, 0, 7); c.fill(); }
     if (kbd && S.state === 'playing') { var L = allLines()[cur % Math.max(1, allLines().length)]; if (L) { c.save(); c.globalAlpha = 0.5 + Math.sin(t * 8) * 0.3; if (L.t === 'h') line(GX + (L.i % B) * SP + 8, GY + Math.floor(L.i / B) * SP, GX + (L.i % B + 1) * SP - 8, GY + Math.floor(L.i / B) * SP, 1); else line(GX + (L.i % (B + 1)) * SP, GY + Math.floor(L.i / (B + 1)) * SP + 8, GX + (L.i % (B + 1)) * SP, GY + (Math.floor(L.i / (B + 1)) + 1) * SP - 8, 1); c.restore(); } }
-    c.fillStyle = turn === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(S.state === 'playing' ? (turn === 1 ? '내 차례' : '컴퓨터 생각 중…') : '', W / 2, GY - 40);
+    c.fillStyle = turn === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(S.state === 'playing' ? (duo() ? (turn === 1 ? 'P1 (파랑) 차례' : 'P2 (빨강) 차례') : turn === 1 ? '내 차례' : '컴퓨터 생각 중…') : '', W / 2, GY - 40);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = me + ' : ' + cpu; document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff]; }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = me + ' : ' + cpu; document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff];
+    if (duo()) { document.getElementById('hA').textContent = tally[0] + ' : ' + tally[1]; document.getElementById('hC').textContent = tally[0] + tally[1] + 1; document.getElementById('hMult').textContent = '2인'; } }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; humanPlace(lineAt(S.toLocal(e))); });
   var dbtns = document.querySelectorAll('[data-diff]');
   function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_dots_diff', diff); A.sfx('click'); pd(); hL = null; }); }); pd();
-  var S = new A.Shell({ id: 'dots', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = null; S = new A.Shell({ id: 'dots', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { kbd = true; var k = e.key, n = allLines().length; if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'd' || k === 's') cur = (cur + 1) % n; if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'a' || k === 'w') cur = (cur - 1 + n) % n; if ((k === ' ' || k === 'Enter') && !e.repeat) humanPlace(allLines()[cur % n]); } });
 })();

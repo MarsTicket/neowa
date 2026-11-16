@@ -2,10 +2,12 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 90, BOT = 930, GW = 180, MR = 38, PR = 24;
   var fx = new A.FX();
+  // 둘이서 모드: 아래 파랑 = P1, 위 빨강 = P2 (화면 절반씩 손가락으로, 키보드는 P1 방향키 / P2 WASD)
+  var duo = A.duo('hockey', { solo: ['SCORE', 'ME : CPU', 'ROUND'], duo: ['P1 : P2 승', 'P1 : P2', '판'] }, function () { if (S) hud(); }), tally = [0, 0], duoWin = 0, tTop = null;
   var me, cpu, puck, sMe, sCpu, round, score, pauseT, dyingT, target = null, keys = {}, lvl, stuckT = 0;
   function resetPuck(toMe) { puck = { x: W / 2, y: (TOP + BOT) / 2 + (toMe ? 120 : -120), vx: 0, vy: 0 }; pauseT = 0.8; stuckT = 0; }
   function newRound() { me = { x: W / 2, y: BOT - 120, vx: 0, vy: 0 }; cpu = { x: W / 2, y: TOP + 120, vx: 0, vy: 0 }; sMe = 0; sCpu = 0; lvl = Math.min(1, (round - 1) / 6); resetPuck(true); }
-  function reset() { round = 1; score = 0; dyingT = 0; target = null; keys = {}; newRound(); fx.clear(); hud(); }
+  function reset() { round = 1; score = 0; dyingT = 0; target = null; tTop = null; duoWin = 0; keys = {}; newRound(); fx.clear(); if (duo()) S.banner('P1 vs P2', '먼저 7점'); hud(); }
   function collide(m, pr) {
     var dx = puck.x - m.x, dy = puck.y - m.y, d = Math.hypot(dx, dy);
     if (d < MR + PR && d > 0) {
@@ -34,6 +36,12 @@
     m.x = puck.x - dx / d * (MR + PR); m.y = puck.y - dy / d * (MR + PR);
   }
   function goal(mine) {
+    if (duo()) { // 둘이서: mine = P1(아래)이 넣은 골
+      var col = mine ? '#5ee7ff' : '#ff4d6d'; if (mine) sMe++; else sCpu++;
+      fx.text(W / 2, mine ? TOP + 80 : BOT - 80, (mine ? 'P1' : 'P2') + ' GOAL!', col, 32); fx.burst(W / 2, mine ? TOP : BOT, col, 40, 400, 0.8, 4); A.sfx('gold'); fx.shake(5, 0.2); A.vibrate(80);
+      if (sMe >= 7 || sCpu >= 7) { duoWin = sMe >= 7 ? 1 : 2; tally[duoWin - 1]++; dyingT = 1.2; A.sfx('level'); } else resetPuck(!mine);
+      hud(); return;
+    }
     if (mine) { sMe++; score += 100 * round; fx.text(W / 2, TOP + 80, 'GOAL!', '#5ee7ff', 34); A.sfx('gold'); fx.burst(W / 2, TOP, '#5ee7ff', 40, 400, 0.8, 4); }
     else { sCpu++; fx.text(W / 2, BOT - 80, '실점', '#ff4d6d', 30); A.sfx('hurt'); fx.shake(8, 0.3); A.vibrate(120); }
     if (sMe >= 7) { score += 500 * round; round++; S.banner('ROUND ' + round, '더 강한 상대'); A.sfx('level'); newRound(); }
@@ -49,18 +57,24 @@
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['라운드', String(round)], ['마지막 점수', sMe + ' : ' + sCpu]]); return; }
-    var mid = (TOP + BOT) / 2;
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0 && duo()) S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['점수', sMe + ' : ' + sCpu]], { title: 'P' + duoWin + ' 승리!', kick: '2인 대결', win: true, noRecord: true }); else if (dyingT <= 0) S.gameOver(score, [['라운드', String(round)], ['마지막 점수', sMe + ' : ' + sCpu]]); return; }
+    var mid = (TOP + BOT) / 2, two = duo();
     // 내 말렛
     var tx = target ? target.x : me.x, ty = target ? target.y : me.y;
-    var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
+    var kx = (keys.ArrowRight || (!two && keys.d) ? 1 : 0) - (keys.ArrowLeft || (!two && keys.a) ? 1 : 0), ky = (keys.ArrowDown || (!two && keys.s) ? 1 : 0) - (keys.ArrowUp || (!two && keys.w) ? 1 : 0);
     if (kx || ky) { tx = me.x + kx * 60; ty = me.y + ky * 60; }
     moveMallet(me, tx, ty, 2600, dt, mid + MR, BOT - MR);
     // 컴퓨터: 퍽이 자기 진영이면 공격, 아니면 골문 앞 수비
+    if (two) { // P2 말렛: 위쪽 손가락 또는 WASD
+      var tx2 = tTop ? tTop.x : cpu.x, ty2 = tTop ? tTop.y : cpu.y, kx2 = (keys.d ? 1 : 0) - (keys.a ? 1 : 0), ky2 = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
+      if (kx2 || ky2) { tx2 = cpu.x + kx2 * 60; ty2 = cpu.y + ky2 * 60; }
+      moveMallet(cpu, tx2, ty2, 2600, dt, TOP + MR, mid - MR);
+    } else {
     var cspd = 520 + lvl * 700, cx, cy;
     if (puck.y < mid + 40) { cx = puck.x + (puck.x - W / 2) * 0.1; cy = puck.y - 30; if (puck.y < cpu.y) { cy = TOP + MR; cx = puck.x + (puck.x < W / 2 ? 1 : -1) * (MR + PR + 12); } }
     else { cx = W / 2 + (puck.x - W / 2) * (0.35 + lvl * 0.3); cy = TOP + 110; }
     moveMallet(cpu, cx + Math.sin(S.time * 3) * (1 - lvl) * 20, cy, cspd, dt, TOP + MR, mid - MR);
+    }
     if (pauseT > 0) { pauseT -= dt; hud(); return; }
     // 퍽
     var steps = 3;
@@ -94,18 +108,27 @@
     var mid = (TOP + BOT) / 2; c.strokeStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.moveTo(6, mid); c.lineTo(W - 6, mid); c.stroke(); c.beginPath(); c.arc(W / 2, mid, 70, 0, 7); c.stroke();
     c.fillStyle = '#ff4d6d'; c.fillRect(W / 2 - GW / 2, TOP - 8, GW, 6); c.fillStyle = '#5ee7ff'; c.fillRect(W / 2 - GW / 2, BOT + 2, GW, 6);
     c.font = '700 120px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = 'rgba(255,255,255,.05)';
-    c.fillText(String(sCpu || 0), W / 2, mid - 160); c.fillText(String(sMe || 0), W / 2, mid + 160);
+    if (duo()) { // 위쪽 사람이 읽기 좋게 P2 점수는 거꾸로
+      c.save(); c.translate(W / 2, mid - 160); c.rotate(Math.PI); c.fillText(String(sCpu || 0), 0, 0); c.restore(); c.fillText(String(sMe || 0), W / 2, mid + 160);
+      c.font = '700 18px "Chakra Petch",system-ui'; c.fillStyle = 'rgba(255,77,109,.7)'; c.save(); c.translate(W / 2, TOP + 34); c.rotate(Math.PI); c.fillText('P2', 0, 0); c.restore();
+      c.fillStyle = 'rgba(94,231,255,.7)'; c.fillText('P1', W / 2, BOT - 34);
+    } else { c.fillText(String(sCpu || 0), W / 2, mid - 160); c.fillText(String(sMe || 0), W / 2, mid + 160); }
     function mallet(m, col) { c.save(); c.shadowColor = col; c.shadowBlur = 20; c.fillStyle = col; c.beginPath(); c.arc(m.x, m.y, MR, 0, 7); c.fill(); c.shadowBlur = 0; c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(m.x, m.y, MR * 0.55, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.arc(m.x, m.y, MR * 0.3, 0, 7); c.fill(); c.restore(); }
     mallet(cpu || { x: W / 2, y: TOP + 120 }, '#ff4d6d'); mallet(me || { x: W / 2, y: BOT - 120 }, '#5ee7ff');
     var pk = puck || { x: W / 2 + Math.sin(t) * 80, y: mid };
     c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; c.fillStyle = '#f4f5fb'; c.beginPath(); c.arc(pk.x, pk.y, PR, 0, 7); c.fill(); c.restore();
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = sMe + ' : ' + sCpu; document.getElementById('hC').textContent = round; }
+  function hud() { var two = duo(); document.getElementById('hA').textContent = two ? tally[0] + ' : ' + tally[1] : A.fmt(score); document.getElementById('hB').textContent = (sMe || 0) + ' : ' + (sCpu || 0); document.getElementById('hC').textContent = two ? tally[0] + tally[1] + 1 : round; }
   var stage = document.getElementById('stage');
-  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; target = S.toLocal(e); target.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
-  stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing') return; if (e.pointerType === 'mouse' || (target && target.id === e.pointerId)) { var p = S.toLocal(e); target = { x: p.x, y: p.y - (e.pointerType === 'mouse' ? 0 : 50), id: e.pointerId }; } });
-  stage.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') target = null; });
-  var S = new A.Shell({ id: 'hockey', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
-    keydown: function (e) { target = null; keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+  // 손가락마다 따로 추적: 둘이서면 화면 위 절반을 누른 손가락은 P2(위), 아래 절반은 P1(아래). 마우스는 P1
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), t = { x: p.x, y: p.y, id: e.pointerId };
+    if (duo() && e.pointerType !== 'mouse' && p.y < (TOP + BOT) / 2) tTop = t; else target = t; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), touch = e.pointerType !== 'mouse';
+    if (tTop && tTop.id === e.pointerId) tTop = { x: p.x, y: p.y + 50, id: e.pointerId }; // 위쪽 사람은 손가락 아래(화면 방향)로 말렛이 보이게
+    else if (!touch || (target && target.id === e.pointerId)) target = { x: p.x, y: p.y - (touch ? 50 : 0), id: e.pointerId }; });
+  function lift(e) { if (tTop && tTop.id === e.pointerId) tTop = null; if (e.pointerType !== 'mouse' && target && target.id === e.pointerId) target = null; }
+  stage.addEventListener('pointerup', lift); stage.addEventListener('pointercancel', lift);
+  var S = null; S = new A.Shell({ id: 'hockey', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { var k1 = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (!duo() || k1.indexOf('Arrow') === 0) target = null; else if ('wasd'.indexOf(k1) >= 0) tTop = null; keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
 })();

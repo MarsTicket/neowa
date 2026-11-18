@@ -18,7 +18,7 @@
   A.isMuted = function () { return muted; };
   A.setMuted = function (m) { muted = !!m; A.set('neowa_mute', muted ? '1' : '0'); document.body.classList.toggle('muted', muted); };
   A.unlockAudio = function () {};
-  A.vibrate = function (p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
+  A.vibrate = function (p) { try { if (navigator.vibrate && A.get('neowa_haptic', '1') === '1') navigator.vibrate(p); } catch (e) {} };
 
   /* ---------- 수학 ---------- */
   A.rand = function (a, b) { return a + Math.random() * (b - a); };

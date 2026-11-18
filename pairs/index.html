@@ -43,9 +43,9 @@
       </div>
       <div class="g-card"><h3>RULES</h3>
         <div class="g-keys">
-          <div>선은 두 번까지 꺾임</div>
-          <div>판 바깥 테두리로도 이을 수 있음</div>
-          <div>막히면 자동 셔플</div>
+          <div>선은 두 번까지 꺾임 (판 바깥으로도)</div>
+          <div>3초 안에 연달아 지우면 콤보</div>
+          <div>막히면 자동 셔플, 힌트는 -5초</div>
         </div>
       </div>
     </aside>
@@ -118,7 +118,7 @@
   var SYM = ['★', '♥', '♦', '♣', '♠', '●', '▲', '■', '☀', '☾', '✿', '♪', '✚', '⚡', '☂', '✈'];
   var COL = ['#ffd166', '#ff4d6d', '#5ee7ff', '#7dff9b', '#b48cff', '#ff7a45', '#ff9ecf', '#c3ff5e', '#ffe066', '#9be7ff', '#ff5ec4', '#4dffd2', '#ffb547', '#7aa2ff', '#5effc8', '#ff9e4d'];
   var fx = new A.FX();
-  var COLS, ROWS, GX, GY, b, sel, time, score, stage, path, pathT, combo, dyingT, cur = { x: 0, y: 0 }, kbd = false, hintPair = null;
+  var COLS, ROWS, GX, GY, b, sel, time, score, stage, path, pathT, combo, dyingT, cur = { x: 0, y: 0 }, kbd = false, hintPair = null, comboT = 0;
   // 판: (COLS+2)×(ROWS+2), 바깥 테두리는 항상 빈칸 (선이 판 밖으로 돌아 나갈 수 있게)
   function idx(x, y) { return y * (COLS + 2) + x; }
   function setup() {
@@ -131,7 +131,7 @@
     b = []; for (i = 0; i < (COLS + 2) * (ROWS + 2); i++) b.push(-1);
     var n = 0; for (var y = 1; y <= ROWS; y++) for (var x = 1; x <= COLS; x++) b[idx(x, y)] = list[n++];
     if (!findPair()) setup();
-    sel = null; path = null; hintPair = null;
+    sel = null; path = null; hintPair = null; cur.x = Math.min(cur.x, COLS - 1); cur.y = Math.min(cur.y, ROWS - 1);
   }
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = A.irand(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } }
   // 최소 꺾임 수 BFS로 두 칸 사이 경로 찾기 (2번 이하로 꺾임)
@@ -154,8 +154,8 @@
     for (var i = 0; i < tiles.length; i++) for (var j = i + 1; j < tiles.length; j++) if (b[tiles[i]] === b[tiles[j]] && connect(tiles[i], tiles[j])) return [tiles[i], tiles[j]];
     return null;
   }
-  function reshuffle() { var vals = [], pos = []; b.forEach(function (v, i) { if (v >= 0) { vals.push(v); pos.push(i); } }); for (var t = 0; t < 20; t++) { shuffle(vals); pos.forEach(function (p, k) { b[p] = vals[k]; }); if (findPair()) break; } fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); A.sfx('turn'); }
-  function reset() { stage = 1; time = 120; score = 0; combo = 0; dyingT = 0; setup(); fx.clear(); hud(); }
+  function reshuffle() { var vals = [], pos = []; b.forEach(function (v, i) { if (v >= 0) { vals.push(v); pos.push(i); } }); for (var t = 0; t < 300; t++) { shuffle(vals); pos.forEach(function (p, k) { b[p] = vals[k]; }); if (findPair()) break; } fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); A.sfx('turn'); }
+  function reset() { stage = 1; time = 120; score = 0; combo = 0; comboT = 0; dyingT = 0; setup(); fx.clear(); hud(); }
   function choose(i) {
     if (S.state !== 'playing' || dyingT > 0 || b[i] < 0) return;
     if (sel == null) { sel = i; A.sfx('tick', 1.2); return; }
@@ -163,7 +163,9 @@
     if (b[sel] !== b[i]) { sel = i; A.sfx('tick', 1.2); return; }
     var p = connect(sel, i);
     if (!p) { A.sfx('wall'); combo = 0; sel = i; return; }
-    path = p; pathT = 0.3; combo++; var pts = 10 * Math.min(5, combo); score += pts;
+    // 콤보: 3초 안에 다음 짝을 지워야 이어짐
+    if (comboT <= 0) combo = 0; path = p; pathT = 0.3; combo++; comboT = 3; var pts = 10 * Math.min(5, combo); score += pts;
+    if (combo >= 2) { var mx = sel % (COLS + 2), my = Math.floor(sel / (COLS + 2)); fx.text(GX + (mx + 0.5) * CW, GY + my * CH, combo + ' 콤보 +' + pts, '#c3ff5e', 18); }
     [sel, i].forEach(function (k) { var x = k % (COLS + 2), y = Math.floor(k / (COLS + 2)); fx.burst(GX + (x + 0.5) * CW, GY + (y + 0.5) * CH, COL[b[k]], 10, 200, 0.4, 3); b[k] = -1; });
     A.sfx('coin', 1 + Math.min(combo, 10) * 0.05); sel = null; hintPair = null;
     if (b.every(function (v) { return v < 0; })) { var bonus = Math.round(time * 3) + stage * 100; score += bonus; time += 45; stage++; fx.text(W / 2, H / 2, '판 클리어! +' + bonus, '#c3ff5e', 26); A.sfx('level'); setup(); S.banner('STAGE ' + stage, '+45초'); }
@@ -172,7 +174,7 @@
   }
   function hint() { var p = findPair(); if (p) { hintPair = p; time = Math.max(0, time - 5); fx.text(W / 2, 120, '힌트 -5초', '#c3ff5e', 18); A.sfx('power'); } }
   function update(dt) {
-    fx.update(dt); if (pathT > 0) { pathT -= dt; if (pathT <= 0) path = null; }
+    fx.update(dt); if (comboT > 0) { comboT -= dt; if (comboT <= 0) { combo = 0; hud(); } } if (pathT > 0) { pathT -= dt; if (pathT <= 0) path = null; }
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['단계', String(stage)]]); return; }
     time -= dt; if (time <= 0) { time = 0; dyingT = 1; A.sfx('over'); }
     hud();
@@ -196,7 +198,7 @@
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
-  function hud() { var left = b ? b.filter(function (v) { return v >= 0; }).length : 0, k = score + '|' + left + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = left; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 15 ? '#ff4d6d' : ''; }
+  function hud() { var left = b ? b.filter(function (v) { return v >= 0; }).length : 0, k = score + '|' + left + '|' + Math.ceil(time) + '|' + combo; if (k === last) return; last = k; document.getElementById('hMult').textContent = combo >= 2 ? '콤보 ×' + Math.min(5, combo) : ''; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = left; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 15 ? '#ff4d6d' : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e);
     if (p.y > 880 && p.y < 932 && Math.abs(p.x - W / 2) < 80) { hint(); return; }

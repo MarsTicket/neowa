@@ -1338,5 +1338,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 300000
+ },
+ {
+  "id": "typing",
+  "name": "한글 타자 레이스",
+  "genre": "TYPING",
+  "kgenre": "타자 연습",
+  "cat": "두뇌",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "떨어지는 낱말을 빠르게 쳐서 없애세요. 점점 빨라지고 길어지는 낱말, 분당 타수 측정까지!",
+  "tags": [
+   "한글 타자",
+   "분당 타수",
+   "황금 낱말"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
  }
 ]

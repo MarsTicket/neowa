@@ -116,6 +116,10 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960, CX = [110, 270, 430], CY = [330, 540, 750], HR = 62;
+  // 가로 화면은 720x720 정사각형 판: 구멍 간격을 넓혀 판이 크게 보이게. 진행 중인 두더지는 위치만 옮김
+  function geo(sh) { W = sh ? sh.W : 540; H = sh ? sh.H : 960; var land = !!(sh && sh.land);
+    CX = land ? [160, 360, 560] : [110, 270, 430]; CY = land ? [210, 425, 640] : [330, 540, 750];
+    if (holes) holes.forEach(function (h, i) { h.x = CX[i % 3]; h.y = CY[Math.floor(i / 3)]; }); }
   var fx = new A.FX();
   var holes, time, score, combo, bestCombo, hits, spawnT, over, el, feverShown;
   function reset() { holes = []; for (var i = 0; i < 9; i++) holes.push({ x: CX[i % 3], y: CY[Math.floor(i / 3)], up: 0, kind: null, life: 0, hit: 0 }); time = 60; score = 0; combo = 0; bestCombo = 0; hits = 0; spawnT = 0.5; over = false; el = 0; feverShown = false; fx.clear(); hud(); }
@@ -136,7 +140,7 @@
       combo++; hits++; bestCombo = Math.max(bestCombo, combo);
       var pts = (h.kind === 'gold' ? 30 : 10) * Math.min(4, 1 + Math.floor(combo / 5)) * (fever() ? 2 : 1); score += pts;
       if (h.kind === 'gold') { time = Math.min(99, time + 2); fx.text(h.x, h.y - 120, '+2초', '#7dff9b', 20); }
-      if (combo % 10 === 0) { fx.text(W / 2, 200, combo + ' 콤보!', '#ffd166', 34); A.sfx('level'); fx.ring(h.x, h.y - 30, '#ffd166', 110, 0.4); }
+      if (combo % 10 === 0) { fx.text(W / 2, Math.round(H * 0.21), combo + ' 콤보!', '#ffd166', 34); A.sfx('level'); fx.ring(h.x, h.y - 30, '#ffd166', 110, 0.4); }
       fx.burst(h.x, h.y - 30, h.kind === 'gold' ? '#ffd166' : '#ffb547', 16, 260, 0.45, 3); fx.text(h.x, h.y - 90, '+' + pts, h.kind === 'gold' ? '#ffd166' : '#fff', 22);
       A.sfx(h.kind === 'gold' ? 'gold' : 'hit', 1 + Math.min(combo, 15) * 0.04); A.vibrate(12); fx.shake(2, 0.06);
     }
@@ -192,8 +196,20 @@
     if (bd < 100) whack(best);
   });
   var KEYPAD = { '7': 0, '8': 1, '9': 2, '4': 3, '5': 4, '6': 5, '1': 6, '2': 7, '3': 8 };
-  var S = new A.Shell({ id: 'whack', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'whack', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { if (KEYPAD[e.key] != null && !e.repeat) whack(KEYPAD[e.key]); } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();
 
 </script>

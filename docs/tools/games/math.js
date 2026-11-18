@@ -2,18 +2,26 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, land = false;
   var fx = new A.FX();
-  var q, ans, input, time, score, combo, solved, endT, flash = 0, flashC = '#fff';
+  var q, ans, input, time, score, combo, solved, endT, flash = 0, flashC = '#fff', maxCombo = 0, wrong = 0, diff = A.get('neowa_math_diff', '0') === '1' ? 1 : 0;
+  // 오늘의 도전: 로컬 날짜(YYYYMMDD)로 시드를 고정해 오늘은 누구나 같은 문제. rnd()는 평소엔 Math.random
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  var rnd = Math.random;
+  function seedRnd(on) { if (!on) { rnd = Math.random; return; } var a = (Math.imul(today(), 0x9E3779B1) ^ 0x5bd1e995) >>> 0;
+    rnd = function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // mulberry32
+  function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
+  function dailyBest(sc) { var k = 'neowa_math_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); b = sc; } return b; } // 오늘 최고 점수
+
   function makeQ() {
-    var lv = solved, ops = ['+', '-']; if (lv >= 10) ops.push('×'); if (lv >= 20) ops.push('÷'); var op = A.pick(ops), a, b;
+    var lv = solved, ops = ['+', '-']; if (lv >= 10) ops.push('×'); if (lv >= 20) ops.push('÷'); var op = ops[ri(0, ops.length - 1)], a, b;
     var m = Math.min(99, 9 + lv * 4);
-    if (op === '+') { a = A.irand(2, m); b = A.irand(2, m); ans = a + b; }
-    else if (op === '-') { a = A.irand(5, m); b = A.irand(1, a + (lv > 15 ? 20 : 0)); ans = a - b; }
-    else if (op === '÷') { b = A.irand(2, 9); ans = A.irand(2, Math.min(12, 2 + Math.floor(lv / 5))); a = b * ans; }
-    else { a = A.irand(2, Math.min(lv >= 30 ? 19 : 12, 3 + Math.floor(lv / 4))); b = A.irand(2, 9); ans = a * b; }
+    if (op === '+') { a = ri(2, m); b = ri(2, m); ans = a + b; }
+    else if (op === '-') { a = ri(5, m); b = ri(1, a + (lv > 15 ? 20 : 0)); ans = a - b; }
+    else if (op === '÷') { b = ri(2, 9); ans = ri(2, Math.min(12, 2 + Math.floor(lv / 5))); a = b * ans; }
+    else { a = ri(2, Math.min(lv >= 30 ? 19 : 12, 3 + Math.floor(lv / 4))); b = ri(2, 9); ans = a * b; }
     if (q === a + ' ' + op + ' ' + b) return makeQ(); // 같은 문제 연속 방지
     q = a + ' ' + op + ' ' + b; input = '';
   }
-  function reset() { time = 60; score = 0; combo = 0; solved = 0; endT = 0; makeQ(); fx.clear(); hud(); }
+  function reset() { time = 60; score = 0; combo = 0; solved = 0; endT = 0; maxCombo = 0; wrong = 0; q = ''; seedRnd(diff === 1); makeQ(); document.getElementById('hMult').textContent = diff === 1 ? '오늘의 도전' : ''; fx.clear(); hud(); }
   // 정답 보너스 시간은 오래 갈수록 줄어 한 판이 끝없이 길어지지 않게 함. 자릿수가 찼거나 부호가 다르면 오답
   function type(ch) {
     if (S.state !== 'playing' || endT > 0) return;
@@ -21,12 +29,12 @@
     if (ch === 'skip') { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('wall'); makeQ(); hud(); return; }
     if (ch === '-') { if (!input) input = '-'; return; }
     if (input.length >= 4) return; input += ch; A.sfx('tick', 1.2);
-    if (+input === ans) { solved++; combo++; var pts = 10 + combo * 2; score += pts; time = Math.min(99, time + (solved <= 15 ? 2 : solved <= 30 ? 1.5 : solved <= 50 ? 1 : solved <= 80 ? 0.7 : 0.5));
+    if (+input === ans) { solved++; combo++; maxCombo = Math.max(maxCombo, combo); var pts = 10 + combo * 2; score += pts; time = Math.min(99, time + (solved <= 15 ? 2 : solved <= 30 ? 1.5 : solved <= 50 ? 1 : solved <= 80 ? 0.7 : 0.5));
       if (solved % 10 === 0 && solved <= 50) { time = Math.min(99, time + 3); S.banner(solved + '문제!', '보너스 +3초'); A.sfx('level'); } flash = 0.25; flashC = '#7dff9b'; A.sfx('coin', 1 + Math.min(combo, 15) * 0.04); fx.text(QX(), land ? 180 : 260, '+' + pts, '#ffd166', 24); makeQ(); }
-    else if (input !== '-' && (input.replace('-', '').length >= String(Math.abs(ans)).length || (ans >= 0) !== (input.charAt(0) !== '-'))) { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.5); fx.shake(5, 0.15); input = ''; }
+    else if (input !== '-' && (input.replace('-', '').length >= String(Math.abs(ans)).length || (ans >= 0) !== (input.charAt(0) !== '-'))) { time -= 3; combo = 0; wrong++; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.5); fx.shake(5, 0.15); input = ''; }
     hud();
   }
-  function update(dt) { fx.update(dt); if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['맞힌 문제', String(solved)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); } hud(); }
+  function update(dt) { fx.update(dt); if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['맞힌 문제', String(solved)], ['최대 콤보', String(maxCombo)], diff === 1 ? ['오늘 최고', A.fmt(dailyBest(score))] : ['정확도', (solved + wrong ? Math.round(solved / (solved + wrong) * 100) : 0) + '%']], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); } hud(); }
   var KEYS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '-', '0', 'del'];
   // 화면 배치: 세로 540x960 / 가로 900x600(왼쪽 문제·입력·건너뛰기, 오른쪽 큰 숫자판)
   function keyRect(i) { return land ? [478 + (i % 3) * 138, 24 + Math.floor(i / 3) * 118, 124, 104] : [60 + (i % 3) * 145, 400 + Math.floor(i / 3) * 105, 130, 92]; }
@@ -54,6 +62,10 @@
     var sr = skipRect(); if (p.x > sr[0] && p.x < sr[0] + sr[2] && p.y > sr[1] && p.y < sr[1] + sr[3]) { type('skip'); return; }
     KEYS.forEach(function (k, i) { var r = keyRect(i); if (p.x > r[0] && p.x < r[0] + r[2] && p.y > r[1] && p.y < r[1] + r[3]) type(k); });
   });
+  // 모드 버튼: 0 = 기본, 1 = 오늘의 도전
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_math_diff', diff); A.sfx('click'); pd(); }); }); pd();
   var S = new A.Shell({ id: 'math', W: W, H: H, land: [900, 600], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key; if (/^[0-9]$/.test(k)) type(k); if (k === '-') type('-'); if (k === 'Backspace') { e.preventDefault(); type('del'); } if (k === 'Tab') { e.preventDefault(); type('skip'); } } });
   // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)

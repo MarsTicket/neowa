@@ -45,7 +45,7 @@
       <div class="g-card"><h3>RULES</h3>
         <div class="g-keys">
           <div>가로·세로 한 줄 채우면 삭제</div>
-          <div><kbd style="color:#ffd166">×2</kbd> 연속으로 지우면 콤보</div>
+          <div><kbd style="color:#ffd166">×2</kbd> 3번 놓는 안에 또 지우면 콤보 유지</div>
           <div>놓을 곳이 없으면 끝</div>
         </div>
       </div>
@@ -118,7 +118,7 @@
   var A = Arcade, W = 540, H = 960, N = 8, CS = 58, GX = (540 - 8 * 58) / 2, GY = 140;
   var TRAY_Y = 790, SLOT_X = [95, 270, 445], TS = 0.5;
   var fx = new A.FX();
-  var grid, tray, score, lines, streak, drag = null, cursor = { x: 3, y: 3, sel: 0 }, kbd = false, clearing = [], pops = [], dyingT = 0, maxStreak = 0;
+  var grid, tray, score, lines, streak, drag = null, cursor = { x: 3, y: 3, sel: 0 }, kbd = false, clearing = [], pops = [], dyingT = 0, maxStreak = 0, streakLife = 0;
   var COLORS = ['#5ee7ff', '#7dff9b', '#ffb547', '#ff7aa8', '#b48cff', '#ffe066', '#ff7a45', '#7aa2ff'];
   // 조각 모양 (x,y 칸 목록)
   var SHAPES = [
@@ -143,7 +143,13 @@
     cells.forEach(function (c) { w = Math.max(w, c[0] + 1); h = Math.max(h, c[1] + 1); });
     return { cells: cells, w: w, h: h, c: A.pick(COLORS), used: false };
   }
-  function refill() { tray = [randPiece(), randPiece(), randPiece()]; }
+  // 새 조각 3개: 판이 비좁아도 적어도 하나는 놓을 수 있게 몇 번 다시 뽑음 (운으로만 끝나는 판 줄이기)
+  function refill() {
+    for (var tries = 0; tries < 25; tries++) {
+      tray = [randPiece(), randPiece(), randPiece()];
+      if (!grid || canFit(tray[0]) || canFit(tray[1]) || canFit(tray[2])) return;
+    }
+  }
   function fits(p, gx, gy) {
     for (var i = 0; i < p.cells.length; i++) { var x = gx + p.cells[i][0], y = gy + p.cells[i][1]; if (x < 0 || y < 0 || x >= N || y >= N || grid[y][x]) return false; }
     return true;
@@ -166,7 +172,7 @@
     p.used = true; score += p.cells.length; A.sfx('brick', 0.9);
     var n = wc.rows.length + wc.cols.length;
     if (n) {
-      streak++; maxStreak = Math.max(maxStreak, streak); lines += n;
+      streak++; streakLife = 3; maxStreak = Math.max(maxStreak, streak); lines += n;
       var pts = n * n * 10 + (streak - 1) * 10 * n; score += pts;
       var cells = {};
       wc.rows.forEach(function (r) { for (var x = 0; x < N; x++) cells[x + ',' + r] = 1; });
@@ -181,16 +187,16 @@
       if (streak > 1) fx.text(cx, cy + 4, 'COMBO ×' + streak, '#7aa2ff', 18);
       fx.shake(3 + n * 2, 0.25); A.sfx(n > 1 ? 'gold' : 'coin', 1 + streak * 0.05); A.vibrate(n > 1 ? [20, 30, 20] : 15);
       if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) { score += 300; S.banner('판 비우기!', '+300'); A.sfx('level'); }
-    } else streak = 0;
+    } else if (streak > 0) { streakLife--; if (streakLife <= 0) { streak = 0; } } // 콤보는 3번 놓는 동안 유지
     if (tray.every(function (q) { return q.used; })) refill();
-    if (!canPlaceAny()) { dyingT = 1; A.sfx('hurt'); }
+    if (!canPlaceAny()) { dyingT = 1.2; A.sfx('hurt'); fx.text(W / 2, TRAY_Y - 130, '놓을 곳이 없어요', '#ff7aa8', 24); fx.shake(6, 0.3); }
     // 키보드 선택을 남은 조각으로
     if (tray[cursor.sel].used) for (var s = 0; s < 3; s++) if (!tray[s].used) { cursor.sel = s; break; }
     hud(); return true;
   }
   function reset() {
     grid = []; for (var y = 0; y < N; y++) { grid.push([]); for (var x = 0; x < N; x++) grid[y].push(0); }
-    refill(); score = 0; lines = 0; streak = 0; maxStreak = 0; clearing = []; pops = []; dyingT = 0; drag = null; cursor = { x: 3, y: 3, sel: 0 };
+    refill(); score = 0; lines = 0; streak = 0; maxStreak = 0; streakLife = 0; clearing = []; pops = []; dyingT = 0; drag = null; cursor = { x: 3, y: 3, sel: 0 };
     fx.clear(); hud();
   }
   function update(dt) {
@@ -218,11 +224,17 @@
     c.globalAlpha = 1;
   }
   // 드래그 중인 조각의 판 위치 계산
+  // 손가락 위치가 칸에서 조금 어긋나도 가장 가까운 놓을 수 있는 자리로 붙여 줌
   function dragTarget() {
     if (!drag) return null;
-    var p = tray[drag.k], left = drag.x - p.w * CS / 2, top = drag.y - p.h * CS / 2;
-    var gx = Math.round((left - GX) / CS), gy = Math.round((top - GY) / CS);
-    return fits(p, gx, gy) ? { gx: gx, gy: gy } : null;
+    var p = tray[drag.k], fx0 = (drag.x - p.w * CS / 2 - GX) / CS, fy0 = (drag.y - p.h * CS / 2 - GY) / CS;
+    var bx = Math.round(fx0), by = Math.round(fy0), best = null, bd = 0.8 * 0.8;
+    if (fits(p, bx, by)) return { gx: bx, gy: by };
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      var gx = bx + dx, gy = by + dy, d = (gx - fx0) * (gx - fx0) + (gy - fy0) * (gy - fy0);
+      if (d < bd && fits(p, gx, gy)) { bd = d; best = { gx: gx, gy: gy }; }
+    }
+    return best;
   }
   function render(c) {
     var o = fx.offset(), t = S.time;

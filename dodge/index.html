@@ -220,28 +220,65 @@
       else { L.on -= dt; if (L.on <= 0) lasers.splice(i, 1); }
     }
   }
+  /* 그림: 붉은 공허 배경 + 육각 격자, 드론, 에너지 결정, 영혼 코어(플레이어) */
+  var BG = A.sprite('ddbg', W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, H * 0.55, 40, W / 2, H * 0.55, H * 0.75); g.addColorStop(0, '#2a0818'); g.addColorStop(0.6, '#10040c'); g.addColorStop(1, '#040106');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 90; i++) { x.globalAlpha = Math.random() * 0.5; x.fillStyle = '#ffb0c0'; x.fillRect(Math.random() * W, Math.random() * H, 1, 1); }
+    x.globalAlpha = 1;
+  });
+  var HEX = A.sprite('ddhex', W, H, function (x) {
+    var r = 26, hw = r * Math.sqrt(3);
+    x.strokeStyle = '#ff4d6d'; x.lineWidth = 1.2;
+    for (var row = -1; row * r * 1.5 < H + r; row++) for (var col = -1; col * hw < W + hw; col++) {
+      var cx = col * hw + (row % 2 ? hw / 2 : 0), cy = row * r * 1.5;
+      var dd = Math.hypot(cx - W / 2, cy - H * 0.55) / (H * 0.7); x.globalAlpha = Math.max(0.15, 1 - dd);
+      x.beginPath(); for (var k = 0; k < 6; k++) { var a = Math.PI / 6 + k * Math.PI / 3; x.lineTo(cx + Math.cos(a) * (r - 2), cy + Math.sin(a) * (r - 2)); } x.closePath(); x.stroke();
+    }
+    x.globalAlpha = 1;
+  });
+  var DRONE = A.sprite('dddrone', 40, 40, function (x) {
+    x.translate(20, 20);
+    var g = x.createLinearGradient(-10, -10, 10, 10); g.addColorStop(0, '#ffd0da'); g.addColorStop(1, '#a0102e');
+    x.fillStyle = g; x.beginPath(); x.moveTo(14, 0); x.lineTo(-6, -11); x.lineTo(-2, 0); x.lineTo(-6, 11); x.closePath(); x.fill();
+    x.fillStyle = '#2a0010'; x.beginPath(); x.ellipse(3, 0, 4, 2.6, 0, 0, 7); x.fill();
+    x.fillStyle = '#ff9a3a'; x.beginPath(); x.ellipse(4, -0.6, 1.6, 1, 0, 0, 7); x.fill();
+  });
+  var CRY = A.sprite('ddcry', 30, 30, function (x) {
+    x.translate(15, 15); var g = x.createLinearGradient(-8, -10, 8, 10); g.addColorStop(0, '#fff6c8'); g.addColorStop(0.5, '#ffd166'); g.addColorStop(1, '#b06a00');
+    x.fillStyle = g; x.beginPath(); x.moveTo(0, -12); x.lineTo(8, 0); x.lineTo(0, 12); x.lineTo(-8, 0); x.closePath(); x.fill();
+    x.fillStyle = 'rgba(255,255,255,.65)'; x.beginPath(); x.moveTo(0, -12); x.lineTo(-4, 0); x.lineTo(0, 1); x.fill();
+  });
+  var CORE = A.sprite('ddcore', 40, 40, function (x) {
+    x.translate(20, 20); var g = x.createRadialGradient(-2, -3, 0, 0, 0, 9); g.addColorStop(0, '#ffffff'); g.addColorStop(0.6, '#c8f6ff'); g.addColorStop(1, '#3ac0e0');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, 8, 0, 7); x.fill();
+  });
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#07040b'; c.fillRect(-10, -10, W + 20, H + 20);
-    // 맥박치는 격자
-    var pulse = 0.06 + Math.sin(t * 2) * 0.02 + (time > 0 ? Math.min(0.08, time / 1000) : 0);
-    c.strokeStyle = 'rgba(255,77,109,' + pulse + ')'; c.lineWidth = 1;
-    for (var x = 0; x <= W; x += 45) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
-    for (var y = 0; y <= H; y += 45) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    c.drawImage(BG, -10, -10, W + 20, H + 20);
+    // 맥박치는 육각 격자(시간이 갈수록 진하게)
+    var pulse = 0.07 + Math.sin(t * 2) * 0.025 + (time > 0 ? Math.min(0.1, time / 900) : 0);
+    c.globalAlpha = pulse * 1.6; c.drawImage(HEX, 0, 0, W, H); c.globalAlpha = 1;
     var i;
-    // 레이저
+    // 레이저: 양 끝 발사기 + 경고선
     for (i = 0; i < lasers.length; i++) {
       var L = lasers[i];
+      c.fillStyle = '#3a0a18'; c.strokeStyle = '#ff4d6d'; c.lineWidth = 2;
+      if (L.hor) { A.rr(c, -4, L.pos - 10, 18, 20, 4); c.fill(); c.stroke(); A.rr(c, W - 14, L.pos - 10, 18, 20, 4); c.fill(); c.stroke(); }
+      else { A.rr(c, L.pos - 10, TOP - 4, 20, 18, 4); c.fill(); c.stroke(); A.rr(c, L.pos - 10, H - 14, 20, 18, 4); c.fill(); c.stroke(); }
       if (L.warn > 0) {
         c.globalAlpha = 0.25 + (Math.floor(t * 14) % 2) * 0.35; c.fillStyle = '#ff4d6d';
-        if (L.hor) c.fillRect(0, L.pos - 1.5, W, 3); else c.fillRect(L.pos - 1.5, 0, 3, H);
+        c.setLineDash ? c.setLineDash([14, 10]) : 0; c.strokeStyle = '#ff4d6d'; c.lineWidth = 3; c.beginPath();
+        if (L.hor) { c.moveTo(0, L.pos); c.lineTo(W, L.pos); } else { c.moveTo(L.pos, 0); c.lineTo(L.pos, H); }
+        c.stroke(); if (c.setLineDash) c.setLineDash([]);
         c.globalAlpha = 1;
       } else {
         c.save(); c.globalCompositeOperation = 'lighter';
-        var g = L.hor ? c.createLinearGradient(0, L.pos - L.w, 0, L.pos + L.w) : c.createLinearGradient(L.pos - L.w, 0, L.pos + L.w, 0);
-        g.addColorStop(0, 'rgba(255,77,109,0)'); g.addColorStop(0.5, 'rgba(255,230,235,1)'); g.addColorStop(1, 'rgba(255,77,109,0)');
-        c.fillStyle = g; if (L.hor) c.fillRect(0, L.pos - L.w, W, L.w * 2); else c.fillRect(L.pos - L.w, 0, L.w * 2, H);
+        var wob = L.w * (1 + Math.sin(t * 40) * 0.12);
+        var g = L.hor ? c.createLinearGradient(0, L.pos - wob, 0, L.pos + wob) : c.createLinearGradient(L.pos - wob, 0, L.pos + wob, 0);
+        g.addColorStop(0, 'rgba(255,77,109,0)'); g.addColorStop(0.3, 'rgba(255,77,109,.6)'); g.addColorStop(0.5, 'rgba(255,240,245,1)'); g.addColorStop(0.7, 'rgba(255,77,109,.6)'); g.addColorStop(1, 'rgba(255,77,109,0)');
+        c.fillStyle = g; if (L.hor) c.fillRect(0, L.pos - wob, W, wob * 2); else c.fillRect(L.pos - wob, 0, wob * 2, H);
         c.restore();
       }
     }
@@ -250,15 +287,19 @@
     c.globalAlpha = 1;
     var SH = A.glowDot('#ff4d8b', 5);
     for (i = 0; i < shots.length; i++) { var s = shots[i]; if (s.delay > 0) { c.globalAlpha = 0.3; } A.draw(c, SH, s.x, s.y, s.r / 8); c.globalAlpha = 1; }
-    for (i = 0; i < foes.length; i++) { var f = foes[i]; A.draw(c, A.glowDot('#ff4d6d', 8), f.x, f.y, 1.2); }
+    for (i = 0; i < foes.length; i++) { var f = foes[i], sp = Math.hypot(f.vx, f.vy) || 1; for (var k = 1; k <= 3; k++) A.draw(c, A.glowDot('#ff7a45', 3), f.x - f.vx / sp * k * 9, f.y - f.vy / sp * k * 9, 1.1 - k * 0.25); A.draw(c, A.glowDot('#ff4d6d', 8), f.x, f.y, 0.9); }
     c.restore();
-    for (i = 0; i < foes.length; i++) { var ff = foes[i]; c.save(); c.translate(ff.x, ff.y); c.rotate(Math.atan2(ff.vy, ff.vx)); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(12, 0); c.lineTo(-8, -8); c.lineTo(-8, 8); c.fill(); c.restore(); }
-    // 플레이어
+    for (i = 0; i < orbs.length; i++) { var ob2 = orbs[i]; if (ob2.t > 5 && Math.floor(t * 10) % 2) continue; c.save(); c.translate(ob2.x, ob2.y + Math.sin(t * 4 + i) * 2); c.scale(Math.cos(t * 3 + i), 1); c.drawImage(CRY, -12, -12, 24, 24); c.restore(); }
+    for (i = 0; i < shots.length; i++) { var s2 = shots[i]; if (s2.delay > 0) continue; c.fillStyle = 'rgba(255,240,245,.9)'; c.beginPath(); c.arc(s2.x, s2.y, s2.r * 0.45, 0, 7); c.fill(); }
+    for (i = 0; i < foes.length; i++) { var ff = foes[i]; A.draw(c, DRONE, ff.x, ff.y, 1, Math.atan2(ff.vy, ff.vx)); }
+    // 플레이어: 영혼 코어 + 도는 고리
     var px = P ? P.x : W / 2, py = P ? P.y : H * 0.65 + Math.sin(t * 2) * 10;
     if (!P || dyingT <= 0) {
       if (!(P && P.inv > 0 && Math.floor(P.inv * 14) % 2)) {
         c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#5ee7ff', 8), px, py, 1.4); c.restore();
-        c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill();
+        c.strokeStyle = 'rgba(160,240,255,.85)'; c.lineWidth = 1.6;
+        c.beginPath(); c.arc(px, py, 14, t * 3, t * 3 + 1.6); c.stroke(); c.beginPath(); c.arc(px, py, 14, t * 3 + Math.PI, t * 3 + Math.PI + 1.6); c.stroke();
+        A.draw(c, CORE, px, py, 1);
       }
     }
     fx.draw(c);

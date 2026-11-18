@@ -73,6 +73,12 @@ SCENE = {
  'sort': ('a row of tall glass test-tube bottles on a dark shelf filled with stacked layers of glossy liquid in red, yellow, cyan and violet, one bottle tilted pouring a violet stream into another, soft purple glow', '색 병 사이로 액체를 부어 정리하는 장면'),
  'sum': ('a glowing lime-green number cross puzzle grid with dark clue squares split diagonally holding small sums, bright digits filling white squares, one row lighting up as it completes', '합계 단서로 숫자를 채우는 퍼즐판'),
  'hexa': ('a glowing hexagonal board made of small hexagon cells, glossy mint, cyan and pink hex tiles filling it, one straight diagonal line of hexes bursting into light as it clears, a hex piece hovering above', '육각 판에서 한 줄이 터지는 순간'),
+ 'cannon': ('a fan of dozens of glowing white balls shooting up from a launcher at the bottom, bouncing between glossy neon-red and cyan numbered square blocks that crack apart, one green +1 ring, dark arcade background', '공 수십 개로 숫자 블록 부수기'),
+ 'golf': ('a top-down neon mini golf course on dark green turf with glowing mint borders, a white golf ball with a dotted aim line bouncing off a wall, a spinning yellow windmill bar, a small pond and sand trap, a red flag on the hole', '네온 미니 골프 코스'),
+ 'bowling': ('a glossy orange bowling ball crashing into ten white bowling pins with red stripes on a polished wooden lane, pins flying apart, warm neon orange glow, low dramatic perspective', '핀이 와르르 쓰러지는 볼링'),
+ 'tank': ('a top-down neon maze with glowing golden walls, a small yellow tank firing a glowing shell that ricochets off a wall corner toward a red enemy tank, dotted bounce trail, sparks', '벽에 튕기는 포탄 탱크 전투'),
+ 'yacht': ('five glossy white dice with red and black pips tumbling on a dark pink felt table, two dice glowing pink as held, a neat score sheet with rows of numbers in the background', '주사위 다섯 개와 족보 점수표'),
+ 'td': ('a top-down winding orange path through a dark grid, rows of small neon towers (yellow machine gun, orange cannon, icy blue, pink laser beam) shooting at a line of colorful creeping enemies, a big red boss', '길 옆 네온 타워들이 적을 막는 장면'),
 }
 
 def build():

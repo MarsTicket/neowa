@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/bowling.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>볼링 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 볼링. 위로 쓸어 올려 공을 굴리고, 끝을 휘면 공이 휘어 들어갑니다. 정식 10프레임 점수(스트라이크·스페어 보너스)로 300점에 도전하세요.">
+<meta property="og:title" content="볼링 · 너와 아케이드">
+<meta property="og:description" content="쓸어 올려 굴리고, 휘어 들어가는 공으로 스트라이크! 10프레임 볼링.">
+<meta property="og:image" content="https://neowa.kr/assets/bowling-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=5">
+<style>:root{--accent:#ff9e4d;--accent-ink:#2a1200;--ar:255,158,77}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 63</small>볼링</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>←→</kbd> 위치 · <kbd>↑↓</kbd> 방향 · <kbd>Z</kbd><kbd>X</kbd> 회전</div>
+          <div class="k-only"><kbd>Space</kbd> 길게 눌렀다 떼기 = 세기</div>
+          <div class="t-only"><kbd>좌우로 끌기</kbd> 위치 · <kbd>위로 쓸기</kbd> 굴리기 · 끝을 휘면 커브</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>한 번에 10개 = 스트라이크(다음 2구 보너스)</div>
+          <div>두 번에 10개 = 스페어(다음 1구 보너스)</div>
+          <div>10프레임에서 스트라이크·스페어면 보너스 투구 · 최고 300점</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">FRAME</span><span class="h-v sm" id="hB">1/10</span></div>
+        <div class="h-box r"><span class="h-lb">PINS</span><span class="h-v sm" id="hC">10</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 63</p>
+        <h1 class="ov-title">볼링</h1>
+        <p class="ov-desc">위로 쓸어 올려 공을 굴리세요. 끝을 살짝 휘면 공이 휘어 들어가요. 10프레임 점수에 도전!</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>위로 쓸어 올리기 = 투구</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>스트라이크 · 스페어 보너스</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>게임 시작</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=5"></script>
+<script>
+(function () {
+  'use strict';
+  // 볼링: 10프레임 정식 점수. 레인 길이 단위는 cm. 카메라가 공을 따라가며 원근감 있게 그림
+  var A = Arcade, W = 540, H = 960;
+  var LW = 53, GW = 11, BR = 11, PR = 6, PY = 1720, PIT = 1840, BM = 6, PM = 1.6;
+  var S0 = 3.5, D = 260, KV = 0.7, YB = 905, CAM0 = -40, CAMEND = PY - 200;
+  var SPOTS = [[0, 0], [-15.24, 26.4], [15.24, 26.4], [-30.48, 52.8], [0, 52.8], [30.48, 52.8], [-45.72, 79.2], [-15.24, 79.2], [15.24, 79.2], [45.72, 79.2]];
+  var fx = new A.FX();
+  var pins, ball, camY, phase, phaseT, frame, rolls, fr, standBefore, aimX, aimAng, aimSpin, power, charging, kbd, keys = {}, drag, strikes, spares, msg, tim = 0, reachT;
+
+  // ---------- 원근 투영 ----------
+  function P(x, y) {
+    var dz = y - camY, z = 1 + dz / D; if (z < 0.3) z = 0.3;
+    var s = S0 / z; return { x: W / 2 + x * s, y: YB - S0 * KV * D * Math.log(z), s: s };
+  }
+
+  // ---------- 점수 계산 ----------
+  function frameRolls() {
+    // rolls 배열 → 프레임별 투구 목록
+    var out = [], i = 0;
+    for (var f = 0; f < 10 && i < rolls.length; f++) {
+      if (f < 9) { if (rolls[i] === 10) { out.push([10]); i++; } else { out.push(rolls.slice(i, i + 2)); i += 2; } }
+      else out.push(rolls.slice(i, i + 3));
+    }
+    return out;
+  }
+  function totals() {
+    // 프레임별 누적 점수(보너스가 아직 정해지지 않은 프레임은 null)
+    var res = [], i = 0, sum = 0;
+    for (var f = 0; f < 10; f++) {
+      var a = rolls[i], b = rolls[i + 1], c = rolls[i + 2], v = null;
+      if (a == null) { res.push(null); continue; }
+      if (f < 9) {
+        if (a === 10) { if (b != null && c != null) v = 10 + b + c; i += 1; }
+        else { if (b == null) { res.push(null); i += 2; continue; } if (a + b === 10) { if (c != null) v = 10 + c; } else v = a + b; i += 2; }
+      } else {
+        var need = (a === 10 || (b != null && a + b === 10)) ? 3 : 2;
+        var got = rolls.slice(i, i + need); if (got.length === need) v = got.reduce(function (p, q) { return p + q; }, 0);
+      }
+      if (v == null) { res.push(null); for (var k = f + 1; k < 10; k++) res.push(null); return res; }
+      sum += v; res.push(sum);
+    }
+    return res;
+  }
+  function marks(f, list) {
+    var m = [];
+    function n(v) { return v === 0 ? '-' : String(v); }
+    if (f < 9) {
+      if (list[0] === 10) return ['', 'X'];
+      if (list[0] != null) m.push(n(list[0]));
+      if (list[1] != null) m.push(list[0] + list[1] === 10 ? '/' : n(list[1]));
+      return m;
+    }
+    var a = list[0], b = list[1], c = list[2];
+    if (a != null) m.push(a === 10 ? 'X' : n(a));
+    if (b != null) m.push(a === 10 ? (b === 10 ? 'X' : n(b)) : (a + b === 10 ? '/' : n(b)));
+    if (c != null) {
+      if (a === 10 && b !== 10) m.push(b + c === 10 ? '/' : n(c));
+      else m.push(c === 10 ? 'X' : n(c));
+    }
+    return m;
+  }
+  function curScore() { var t = totals(), s = 0; t.forEach(function (v) { if (v != null) s = v; }); return s; }
+
+  // ---------- 핀·공 ----------
+  function rackAll() { pins = SPOTS.map(function (q, i) { return { i: i, x: q[0], y: PY + q[1], vx: 0, vy: 0, down: false, gone: false, r: PR, rot: 0, rotTo: 0, a: 1 }; }); }
+  function respot() {
+    // 서 있는 핀은 제자리로, 쓰러진 핀은 치움
+    pins = pins.filter(function (p) { return !p.down; });
+    pins.forEach(function (p) { var q = SPOTS[p.i]; p.x = q[0]; p.y = PY + q[1]; p.vx = p.vy = 0; });
+  }
+  function standing() { var n = 0; pins.forEach(function (p) { if (!p.down) n++; }); return n; }
+  function newBall() { ball = { x: aimX, y: 0, vx: 0, vy: 0, spin: 0, gutter: false, on: false, rot: 0 }; }
+  function reset() {
+    frame = 0; rolls = []; strikes = 0; spares = 0; aimX = 0; aimAng = 0; aimSpin = 0; power = 0; charging = false; kbd = false; drag = null; msg = null;
+    rackAll(); newBall(); camY = CAM0; phase = 'ready'; phaseT = 0; standBefore = 10; fx.clear(); hud();
+  }
+  function rollIndexInFrame() { var fl = frameRolls(); var cur = fl[frame]; return cur ? cur.length : 0; }
+
+  function throwBall(spd, ang, spin) {
+    if (phase !== 'ready' || S.state !== 'playing') return;
+    spd = A.clamp(spd, 480, 1000); ang = A.clamp(ang, -0.055, 0.055); spin = A.clamp(spin, -1, 1);
+    ball.x = aimX; ball.y = 0; ball.vx = Math.sin(ang) * spd; ball.vy = Math.cos(ang) * spd; ball.spin = spin; ball.on = true;
+    standBefore = standing(); phase = 'roll'; phaseT = 0; reachT = -1; aimAng = ang; aimSpin = spin;
+    A.sfx('shoot', 0.5); A.vibrate(15);
+  }
+  function collide(a, b, ma, mb, e) {
+    var dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), rr = a.r + b.r;
+    if (d >= rr || d < 0.001) return 0;
+    var nx = dx / d, ny = dy / d, ov = rr - d, im = 1 / ma + 1 / mb;
+    a.x -= nx * ov * (1 / ma) / im; a.y -= ny * ov * (1 / ma) / im; b.x += nx * ov * (1 / mb) / im; b.y += ny * ov * (1 / mb) / im;
+    var vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny; if (vn >= 0) return 0;
+    var j = -(1 + e) * vn / im; a.vx -= j / ma * nx; a.vy -= j / ma * ny; b.vx += j / mb * nx; b.vy += j / mb * ny;
+    return -vn;
+  }
+  function knock(p, from) {
+    if (p.down) return; p.down = true; p.rotTo = (from != null ? (p.x > from ? 1 : -1) : (Math.random() < 0.5 ? 1 : -1)) * Math.PI / 2;
+    var q = P(p.x, p.y); fx.burst(q.x, q.y - 20 * q.s, '#ffffff', 5, 120, 0.3, 2);
+  }
+  var clackT = 0;
+  function physStep(h) {
+    var b = ball;
+    if (b.on) {
+      if (!b.gutter) {
+        var hk = A.clamp((b.y - 600) / 900, 0, 1); hk = hk * hk * (3 - 2 * hk);
+        b.vx += b.spin * 115 * hk * h;
+        if (Math.abs(b.x) > LW - 3) { b.gutter = true; b.vx = 0; b.spin = 0; A.sfx('wall', 0.6); fx.text(W / 2, 260, '거터!', '#ffb27a', 30); }
+      } else { var gx = (b.x > 0 ? 1 : -1) * (LW + GW / 2); b.x += (gx - b.x) * Math.min(1, h * 12); }
+      b.vy = Math.max(420, b.vy - 12 * h); b.x += b.vx * h; b.y += b.vy * h; b.rot += b.vy * h / BR;
+      b.r = BR;
+    }
+    // 핀 이동·마찰
+    pins.forEach(function (p) {
+      if (p.gone) return;
+      var sp = Math.hypot(p.vx, p.vy);
+      if (sp > 0) { var nv = Math.max(0, sp - (240 + 1.1 * sp) * h); p.vx *= nv / sp; p.vy *= nv / sp; }
+      p.x += p.vx * h; p.y += p.vy * h;
+      if (!p.down && sp > 28) knock(p);
+      if (p.down && p.r < 9) p.r = Math.min(9, p.r + 20 * h); // 넘어지면서 옆 핀을 쓸어 넘김
+      // 옆 칸막이(킥백)
+      if (p.y > PY - 40) { var wl = LW + GW; if (p.x < -wl) { p.x = -wl; p.vx = Math.abs(p.vx) * 0.5; } if (p.x > wl) { p.x = wl; p.vx = -Math.abs(p.vx) * 0.5; } }
+      if (Math.abs(p.x) > LW + 1 && !p.down) knock(p);
+      if (p.y > PIT + 30 || p.y < PY - 160) { p.gone = true; knock(p); }
+    });
+    // 충돌
+    var hitMax = 0;
+    if (b.on && !b.gutter) pins.forEach(function (p) { if (!p.gone) { var v = collide(b, p, BM, PM, 0.45); if (v) { hitMax = Math.max(hitMax, v); knock(p, b.x); } } });
+    for (var i = 0; i < pins.length; i++) {
+      var a = pins[i]; if (a.gone) continue;
+      for (var j = i + 1; j < pins.length; j++) {
+        var c = pins[j]; if (c.gone) continue;
+        var v = collide(a, c, PM, PM, 0.6);
+        if (v > 25) { hitMax = Math.max(hitMax, v * 0.7); if (a.down || c.down) { knock(a, c.x); knock(c, a.x); } }
+      }
+    }
+    if (hitMax > 60 && clackT <= 0) { A.sfx('brick', 0.7 + Math.random() * 0.4); clackT = 0.04; if (hitMax > 300) { fx.shake(4, 0.15); A.vibrate(20); } }
+  }
+  function update(dt) {
+    tim += dt; fx.update(dt); clackT -= dt; phaseT += dt;
+    pins.forEach(function (p) { if (p.down) p.rot += (p.rotTo - p.rot) * Math.min(1, dt * 10); });
+    if (phase === 'ready') {
+      if (keys.L) { aimX -= 40 * dt; kbd = true; } if (keys.R) { aimX += 40 * dt; kbd = true; }
+      if (keys.U) { aimAng += 0.03 * dt; kbd = true; } if (keys.D) { aimAng -= 0.03 * dt; kbd = true; }
+      aimX = A.clamp(aimX, -LW + BR + 1, LW - BR - 1); aimAng = A.clamp(aimAng, -0.055, 0.055);
+      if (charging) power = Math.min(1, power + dt / 1.1);
+      ball.x = aimX; ball.y = 0;
+      camY += (CAM0 - camY) * Math.min(1, dt * 5);
+      return;
+    }
+    if (phase === 'roll') {
+      var n = 6, h = dt / n; for (var i = 0; i < n; i++) physStep(h);
+      var target = Math.min(ball.y - 40 - 0, CAMEND); camY += (target - camY) * Math.min(1, dt * 7);
+      if (reachT < 0 && ball.y > PY - 30) reachT = 0;
+      if (reachT >= 0) reachT += dt;
+      if (ball.y > PIT + 60) ball.on = false;
+      var moving = pins.some(function (p) { return !p.gone && Math.hypot(p.vx, p.vy) > 6; });
+      if ((!ball.on && (!moving || reachT > 3.2)) || phaseT > 9) endRoll();
+      return;
+    }
+    if (phase === 'count') {
+      if (phaseT > 1.3) { phase = 'sweep'; phaseT = 0; }
+      return;
+    }
+    if (phase === 'sweep') {
+      pins.forEach(function (p) { if (p.down) p.a = Math.max(0, 1 - phaseT * 2.5); });
+      camY += (CAM0 - camY) * Math.min(1, dt * 4);
+      if (phaseT > 0.6) nextRoll();
+    }
+  }
+  function endRoll() {
+    var down = standBefore - standing(); rolls.push(down);
+    var title, big = false;
+    if (standBefore === 10 && down === 10) { title = 'STRIKE!'; big = true; strikes++; }
+    else if (standBefore < 10 && standing() === 0) { title = 'SPARE!'; big = true; spares++; }
+    else title = down === 0 ? (ball.gutter ? '거터' : '0 핀') : down + ' 핀';
+    msg = { t: title, big: big, at: tim };
+    if (big) {
+      A.sfx(title === 'STRIKE!' ? 'record' : 'level'); A.vibrate(title === 'STRIKE!' ? [30, 40, 30, 40, 60] : [20, 30, 20]);
+      var q = P(0, PY + 40); fx.burst(q.x, q.y, '#ff9e4d', 40, 420, 0.9, 4); fx.burst(q.x, q.y, '#ffd166', 26, 320, 0.8, 3); if (title === 'STRIKE!') fx.flashIt('#ff9e4d', 0.3);
+    } else A.sfx(down ? 'coin' : 'hurt');
+    phase = 'count'; phaseT = 0; hud();
+  }
+  function frameDone() {
+    var cur = frameRolls()[frame] || [];
+    if (frame < 9) return cur[0] === 10 || cur.length === 2;
+    if (cur.length === 3) return true;
+    if (cur.length === 2) return cur[0] + cur[1] < 10;
+    return false;
+  }
+  function nextRoll() {
+    msg = null;
+    if (frameDone()) {
+      frame++;
+      if (frame >= 10) { phase = 'done'; finish(); return; }
+      rackAll(); S.banner('FRAME ' + (frame + 1), frame === 9 ? '마지막 프레임 · 스트라이크·스페어면 보너스 투구' : null);
+    } else {
+      // 10프레임: 스트라이크나 스페어 뒤에는 핀을 새로 세움
+      if (standing() === 0) rackAll(); else respot();
+    }
+    newBall(); phase = 'ready'; phaseT = 0; power = 0; charging = false; hud();
+  }
+  function finish() {
+    var sc = curScore();
+    S.gameOver(sc, [['스트라이크', strikes + '번'], ['스페어', spares + '번'], ['핀', rolls.reduce(function (p, q) { return p + q; }, 0) + '개']], { win: true, title: sc >= 200 ? '멋진 게임!' : '게임 완료' });
+  }
+
+  // ---------- 그리기 ----------
+  function pinSprite() {
+    return A.sprite('bw_pin', 24, 76, function (x) {
+      x.beginPath(); x.moveTo(12, 0.5);
+      x.bezierCurveTo(17.5, 0.5, 17.5, 12, 14.5, 18); x.bezierCurveTo(13, 22, 23.5, 34, 23.5, 50); x.bezierCurveTo(23.5, 64, 19, 72, 17, 75.5);
+      x.lineTo(7, 75.5); x.bezierCurveTo(5, 72, 0.5, 64, 0.5, 50); x.bezierCurveTo(0.5, 34, 11, 22, 9.5, 18); x.bezierCurveTo(6.5, 12, 6.5, 0.5, 12, 0.5); x.closePath();
+      var g = x.createLinearGradient(0, 0, 24, 0); g.addColorStop(0, '#b9b4ad'); g.addColorStop(0.35, '#ffffff'); g.addColorStop(0.6, '#f4f1ea'); g.addColorStop(1, '#9d978e');
+      x.fillStyle = g; x.fill(); x.save(); x.clip();
+      x.fillStyle = '#e8324a'; x.fillRect(0, 18.5, 24, 2.6); x.fillRect(0, 23, 24, 2.6); x.restore();
+    });
+  }
+  function ballSprite() {
+    return A.sprite('bw_ball', 80, 80, function (x) {
+      var g = x.createRadialGradient(28, 26, 4, 40, 40, 40); g.addColorStop(0, '#ffd7a8'); g.addColorStop(0.3, '#ff9e4d'); g.addColorStop(0.8, '#a23a08'); g.addColorStop(1, '#4a1600');
+      x.fillStyle = g; x.beginPath(); x.arc(40, 40, 39.5, 0, Math.PI * 2); x.fill();
+    });
+  }
+  function laneQuad(c, x0, x1, y0, y1, col) {
+    var a = P(x0, y0), b = P(x1, y0), e = P(x1, y1), d = P(x0, y1);
+    c.fillStyle = col; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(e.x, e.y); c.lineTo(d.x, d.y); c.closePath(); c.fill();
+  }
+  function render(c, t) {
+    if (!pins) reset();
+    c.fillStyle = '#0b0603'; c.fillRect(0, 0, W, H);
+    var o = fx.offset(); c.save(); c.translate(o[0], o[1]);
+    var yFar = Math.min(PIT + 120, camY + 900), yNear = camY - 60;
+    // 뒤쪽 벽(핀 세우는 기계)
+    var back = P(0, PIT + 40);
+    if (back.y > 120) {
+      var bw = (LW + GW + 30) * back.s;
+      c.fillStyle = '#1a0c04'; c.fillRect(W / 2 - bw, 100, bw * 2, back.y - 100);
+      c.fillStyle = 'rgba(255,158,77,.85)'; c.font = '900 ' + Math.round(22 * back.s) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center';
+      c.fillText('★ NEOWA LANES ★', W / 2, back.y - 20 * back.s);
+    }
+    // 홈통(거터)과 레인
+    laneQuad(c, -LW - GW, -LW, yNear, Math.min(yFar, PIT), '#1d1209');
+    laneQuad(c, LW, LW + GW, yNear, Math.min(yFar, PIT), '#1d1209');
+    laneQuad(c, -LW, LW, yNear, Math.min(yFar, PY - 40), '#c9894a');
+    laneQuad(c, -LW, LW, PY - 40, Math.min(yFar, PIT), '#dfa766');
+    laneQuad(c, -LW - GW - 30, LW + GW + 30, PIT, PIT + 40, '#050302');
+    // 판자 줄
+    c.strokeStyle = 'rgba(90,45,10,.35)'; c.lineWidth = 1;
+    for (var bx = -LW + 2.65 * 4; bx < LW; bx += 2.65 * 4) { var p0 = P(bx, Math.max(yNear, -60)), p1 = P(bx, Math.min(yFar, PIT)); c.beginPath(); c.moveTo(p0.x, p0.y); c.lineTo(p1.x, p1.y); c.stroke(); }
+    // 반사광
+    var gl = c.createLinearGradient(0, 120, 0, H); gl.addColorStop(0, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,230,200,.12)');
+    laneQuad(c, -LW, LW, yNear, Math.min(yFar, PIT), gl);
+    // 파울 선·점·화살표
+    laneQuad(c, -LW, LW, -1.5, 1.5, '#ff4d4d');
+    [-4, -3, -2, -1, 0, 1, 2, 3, 4].forEach(function (k) {
+      var q = P(k * 10.6, 210); c.fillStyle = 'rgba(60,25,5,.55)'; c.beginPath(); c.arc(q.x, q.y, 2.2 * q.s, 0, Math.PI * 2); c.fill();
+      var ay = 460 + Math.abs(k) * 30, a0 = P(k * 10.6, ay + 22), a1 = P(k * 10.6 - 2.4, ay), a2 = P(k * 10.6 + 2.4, ay);
+      c.fillStyle = 'rgba(255,158,77,.55)'; c.beginPath(); c.moveTo(a0.x, a0.y); c.lineTo(a1.x, a1.y); c.lineTo(a2.x, a2.y); c.closePath(); c.fill();
+    });
+    // 핀 자리 표시
+    SPOTS.forEach(function (q) { var p = P(q[0], PY + q[1]); c.fillStyle = 'rgba(90,45,10,.3)'; c.beginPath(); c.ellipse(p.x, p.y, 4 * p.s, 2.5 * p.s, 0, 0, Math.PI * 2); c.fill(); });
+    // 조준선
+    if (phase === 'ready' && S.state === 'playing') drawAim(c, t);
+    // 핀과 공을 먼 것부터 그림
+    var items = pins.filter(function (p) { return !p.gone && p.a > 0.01; }).map(function (p) { return { y: p.y, p: p }; });
+    if (ball && (ball.on || phase === 'ready')) items.push({ y: ball.y, b: ball });
+    items.sort(function (a, b) { return b.y - a.y; });
+    var spr = pinSprite(), bs = ballSprite();
+    items.forEach(function (it) {
+      if (it.p) {
+        var p = it.p, q = P(p.x, p.y), sc = q.s / 2;
+        c.globalAlpha = p.a;
+        c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(q.x + 2 * q.s, q.y, 7 * q.s, 3 * q.s, 0, 0, Math.PI * 2); c.fill();
+        if (p.down) A.draw(c, spr, q.x, q.y - 5 * q.s, sc * 0.95, p.rot); else A.draw(c, spr, q.x, q.y - 17 * q.s, sc * 0.9);
+        c.globalAlpha = 1;
+      } else {
+        var b = it.b, bq = P(b.x, b.y), r = BR * bq.s;
+        if (bq.y > H + 60) return;
+        c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(bq.x + 3, bq.y + r * 0.15, r * 1.05, r * 0.45, 0, 0, Math.PI * 2); c.fill();
+        A.draw(c, bs, bq.x, bq.y - r * 0.85, r / 40);
+        // 손가락 구멍(굴러가며 돌아감)
+        var hy = Math.cos(b.rot), vis = Math.sin(b.rot) > -0.2;
+        if (vis) { c.fillStyle = 'rgba(30,8,0,.8)'; var cy = bq.y - r * 0.85 - hy * r * 0.45; [[-0.22, 0], [0.22, 0], [0, 0.35]].forEach(function (h) { c.beginPath(); c.ellipse(bq.x + h[0] * r, cy + h[1] * r * Math.sin(b.rot), r * 0.11, r * 0.11 * Math.abs(Math.sin(b.rot)) + 0.5, 0, 0, Math.PI * 2); c.fill(); }); }
+      }
+    });
+    // 점수판
+    drawBoard(c);
+    // 남은 핀 그림(오른쪽 위)
+    var mx = W - 74, my = 196;
+    c.fillStyle = 'rgba(0,0,0,.45)'; A.rr(c, mx - 48, my - 20, 96, 76, 12); c.fill();
+    SPOTS.forEach(function (q, i) {
+      var st = pins.some(function (p) { return p.i === i && !p.down; });
+      c.fillStyle = st ? '#ffffff' : 'rgba(255,255,255,.14)'; c.beginPath(); c.arc(mx + q[0] * 0.95, my + 50 - q[1] * 0.8, 5.5, 0, Math.PI * 2); c.fill();
+    });
+    // 결과 문구
+    if (msg) {
+      var age = tim - msg.at, sc2 = Math.min(1, age * 5);
+      c.save(); c.translate(W / 2, 720); c.scale(0.6 + sc2 * 0.4, 0.6 + sc2 * 0.4); c.textAlign = 'center';
+      c.font = '900 ' + (msg.big ? 64 : 44) + 'px "Pretendard Variable",system-ui'; c.lineWidth = 8; c.strokeStyle = 'rgba(0,0,0,.6)'; c.strokeText(msg.t, 0, 0);
+      c.fillStyle = msg.big ? '#ffd166' : '#ffffff'; c.fillText(msg.t, 0, 0); c.restore();
+    }
+    // 안내
+    if (phase === 'ready' && S.state === 'playing' && rolls.length === 0 && !drag && !charging) {
+      c.fillStyle = 'rgba(255,240,225,' + (0.55 + 0.3 * Math.sin(t * 4)) + ')'; c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center';
+      c.fillText(document.body.classList.contains('touch') ? '좌우로 끌어 위치 · 위로 쓸어 올려 굴리기' : '←→ 위치 · ↑↓ 방향 · Z/X 회전 · Space 길게 눌렀다 떼기', W / 2, 940);
+    }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function predict() {
+    // 회전까지 반영한 공의 예상 경로(레인 앞쪽 일부만)
+    var x = aimX, y = 0, spd = 520 + (charging ? power : 0.6) * 480, vx = Math.sin(aimAng) * spd, vy = Math.cos(aimAng) * spd, pts = [], h = 1 / 60;
+    for (var i = 0; i < 400 && y < PY; i++) {
+      var hk = A.clamp((y - 600) / 900, 0, 1); hk = hk * hk * (3 - 2 * hk); vx += aimSpin * 115 * hk * h; x += vx * h; y += vy * h;
+      if (i % 3 === 0) pts.push([x, y]); if (Math.abs(x) > LW) break;
+    }
+    return pts;
+  }
+  function drawAim(c, t) {
+    var show = kbd || charging || aimSpin !== 0 || aimAng !== 0;
+    if (show) {
+      predict().forEach(function (q, i) { var p = P(q[0], q[1]); if (p.y < 130) return; c.fillStyle = 'rgba(255,209,102,' + Math.max(0.1, 0.8 - i * 0.012) + ')'; c.beginPath(); c.arc(p.x, p.y, Math.max(1.5, 3 * p.s / 2), 0, Math.PI * 2); c.fill(); });
+    }
+    var bq = P(aimX, 0);
+    // 회전 표시
+    if (aimSpin !== 0) {
+      c.strokeStyle = '#ffd166'; c.lineWidth = 3; c.beginPath(); var r = 46, dir = aimSpin > 0 ? 1 : -1;
+      c.arc(bq.x, bq.y - 30, r, -Math.PI / 2 - dir * 0.2, -Math.PI / 2 + dir * Math.abs(aimSpin) * 1.4, dir < 0); c.stroke();
+      c.fillStyle = '#ffd166'; c.font = '800 15px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('회전 ' + (dir > 0 ? '→' : '←') + ' ' + Math.round(Math.abs(aimSpin) * 100) + '%', bq.x, bq.y - 86);
+    }
+    // 힘 막대
+    if (charging) {
+      c.fillStyle = 'rgba(0,0,0,.5)'; A.rr(c, 30, 640, 22, 220, 11); c.fill();
+      var col = power > 0.85 ? '#ff4d6d' : power > 0.5 ? '#ffd166' : '#7dff9b'; c.fillStyle = col; A.rr(c, 30, 640 + 220 * (1 - power), 22, 220 * power, 11); c.fill();
+    }
+    // 끌기 자취
+    if (drag && drag.pts.length > 1 && drag.up) {
+      c.strokeStyle = 'rgba(255,209,102,.6)'; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath();
+      drag.pts.forEach(function (q, i) { if (i === 0) c.moveTo(q.x, q.y); else c.lineTo(q.x, q.y); }); c.stroke();
+    }
+  }
+  function drawBoard(c) {
+    var fl = frameRolls(), tot = totals(), x = 22, y = 106, wN = 48, w10 = 64, hh = 58;
+    c.fillStyle = 'rgba(0,0,0,.55)'; A.rr(c, x - 6, y - 4, 9 * wN + w10 + 12, hh + 8, 10); c.fill();
+    c.textAlign = 'center';
+    for (var f = 0; f < 10; f++) {
+      var w = f === 9 ? w10 : wN, fx0 = x + f * wN, cur = f === frame && phase !== 'done';
+      c.strokeStyle = cur ? '#ff9e4d' : 'rgba(255,255,255,.18)'; c.lineWidth = cur ? 2 : 1; c.strokeRect(fx0 + 0.5, y + 0.5, w - 1, hh - 1);
+      c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 10px "Pretendard Variable",system-ui'; c.fillText(String(f + 1), fx0 + 9, y + 12);
+      var m = fl[f] ? marks(f, fl[f]) : [], cells = f === 9 ? 3 : 2, cw = 17;
+      for (var k = 0; k < cells; k++) {
+        var cx = fx0 + w - cw * (cells - k) + cw / 2 - 2, s = m[k] || '';
+        if (s) { c.fillStyle = s === 'X' ? '#ffd166' : s === '/' ? '#7dff9b' : '#ffffff'; c.font = '800 14px "Pretendard Variable",system-ui'; c.fillText(s, cx, y + 16); }
+      }
+      if (tot[f] != null) { c.fillStyle = '#ffffff'; c.font = '800 17px "Pretendard Variable",system-ui'; c.fillText(String(tot[f]), fx0 + w / 2, y + 46); }
+    }
+  }
+  var lastHud = '';
+  function hud() {
+    var sc = curScore(), k = sc + '|' + frame + '|' + standing(); if (k === lastHud) return; lastHud = k;
+    document.getElementById('hA').textContent = sc; document.getElementById('hB').textContent = Math.min(10, frame + 1) + '/10'; document.getElementById('hC').textContent = standing();
+    document.getElementById('hMult').textContent = '';
+  }
+
+  // ---------- 입력 ----------
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing' || phase !== 'ready') return; e.preventDefault(); kbd = false;
+    var p = S.toLocal(e); drag = { x0: p.x, y0: p.y, ax: aimX, pts: [{ x: p.x, y: p.y, t: performance.now() }], up: false, ly: p.y };
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!drag || phase !== 'ready') return; var p = S.toLocal(e);
+    if (!drag.up) {
+      if (drag.y0 - p.y > 28) { drag.up = true; drag.pts = [{ x: p.x, y: p.y, t: performance.now() }]; }
+      else aimX = A.clamp(drag.ax + (p.x - drag.x0) / S0, -LW + BR + 1, LW - BR - 1);
+    } else drag.pts.push({ x: p.x, y: p.y, t: performance.now() });
+  });
+  window.addEventListener('pointerup', function () {
+    if (!drag) return; var d = drag; drag = null;
+    if (!d.up || phase !== 'ready' || S.state !== 'playing' || d.pts.length < 2) return;
+    var a = d.pts[0], z = d.pts[d.pts.length - 1], dy = a.y - z.y; if (dy < 50) return;
+    // 세기: 마지막 0.12초의 속도
+    var now = z.t, k = d.pts.length - 1; while (k > 0 && now - d.pts[k - 1].t < 120) k--;
+    var q = d.pts[k], dt = Math.max(16, now - q.t), v = Math.hypot(z.x - q.x, z.y - q.y) / dt * 1000;
+    if (k === d.pts.length - 1) v = 600;
+    var spd = A.clamp(470 + v * 0.22, 480, 1000);
+    // 방향: 처음→끝, 회전: 앞부분과 끝부분 방향 차이
+    var ang = Math.atan2(z.x - a.x, dy) * 0.1;
+    var total = 0, i; for (i = 1; i < d.pts.length; i++) total += Math.hypot(d.pts[i].x - d.pts[i - 1].x, d.pts[i].y - d.pts[i - 1].y);
+    var acc = 0, mid = d.pts[0]; for (i = 1; i < d.pts.length; i++) { acc += Math.hypot(d.pts[i].x - d.pts[i - 1].x, d.pts[i].y - d.pts[i - 1].y); if (acc > total * 0.6) { mid = d.pts[i]; break; } }
+    var a1 = Math.atan2(mid.x - a.x, a.y - mid.y), a2 = Math.atan2(z.x - mid.x, mid.y - z.y), spin = (a2 - a1) * 1.6;
+    if (Math.abs(spin) < 0.12) spin = 0;
+    throwBall(spd, ang, spin);
+  });
+  window.addEventListener('pointercancel', function () { drag = null; });
+  function keyFlag(k, on) {
+    if (k === 'ArrowLeft' || k === 'a') keys.L = on; else if (k === 'ArrowRight' || k === 'd') keys.R = on;
+    else if (k === 'ArrowUp' || k === 'w') keys.U = on; else if (k === 'ArrowDown' || k === 's') keys.D = on; else return false;
+    return true;
+  }
+  var S = new A.Shell({
+    id: 'bowling', W: W, H: H, reset: reset, update: update, idle: function (dt) { tim += dt; fx.update(dt); }, render: render,
+    keydown: function (e) {
+      var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (keyFlag(k, true)) return;
+      if (phase !== 'ready') return;
+      if (k === 'z') { aimSpin = A.clamp(aimSpin - 0.25, -1, 1); kbd = true; }
+      else if (k === 'x') { aimSpin = A.clamp(aimSpin + 0.25, -1, 1); kbd = true; }
+      else if (k === ' ' && !e.repeat) { charging = true; power = 0; kbd = true; }
+    },
+    keyup: function (e) {
+      var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keyFlag(k, false);
+      if (k === ' ' && charging) { charging = false; if (phase === 'ready' && S.state === 'playing') throwBall(520 + power * 480, aimAng, aimSpin); }
+    }
+  });
+  window.addEventListener('blur', function () { keys = {}; charging = false; });
+})();
+
+</script>
+</body>
+</html>

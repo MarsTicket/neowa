@@ -1218,5 +1218,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 2000000
+ },
+ {
+  "id": "golf",
+  "name": "미니 골프",
+  "genre": "MINI GOLF",
+  "kgenre": "미니 골프",
+  "cat": "액션",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "당겼다 놓아서 공을 치고, 벽에 튕겨 홀에 쏙! 풍차·연못·순간이동이 있는 9홀 라운드.",
+  "tags": [
+   "당겨 쏘기",
+   "9홀",
+   "홀인원"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 20000
  }
 ]

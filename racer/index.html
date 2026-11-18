@@ -138,20 +138,22 @@
     var c0 = cx(dist + (H - PY)), off = Math.abs(car.x - c0), onRoad = off < RW / 2 - 14;
     var target = (boostT > 0 ? 1.6 : 1) * Math.min(1050, 420 + dist / 90) * (onRoad ? 1 : 0.5);
     speed = A.lerp(speed, target, Math.min(1, dt * 2)); maxSp = Math.max(maxSp, speed);
-    dist += speed * dt; if (boostT > 0) boostT -= dt;
+    var mk = Math.floor(dist / 5000); dist += speed * dt; if (boostT > 0) boostT -= dt; if (Math.floor(dist / 5000) !== mk) A.sfx('level');
     fuel -= dt * (onRoad ? 3.2 : 9) * (1 + dist / 80000);
     if (!onRoad && Math.random() < 0.6) fx.spark(car.x + A.rand(-16, 16), PY + 40, '#8a6a3a', A.rand(-60, 60), 120, 0.4, 3);
+    var lowNow = fuel < 25; if (lowNow !== lowF) { lowF = lowNow; A.music.tempo(lowF ? 1.12 : 1); }
+    if (lowNow && fuel > 0) { lowT -= dt; if (lowT <= 0) { lowT = 1; A.sfx('warn'); } } else lowT = 0;
     if (dist > nextObj) spawn();
     function sy(d) { return PY - (d - dist - (H - PY)) ; }
     obs.forEach(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (!o.hit && Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { o.hit = true; fuel -= 15; speed *= 0.45; fx.burst(x, y, '#ff4d6d', 24, 300, 0.5, 3.5); fx.shake(9, 0.3); A.sfx('hurt'); A.vibrate(120); fx.text(car.x, PY - 70, '연료 -15', '#ff4d6d', 20); } });
     cans = cans.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { fuel = Math.min(100, fuel + 22); score += 100; fx.burst(x, y, '#7dff9b', 14, 220, 0.4, 3); fx.text(x, y - 40, '연료 +22', '#7dff9b', 18); A.sfx('power'); return false; } return y < H + 60; });
-    boosts = boosts.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { boostT = 2.5; score += 50; fx.ring(car.x, PY, '#ffe066', 120, 0.5); A.sfx('level'); return false; } return y < H + 60; });
+    boosts = boosts.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { boostT = 2.5; score += 50; fx.ring(car.x, PY, '#ffe066', 120, 0.5); A.sfx('charge', 1.2); A.sfx('whoosh'); return false; } return y < H + 60; });
     obs = obs.filter(function (o) { return sy(o.d) < H + 60; });
     score += speed * dt / 30;
-    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.sfx('over'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
+    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.music.tempo(1); lowF = false; A.sfx('drop'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
     hud();
   }
-  var maxSp = 0;
+  var maxSp = 0, lowT = 0, lowF = false;
   function render(c) {
     var o = fx.offset(), t = S.time, d0 = dist || t * 300;
     c.save(); c.translate(o[0], o[1]);

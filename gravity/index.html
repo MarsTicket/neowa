@@ -131,25 +131,26 @@
   }
   function reset() { P = { x: 130, y: BOTY - 22, vy: 0, g: 1, ground: true, rot: 0 }; segs = []; stars = []; speed = 340; dist = 0; score = 0; starN = 0; dyingT = 0; nextX = -100; while (nextX < W + 400) gen(); fx.clear(); hud(); }
   function floorHere(side) { for (var i = 0; i < segs.length; i++) { var s = segs[i]; if (P.x >= s.x && P.x < s.x + s.len) return s[side]; } return true; }
-  function flip() { if (S.state !== 'playing' || dyingT > 0 || !P.ground) return; P.g *= -1; P.ground = false; P.vy = 0; A.sfx('turn', P.g > 0 ? 0.8 : 1.6); fx.burst(P.x, P.y, '#7aa2ff', 8, 160, 0.3, 2.4); }
+  function flip() { if (S.state !== 'playing' || dyingT > 0 || !P.ground) return; P.g *= -1; P.ground = false; P.vy = 0; A.sfx('whoosh', P.g > 0 ? 0.8 : 1.4); fx.burst(P.x, P.y, '#7aa2ff', 8, 160, 0.3, 2.4); }
   function die() { if (dyingT > 0) return; dyingT = 1.1; fx.burst(P.x, P.y, '#7aa2ff', 40, 420, 0.8, 4); fx.shake(12, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(160); }
   function update(dt) {
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['별', String(starN)]]); return; }
-    speed = Math.min(760, 340 + dist / 50); var dx = speed * dt; dist += dx; nextX -= dx;
+    speed = Math.min(760, 340 + dist / 50); var dx = speed * dt, mk = Math.floor(dist / 3000); dist += dx; if (Math.floor(dist / 3000) !== mk) A.sfx('level'); nextX -= dx;
     segs.forEach(function (s) { s.x -= dx; s.spikes.forEach(function (k) { k.x -= dx; }); }); stars.forEach(function (s) { s.x -= dx; });
     segs = segs.filter(function (s) { return s.x + s.len > -50; }); stars = stars.filter(function (s) { return s.x > -30; });
     while (nextX < W + 400) gen();
-    P.vy += 3200 * P.g * dt; P.y += P.vy * dt; P.ground = false;
+    var wasG = P.ground; P.vy += 3200 * P.g * dt; P.y += P.vy * dt; P.ground = false;
     var side = P.g > 0 ? 'bot' : 'top';
     if (floorHere(side)) {
       if (P.g > 0 && P.y >= BOTY - 22) { P.y = BOTY - 22; P.vy = 0; P.ground = true; }
       if (P.g < 0 && P.y <= TOPY + 22) { P.y = TOPY + 22; P.vy = 0; P.ground = true; }
     }
+    if (P.ground && !wasG) A.sfx('land', P.g > 0 ? 1 : 1.5);
     if (P.y > H + 60 || P.y < -60) die();
     P.rot += (P.ground ? 0 : 8) * dt;
     segs.forEach(function (s) { s.spikes.forEach(function (k) { var ky = k.side === 'bot' ? BOTY - 18 : TOPY + 18; if (Math.abs(k.x - P.x) < 26 && Math.abs(ky - P.y) < 30) die(); }); });
-    for (var i = stars.length - 1; i >= 0; i--) if (Math.hypot(stars[i].x - P.x, stars[i].y - P.y) < 34) { var st = stars.splice(i, 1)[0]; starN++; fx.burst(st.x, st.y, '#ffd166', 12, 200, 0.4, 3); A.sfx('coin'); }
+    for (var i = stars.length - 1; i >= 0; i--) if (Math.hypot(stars[i].x - P.x, stars[i].y - P.y) < 34) { var st = stars.splice(i, 1)[0]; starN++; fx.burst(st.x, st.y, '#ffd166', 12, 200, 0.4, 3); A.sfx('coin', 1 + (starN % 8) * 0.04); }
     if (P.ground && Math.random() < 0.5) fx.spark(P.x - 16, P.y + 18 * P.g, '#7aa2ff', -speed * 0.3, -P.g * 40, 0.25, 2);
     score = Math.floor(dist / 10) + starN * 20; hud();
   }

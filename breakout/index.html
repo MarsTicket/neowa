@@ -196,7 +196,7 @@
   }
   function reset() {
     paddle = { x: W / 2, w: 104, tw: 104, vx: 0 };
-    score = 0; lives = 3; level = 1; combo = 0; slowT = 0; fireT = 0; wideT = 0; clearT = 0; dyingT = 0;
+    A.music.tempo(1); score = 0; lives = 3; level = 1; combo = 0; slowT = 0; fireT = 0; wideT = 0; clearT = 0; dyingT = 0;
     drops = []; fx.clear(); keys = {};
     buildLevel(1);
     balls = [newBall(true)]; launchT = 3;
@@ -214,7 +214,7 @@
   }
 
   function hitBrick(b, ball) {
-    if (b.steel) { b.hit = 0.15; A.sfx('steel'); fx.burst(ball.x, ball.y, '#c9cee8', 4, 160, 0.25, 2); return false; }
+    if (b.steel) { b.hit = 0.15; A.sfx('steel', 1, A.clamp(ball.x / W * 2 - 1, -1, 1)); fx.burst(ball.x, ball.y, '#c9cee8', 4, 160, 0.25, 2); return false; }
     b.hp -= fireT > 0 ? 3 : 1; b.hit = 0.12;
     combo++;
     if (b.hp <= 0) {
@@ -223,13 +223,13 @@
       var cx = b.x + BW / 2, cy = b.y + BH / 2;
       fx.burst(cx, cy, b.c, 16, 300, 0.55, 3.2); fx.burst(cx, cy, '#fff', 4, 200, 0.25, 2);
       if (combo >= 3) fx.text(cx, cy, '+' + pts, combo >= 8 ? '#ffd166' : '#fff', combo >= 8 ? 22 : 17);
-      A.sfx('brick', 1 + Math.min(combo, 16) * 0.06);
+      A.sfx('brick', 1 + Math.min(combo, 16) * 0.06, A.clamp(cx / W * 2 - 1, -1, 1)); if (combo >= 5 && combo % 5 === 0) A.sfx('combo', 1 + Math.min(combo / 5, 8) * 0.06);
       fx.shake(1.5 + Math.min(combo, 10) * 0.25, 0.08);
       if (b.item || Math.random() < 0.06) dropItem(cx, cy);
       bricks.splice(bricks.indexOf(b), 1);
       return true;
     }
-    A.sfx('wall', 1.6); score += 10;
+    A.sfx('wall', 1.6, A.clamp(ball.x / W * 2 - 1, -1, 1)); score += 10;
     return false;
   }
   function dropItem(x, y) {
@@ -238,7 +238,7 @@
     drops.push({ x: x, y: y, k: A.pick(pool), vy: 170, t: 0 });
   }
   function applyItem(k) {
-    A.sfx('power'); A.vibrate(20);
+    A.sfx(k === 'L' ? 'gold' : k === 'M' ? 'combo' : k === 'F' ? 'laser' : k === 'S' ? 'charge' : 'power'); A.vibrate(20);
     var label = { W: 'WIDE', M: 'MULTI BALL', F: 'FIRE BALL', S: 'SLOW', L: '1UP' }[k];
     fx.text(paddle.x, PY - 40, label, ITEMS[k], 20); fx.ring(paddle.x, PY, ITEMS[k], 100, 0.4);
     if (k === 'W') { wideT = 12; paddle.tw = 160; }
@@ -294,9 +294,9 @@
       var dist = cur * dt, steps = Math.ceil(dist / 5), sdt = dt / steps;
       for (var s = 0; s < steps; s++) {
         b.x += b.vx * sdt; b.y += b.vy * sdt;
-        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); A.sfx('wall'); }
-        if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); A.sfx('wall'); }
-        if (b.y < 66 + b.r) { b.y = 66 + b.r; b.vy = Math.abs(b.vy); A.sfx('wall'); }
+        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); A.sfx('wall', 1, -0.8); }
+        if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); A.sfx('wall', 1, 0.8); }
+        if (b.y < 66 + b.r) { b.y = 66 + b.r; b.vy = Math.abs(b.vy); A.sfx('wall', 1.2, A.clamp(b.x / W * 2 - 1, -1, 1)); }
         // 패들
         if (b.vy > 0 && b.y + b.r >= PY - PH / 2 && b.y - b.r < PY + PH / 2 && Math.abs(b.x - paddle.x) < paddle.w / 2 + b.r) {
           var off = A.clamp((b.x - paddle.x) / (paddle.w / 2), -1, 1);
@@ -305,7 +305,7 @@
           b.vx = Math.cos(ang) * sp; b.vy = Math.sin(ang) * sp; b.y = PY - PH / 2 - b.r;
           if (combo >= 5) fx.text(paddle.x, PY - 34, combo + ' COMBO', '#ffd166', 16);
           stat.maxCombo = Math.max(stat.maxCombo, combo); combo = 0;
-          A.sfx('bounce'); fx.burst(b.x, PY - 8, '#ffb547', 6, 160, 0.3, 2.2); paddle.squash = 0.15;
+          A.sfx('bounce', 1, A.clamp(b.x / W * 2 - 1, -1, 1)); fx.burst(b.x, PY - 8, '#ffb547', 6, 160, 0.3, 2.2); paddle.squash = 0.15;
         }
         // 벽돌
         for (j = bricks.length - 1; j >= 0; j--) {
@@ -355,7 +355,8 @@
     lives--; combo = 0; wideT = 0; paddle.tw = 104; fireT = 0; slowT = 0;
     fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(150);
     fx.burst(paddle.x, PY, '#ff4d6d', 30, 360, 0.7, 3.5);
-    if (lives <= 0) { dyingT = 1; balls = []; hud(); return; }
+    if (lives <= 0) { dyingT = 1; balls = []; A.music.tempo(1); hud(); return; }
+    if (lives === 1) { A.music.tempo(1.12); A.sfx('warn'); }
     balls = [newBall(true)]; launchT = 3; drops = [];
     S.banner(lives === 1 ? '마지막 기회' : '목숨 ' + lives, 'BALL LOST');
     hud();

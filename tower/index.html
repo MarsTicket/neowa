@@ -146,18 +146,18 @@
       var grow = combo >= 3 ? Math.min(14, 260 - cur.w) : 0;
       if (grow > 0) { cur.x -= grow / 2; cur.w += grow; fx.text(W / 2, sy(topY(cur.n)) - 50, '넓어짐!', '#ffe066', 20); }
       fx.ring(cur.x + cur.w / 2, sy(topY(cur.n)) + BH / 2, '#ffe066', cur.w * 0.7, 0.45);
-      A.sfx('coin', 1 + Math.min(combo, 10) * 0.08); A.vibrate(15);
+      A.sfx('combo', 1 + Math.min(combo, 12) * 0.05, A.clamp((cur.x + cur.w / 2) / W * 2 - 1, -1, 1)); if (grow > 0) A.sfx('power'); A.vibrate(15);
       fx.text(cur.x + cur.w / 2, sy(topY(cur.n)) - 20, combo > 1 ? 'PERFECT ×' + combo : 'PERFECT', '#fff', 20);
     } else {
       combo = 0;
       var nx = Math.max(cur.x, last.x), nr = Math.min(cur.x + cur.w, last.x + last.w), nw = nr - nx;
       if (nw <= 0) { // 완전히 빗나감
         chips.push({ x: cur.x, w: cur.w, y: topY(cur.n), vy: 0, vx: dir * 60, n: cur.n, rot: 0 });
-        cur = null; dyingT = 1.2; A.sfx('hurt'); fx.shake(8, 0.4); A.vibrate(150); return;
+        cur = null; dyingT = 1.2; A.sfx('drop'); A.sfx('hurt'); fx.shake(8, 0.4); A.vibrate(150); return;
       }
       var cx = off > 0 ? nr : cur.x, cw = cur.w - nw; // 잘려 나가는 조각
       chips.push({ x: cx, w: cw, y: topY(cur.n), vy: 0, vx: off > 0 ? 80 : -80, n: cur.n, rot: 0 });
-      cur.x = nx; cur.w = nw; A.sfx('brick', 0.8);
+      cur.x = nx; cur.w = nw; A.sfx('place', 0.8, A.clamp((nx + nw / 2) / W * 2 - 1, -1, 1)); A.sfx('whoosh', 1.4);
       fx.burst(off > 0 ? nr : nx, sy(topY(cur.n)) + BH / 2, col(cur.n, 70), 10, 200, 0.4, 2.5);
     }
     stack.push({ x: cur.x, w: cur.w, n: cur.n }); floors++;

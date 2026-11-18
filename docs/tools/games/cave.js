@@ -34,7 +34,7 @@
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['크리스털', String(gemN)]]); return; }
     speed = Math.min(620, 300 + dist / 60);
-    var dx = speed * dt; dist += dx;
+    var dx = speed * dt, mk = Math.floor(dist / 3000); dist += dx; if (Math.floor(dist / 3000) !== mk) A.sfx('level');
     walls.forEach(function (w) { w.x -= dx; }); pillars.forEach(function (p) { p.x -= dx; }); gems.forEach(function (g) { g.x -= dx; });
     while (walls.length && walls[1].x < -SEG) walls.shift();
     while (walls[walls.length - 1].x < W + SEG * 2) nextWall();
@@ -43,8 +43,9 @@
     if (hold) fx.spark(P.x - 18, P.y + 6, A.pick(['#5effc8', '#fff']), -speed * 0.5, A.rand(60, 160), 0.3, 2.4);
     var w = wallAt(P.x);
     if (P.y - 12 < w.top || P.y + 12 > w.bot) die();
+    var nearW = P.y - 12 < w.top + 14 || P.y + 12 > w.bot - 14; if (nearW && !P.near) A.sfx('tick'); P.near = nearW;
     pillars.forEach(function (p) { if (Math.abs(p.x - P.x) < p.w / 2 + 12 && Math.abs(p.y - P.y) < p.h / 2 + 10) die(); });
-    for (var i = gems.length - 1; i >= 0; i--) if (Math.hypot(gems[i].x - P.x, gems[i].y - P.y) < 30) { var g = gems.splice(i, 1)[0]; gemN++; fx.burst(g.x, g.y, '#ffd166', 12, 200, 0.4, 3); fx.text(g.x, g.y - 20, '+25', '#ffd166', 18); A.sfx('coin'); }
+    for (var i = gems.length - 1; i >= 0; i--) if (Math.hypot(gems[i].x - P.x, gems[i].y - P.y) < 30) { var g = gems.splice(i, 1)[0]; gemN++; fx.burst(g.x, g.y, '#ffd166', 12, 200, 0.4, 3); fx.text(g.x, g.y - 20, '+25', '#ffd166', 18); A.sfx('coin', 1 + (gemN % 8) * 0.04); }
     score = Math.floor(dist / 10) + gemN * 25;
     hud();
   }

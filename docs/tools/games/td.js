@@ -41,6 +41,7 @@
 
   // ---------- 진행 ----------
   function reset() {
+    if (A.music && A.music.mood) A.music.mood(null);
     makePath(); towers = []; enemies = []; shots = []; beams = []; gold = 160; lives = 20; wave = 0; score = 0; kills = 0;
     phase = 'break'; breakT = 15; queue = []; spawnT = 0; sel = null; cur = { r: 1, c: 1 }; speed = 1; fx.clear(); hud();
   }
@@ -57,7 +58,7 @@
     var bonus = wave > 0 ? Math.floor(breakT) * 2 : 0;
     if (bonus > 0) { gold += bonus; fx.text(W / 2, GY + 40, '바로 시작 +' + bonus + 'G', '#ffd166', 22); }
     wave++; queue = buildWave(wave); spawnT = 0; phase = 'wave';
-    S.banner('WAVE ' + wave, wave % 10 === 0 ? '보스 등장!' : (queue.length + '마리')); A.sfx('start'); hud();
+    S.banner('WAVE ' + wave, wave % 10 === 0 ? '보스 등장!' : (queue.length + '마리')); A.sfx(wave % 10 === 0 ? 'charge' : 'go'); if (A.music && A.music.mood) A.music.mood((wave % 10 === 0 ? 'boss' : (lives <= 5 ? 'danger' : null))); hud();
   }
   function spawn(k) {
     var t = ET[k], hp = Math.round(t.hp * Math.pow(1.12, wave - 1));
@@ -66,14 +67,14 @@
   function tStats(tw) { var b = TT[tw.t], m = Math.pow(1.6, tw.lv - 1); return { rng: (b.rng + 0.3 * (tw.lv - 1)) * CS, rate: b.rate * (1 + 0.15 * (tw.lv - 1)), dmg: b.dmg * m }; }
   function upCost(tw) { return Math.round(TT[tw.t].cost * 0.8 * tw.lv); }
   function build(r, c, t) {
-    if (onPath[r + ',' + c]) { A.sfx('tick'); fx.text(W / 2, PY - 14, '길 위에는 지을 수 없어요', '#ffd9c4', 18); return; }
-    if (towerAt(r, c) || gold < TT[t].cost) { if (gold < TT[t].cost) { A.sfx('hurt'); fx.text(W / 2, 770, '골드가 모자라요', '#ff7a8a', 20); } return; }
+    if (onPath[r + ',' + c]) { A.sfx('wrong'); fx.text(W / 2, PY - 14, '길 위에는 지을 수 없어요', '#ffd9c4', 18); return; }
+    if (towerAt(r, c) || gold < TT[t].cost) { if (gold < TT[t].cost) { A.sfx('wrong'); fx.text(W / 2, 770, '골드가 모자라요', '#ff7a8a', 20); } return; }
     gold -= TT[t].cost; var p = cpos(r, c);
     var tw = { r: r, c: c, x: p.x, y: p.y, t: t, lv: 1, cd: 0, a: -Math.PI / 2, spent: TT[t].cost }; towers.push(tw); sel = { tw: tw };
-    fx.burst(p.x, p.y, TT[t].col, 14, 180, 0.4, 2.5); A.sfx('power'); A.vibrate(10); hud();
+    fx.burst(p.x, p.y, TT[t].col, 14, 180, 0.4, 2.5); A.sfx('place'); A.sfx('power', 0.8); A.vibrate(10); hud();
   }
   function upgrade(tw) {
-    if (!tw || tw.lv >= 3) return; var cst = upCost(tw); if (gold < cst) { A.sfx('hurt'); fx.text(W / 2, 770, '골드가 모자라요', '#ff7a8a', 20); return; }
+    if (!tw || tw.lv >= 3) return; var cst = upCost(tw); if (gold < cst) { A.sfx('wrong'); fx.text(W / 2, 770, '골드가 모자라요', '#ff7a8a', 20); return; }
     gold -= cst; tw.spent += cst; tw.lv++; fx.burst(tw.x, tw.y, '#ffffff', 16, 200, 0.4, 2.5); fx.ring(tw.x, tw.y, TT[tw.t].col, 34, 0.35); A.sfx('level'); hud();
   }
   function sell(tw) {
@@ -86,7 +87,7 @@
     if (e.hp <= 0) {
       gold += e.g; score += e.g * 10 * (e.boss ? 3 : 1); kills++;
       fx.burst(e.x, e.y, e.col, e.boss ? 40 : 12, e.boss ? 360 : 200, 0.5, 2.5); fx.text(e.x, e.y - 14, '+' + e.g, '#ffd166', 15);
-      if (e.boss) { fx.shake(8, 0.3); A.sfx('bigboom'); A.vibrate([30, 30, 60]); } else A.sfx('hit', 0.9 + Math.random() * 0.3);
+      if (e.boss) { fx.shake(8, 0.3); A.sfx('bigboom'); A.vibrate([30, 30, 60]); } else { A.sfx('hit', 0.9 + Math.random() * 0.3); A.sfx('coin', 1.3); }
       hud();
     }
   }
@@ -102,8 +103,8 @@
       e.d += e.sp * (e.slow > 0 ? 0.55 : 1) * dt;
       var p = pathPos(e.d); e.x = p.x; e.y = p.y;
       if (e.d >= path.length) {
-        enemies.splice(i, 1); lives -= e.boss ? 5 : 1; fx.flashIt('#ff4d6d', 0.25); fx.shake(5, 0.2); A.sfx('hurt'); A.vibrate(30); hud();
-        if (lives <= 0) { lives = 0; phase = 'over'; S.gameOver(score, [['웨이브', String(wave)], ['처치', String(kills)], ['타워', String(towers.length)]]); return; }
+        enemies.splice(i, 1); lives -= e.boss ? 5 : 1; fx.flashIt('#ff4d6d', 0.25); fx.shake(5, 0.2); A.sfx('hurt'); A.vibrate(30); if (lives <= 5) { A.sfx('warn'); if (A.music && A.music.mood) A.music.mood('danger'); } hud();
+        if (lives <= 0) { lives = 0; phase = 'over'; if (A.music && A.music.mood) A.music.mood(null); S.gameOver(score, [['웨이브', String(wave)], ['처치', String(kills)], ['타워', String(towers.length)]]); return; }
       }
     }
     // 타워
@@ -114,9 +115,9 @@
       var want = Math.atan2(best.y - tw.y, best.x - tw.x); tw.a = want;
       if (tw.cd > 0) return; tw.cd = 1 / st.rate;
       var mx = tw.x + Math.cos(want) * 20, my = tw.y + Math.sin(want) * 20;
-      if (tw.t === 0) { shots.push({ x: mx, y: my, tg: best, sp: 900, dmg: st.dmg, col: '#ffd166', kind: 0 }); A.sfx('shoot', 1.6); }
-      else if (tw.t === 1) { shots.push({ x: mx, y: my, tg: best, sp: 420, dmg: st.dmg, col: '#ff7a45', kind: 1, splash: CS * (0.85 + 0.1 * tw.lv) }); A.sfx('shoot', 0.6); }
-      else if (tw.t === 2) { shots.push({ x: mx, y: my, tg: best, sp: 520, dmg: st.dmg, col: '#7ad7ff', kind: 2, splash: CS * 0.7, slow: 1.4 + 0.4 * tw.lv }); A.sfx('shoot', 1.2); }
+      if (tw.t === 0) { shots.push({ x: mx, y: my, tg: best, sp: 900, dmg: st.dmg, col: '#ffd166', kind: 0 }); A.sfx('shoot', 1.6, A.clamp(mx / W * 2 - 1, -1, 1)); }
+      else if (tw.t === 1) { shots.push({ x: mx, y: my, tg: best, sp: 420, dmg: st.dmg, col: '#ff7a45', kind: 1, splash: CS * (0.85 + 0.1 * tw.lv) }); A.sfx('shoot', 0.6, A.clamp(mx / W * 2 - 1, -1, 1)); }
+      else if (tw.t === 2) { shots.push({ x: mx, y: my, tg: best, sp: 520, dmg: st.dmg, col: '#7ad7ff', kind: 2, splash: CS * 0.7, slow: 1.4 + 0.4 * tw.lv }); A.sfx('shoot', 1.2, A.clamp(mx / W * 2 - 1, -1, 1)); }
       else {
         // 레이저: 사거리 끝까지 직선 관통
         var ex = tw.x + Math.cos(want) * st.rng, ey = tw.y + Math.sin(want) * st.rng;
@@ -141,7 +142,7 @@
     // 웨이브 끝
     if (phase === 'wave' && !queue.length && !enemies.length) {
       var b = 100 + lives * 5; score += b; gold += 20 + wave * 2; phase = 'break'; breakT = 12;
-      S.banner('WAVE ' + wave + ' 클리어', '+' + b + '점 · +' + (20 + wave * 2) + 'G'); A.sfx('level'); hud();
+      S.banner('WAVE ' + wave + ' 클리어', '+' + b + '점 · +' + (20 + wave * 2) + 'G'); A.sfx('level'); if (A.music && A.music.mood) A.music.mood(lives <= 5 ? 'danger' : null); hud();
     }
   }
   function segDist(px, py, x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy, t = l ? A.clamp(((px - x1) * dx + (py - y1) * dy) / l, 0, 1) : 0; return Math.hypot(px - x1 - dx * t, py - y1 - dy * t); }

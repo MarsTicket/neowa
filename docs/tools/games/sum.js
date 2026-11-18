@@ -140,13 +140,13 @@
   function put(d) {
     if (winT > 0 || dyingT > 0 || !white[sel]) return;
     if (val[sel] && val[sel] === sol[sel]) { A.sfx('wall'); return; }
-    if (noteMode) { notes[sel] ^= 1 << d; A.sfx('tick'); return; }
+    if (noteMode) { notes[sel] ^= 1 << d; A.sfx('pop', 1 + d * 0.04); return; }
     val[sel] = d; notes[sel] = 0; var p = cxy(sel);
     if (d !== sol[sel]) {
-      wrong[sel] = true; mistakes++; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2); fx.text(p[0] + CS / 2, p[1] - 6, '✕', '#ff4d6d', 24);
+      wrong[sel] = true; mistakes++; A.sfx('wrong'); A.vibrate(80); fx.shake(5, 0.2); fx.text(p[0] + CS / 2, p[1] - 6, '✕', '#ff4d6d', 24);
       if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.5); }
     } else {
-      wrong[sel] = false; A.sfx('eat', 1 + d * 0.04); clearNotes(sel, d); celebrate(sel);
+      wrong[sel] = false; A.sfx('right', 1 + d * 0.03); clearNotes(sel, d); celebrate(sel);
       if (allDone()) win();
     }
     hud();
@@ -156,9 +156,9 @@
   function celebrate(i) {
     var n = 0;
     [0, 1].forEach(function (dd) { var r = runOf[i][dd]; if (r.cells.every(function (c) { return val[c] === sol[c]; })) { n++; r.cells.forEach(function (c, k) { flash.push({ k: c, t: -k * 0.04 }); }); flash.push({ k: r.clue, t: 0 }); } });
-    if (n) { var p = cxy(i); A.sfx('coin', 1 + n * 0.1); fx.text(p[0] + CS / 2, p[1] - 10, n > 1 ? '합 완성 ×2' : '합 완성!', '#c3ff5e', 20); }
+    if (n) { var p = cxy(i); A.sfx('match', 1 + n * 0.1); A.vibrate(12); fx.text(p[0] + CS / 2, p[1] - 10, n > 1 ? '합 완성 ×2' : '합 완성!', '#c3ff5e', 20); }
   }
-  function erase() { if (!white[sel] || val[sel] === sol[sel]) return; val[sel] = 0; wrong[sel] = false; notes[sel] = 0; A.sfx('click'); hud(); }
+  function erase() { if (!white[sel] || val[sel] === sol[sel]) return; val[sel] = 0; wrong[sel] = false; notes[sel] = 0; A.sfx('tap'); hud(); }
   function hint() {
     if (hints >= 3 || winT > 0 || dyingT > 0) { A.sfx('wall'); return; }
     var i = sel;
@@ -167,7 +167,7 @@
     var p = cxy(i); fx.ring(p[0] + CS / 2, p[1] + CS / 2, '#c3ff5e', 60, 0.4); A.sfx('power');
     celebrate(i); if (allDone()) win(); hud();
   }
-  function win() { winT = 1.6; A.sfx('level'); fx.flashIt('#c3ff5e', 0.3); for (var k = 0; k < N * N; k++) if (white[k]) flash.push({ k: k, t: -((k % N) + Math.floor(k / N)) * 0.03 }); for (var i = 0; i < 6; i++) fx.burst(A.rand(80, W - 80), A.rand(150, 600), A.pick(['#c3ff5e', '#ffd166', '#5ee7ff']), 26, 400, 0.9, 4); }
+  function win() { winT = 1.6; A.sfx('win'); fx.flashIt('#c3ff5e', 0.3); for (var k = 0; k < N * N; k++) if (white[k]) flash.push({ k: k, t: -((k % N) + Math.floor(k / N)) * 0.03 }); for (var i = 0; i < 6; i++) fx.burst(A.rand(80, W - 80), A.rand(150, 600), A.pick(['#c3ff5e', '#ffd166', '#5ee7ff']), 26, 400, 0.9, 4); }
   function score() { return Math.max(100, Math.round(D.base + Math.max(0, D.base * 1.5 - time * D.base / 300) - hints * D.base * 0.15 - mistakes * D.base * 0.1)); }
   function fmtT(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
   function update(dt) {
@@ -254,11 +254,11 @@
   }
 
   // ---------- 입력 ----------
-  function move(dx, dy) { var x = sel % N, y = Math.floor(sel / N); for (var s = 0; s < N; s++) { x = (x + dx + N) % N; y = (y + dy + N) % N; if (white[y * N + x]) { sel = y * N + x; A.sfx('tick'); return; } } }
+  function move(dx, dy) { var x = sel % N, y = Math.floor(sel / N); for (var s = 0; s < N; s++) { x = (x + dx + N) % N; y = (y + dy + N) % N; if (white[y * N + x]) { sel = y * N + x; A.sfx('select'); return; } } }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing' || !white) return;
     var p = S.toLocal(e);
-    if (p.x >= GX && p.x < GX + N * CS && p.y >= GY && p.y < GY + N * CS) { var i = Math.floor((p.y - GY) / CS) * N + Math.floor((p.x - GX) / CS); if (white[i]) { sel = i; A.sfx('tick'); } return; }
+    if (p.x >= GX && p.x < GX + N * CS && p.y >= GY && p.y < GY + N * CS) { var i = Math.floor((p.y - GY) / CS) * N + Math.floor((p.x - GX) / CS); if (white[i]) { sel = i; A.sfx('select'); } return; }
     if (p.y >= PAD_Y && p.y <= PAD_Y + PAD_H) { var d = Math.floor((p.x - 18) / (504 / 9)) + 1; if (d >= 1 && d <= 9) put(d); return; }
     if (p.y >= TOOL_Y && p.y <= TOOL_Y + TOOL_H) { var t = Math.floor((p.x - 18) / (504 / 3)); if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else if (t === 2) hint(); }
   });

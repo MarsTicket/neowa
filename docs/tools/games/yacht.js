@@ -48,12 +48,12 @@
     if (held.every(Boolean)) { S.banner('모두 고정됨', '주사위를 눌러 풀어 주세요'); return; }
     rollsLeft--; rollT = 0.6; armed = -1;
     for (var i = 0; i < 5; i++) if (!held[i]) dice[i] = A.irand(1, 6);
-    A.sfx('shoot', 0.5); A.vibrate(15); hud();
+    A.sfx('whoosh', 1.1); A.vibrate(15); hud();
   }
   function rolled() { return rollsLeft < 3; }
   function toggleHold(i) {
     if (phase !== 'turn' || !rolled() || rollT > 0 || rollsLeft === 0) return;
-    held[i] = !held[i]; A.sfx(held[i] ? 'click' : 'turn'); A.vibrate(8);
+    held[i] = !held[i]; A.sfx(held[i] ? 'select' : 'tap'); A.vibrate(8);
   }
   function record(ci) {
     var c = CATS[ci]; if (!c || sheet[c.k] != null || !rolled() || rollT > 0 || phase !== 'turn') return;
@@ -62,8 +62,8 @@
     fx.text(r.x + r.w - 40, r.y + 26, v ? '+' + v : '0', v ? '#ff7aa8' : '#8a8a9a', 24);
     if (c.k === 'ya' && v) { yachts++; S.banner('요트!', '+50'); A.sfx('record'); fx.flashIt('#ff7aa8', 0.35); fx.burst(W / 2, 640, '#ff7aa8', 40, 420, 0.9, 4); fx.burst(W / 2, 640, '#ffd166', 30, 360, 0.9, 3); A.vibrate([30, 40, 30, 40, 60]); }
     else if (v >= 25) { A.sfx('level'); fx.burst(r.x + r.w / 2, r.y + 26, '#ff7aa8', 20, 260, 0.6, 3); }
-    else A.sfx(v ? 'coin' : 'hurt');
-    if (!hadBonus && bonus()) { S.banner('보너스 +35', '위쪽 합 63 달성!'); A.sfx('record'); }
+    else A.sfx(v ? 'right' : 'wrong');
+    if (!hadBonus && bonus()) { S.banner('보너스 +35', '위쪽 합 63 달성!'); A.sfx('win'); }
     if (turn >= 12) { phase = 'done'; hud(); setTimeout(function () { S.gameOver(total(), [['위쪽 합', upper() + (bonus() ? ' (+35)' : '')], ['요트', yachts + '번']], { win: true, title: total() >= 200 ? '대단해요!' : '게임 완료' }); }, 900); return; }
     turn++; rollsLeft = 3; held = [false, false, false, false, false]; hud();
   }
@@ -156,7 +156,7 @@
   function pickRow(ci) {
     if (ci < 0 || sheet[CATS[ci].k] != null || !rolled() || rollT > 0) return;
     if (armed === ci) { record(ci); return; }
-    sel = ci; armed = ci; A.sfx('tick');
+    sel = ci; armed = ci; A.sfx('select');
   }
   var stage = document.getElementById('stage');
   stage.addEventListener('click', function (e) {

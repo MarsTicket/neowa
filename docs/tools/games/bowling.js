@@ -82,7 +82,7 @@
     spd = A.clamp(spd, 480, 1000); ang = A.clamp(ang, -0.055, 0.055); spin = A.clamp(spin, -1, 1);
     ball.x = aimX; ball.y = 0; ball.vx = Math.sin(ang) * spd; ball.vy = Math.cos(ang) * spd; ball.spin = spin; ball.on = true;
     standBefore = standing(); phase = 'roll'; phaseT = 0; reachT = -1; aimAng = ang; aimSpin = spin;
-    A.sfx('shoot', 0.5); A.vibrate(15);
+    A.sfx('whoosh', 0.7); A.vibrate(15);
   }
   function collide(a, b, ma, mb, e) {
     var dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), rr = a.r + b.r;
@@ -104,7 +104,7 @@
       if (!b.gutter) {
         var hk = A.clamp((b.y - 600) / 900, 0, 1); hk = hk * hk * (3 - 2 * hk);
         b.vx += b.spin * 115 * hk * h;
-        if (Math.abs(b.x) > LW - 3) { b.gutter = true; b.vx = 0; b.spin = 0; A.sfx('wall', 0.6); fx.text(W / 2, 260, '거터!', '#ffb27a', 30); }
+        if (Math.abs(b.x) > LW - 3) { b.gutter = true; b.vx = 0; b.spin = 0; A.sfx('wall', 0.6); A.sfx('splash', 0.7); fx.text(W / 2, 260, '거터!', '#ffb27a', 30); }
       } else { var gx = (b.x > 0 ? 1 : -1) * (LW + GW / 2); b.x += (gx - b.x) * Math.min(1, h * 12); }
       b.vy = Math.max(420, b.vy - 12 * h); b.x += b.vx * h; b.y += b.vy * h; b.rot += b.vy * h / BR;
       b.r = BR;
@@ -175,9 +175,9 @@
     else title = down === 0 ? (ball.gutter ? '거터' : '0 핀') : down + ' 핀';
     msg = { t: title, big: big, at: tim };
     if (big) {
-      A.sfx(title === 'STRIKE!' ? 'record' : 'level'); A.vibrate(title === 'STRIKE!' ? [30, 40, 30, 40, 60] : [20, 30, 20]);
+      A.sfx(title === 'STRIKE!' ? 'bigboom' : 'level'); if (title === 'STRIKE!') A.sfx('combo', 1.2); A.vibrate(title === 'STRIKE!' ? [30, 40, 30, 40, 60] : [20, 30, 20]);
       var q = P(0, PY + 40); fx.burst(q.x, q.y, '#ff9e4d', 40, 420, 0.9, 4); fx.burst(q.x, q.y, '#ffd166', 26, 320, 0.8, 3); if (title === 'STRIKE!') fx.flashIt('#ff9e4d', 0.3);
-    } else A.sfx(down ? 'coin' : 'hurt');
+    } else A.sfx(down ? 'coin' : 'wrong', 1 + down * 0.03);
     phase = 'count'; phaseT = 0; hud();
   }
   function frameDone() {

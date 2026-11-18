@@ -58,7 +58,7 @@
     hist = []; sel = -1; anim = null; clearT = 0; added = false; moves = 0; done = {}; cur = 0; stuck = false;
     layout();
   }
-  function reset() { stage = 1; score = 0; time = 0; undos = 0; setup(); fx.clear(); hud(); }
+  function reset() { if (A.music && A.music.mood) A.music.mood(null); stage = 1; score = 0; time = 0; undos = 0; setup(); fx.clear(); hud(); }
   // 병 위치 (최대 한 줄 7개)
   var pos = [];
   function layout() {
@@ -75,20 +75,20 @@
   // ---------- 조작 ----------
   function tap(i) {
     if (S.state !== 'playing' || anim || clearT > 0 || i < 0 || i >= B.length) return;
-    if (sel < 0) { if (!B[i].length || done[i]) { A.sfx('wall'); return; } sel = i; A.sfx('click', 1.2); return; }
-    if (sel === i) { sel = -1; A.sfx('click', 0.8); return; }
+    if (sel < 0) { if (!B[i].length || done[i]) { A.sfx('wall'); return; } sel = i; A.sfx('select'); return; }
+    if (sel === i) { sel = -1; A.sfx('tap'); return; }
     if (!canPour(B, sel, i)) {
-      if (B[i].length && !done[i]) { sel = i; A.sfx('click', 1.2); return; } // 다른 병으로 고르기 바꿈
+      if (B[i].length && !done[i]) { sel = i; A.sfx('select'); return; } // 다른 병으로 고르기 바꿈
       A.sfx('wall'); fx.shake(3, 0.12); sel = -1; return;
     }
     hist.push(B.map(function (b) { return b.slice(); }));
     var r = topRun(B[sel]), n = Math.min(r[0], CAP - B[i].length);
     anim = { from: sel, to: i, n: n, c: r[1], t: 0, moved: 0 };
-    sel = -1; moves++; A.sfx('turn', 1.2); hud();
+    sel = -1; moves++; A.sfx('splash', 1.3); hud();
   }
   function undo() {
     if (S.state !== 'playing' || anim || clearT > 0 || !hist.length) { A.sfx('wall'); return; }
-    B = hist.pop(); sel = -1; undos++; score = Math.max(0, score - 5); done = {}; checkDone(true); stuck = false; layout(); A.sfx('click'); hud();
+    B = hist.pop(); sel = -1; undos++; score = Math.max(0, score - 5); done = {}; checkDone(true); stuck = false; layout(); A.sfx('slide'); hud();
   }
   function addBottle() {
     if (S.state !== 'playing' || anim || clearT > 0 || added) { A.sfx('wall'); return; }
@@ -106,15 +106,17 @@
     checkDone(false);
     if (solved(B)) {
       var pts = Math.max(20, 100 * nCol); score += pts; clearT = 1.6;
-      S.banner('STAGE ' + stage + ' CLEAR', '+' + A.fmt(pts) + ' · ' + moves + '번 만에'); A.sfx('level'); A.vibrate([20, 40, 20]);
+      S.banner('STAGE ' + stage + ' CLEAR', '+' + A.fmt(pts) + ' · ' + moves + '번 만에'); A.sfx('win'); A.vibrate([20, 40, 20]);
       B.forEach(function (b, i) { var p = pos[i]; setTimeout(function () { fx.burst(p.x + BW / 2, p.y + BH / 2, '#ffd166', 12, 240, 0.6, 3); }, i * 60); });
-    } else if (!anyMove()) { stuck = true; A.sfx('hurt'); fx.shake(6, 0.3); }
+    } else if (!anyMove()) { stuck = true; A.sfx('wrong'); fx.shake(6, 0.3); }
     hud();
   }
   function update(dt) {
     fx.update(dt);
     if (clearT > 0) { clearT -= dt; if (clearT <= 0) { stage++; setup(); S.banner('STAGE ' + stage, nCol + '가지 색'); } hud(); return; }
     time += dt;
+    if (LIMIT - time <= 5 && Math.floor(LIMIT - time) !== Math.floor(LIMIT - time + dt)) A.sfx('warn');
+    if (LIMIT - time <= 10) { if (A.music && A.music.mood) A.music.mood('danger'); }
     if (time >= LIMIT) { time = LIMIT; hud(); S.gameOver(score, [['단계', (stage - 1) + ' 클리어'], ['붓기', String(moves)], ['되돌리기', String(undos)]], { kick: 'TIME UP', win: true }); return; }
     if (anim) {
       anim.t += dt;
@@ -215,7 +217,7 @@
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; e.preventDefault(); kbd = false; var p = S.toLocal(e);
     var bs = btns(); for (var b = 0; b < bs.length; b++) { var q = bs[b]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) { if (!q.on) { A.sfx('wall'); return; } if (q.id === 'undo') undo(); else addBottle(); return; } }
-    var i = hit(p); if (i >= 0) tap(i); else if (sel >= 0) { sel = -1; A.sfx('click', 0.8); }
+    var i = hit(p); if (i >= 0) tap(i); else if (sel >= 0) { sel = -1; A.sfx('tap'); }
   });
   var S = new A.Shell({
     id: 'sort', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,

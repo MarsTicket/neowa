@@ -120,9 +120,20 @@
   var ground, me, foe, shell, turn, wind, battle, score, hp, foeHp, aim = { a: -0.9, p: 0.6 }, pulling = null, keys = {}, dyingT, aiErr, foeAim, pending = null;
   // 다음 차례로 넘기는 대기 시간은 setTimeout 대신 update에서 셈 → 일시정지·다시 하기에도 꼬이지 않음
   function later(sec, fn) { pending = { t: sec, fn: fn }; }
+  // 가로 화면은 900x600 가로 전장. 세로(540x960)에선 예전과 같은 지형
+  var land = false, TY = 130;
+  function geo(sh) {
+    var nW = sh ? sh.W : 540, nH = sh ? sh.H : 960; land = !!(sh && sh.land); TY = land ? 40 : 130;
+    if (ground && (nW !== W || nH !== H)) { // 전투 중 화면을 돌리면 지형·포대·포탄을 새 크기에 맞춰 늘이고 줄임
+      var kx = nW / W, ky = nH / H, old = ground; ground = [];
+      for (var x = 0; x <= nW; x += STEP) { var f = x / kx / STEP, i = Math.min(old.length - 2, Math.floor(f)), u = Math.min(1, f - i); ground.push((old[i] * (1 - u) + old[i + 1] * u) * ky); }
+      me.x *= kx; foe.x *= kx; if (shell) { shell.x *= kx; shell.y *= ky; }
+    }
+    W = nW; H = nH;
+  }
   function makeGround() {
-    ground = []; var base = A.rand(640, 720), hill = A.rand(160, 300), hx = A.rand(220, 320);
-    for (var x = 0; x <= W; x += STEP) ground.push(base - Math.exp(-Math.pow((x - hx) / 90, 2)) * hill - Math.sin(x * 0.02 + battle) * 20);
+    var sx = W / 540; ground = []; var base = A.rand(0.667, 0.75) * H, hill = (land ? A.rand(0.24, 0.4) : A.rand(0.167, 0.31)) * H, hx = A.rand(0.41, 0.59) * W;
+    for (var x = 0; x <= W; x += STEP) ground.push(base - Math.exp(-Math.pow((x - hx) / (90 * sx), 2)) * hill - Math.sin(x * 0.02 / sx + battle) * 20);
   }
   function gy(x) { var i = A.clamp(Math.floor(x / STEP), 0, ground.length - 1); return ground[i]; }
   function newBattle() {
@@ -191,16 +202,16 @@
     c.strokeStyle = '#ff9e4d'; c.lineWidth = 3; c.beginPath(); ground.forEach(function (y, i) { c[i ? 'lineTo' : 'moveTo'](i * STEP, y); }); c.stroke();
     var am = curAim();
     tank(c, me.x, '#5ee7ff', am.a); tank(c, foe.x, '#ff4d6d', foeAim ? foeAim.a : -Math.PI + 0.8);
-    c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '700 16px "Pretendard Variable",system-ui'; c.textAlign = 'center';
-    c.fillText('바람 ' + (wind > 0 ? '→ ' : wind < 0 ? '← ' : '') + Math.abs(wind || 0).toFixed(1), W / 2, 130);
-    c.strokeStyle = '#9be7ff'; c.lineWidth = 4; c.beginPath(); c.moveTo(W / 2, 145); c.lineTo(W / 2 + (wind || 0) * 30, 145); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '700 ' + (land ? Math.round(16 * 1.45) : 16) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center';
+    c.fillText('바람 ' + (wind > 0 ? '→ ' : wind < 0 ? '← ' : '') + Math.abs(wind || 0).toFixed(1), W / 2, TY);
+    c.strokeStyle = '#9be7ff'; c.lineWidth = 4; c.beginPath(); c.moveTo(W / 2, TY + 15); c.lineTo(W / 2 + (wind || 0) * 30, TY + 15); c.stroke();
     if (S.state === 'playing' && turn === 'me' && !shell) {
       c.fillStyle = 'rgba(255,255,255,.55)'; var v = 300 + am.p * 520, x = me.x + Math.cos(am.a) * 30, y = gy(me.x) - 24 + Math.sin(am.a) * 30, vx = Math.cos(am.a) * v, vy = Math.sin(am.a) * v;
       for (var i = 0; i < 10; i++) { for (var q = 0; q < 4; q++) { vy += G * 0.012; x += vx * 0.012; y += vy * 0.012; } c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); }
-      c.fillStyle = '#5ee7ff'; c.font = '700 15px "Pretendard Variable",system-ui'; c.fillText('힘 ' + Math.round(am.p * 100) + '%', me.x + 30, gy(me.x) - 70);
+      c.fillStyle = '#5ee7ff'; c.font = '700 ' + (land ? Math.round(15 * 1.45) : 15) + 'px "Pretendard Variable",system-ui'; c.fillText('힘 ' + Math.round(am.p * 100) + '%', me.x + 30, gy(me.x) - 70);
     }
-    if (turn === 'me' && battle === 1 && hp === 3 && foeHp === 3 && S.state === 'playing' && !shell && !pulling) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(document.body.classList.contains('touch') ? '화면을 누르고 왼쪽 아래로 당겼다 놓으세요' : '드래그로 당겼다 놓거나 ↑↓←→ + Space', W / 2, 200); }
-    if (turn === 'foe' && S.state === 'playing' && !shell) { c.fillStyle = '#ff4d6d'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText('적이 조준 중…', W / 2, 200); }
+    if (turn === 'me' && battle === 1 && hp === 3 && foeHp === 3 && S.state === 'playing' && !shell && !pulling) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 ' + (land ? Math.round(18 * 1.45) : 18) + 'px "Pretendard Variable",system-ui'; c.fillText(document.body.classList.contains('touch') ? '화면을 누르고 왼쪽 아래로 당겼다 놓으세요' : '드래그로 당겼다 놓거나 ↑↓←→ + Space', W / 2, TY + 70); }
+    if (turn === 'foe' && S.state === 'playing' && !shell) { c.fillStyle = '#ff4d6d'; c.font = '700 ' + (land ? Math.round(18 * 1.45) : 18) + 'px "Pretendard Variable",system-ui'; c.fillText('적이 조준 중…', W / 2, TY + 70); }
     if (shell) { c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ffd166', 5), shell.x, shell.y, 1); c.restore(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
@@ -209,10 +220,22 @@
   stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing' || turn !== 'me' || shell) return; var p = S.toLocal(e); pulling = { sx: p.x, sy: p.y, x: p.x, y: p.y, id: e.pointerId }; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (pulling && pulling.id === e.pointerId) { var p = S.toLocal(e); pulling.x = p.x; pulling.y = p.y; } });
   stage.addEventListener('pointerup', function (e) { if (!pulling) return; var a = curAim(); pulling = null; if (a.p > 0.08) { aim = a; turn = 'wait'; fire(a.a, a.p, 'me'); } });
-  var S = new A.Shell({ id: 'artillery', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'artillery', W: W, H: H, land: [900, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key; if (k === 'ArrowUp' || k === 'w') keys.up = true; if (k === 'ArrowDown' || k === 's') keys.down = true; if (k === 'ArrowLeft' || k === 'a') keys.left = true; if (k === 'ArrowRight' || k === 'd') keys.right = true;
       if ((k === ' ' || k === 'Enter') && !e.repeat && turn === 'me' && !shell) { turn = 'wait'; fire(aim.a, aim.p, 'me'); } },
     keyup: function (e) { var k = e.key; if (k === 'ArrowUp' || k === 'w') keys.up = false; if (k === 'ArrowDown' || k === 's') keys.down = false; if (k === 'ArrowLeft' || k === 'a') keys.left = false; if (k === 'ArrowRight' || k === 'd') keys.right = false; } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();
 
 </script>

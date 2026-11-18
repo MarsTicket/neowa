@@ -123,14 +123,25 @@
   var SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   var fx = new A.FX();
   // hands: 내 손패 목록 (분할하면 2개). 각 {c: 카드들, bet: 건 칩, dbl: 더블 여부, split: 분할된 손인지}
-  var shoe, chips, bet, round, MAXR = 20, phase, hands, hi, dl, msg, msgC, endT, btns = [], streak = 0, dealerT = 0;
+  var shoe, chips, bet, round, MAXR = 20, phase, hands, hi, dl, msg, msgC, endT, btns = [], streak = 0, dealerT = 0, bestStreak = 0, MAXSC = 1000000; // MAXSC = 카탈로그 최고 점수 한도
+  // 첫 플레이 안내: 처음 한 번만 판 위에 짧은 안내를 띄우고, 첫 올바른 행동을 하면 사라짐 (neowa_blackjack_tut = 1)
+  var tut = A.get('neowa_blackjack_tut', '0') !== '1', tutStep = 0; // 0: 딜 안내, 1: 히트·스탠드 안내
+  function tutDone() { if (tut) { tut = false; A.set('neowa_blackjack_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function tutBox(c, x, y, txt, size, tx, ty) { // 글 상자 + (tx, ty)에 깜빡이는 손가락 원
+    c.save(); c.font = '700 ' + size + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(txt).width + size * 1.6; c.fillStyle = 'rgba(0,0,0,.78)'; A.rr(c, x - w / 2, y - size, w, size * 2, size * 0.7); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5; c.stroke(); c.fillStyle = '#fff'; c.fillText(txt, x, y + 1);
+    if (tx != null) { var k = (S.time * 1.6) % 1; c.strokeStyle = 'rgba(255,255,255,' + (1 - k) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(tx, ty, 10 + k * 26, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(tx, ty, 8, 0, 7); c.fill(); }
+    c.restore(); }
+
   function newShoe() { shoe = []; for (var d = 0; d < 4; d++) for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) shoe.push({ s: s, r: r }); for (var i = shoe.length - 1; i > 0; i--) { var j = A.irand(0, i), t = shoe[i]; shoe[i] = shoe[j]; shoe[j] = t; } }
   function drawC(up) { if (shoe.length < 30) newShoe(); var c = shoe.pop(); c.up = up !== false; c.t = 0; return c; }
   function cv(c) { return Math.min(10, c.r + 1); }
   function val(h) { var v = 0, aces = 0; h.forEach(function (c) { if (!c.up) return; if (c.r === 0) { aces++; v += 11; } else v += cv(c); }); while (v > 21 && aces) { v -= 10; aces--; } return v; }
   function bj(h) { return h.length === 2 && val(h) === 21; }
   function cur() { return hands && hands[hi]; }
-  function reset() { newShoe(); chips = 1000; bet = 100; round = 1; phase = 'bet'; hands = []; hi = 0; dl = []; streak = 0; msg = '베팅액을 정하고 시작하세요'; msgC = '#fff'; endT = 0; fx.clear(); hud(); }
+  function reset() { newShoe(); chips = 1000; bet = 100; round = 1; phase = 'bet'; hands = []; hi = 0; dl = []; streak = 0; bestStreak = 0; msg = '베팅액을 정하고 시작하세요'; msgC = '#fff'; endT = 0; fx.clear(); hud(); }
   function canDbl() { var h = cur(); return phase === 'play' && h && h.c.length === 2 && chips >= h.bet; }
   function canSplit() { var h = cur(); return phase === 'play' && hands.length === 1 && h.c.length === 2 && cv(h.c[0]) === cv(h.c[1]) && chips >= h.bet; }
   function deal() {
@@ -149,8 +160,8 @@
     if (hands.every(function (h) { return val(h.c) > 21; })) { finish(); return; } // 모두 버스트면 딜러는 더 받지 않음
     phase = 'dealer'; dealerT = 0.6;
   }
-  function hit() { if (phase !== 'play') return; var h = cur(); h.c.push(drawC()); A.sfx('click', 1.2); if (val(h.c) >= 21) nextHand(); hud(); }
-  function stand() { if (phase !== 'play') return; nextHand(); hud(); }
+  function hit() { if (phase !== 'play') return; if (tutStep) tutDone(); var h = cur(); h.c.push(drawC()); A.sfx('click', 1.2); if (val(h.c) >= 21) nextHand(); hud(); }
+  function stand() { if (phase !== 'play') return; if (tutStep) tutDone(); nextHand(); hud(); }
   function dbl() { if (!canDbl()) { A.sfx('wall'); return; } var h = cur(); chips -= h.bet; h.bet *= 2; h.dbl = true; h.c.push(drawC()); A.sfx('coin'); nextHand(); hud(); }
   function split() {
     if (!canSplit()) { A.sfx('wall'); return; }
@@ -179,7 +190,7 @@
     else if (parts[0] === '승') { msg = (dv > 21 ? '딜러 버스트! +' : '승리! +') + net; msgC = '#4dffd2'; }
     else if (parts[0] === '푸시') { msg = '무승부 (푸시)'; msgC = '#fff'; }
     else { msg = dBJ ? '딜러 블랙잭' : '딜러 승'; msgC = '#ff4d6d'; }
-    if (net > 0) { streak++; A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'coin'); fx.burst(TX(), MY(), '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(TX(), MY() - 40, streak + '연승!', '#ffd166', 24); }
+    if (net > 0) { streak++; bestStreak = Math.max(bestStreak, streak); A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'coin'); fx.burst(TX(), MY(), '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(TX(), MY() - 40, streak + '연승!', '#ffd166', 24); }
     else if (net < 0) { streak = 0; A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
     hud();
   }
@@ -187,8 +198,8 @@
     fx.update(dt); var all = dl.slice(); hands.forEach(function (h) { all = all.concat(h.c); }); all.forEach(function (c) { c.t = Math.min(1, (c.t || 0) + dt * 5); });
     if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17) { dl.push(drawC()); A.sfx('click', 0.9); dealerT = 0.55; } else finish(); } }
     if (phase === 'result') { endT -= dt; if (endT <= 0) {
-      if (chips <= 0) { S.gameOver(0, [['라운드', String(round)]]); return; }
-      if (round >= MAXR) { S.gameOver(chips, [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)]], { kick: 'FINISH', win: chips > 1000 }); return; }
+      if (chips <= 0) { S.gameOver(0, [['라운드', String(round)], ['최대 연승', String(bestStreak)]]); return; }
+      if (round >= MAXR) { S.gameOver(Math.min(chips, MAXSC), [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)], ['최대 연승', String(bestStreak)]], { kick: 'FINISH', win: chips > 1000 }); return; } // 점수는 한도에서 자름(칩 표시는 그대로)
       round++; phase = 'bet'; hands = []; hi = 0; dl = []; bet = Math.max(Math.min(bet, chips), Math.min(10, chips)); msg = ''; if (round === MAXR) S.banner('마지막 판', '남은 칩이 점수'); hud(); } }
   }
   function cardDraw(c, cd, x, y) {
@@ -227,6 +238,9 @@
       btns.forEach(function (b) { var on = !(b[4] === 'dbl' && !canDbl()) && !(b[4] === 'split' && !canSplit()); c.fillStyle = b[4] === 'deal' ? '#4dffd2' : on ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; A.rr(c, b[1], b[2], b[3], b[5] || 66, 16); c.fill(); c.fillStyle = b[4] === 'deal' ? '#00241b' : on ? '#fff' : 'rgba(255,255,255,.3)'; c.font = '700 ' + (land ? 24 : 20) + 'px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + b[3] / 2, b[2] + (b[5] || 66) / 2 + 1); });
     }
     c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 12px "Pretendard Variable",system-ui'; c.fillText('가상 칩만 사용합니다. 실제 돈은 쓰이지 않습니다.', TX(), land ? 585 : 935);
+    if (tut && S.state === 'playing') { var tb = null; btns.forEach(function (b) { if (b[4] === (phase === 'bet' ? 'deal' : 'hit')) tb = b; });
+      if (phase === 'play' && !tutStep) tutStep = 1;
+      if (tb && (phase === 'bet' || phase === 'play')) tutBox(c, TX(), land ? 520 : 595, phase === 'bet' ? (isTouch() ? '딜을 눌러 카드를 받아요' : '딜(Space)을 눌러 카드를 받아요') : '더 받으려면 히트, 멈추려면 스탠드', land ? 22 : 19, tb[1] + tb[3] / 2, tb[2] + (tb[5] || 66) / 2); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { var b = hands && hands.length ? hands.reduce(function (a, h) { return a + h.bet; }, 0) : bet; document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(b); }

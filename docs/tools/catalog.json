@@ -1038,5 +1038,65 @@
   "new": true,
   "art": "capture",
   "maxScore": 10000000
+ },
+ {
+  "id": "bridge",
+  "name": "다리 잇기",
+  "genre": "LIGHT BRIDGE",
+  "kgenre": "원탭 타이밍",
+  "cat": "원탭",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "꾹 누르면 빛 다리가 자라고, 떼면 쓰러져 다음 기둥에 닿아요. 정중앙 빨간 점을 맞혀 연속 보너스에 도전!",
+  "tags": [
+   "꾹 누르기",
+   "정중앙 보너스",
+   "바람"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000
+ },
+ {
+  "id": "knight",
+  "name": "나이트 투어",
+  "genre": "KNIGHT'S TOUR",
+  "kgenre": "수읽기 퍼즐",
+  "cat": "두뇌",
+  "accent": "#e8e8ff",
+  "rgb": "232,232,255",
+  "ink": "#14142a",
+  "desc": "체스 나이트를 L자로만 움직여 판의 모든 칸을 한 번씩 밟으세요. 5×5부터 8×8까지, 완주할수록 판이 커져요.",
+  "tags": [
+   "L자 이동",
+   "되돌리기·힌트",
+   "판 크기 UP"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 50000
+ },
+ {
+  "id": "four",
+  "name": "사목",
+  "genre": "FOUR IN A ROW",
+  "kgenre": "수읽기 대전",
+  "cat": "보드·카드",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "열을 골라 돌을 떨어뜨려 4개를 먼저 이으세요. 컴퓨터와 연승 도전, 한 화면 둘이서 대결도 OK.",
+  "tags": [
+   "열 탭",
+   "난이도 3단계",
+   "둘이서"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
  }
 ]

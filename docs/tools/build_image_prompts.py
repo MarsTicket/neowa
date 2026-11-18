@@ -65,6 +65,9 @@ SCENE = {
  'schulte': ('a 5x5 grid of tiles with scattered colorful abstract numeral shapes, a quick tap trail connecting them in sequence', '흩어진 숫자를 순서대로 찾는 격자'),
  'baduk': ('a glowing wooden go board seen from above with black and white stones, a small group of white stones encircled by a pulsing red target ring and a black stone landing to capture them', '표시된 백 돌을 잡는 바둑 수읽기'),
  'fall': ('a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap', '떨어지는 블록을 돌려 줄을 지우는 퍼즐'),
+ 'bridge': ('a tiny glowing round light-robot with a pink scarf standing on the edge of a tall dark pillar at night, a shining beam of ice-blue light falling forward like a bridge toward the next pillar with a red glowing center mark, aurora sky and full moon', '빛 다리를 쓰러뜨려 다음 기둥으로 건너는 장면'),
+ 'knight': ('a glowing white chess knight piece leaping in an L-shaped arc over a dark violet checkerboard, a trail of light lines connecting numbered visited squares, candidate squares softly glowing ice-blue', '나이트가 L자로 뛰며 판을 밟아 가는 장면'),
+ 'four': ('a glossy deep-blue upright game board with round holes, shiny yellow and magenta discs stacked inside, one yellow disc falling into a column, four yellow discs in a diagonal row glowing with a bright light line', '돌을 떨어뜨려 4개를 잇는 판'),
 }
 
 def build():

@@ -90,6 +90,9 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 50 | 숫자 순서 찾기 | `assets/schulte-card.jpg` | ⬜ 임시 캡처 | 흩어진 숫자를 순서대로 찾는 격자 |
 | 51 | 바둑 묘수풀이 | `assets/baduk-card.jpg` | ⬜ 임시 캡처 | 표시된 백 돌을 잡는 바둑 수읽기 |
 | 52 | 떨어지는 블록 | `assets/fall-card.jpg` | ⬜ 임시 캡처 | 떨어지는 블록을 돌려 줄을 지우는 퍼즐 |
+| 53 | 다리 잇기 | `assets/bridge-card.jpg` | ⬜ 임시 캡처 | 빛 다리를 쓰러뜨려 다음 기둥으로 건너는 장면 |
+| 54 | 나이트 투어 | `assets/knight-card.jpg` | ⬜ 임시 캡처 | 나이트가 L자로 뛰며 판을 밟아 가는 장면 |
+| 55 | 사목 | `assets/four-card.jpg` | ⬜ 임시 캡처 | 돌을 떨어뜨려 4개를 잇는 판 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -581,4 +584,34 @@ a glowing wooden go board seen from above with black and white stones, a small g
 
 ```
 a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap, dominant glow color #5ee7ff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 53. 다리 잇기 (`bridge`)
+
+- 파일: `assets/bridge-card.jpg`
+- 대표색: `#9be7ff` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 빛 다리를 쓰러뜨려 다음 기둥으로 건너는 장면
+
+```
+a tiny glowing round light-robot with a pink scarf standing on the edge of a tall dark pillar at night, a shining beam of ice-blue light falling forward like a bridge toward the next pillar with a red glowing center mark, aurora sky and full moon, dominant glow color #9be7ff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 54. 나이트 투어 (`knight`)
+
+- 파일: `assets/knight-card.jpg`
+- 대표색: `#e8e8ff` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 나이트가 L자로 뛰며 판을 밟아 가는 장면
+
+```
+a glowing white chess knight piece leaping in an L-shaped arc over a dark violet checkerboard, a trail of light lines connecting numbered visited squares, candidate squares softly glowing ice-blue, dominant glow color #e8e8ff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 55. 사목 (`four`)
+
+- 파일: `assets/four-card.jpg`
+- 대표색: `#ffe066` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 돌을 떨어뜨려 4개를 잇는 판
+
+```
+a glossy deep-blue upright game board with round holes, shiny yellow and magenta discs stacked inside, one yellow disc falling into a column, four yellow discs in a diagonal row glowing with a bright light line, dominant glow color #ffe066. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

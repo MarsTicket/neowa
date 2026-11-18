@@ -1,7 +1,21 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960, CS = 56, GX = 18, GY = 132;
-  var PAD_Y = 666, PAD_H = 80, TOOL_Y = 768, TOOL_H = 70;
+  var PAD_Y = 666, PAD_H = 80, TOOL_Y = 768, TOOL_H = 70, land = false;
+  // 화면 배치: 세로 540x960 (판 아래 숫자·도구), 가로 920x600 (판 왼쪽, 오른쪽에 3x3 숫자 버튼과 도구)
+  function geo(sh) {
+    land = !!sh.land; W = sh.W; H = sh.H;
+    if (land) { CS = 60; GX = 30; GY = 30; } else { CS = 56; GX = 18; GY = 132; }
+  }
+  function padRect(d) {
+    if (!land) return [GX + (d - 1) * CS + 3, PAD_Y, CS - 6, PAD_H];
+    var w = (290 - 16) / 3, k = d - 1; return [600 + (k % 3) * (w + 8), 30 + Math.floor(k / 3) * (w + 8), w, w];
+  }
+  function toolRect(i) {
+    if (!land) { var tw = (CS * 9) / 3; return [GX + i * tw + 4, TOOL_Y, tw - 8, TOOL_H]; }
+    return [600, 344 + i * 78, 290, 68];
+  }
+  function inR(p, r) { return p.x >= r[0] && p.x <= r[0] + r[2] && p.y >= r[1] && p.y <= r[1] + r[3]; }
   var DIFFS = [{ clues: 40, base: 1000, name: '쉬움' }, { clues: 32, base: 2500, name: '보통' }, { clues: 26, base: 5000, name: '어려움' }];
   var diff = +A.get('neowa_sudoku_diff', '0') || 0;
   var fx = new A.FX();
@@ -151,16 +165,16 @@
     // 숫자 버튼
     var counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; vv.forEach(function (v2, k) { if (v2 && (demo || v2 === sol[k])) counts[v2]++; });
     for (d = 1; d <= 9; d++) {
-      var bx = GX + (d - 1) * CS, done = counts[d] >= 9;
-      c.fillStyle = done ? 'rgba(255,255,255,.03)' : 'rgba(195,255,94,.1)'; A.rr(c, bx + 3, PAD_Y, CS - 6, PAD_H, 12); c.fill();
-      c.font = '700 30px "Chakra Petch",system-ui'; c.fillStyle = done ? 'rgba(255,255,255,.2)' : '#e9ffc9'; c.fillText(String(d), bx + CS / 2, PAD_Y + 30);
-      c.font = '600 12px "Chakra Petch",system-ui'; c.fillStyle = 'rgba(255,255,255,.35)'; c.fillText(done ? '✓' : String(9 - counts[d]), bx + CS / 2, PAD_Y + 56);
+      var pr = padRect(d), done = counts[d] >= 9, pcx = pr[0] + pr[2] / 2;
+      c.fillStyle = done ? 'rgba(255,255,255,.03)' : 'rgba(195,255,94,.1)'; A.rr(c, pr[0], pr[1], pr[2], pr[3], 12); c.fill();
+      c.font = '700 ' + (land ? 38 : 30) + 'px "Chakra Petch",system-ui'; c.fillStyle = done ? 'rgba(255,255,255,.2)' : '#e9ffc9'; c.fillText(String(d), pcx, pr[1] + pr[3] * 0.4);
+      c.font = '600 ' + (land ? 14 : 12) + 'px "Chakra Petch",system-ui'; c.fillStyle = 'rgba(255,255,255,.35)'; c.fillText(done ? '✓' : String(9 - counts[d]), pcx, pr[1] + pr[3] * 0.72);
     }
     // 도구
-    var tools = [['지우기', false], [noteMode ? '메모 켜짐' : '메모', noteMode], ['힌트 ' + (3 - hints), false]], tw = (CS * 9) / 3;
+    var tools = [['지우기', false], [noteMode ? '메모 켜짐' : '메모', noteMode], ['힌트 ' + (3 - hints), false]];
     for (i = 0; i < 3; i++) {
-      var tx = GX + i * tw; c.fillStyle = tools[i][1] ? '#c3ff5e' : 'rgba(255,255,255,.06)'; A.rr(c, tx + 4, TOOL_Y, tw - 8, TOOL_H, 14); c.fill();
-      c.font = '700 18px "Pretendard Variable",system-ui'; c.fillStyle = tools[i][1] ? '#172400' : '#e9ffc9'; c.fillText(tools[i][0], tx + tw / 2, TOOL_Y + TOOL_H / 2 + 1);
+      var tr = toolRect(i); c.fillStyle = tools[i][1] ? '#c3ff5e' : 'rgba(255,255,255,.06)'; A.rr(c, tr[0], tr[1], tr[2], tr[3], 14); c.fill();
+      c.font = '700 ' + (land ? 22 : 18) + 'px "Pretendard Variable",system-ui'; c.fillStyle = tools[i][1] ? '#172400' : '#e9ffc9'; c.fillText(tools[i][0], tr[0] + tr[2] / 2, tr[1] + tr[3] / 2 + 1);
     }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
@@ -173,21 +187,23 @@
     document.getElementById('hB').textContent = fmtT(time);
     document.getElementById('hC').textContent = mistakes + '/3';
     document.getElementById('hMult').textContent = D.name;
+    if (pEl.score) { pEl.score.textContent = A.fmt(score()); pEl.time.textContent = fmtT(time); pEl.mis.textContent = mistakes + '/3'; }
   }
+  var pEl = {};
   var stage = document.getElementById('stage');
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return;
     var p = S.toLocal(e);
     if (p.x >= GX && p.x < GX + 9 * CS && p.y >= GY && p.y < GY + 9 * CS) { sel = { x: Math.floor((p.x - GX) / CS), y: Math.floor((p.y - GY) / CS) }; A.sfx('tick'); return; }
-    if (p.y >= PAD_Y && p.y <= PAD_Y + PAD_H) { var d = Math.floor((p.x - GX) / CS) + 1; if (d >= 1 && d <= 9) put(d); return; }
-    if (p.y >= TOOL_Y && p.y <= TOOL_Y + TOOL_H) { var t = Math.floor((p.x - GX) / (CS * 3)); if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else if (t === 2) hint(); }
+    for (var d = 1; d <= 9; d++) if (inR(p, padRect(d))) { put(d); return; }
+    for (var t = 0; t < 3; t++) if (inR(p, toolRect(t))) { if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else hint(); return; }
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_sudoku_diff', diff); A.sfx('click'); paintDiff(); }); });
   paintDiff();
   var S = new A.Shell({
-    id: 'sudoku', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    id: 'sudoku', W: W, H: H, land: [920, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) {
       var k = e.key;
       if (k === 'ArrowLeft' || k === 'a') sel.x = (sel.x + 8) % 9;
@@ -200,4 +216,8 @@
       else if (k === 'h' || k === 'H') hint();
     }
   });
+  // 가로 화면: 점수판은 오른쪽 패널로 (게임판 위 점수판은 판을 가리므로 숨김)
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>TIME</span><b id="pkTime">0:00</b></div><div><span>MISTAKE</span><b id="pkMis">0/3</b></div></div>';
+  pEl = { score: document.getElementById('pkScore'), time: document.getElementById('pkTime'), mis: document.getElementById('pkMis') };
 })();

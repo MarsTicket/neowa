@@ -1258,5 +1258,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 300
+ },
+ {
+  "id": "tank",
+  "name": "미로 탱크",
+  "genre": "MAZE TANK",
+  "kgenre": "탱크 슈팅",
+  "cat": "액션",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "벽에 튕기는 포탄으로 모퉁이 너머 적 탱크를 맞히세요. 판마다 새 미로, 점점 똑똑해지는 적.",
+  "tags": [
+   "튕기는 포탄",
+   "무작위 미로",
+   "조이스틱"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
  }
 ]

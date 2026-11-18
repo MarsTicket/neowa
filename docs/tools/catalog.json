@@ -1038,5 +1038,165 @@
   "new": true,
   "art": "capture",
   "maxScore": 10000000
+ },
+ {
+  "id": "bridge",
+  "name": "다리 잇기",
+  "genre": "LIGHT BRIDGE",
+  "kgenre": "원탭 타이밍",
+  "cat": "원탭",
+  "accent": "#9be7ff",
+  "rgb": "155,231,255",
+  "ink": "#03141c",
+  "desc": "꾹 누르면 빛 다리가 자라고, 떼면 쓰러져 다음 기둥에 닿아요. 정중앙 빨간 점을 맞혀 연속 보너스에 도전!",
+  "tags": [
+   "꾹 누르기",
+   "정중앙 보너스",
+   "바람"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000
+ },
+ {
+  "id": "knight",
+  "name": "나이트 투어",
+  "genre": "KNIGHT'S TOUR",
+  "kgenre": "수읽기 퍼즐",
+  "cat": "두뇌",
+  "accent": "#e8e8ff",
+  "rgb": "232,232,255",
+  "ink": "#14142a",
+  "desc": "체스 나이트를 L자로만 움직여 판의 모든 칸을 한 번씩 밟으세요. 5×5부터 8×8까지, 완주할수록 판이 커져요.",
+  "tags": [
+   "L자 이동",
+   "되돌리기·힌트",
+   "판 크기 UP"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 50000
+ },
+ {
+  "id": "four",
+  "name": "사목",
+  "genre": "FOUR IN A ROW",
+  "kgenre": "수읽기 대전",
+  "cat": "보드·카드",
+  "accent": "#ffe066",
+  "rgb": "255,224,102",
+  "ink": "#221a00",
+  "desc": "열을 골라 돌을 떨어뜨려 4개를 먼저 이으세요. 컴퓨터와 연승 도전, 한 화면 둘이서 대결도 OK.",
+  "tags": [
+   "열 탭",
+   "난이도 3단계",
+   "둘이서"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "merge",
+  "name": "숫자 합치기",
+  "genre": "NUMBER MERGE",
+  "kgenre": "합치기 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ffb547",
+  "rgb": "255,181,71",
+  "ink": "#241400",
+  "desc": "숫자 블록을 원하는 열로 쏘아 올려 같은 숫자끼리 합치세요. 연쇄가 이어질수록 점수 배율이 커져요.",
+  "tags": [
+   "열 탭",
+   "연쇄 배율",
+   "무한 모드"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 5000000
+ },
+ {
+  "id": "paint",
+  "name": "한붓 그리기",
+  "genre": "ONE STROKE",
+  "kgenre": "한붓 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "시작 칸에서 손을 떼지 않고 끌어 모든 빈칸을 한 번씩 칠하세요. 매번 새 판, 항상 풀 수 있어요.",
+  "tags": [
+   "끌어서 칠하기",
+   "10분 도전",
+   "항상 풀림"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
+ },
+ {
+  "id": "sort",
+  "name": "색 병 정렬",
+  "genre": "COLOR SORT",
+  "kgenre": "정리 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "병을 골라 다른 병에 부어 같은 색끼리 모으세요. 단계마다 색이 늘어나는 10분 도전.",
+  "tags": [
+   "탭 두 번",
+   "항상 풀림",
+   "10분 도전"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "sum",
+  "name": "합 퍼즐",
+  "genre": "SUM LOGIC",
+  "kgenre": "숫자 논리",
+  "cat": "퍼즐",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "가로·세로 줄의 합계 단서에 맞게 1~9를 채우세요. 매번 새로 만들어지는 답이 하나뿐인 퍼즐.",
+  "tags": [
+   "합계 단서",
+   "답은 하나",
+   "조합 안내"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "hexa",
+  "name": "육각 블록",
+  "genre": "HEX BLOCKS",
+  "kgenre": "블록 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "육각 조각을 끌어다 놓고 세 방향 중 어느 직선이든 꽉 채워 지우세요. 연속으로 지우면 배율이 올라가요.",
+  "tags": [
+   "끌어다 놓기",
+   "세 방향 줄",
+   "콤보"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000000
  }
 ]

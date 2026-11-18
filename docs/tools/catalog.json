@@ -1238,5 +1238,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 20000
+ },
+ {
+  "id": "bowling",
+  "name": "볼링",
+  "genre": "BOWLING",
+  "kgenre": "볼링",
+  "cat": "액션",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "위로 쓸어 올려 굴리고, 끝을 휘면 커브! 핀이 와르르 쓰러지는 10프레임 정식 볼링.",
+  "tags": [
+   "쓸어 올리기",
+   "커브",
+   "10프레임"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300
  }
 ]

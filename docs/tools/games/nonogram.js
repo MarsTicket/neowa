@@ -52,18 +52,18 @@
   function lineDone(i) { // 줄 완성 시 남은 칸 X 자동
     var x = i % N, y = Math.floor(i / N), k;
     var rowOk = true; for (k = 0; k < N; k++) if (sol[y * N + k] && st[y * N + k] !== 1) rowOk = false;
-    if (rowOk) for (k = 0; k < N; k++) if (!st[y * N + k]) st[y * N + k] = -1;
+    if (rowOk) { A.sfx('match', 1.2); for (k = 0; k < N; k++) if (!st[y * N + k]) st[y * N + k] = -1; }
     var colOk = true; for (k = 0; k < N; k++) if (sol[k * N + x] && st[k * N + x] !== 1) colOk = false;
-    if (colOk) for (k = 0; k < N; k++) if (!st[k * N + x]) st[k * N + x] = -1;
+    if (colOk) { A.sfx('match', 1.3); for (k = 0; k < N; k++) if (!st[k * N + x]) st[k * N + x] = -1; }
   }
   function act(i, asX) {
     if (S.state !== 'playing' || done || dyingT > 0 || st[i] !== 0) return false;
-    if (asX) { if (sol[i]) { mistake(i, 1); } else { st[i] = -1; A.sfx('tick', 0.9); } }
-    else { if (!sol[i]) { mistake(i, -1); } else { st[i] = 1; A.sfx('tick', 1.4); lineDone(i); } }
-    if (sol.every(function (v, k) { return !v || st[k] === 1; })) { done = 1.4; A.sfx('level'); st = st.map(function (v, k) { return sol[k] ? 1 : -1; }); for (var j = 0; j < 4; j++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), '#ff9e4d', 20, 300, 0.7, 4); }
+    if (asX) { if (sol[i]) { mistake(i, 1); } else { st[i] = -1; A.sfx('tap', 0.8); } }
+    else { if (!sol[i]) { mistake(i, -1); } else { st[i] = 1; A.sfx('place', 1.2); lineDone(i); } }
+    if (sol.every(function (v, k) { return !v || st[k] === 1; })) { done = 1.4; A.sfx('win'); st = st.map(function (v, k) { return sol[k] ? 1 : -1; }); for (var j = 0; j < 4; j++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), '#ff9e4d', 20, 300, 0.7, 4); }
     hud(); return true;
   }
-  function mistake(i, val) { mistakes++; st[i] = val; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2); fx.text(GX + (i % N + 0.5) * CS, GY + Math.floor(i / N) * CS, '✕', '#ff4d6d', 24); if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.4); } }
+  function mistake(i, val) { mistakes++; st[i] = val; A.sfx('wrong'); A.vibrate(80); fx.shake(5, 0.2); fx.text(GX + (i % N + 0.5) * CS, GY + Math.floor(i / N) * CS, '✕', '#ff4d6d', 24); if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.4); } }
   function score() { var b = [300, 1200, 3000][diff]; return Math.max(50, Math.round(b * 2 - time * b / 300 - mistakes * b * 0.2)); }
   function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
   function update(dt) {
@@ -101,7 +101,7 @@
   function cellAt(p) { var x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); return x >= 0 && y >= 0 && x < N && y < N ? y * N + x : -1; }
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e);
-    if (p.y > btnY && p.y < btnY + 60) { xMode = p.x > W / 2; A.sfx('click'); return; }
+    if (p.y > btnY && p.y < btnY + 60) { xMode = p.x > W / 2; A.sfx('select', xMode ? 0.9 : 1.2); return; }
     var i = cellAt(p); if (i < 0) return; paint = { id: e.pointerId, x: e.button === 2 || xMode }; act(i, paint.x); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
   });
   stage.addEventListener('pointermove', function (e) { if (!paint || paint.id !== e.pointerId) return; var i = cellAt(S.toLocal(e)); if (i >= 0) act(i, paint.x); });

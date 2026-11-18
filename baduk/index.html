@@ -177,11 +177,11 @@
   function put(p, c) {
     var m = play(bd, p, c, ko); if (!m) return null;
     bd = m.bd; ko = m.ko; lastMv = p; born[p] = S ? S.time : 0;
-    A.sfx('tick', c === 1 ? 1.3 : 0.85);
+    A.sfx('place', c === 1 ? 1.1 : 0.85);
     // 잡힌 돌은 반투명하게 남겨서 무엇을 잡았는지 보이게
     m.cap.forEach(function (q) { ghosts[q] = { c: 3 - c, n: marks[q] }; delete marks[q]; });
     m.cap.forEach(function (q) { var x = GX + (q % N) * CS, y = GY + ((q / N) | 0) * CS; fx.burst(x, y, c === 1 ? '#ffffff' : '#555a66', 10, 180, 0.5, 3); });
-    if (m.cap.length) { A.sfx('brick', 1 + m.cap.length * 0.05); fx.shake(3, 0.15); }
+    if (m.cap.length) { A.sfx('pop', 1 + Math.min(m.cap.length, 10) * 0.05); fx.shake(3, 0.15); }
     return m;
   }
   function human(p) {
@@ -200,13 +200,13 @@
     score += pts; solved++; streak++; if (streak > best) best = streak;
     var tx = GX + 4 * CS, ty = GY + 4 * CS;
     fx.text(tx, ty - 30, '정답!', '#f2c879', 44); fx.text(tx, ty + 20, '+' + A.fmt(pts), '#ffd166', 26); fx.flashIt('#f2c879', 0.18);
-    A.sfx('gold'); A.vibrate([15, 30, 15]); if (streak > 0 && streak % 5 === 0) { A.sfx('level'); S.banner(streak + '연속 정답!', '배율 ×' + (1 + Math.min(streak, 10) * 0.1).toFixed(1)); }
+    A.sfx('right'); A.sfx('gold', 1 + Math.min(streak, 10) * 0.03); A.vibrate([15, 30, 15]); if (streak > 0 && streak % 5 === 0) { A.sfx('level'); S.banner(streak + '연속 정답!', '배율 ×' + (1 + Math.min(streak, 10) * 0.1).toFixed(1)); }
     phase = 'solved'; phaseT = 1.3; hud();
   }
   function fail(p) {
     hearts--; streak = 0; wrongAt = p; hintOn = false;
     if (p >= 0) { fx.text(GX + (p % N) * CS, GY + ((p / N) | 0) * CS - 24, '오답', '#ff4d6d', 24); } else fx.text(GX + 4 * CS, GY + 4 * CS, '시간 초과', '#ff4d6d', 34);
-    A.sfx('hurt'); fx.shake(8, 0.3); fx.flashIt('#ff2244', 0.3); A.vibrate(120);
+    A.sfx('wrong'); fx.shake(8, 0.3); fx.flashIt('#ff2244', 0.3); A.vibrate(120);
     phase = 'reveal'; phaseT = 1.0; hud();
   }
   function useHint() {
@@ -218,7 +218,7 @@
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['푼 문제', String(solved)], ['최고 연속', String(best)], ['도전', String(count)]]); return; }
     if (phase === 'play') {
       tLeft -= dt; if (tLeft <= 0) { tLeft = 0; fail(-1); return; }
-      if (tLeft < 5 && Math.ceil(tLeft) !== Math.ceil(tLeft + dt)) A.sfx('tick', 1.6);
+      if (tLeft < 5 && Math.ceil(tLeft) !== Math.ceil(tLeft + dt)) A.sfx('warn');
     } else if (phase === 'white') {
       phaseT -= dt; if (phaseT <= 0) { var p = prob.seq[step]; put(p, 2); marks[p] = step + 1; step++; phase = 'play'; hud(); }
     } else if (phase === 'solved') {

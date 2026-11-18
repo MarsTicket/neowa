@@ -11,12 +11,12 @@
   function reset() { newShoe(); chips = 1000; bet = 100; round = 1; phase = 'bet'; me = []; dl = []; msg = '베팅액을 정하고 시작하세요'; msgC = '#fff'; endT = 0; fx.clear(); hud(); }
   function deal() {
     if (phase !== 'bet' || S.state !== 'playing') return; bet = Math.min(bet, chips); if (bet <= 0) return;
-    chips -= bet; doubled = false; me = [drawC(), drawC()]; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('click');
+    chips -= bet; doubled = false; me = [drawC(), drawC()]; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('deal');
     if (bj(me)) { stand(); } hud();
   }
-  function hit() { if (phase !== 'play') return; me.push(drawC()); A.sfx('click', 1.2); if (val(me) > 21) finish(); else if (val(me) === 21) stand(); hud(); }
-  function stand() { if (phase !== 'play') return; phase = 'dealer'; dl[1].up = true; dealerT = 0.6; hud(); }
-  function dbl() { if (phase !== 'play' || me.length !== 2 || chips < bet) { A.sfx('wall'); return; } chips -= bet; bet *= 2; doubled = true; me.push(drawC()); A.sfx('coin'); if (val(me) > 21) finish(); else stand(); hud(); }
+  function hit() { if (phase !== 'play') return; me.push(drawC()); A.sfx('flip', 1.2); if (val(me) > 21) finish(); else if (val(me) === 21) stand(); hud(); }
+  function stand() { if (phase !== 'play') return; phase = 'dealer'; dl[1].up = true; A.sfx('flip', 0.9); dealerT = 0.6; hud(); }
+  function dbl() { if (phase !== 'play' || me.length !== 2 || chips < bet) { A.sfx('wall'); return; } chips -= bet; bet *= 2; doubled = true; me.push(drawC()); A.sfx('chip'); A.sfx('flip', 1.2); if (val(me) > 21) finish(); else stand(); hud(); }
   var dealerT = 0;
   function finish() {
     dl.forEach(function (c) { c.up = true; }); var mv = val(me), dv = val(dl), win = 0;
@@ -26,13 +26,13 @@
     else if (mv === dv) { win = bet; msg = '무승부 (푸시)'; msgC = '#fff'; }
     else { msg = '딜러 승'; msgC = '#ff4d6d'; }
     chips += win; phase = 'result'; endT = 1.4;
-    if (win > bet) { A.sfx(win >= bet * 2.5 ? 'gold' : 'coin'); fx.burst(W / 2, 640, '#4dffd2', 24, 300, 0.6, 3.5); } else if (!win) { A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
+    if (win > bet) { A.sfx(win >= bet * 2.5 ? 'gold' : 'right'); fx.burst(W / 2, 640, '#4dffd2', 24, 300, 0.6, 3.5); } else if (!win) { A.sfx(mv > 21 ? 'hurt' : 'wrong'); fx.shake(4, 0.2); }
     if (doubled) bet = Math.floor(bet / 2);
     hud();
   }
   function update(dt) {
     fx.update(dt); me.concat(dl).forEach(function (c) { c.t = Math.min(1, (c.t || 0) + dt * 5); });
-    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17 && val(me) <= 21) { dl.push(drawC()); A.sfx('click', 0.9); dealerT = 0.55; } else finish(); } }
+    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17 && val(me) <= 21) { dl.push(drawC()); A.sfx('flip', 0.9); dealerT = 0.55; } else finish(); } }
     if (phase === 'result') { endT -= dt; if (endT <= 0) {
       if (chips <= 0) { S.gameOver(0, [['라운드', String(round)]]); return; }
       if (round >= MAXR) { S.gameOver(chips, [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)]], { kick: 'FINISH', win: chips > 1000 }); return; }
@@ -71,7 +71,7 @@
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(bet); }
-  function act(a) { if (a === 'minus') { bet = Math.max(10, bet - 50); A.sfx('tick'); hud(); } if (a === 'plus') { bet = Math.min(chips, bet + 50); A.sfx('tick'); hud(); } if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); }
+  function act(a) { if (a === 'minus') { bet = Math.max(10, bet - 50); A.sfx('chip', 0.9); hud(); } if (a === 'plus') { bet = Math.min(chips, bet + 50); A.sfx('chip', 1.1); hud(); } if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); btns.forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + 66) act(b[4]); }); });
   var S = new A.Shell({ id: 'blackjack', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key.toLowerCase(); if (e.repeat) return; if (k === 'h') hit(); if (k === 's') stand(); if (k === 'd') dbl(); if (k === ' ' || k === 'enter') deal(); if (k === 'arrowleft') act('minus'); if (k === 'arrowright') act('plus'); } });

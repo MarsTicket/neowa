@@ -155,9 +155,9 @@
     put(best[0], best[1], 2);
   }
   function put(x, y, p) {
-    bd[y * N + x] = p; moves++; hist.push([x, y]); lastMv = [x, y]; A.sfx('tick', p === 1 ? 1.3 : 0.9);
+    bd[y * N + x] = p; moves++; hist.push([x, y]); lastMv = [x, y]; A.sfx('place', p === 1 ? 1.1 : 0.9);
     var w = five(x, y, p);
-    if (w) { winLine = w; endT = 1.6; if (p === 1 || duo()) { A.sfx('level'); w.forEach(function (q) { fx.burst(GX + q[0] * CS, GY + q[1] * CS, '#ffd166', 10, 200, 0.5, 3); }); } else { A.sfx('hurt'); fx.flashIt('#ff2244', 0.3); } hud(); return; }
+    if (w) { winLine = w; endT = 1.6; if (p === 1 || duo()) { A.sfx('win'); w.forEach(function (q) { fx.burst(GX + q[0] * CS, GY + q[1] * CS, '#ffd166', 10, 200, 0.5, 3); }); } else { A.sfx('wrong'); fx.flashIt('#ff2244', 0.3); } hud(); return; }
     if (moves >= N * N) { endT = 1.2; winLine = []; hud(); return; }
     turn = p === 1 ? 2 : 1; if (turn === 2 && !duo()) thinking = 0.35; hud();
   }
@@ -165,9 +165,9 @@
   function doUndo() {
     if (duo()) { // 둘이서: 마지막 한 수만 되돌리고 그 사람 차례로
       if (S.state !== 'playing' || !hist.length || endT > 0) { A.sfx('wall'); return; }
-      var u = hist.pop(); turn = bd[u[1] * N + u[0]]; bd[u[1] * N + u[0]] = 0; moves--; lastMv = hist[hist.length - 1] || null; A.sfx('click'); hud(); return;
+      var u = hist.pop(); turn = bd[u[1] * N + u[0]]; bd[u[1] * N + u[0]] = 0; moves--; lastMv = hist[hist.length - 1] || null; A.sfx('slide', 0.8); hud(); return;
     }
-    if (S.state !== 'playing' || undo <= 0 || turn !== 1 || hist.length < 2 || endT > 0) { A.sfx('wall'); return; } for (var k = 0; k < 2; k++) { var m = hist.pop(); bd[m[1] * N + m[0]] = 0; moves--; } undo--; score = Math.max(0, score - 30); lastMv = hist[hist.length - 1] || null; A.sfx('click'); hud(); }
+    if (S.state !== 'playing' || undo <= 0 || turn !== 1 || hist.length < 2 || endT > 0) { A.sfx('wall'); return; } for (var k = 0; k < 2; k++) { var m = hist.pop(); bd[m[1] * N + m[0]] = 0; moves--; } undo--; score = Math.max(0, score - 30); lastMv = hist[hist.length - 1] || null; A.sfx('slide', 0.8); hud(); }
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) {

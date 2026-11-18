@@ -137,7 +137,7 @@
     (l.t === 'h' ? hL : vL)[l.i] = who; lastLine = l;
     var closed = 0; boxesOf(l).forEach(function (b) { if (sides(b[0], b[1], hL, vL) === 4 && !owner[b[1] * B + b[0]]) { owner[b[1] * B + b[0]] = who; closed++; fx.burst(GX + (b[0] + 0.5) * SP, GY + (b[1] + 0.5) * SP, who === 1 ? '#5ee7ff' : '#ff4d6d', 14, 220, 0.4, 3); } });
     if (who === 1) me += closed; else cpu += closed;
-    A.sfx(closed ? 'coin' : 'tick', who === 1 ? 1.2 : 0.9);
+    A.sfx(closed ? 'match' : 'place', (who === 1 ? 1.2 : 0.9) + (closed > 1 ? 0.2 : 0));
     if (!allLines().length) { endT = 1.2; return; }
     if (!closed) turn = who === 1 ? 2 : 1;
     if (turn === 2 && !duo()) thinking = 0.45;
@@ -171,9 +171,9 @@
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) {
-      if (duo()) { var wp = me > cpu ? 1 : cpu > me ? 2 : 0; if (wp) tally[wp - 1]++; A.sfx('level'); hud();
+      if (duo()) { var wp = me > cpu ? 1 : cpu > me ? 2 : 0; if (wp) tally[wp - 1]++; A.sfx('win'); hud();
         S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['상자', me + ' : ' + cpu]], { title: wp ? 'P' + wp + ' 승리!' : '무승부', kick: '2인 대결', win: true, noRecord: true }); return; }
-      if (me > cpu) { wins++; var pts = (me - cpu) * 20 * (diff + 1) + 100 * (diff + 1); score += pts; S.banner('승리 ' + me + ':' + cpu, '+' + pts); A.sfx('level'); setup(); hud(); }
+      if (me > cpu) { wins++; var pts = (me - cpu) * 20 * (diff + 1) + 100 * (diff + 1); score += pts; S.banner('승리 ' + me + ':' + cpu, '+' + pts); A.sfx('win'); setup(); hud(); }
       else if (me === cpu) { score += 50; S.banner('무승부', '+50'); setup(); hud(); }
       else S.gameOver(score, [['이긴 판', String(wins)], ['마지막', me + ' : ' + cpu]]);
     } return; }

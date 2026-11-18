@@ -3,7 +3,7 @@
   var A = Arcade, W = 540, H = 960, N = 8, CS = 62, GX = (540 - 8 * 62) / 2, GY = 220, NC = 6;
   var COLS = ['#ff4d6d', '#ffd166', '#7dff9b', '#5ee7ff', '#b48cff', '#ff7aa8'];
   var fx = new A.FX();
-  var g, moves, score, chain, bestChain, busy, sel, drag = null, cur = { x: 3, y: 3 }, kbd = false, dyingT, falling;
+  var g, moves, score, chain, bestChain, busy, sel, drag = null, cur = { x: 3, y: 3 }, kbd = false, dyingT, falling, idleT = 0, hintMv = null, chainBonus = false;
   // 칸: {c:색, sp: null|'h'|'v'|'bomb', y:그릴 위치(애니메이션)}
   function rnd() { return A.irand(0, NC - 1); }
   function at(x, y) { return x >= 0 && y >= 0 && x < N && y < N ? g[y][x] : null; }
@@ -18,14 +18,15 @@
     return runs;
   }
   function range(a, b) { var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
-  function hasMove() {
+  function findMove() {
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) for (var d = 0; d < 2; d++) {
       var nx = x + (d ? 0 : 1), ny = y + (d ? 1 : 0); if (nx >= N || ny >= N) continue;
-      var a = g[y][x], b = g[ny][nx]; if (a.sp === 'bomb' || b.sp === 'bomb') return true;
-      g[y][x] = b; g[ny][nx] = a; var m = findMatches().length; g[y][x] = a; g[ny][nx] = b; if (m) return true;
+      var a = g[y][x], b = g[ny][nx]; if (a.sp === 'bomb' || b.sp === 'bomb') return [x, y, nx, ny];
+      g[y][x] = b; g[ny][nx] = a; var m = findMatches().length; g[y][x] = a; g[ny][nx] = b; if (m) return [x, y, nx, ny];
     }
-    return false;
+    return null;
   }
+  function hasMove() { return !!findMove(); }
   function blastCells(set, x, y) {
     var it = g[y][x]; if (set[x + ',' + y]) return; set[x + ',' + y] = 1;
     if (it.sp === 'h') for (var k = 0; k < N; k++) blastCells(set, k, y);
@@ -34,6 +35,7 @@
   function resolve(swapA, swapB) {
     var runs = findMatches(); if (!runs.length) return false;
     chain++; bestChain = Math.max(bestChain, chain);
+    if (chain === 3 && !chainBonus) { chainBonus = true; moves++; fx.text(W / 2, GY + N * CS + 40, '3연쇄 보너스: 이동 +1', '#7dff9b', 22); A.sfx('power'); }
     var set = {}, make = [];
     runs.forEach(function (r) {
       r.cells.forEach(function (p) { blastCells(set, p[0], p[1]); });
@@ -65,7 +67,7 @@
   }
   function trySwap(x1, y1, x2, y2) {
     if (busy > 0 || dyingT > 0 || S.state !== 'playing' || !at(x2, y2) || Math.abs(x1 - x2) + Math.abs(y1 - y2) !== 1) return;
-    var a = g[y1][x1], b = g[y2][x2]; chain = 0;
+    var a = g[y1][x1], b = g[y2][x2]; chain = 0; chainBonus = false; idleT = 0; hintMv = null;
     if (a.sp === 'bomb' || b.sp === 'bomb') { moves--; var bomb = a.sp === 'bomb' ? [x1, y1, b.c] : [x2, y2, a.c]; colorBomb(bomb[0], bomb[1], bomb[2] === 9 ? A.irand(0, NC - 1) : bomb[2]); hud(); return; }
     g[y1][x1] = b; g[y2][x2] = a; a.yy = y2; b.yy = y1;
     swapAnim = { a: a, b: b, ax: x1, ay: y1, bx: x2, by: y2, t: 0 };
@@ -73,15 +75,17 @@
     moves--; A.sfx('turn', 1.3); busy = 0.18; pendingSwap = [[x2, y2], [x1, y1]]; hud();
   }
   var swapAnim = null, pendingSwap = null;
-  function reset() { fill(); for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) g[y][x].yy = y; moves = 30; score = 0; chain = 0; bestChain = 0; busy = 0; sel = null; dyingT = 0; fx.clear(); hud(); }
+  function reset() { fill(); for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) g[y][x].yy = y; moves = 30; score = 0; chain = 0; bestChain = 0; busy = 0; sel = null; dyingT = 0; idleT = 0; hintMv = null; fx.clear(); hud(); }
   function update(dt) {
     fx.update(dt);
     if (swapAnim) { swapAnim.t += dt * 6; if (swapAnim.t >= 1) swapAnim = null; }
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) { var it = g[y][x]; if (it.dy) { it.dy = it.dy < 0 ? Math.min(0, it.dy + dt * 1400) : 0; } }
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최대 연쇄', String(bestChain)]], { kick: 'FINISH', win: true }); return; }
+    // 6초 동안 아무것도 안 하면 바꿀 수 있는 두 보석을 살짝 알려 줌
+    if (busy <= 0 && !swapAnim) { idleT += dt; if (idleT > 6 && !hintMv) hintMv = findMove(); }
     if (busy > 0) { busy -= dt; if (busy <= 0) {
       if (pendingSwap) { var ps = pendingSwap; pendingSwap = null; resolve(ps[0], ps[1]); }
-      else if (!resolve()) { if (moves <= 0) { dyingT = 1; A.sfx('level'); } else if (!hasMove()) { fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); fill(); for (y = 0; y < N; y++) for (x = 0; x < N; x++) g[y][x].yy = y; } }
+      else if (!resolve()) { if (moves <= 0) { dyingT = 1; A.sfx('level'); } else if (!hasMove()) { fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); hintMv = null; idleT = 0; fill(); for (y = 0; y < N; y++) for (x = 0; x < N; x++) g[y][x].yy = y; } }
     } }
     hud();
   }
@@ -89,11 +93,15 @@
     var col = COLS[it.c] || '#ffffff', r = CS * 0.38 * s;
     c.save(); c.translate(px, py);
     if (it.sp === 'bomb') { var gr = c.createRadialGradient(0, 0, 2, 0, 0, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.5, '#b48cff'); gr.addColorStop(1, '#ff4d6d'); c.fillStyle = gr; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill(); c.restore(); return; }
-    c.shadowColor = col; c.shadowBlur = 10; c.fillStyle = col; c.beginPath();
-    var sides = [6, 4, 5, 8, 3, 0][it.c % 6];
-    if (!sides) c.arc(0, 0, r, 0, 7); else for (var k = 0; k < sides; k++) { var a = k / sides * Math.PI * 2 - Math.PI / 2; c[k ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); }
-    c.closePath(); c.fill(); c.shadowBlur = 0;
-    c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(-r * 0.25, -r * 0.3, r * 0.35, r * 0.18, -0.5, 0, 7); c.fill();
+    // 빛 번짐이 있는 보석 모양은 색마다 한 번만 그려 둠 (매 프레임 shadowBlur 금지)
+    var r0 = CS * 0.38, spr = A.sprite('gem' + it.c, r0 * 2 + 24, r0 * 2 + 24, function (x, w) {
+      x.translate(w / 2, w / 2); x.shadowColor = col; x.shadowBlur = 10; x.fillStyle = col; x.beginPath();
+      var sides = [6, 4, 5, 8, 3, 0][it.c % 6];
+      if (!sides) x.arc(0, 0, r0, 0, 7); else for (var k = 0; k < sides; k++) { var a = k / sides * Math.PI * 2 - Math.PI / 2; x[k ? 'lineTo' : 'moveTo'](Math.cos(a) * r0, Math.sin(a) * r0); }
+      x.closePath(); x.fill(); x.shadowBlur = 0;
+      x.fillStyle = 'rgba(255,255,255,.45)'; x.beginPath(); x.ellipse(-r0 * 0.25, -r0 * 0.3, r0 * 0.35, r0 * 0.18, -0.5, 0, 7); x.fill();
+    });
+    A.draw(c, spr, 0, 0, s);
     if (it.sp === 'h' || it.sp === 'v') { c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); if (it.sp === 'h') { c.moveTo(-r, 0); c.lineTo(r, 0); } else { c.moveTo(0, -r); c.lineTo(0, r); } c.stroke(); }
     c.restore();
   }
@@ -108,7 +116,8 @@
       c.fillStyle = (x + y) % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)'; c.fillRect(GX + x * CS, GY + y * CS, CS, CS);
       var it = g[y][x], px = GX + (x + 0.5) * CS, py = GY + (y + 0.5) * CS + (it.dy || 0);
       if (swapAnim && (it === swapAnim.a || it === swapAnim.b)) { var e = swapAnim.back ? Math.sin(swapAnim.t * Math.PI) : swapAnim.t; var fromX = it === swapAnim.a ? swapAnim.ax : swapAnim.bx, fromY = it === swapAnim.a ? swapAnim.ay : swapAnim.by, toX = it === swapAnim.a ? swapAnim.bx : swapAnim.ax, toY = it === swapAnim.a ? swapAnim.by : swapAnim.ay; if (swapAnim.back) { px = GX + (A.lerp(fromX, toX, e) + 0.5) * CS; py = GY + (A.lerp(fromY, toY, e) + 0.5) * CS; } else { px = GX + (A.lerp(fromX, toX, e) + 0.5) * CS; py = GY + (A.lerp(fromY, toY, e) + 0.5) * CS; } }
-      if (it.c >= 0) gem(c, it, px, py, sel && sel[0] === x && sel[1] === y ? 1.12 : 1);
+      var hs = hintMv && ((hintMv[0] === x && hintMv[1] === y) || (hintMv[2] === x && hintMv[3] === y)) ? 1 + 0.1 * Math.abs(Math.sin(S.time * 6)) : 1;
+      if (it.c >= 0) gem(c, it, px, py, sel && sel[0] === x && sel[1] === y ? 1.12 : hs);
     }
     c.restore();
     if (sel) { c.strokeStyle = '#fff'; c.lineWidth = 3; A.rr(c, GX + sel[0] * CS + 3, GY + sel[1] * CS + 3, CS - 6, CS - 6, 12); c.stroke(); }
@@ -121,6 +130,7 @@
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), c = cellOf(p); if (!c) { sel = null; return; }
     if (sel && Math.abs(sel[0] - c[0]) + Math.abs(sel[1] - c[1]) === 1) { trySwap(sel[0], sel[1], c[0], c[1]); sel = null; return; }
+    if (sel && sel[0] === c[0] && sel[1] === c[1]) { sel = null; return; }
     sel = c; drag = { c: c, x: p.x, y: p.y, id: e.pointerId }; A.sfx('tick'); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
   });
   stage.addEventListener('pointermove', function (e) { if (!drag || drag.id !== e.pointerId) return; var p = S.toLocal(e), dx = p.x - drag.x, dy = p.y - drag.y; if (Math.max(Math.abs(dx), Math.abs(dy)) > CS * 0.4) { var t = Math.abs(dx) > Math.abs(dy) ? [drag.c[0] + Math.sign(dx), drag.c[1]] : [drag.c[0], drag.c[1] + Math.sign(dy)]; trySwap(drag.c[0], drag.c[1], t[0], t[1]); drag = null; sel = null; } });

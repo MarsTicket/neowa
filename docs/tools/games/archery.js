@@ -15,16 +15,16 @@
     if (S.state !== 'playing' || arrow || arrows <= 0 || dyingT > 0) return;
     var v = 520 + power * 900;
     arrow = { x: BX + 30, y: BY - 40, vx: Math.cos(angle) * v, vy: Math.sin(angle) * v, t: 0, stuck: false };
-    arrows--; A.sfx('shoot', 0.5); hud();
+    arrows--; A.sfx('whoosh', 1.2); A.sfx('tap', 1.6); hud();
   }
   function settle(pts, x, y) {
     if (pts > 0) {
       streak++; var bonus = streak >= 3 ? (streak - 2) * 2 : 0; score += pts + bonus;
       fx.text(x, y - 40, (pts === 10 ? '정중앙! ' : '') + '+' + (pts + bonus), pts >= 9 ? '#ffd166' : '#fff', pts === 10 ? 28 : 22);
-      fx.burst(x, y, pts >= 9 ? '#ffd166' : '#ff9ecf', 20, 260, 0.5, 3); A.sfx(pts >= 9 ? 'gold' : 'coin'); if (pts === 10) fx.shake(5, 0.2);
+      fx.burst(x, y, pts >= 9 ? '#ffd166' : '#ff9ecf', 20, 260, 0.5, 3); A.sfx('hit', 0.8, A.clamp(x / W * 2 - 1, -1, 1)); A.sfx(pts >= 9 ? 'gold' : 'coin', 1 + Math.min(streak, 12) * 0.04, A.clamp(x / W * 2 - 1, -1, 1)); if (streak >= 3) A.sfx('combo', 1 + Math.min(streak, 12) * 0.05); if (pts === 10) fx.shake(5, 0.2);
       // 정중앙이면 화살 1발 보너스
       if (pts === 10) { arrows++; extra++; fx.text(x, y - 76, '보너스 화살 +1', '#7dff9b', 18); A.sfx('power'); }
-    } else { streak = 0; fx.text(x, y - 30, '빗나감', '#ff4d6d', 20); A.sfx('wall'); }
+    } else { streak = 0; fx.text(x, y - 30, '빗나감', '#ff4d6d', 20); A.sfx('wrong'); }
     results.push(pts);
     nextT = 0.7;   // 0.7초 뒤 다음 과녁 (게임 시간 기준이라 일시정지·다시 하기에도 안전)
     hud();

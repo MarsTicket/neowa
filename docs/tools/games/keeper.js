@@ -11,7 +11,7 @@
     var curve = Math.random() < 0.2 + lv * 0.5 ? A.rand(-160, 160) : 0;
     var fake = Math.random() < lv * 0.3;
     ball = { sx: W / 2 + A.rand(-60, 60), sy: 900, tx: tx, ty: ty, t: 0, dur: dur, curve: curve, fake: fake, fx: fake ? A.rand(GX0 + 30, GX1 - 30) : tx };
-    A.sfx('shoot', 0.4);
+    A.sfx('puck', 0.7);
   }
   function pos(b, k) {
     // 페인트 슛: 35% 지점부터 진짜 방향으로 꺾임 (예전 50% → 반응할 시간 확보)
@@ -33,12 +33,12 @@
         saves++; streak++; bestStreak = Math.max(bestStreak, streak); var m = Math.min(5, 1 + Math.floor(streak / 3)), pts = 10 * m, perf = gd < 28;
         if (perf) pts += 10;   // 장갑 정중앙으로 막으면 +10
         score += pts;
-        fx.burst(p.x, p.y, '#7dff9b', 24, 320, 0.5, 3.5); fx.ring(p.x, p.y, '#7dff9b', 100, 0.4); fx.text(p.x, p.y - 50, (perf ? '완벽 선방! +' : '선방! +') + pts, perf ? '#ffd166' : '#7dff9b', perf ? 26 : 24); A.sfx('bounce', 1.3); A.vibrate(25); fx.shake(4, 0.15);
+        fx.burst(p.x, p.y, '#7dff9b', 24, 320, 0.5, 3.5); fx.ring(p.x, p.y, '#7dff9b', 100, 0.4); fx.text(p.x, p.y - 50, (perf ? '완벽 선방! +' : '선방! +') + pts, perf ? '#ffd166' : '#7dff9b', perf ? 26 : 24); A.sfx('bounce', 1.3, A.clamp(p.x / W * 2 - 1, -1, 1)); if (streak >= 3 && streak % 3 === 0) A.sfx('combo', 1 + Math.min(streak, 12) * 0.05); A.vibrate(25); fx.shake(4, 0.15);
         // 10연속 선방마다 실점 1 회복
         if (streak % 10 === 0 && goals > 0) { goals--; fx.text(W / 2, 200, '실점 -1 회복!', '#ffd166', 26); A.sfx('power'); }
         if (saves % 10 === 0) { S.banner(saves + ' 선방', '슛이 더 빨라져요'); A.sfx('level'); }
       } else {
-        goals++; streak = 0; fx.flashIt('#ff2244', 0.4); fx.shake(9, 0.3); A.sfx('hurt'); A.vibrate(140);
+        goals++; streak = 0; fx.flashIt('#ff2244', 0.4); fx.shake(9, 0.3); A.sfx('hurt', 1, A.clamp(p.x / W * 2 - 1, -1, 1)); A.vibrate(140); if (goals === 2) A.sfx('warn');
         fx.text(W / 2, 200, 'GOAL...', '#ff4d6d', 34); fx.burst(p.x, p.y, '#ffffff', 20, 260, 0.5, 3);
         if (goals >= 3) dyingT = 1.2;
       }

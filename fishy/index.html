@@ -117,10 +117,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 70;
   var fx = new A.FX();
-  var P, fish, bubbles = [], score, eaten, size, xp, dyingT, drag = null, keys = {}, spawnT, inv, combo, comboT, bestCombo, MAXS = 10;
+  var warnT = 0, P, fish, bubbles = [], score, eaten, size, xp, dyingT, drag = null, keys = {}, spawnT, inv, combo, comboT, bestCombo, MAXS = 10;
   var COLS = ['#ffb547', '#ff7aa8', '#7dff9b', '#b48cff', '#ffe066', '#5ee7ff', '#ff7a45'];
   function rFor(s) { return 14 + s * 6; }
-  function reset() { P = { x: W / 2, y: H / 2, vx: 0, vy: 0, face: 1 }; fish = []; score = 0; eaten = 0; size = 1; xp = 0; dyingT = 0; drag = null; keys = {}; spawnT = 0; inv = 2; combo = 0; comboT = 0; bestCombo = 0; for (var i = 0; i < 8; i++) spawnFish(true, i < 5); fx.clear(); hud(); }
+  function reset() { P = { x: W / 2, y: H / 2, vx: 0, vy: 0, face: 1 }; fish = []; score = 0; eaten = 0; size = 1; xp = 0; dyingT = 0; drag = null; keys = {}; spawnT = 0; warnT = 0; inv = 2; combo = 0; comboT = 0; bestCombo = 0; for (var i = 0; i < 8; i++) spawnFish(true, i < 5); fx.clear(); hud(); }
   function spawnFish(init, small) {
     // 작은 물고기(먹이)가 절반 이상 나오게. 가끔 아주 큰 포식자
     var gold = !init && Math.random() < 0.05, s = gold ? Math.max(0.5, size - 1) : A.clamp(size + (small ? A.irand(-3, -1) : (Math.random() < 0.35 ? A.irand(0, 3) : A.irand(-3, -1))), 0.5, MAXS + 3), side = Math.random() < 0.5 ? -1 : 1;
@@ -131,6 +131,7 @@
   }
   function update(dt) {
     fx.update(dt);
+    if (warnT > 0) warnT -= dt;
     fish.forEach(function (f) { f.x += f.vx * dt; f.wob += dt * 3; f.y += Math.sin(f.wob) * 12 * dt; });
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최대 크기', String(size)], ['먹은 물고기', String(eaten)], ['최대 연속', String(bestCombo)]]); return; }
     var tx = 0, ty = 0;
@@ -146,15 +147,16 @@
       var f = fish[i], m = f.r * 1.6 + 40;
       if ((f.x < -m && f.vx < 0) || (f.x > W + m && f.vx > 0)) { fish.splice(i, 1); continue; }
       var dd = Math.hypot(f.x - P.x, f.y - P.y);
+      if (warnT <= 0 && f.r >= pr * 0.95 && dd < (pr + f.r) * 1.25 && dd >= (pr + f.r) * 0.7) { warnT = 1.5; A.sfx('warn', 1, A.clamp(f.x / W * 2 - 1, -1, 1)); }
       if (dd < (pr + f.r) * 0.7) {
         if (f.r < pr * 0.95) {
           combo++; comboT = 1.6; bestCombo = Math.max(bestCombo, combo);
           fish.splice(i, 1); eaten++; var pts = Math.round(10 * Math.max(1, f.s) * (f.gold ? 5 : 1)) * Math.min(5, combo); score += pts; xp += Math.max(1, f.s) * (f.gold ? 3 : 1);
-          fx.burst(f.x, f.y, f.c, 12, 200, 0.4, 3); fx.text(f.x, f.y - 20, '+' + pts + (combo > 1 ? ' ×' + Math.min(5, combo) : ''), f.gold ? '#ffd166' : '#fff', 16 + Math.min(4, combo) * 2); if (f.gold) A.sfx('gold'); A.sfx('eat', 1.4 - Math.min(0.6, f.s * 0.05)); A.vibrate(10);
+          fx.burst(f.x, f.y, f.c, 12, 200, 0.4, 3); fx.text(f.x, f.y - 20, '+' + pts + (combo > 1 ? ' ×' + Math.min(5, combo) : ''), f.gold ? '#ffd166' : '#fff', 16 + Math.min(4, combo) * 2); if (f.gold) A.sfx('gold'); A.sfx('eat', 1.4 - Math.min(0.6, f.s * 0.05), A.clamp(f.x / W * 2 - 1, -1, 1)); A.vibrate(10);
           var need = 5 + size * 3;
           if (xp >= need && size < MAXS) { xp -= need; size++; S.banner('크기 ' + size, size === MAXS ? '최대 크기! 이제부터 먹을 때마다 보너스' : '더 커졌다!'); A.sfx('level'); fx.ring(P.x, P.y, '#4dd8ff', 140, 0.5); }
           else if (xp >= need) { xp -= need; score += 500; fx.text(P.x, P.y - pr - 30, '바다의 왕 +500', '#ffd166', 22); A.sfx('gold'); }
-        } else if (inv <= 0) { dyingT = 1.2; fx.burst(P.x, P.y, '#4dd8ff', 40, 380, 0.8, 4); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(180); hud(); return; }
+        } else if (inv <= 0) { dyingT = 1.2; fx.burst(P.x, P.y, '#4dd8ff', 40, 380, 0.8, 4); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt', 1, A.clamp(P.x / W * 2 - 1, -1, 1)); A.vibrate(180); hud(); return; }
       }
     }
     spawnT -= dt; if (spawnT <= 0 && fish.length < 15) { spawnFish(false); spawnT = A.rand(0.35, 0.8); }

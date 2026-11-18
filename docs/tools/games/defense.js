@@ -16,10 +16,10 @@
   function fire(x, y) {
     if (S.state !== 'playing' || dyingT > 0) return;
     if (ammo <= 0) { if (noAmmoT <= 0) { noAmmoT = 0.6; A.sfx('wall', 0.7); fx.text(BASE.x, GY - 70, '요격탄 없음', '#ff4d6d', 18); } return; } y = Math.min(y, GY - 60);
-    ammo--; shots.push({ x: BASE.x, y: BASE.y, tx: x, ty: y, sp: 900 }); A.sfx('shoot', 0.7); hud();
+    ammo--; shots.push({ x: BASE.x, y: BASE.y, tx: x, ty: y, sp: 900 }); A.sfx('shoot', 0.7, A.clamp(x / W * 2 - 1, -1, 1)); hud();
   }
   // root: 같은 요격탄에서 시작된 폭발끼리 공유하는 연쇄 카운터
-  function explode(x, y, chain, root) { blasts.push({ x: x, y: y, r: 0, max: 62, t: 0, chain: chain, root: root || { n: 0 } }); A.sfx(chain ? 'boom' : 'hit', chain ? 1.3 : 1); }
+  function explode(x, y, chain, root) { blasts.push({ x: x, y: y, r: 0, max: 62, t: 0, chain: chain, root: root || { n: 0 } }); A.sfx(chain ? 'boom' : 'hit', chain ? 1.1 + Math.min(chainCount, 10) * 0.06 : 1, A.clamp(x / W * 2 - 1, -1, 1)); }
   function update(dt) {
     fx.update(dt); if (noAmmoT > 0) noAmmoT -= dt;
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['최대 연쇄', String(bestChain)]]); return; }
@@ -30,17 +30,17 @@
     for (i = missiles.length - 1; i >= 0; i--) {
       var m = missiles[i]; m.x += m.vx * dt; m.y += m.vy * dt;
       var hit = null; for (j = 0; j < blasts.length; j++) if (Math.hypot(m.x - blasts[j].x, m.y - blasts[j].y) < blasts[j].r) { hit = blasts[j]; break; }
-      if (hit) { missiles.splice(i, 1); var chainCount = ++hit.root.n; if (chainCount > bestChain) bestChain = chainCount; var pts = 25 * chainCount * (m.fast ? 2 : 1); score += pts; fx.text(m.x, m.y - 20, (chainCount > 1 ? chainCount + '연쇄 ' : '') + '+' + pts, chainCount > 1 ? '#ffd166' : '#fff', 18); fx.burst(m.x, m.y, '#ff7a45', 14, 240, 0.5, 3); explode(m.x, m.y, true, hit.root); continue; }
+      if (hit) { missiles.splice(i, 1); var chainCount = ++hit.root.n; if (chainCount > bestChain) bestChain = chainCount; var pts = 25 * chainCount * (m.fast ? 2 : 1); score += pts; fx.text(m.x, m.y - 20, (chainCount > 1 ? chainCount + '연쇄 ' : '') + '+' + pts, chainCount > 1 ? '#ffd166' : '#fff', 18); fx.burst(m.x, m.y, '#ff7a45', 14, 240, 0.5, 3); explode(m.x, m.y, true, hit.root); if (chainCount >= 3) A.sfx('combo', 1 + Math.min(chainCount, 12) * 0.05); continue; }
       if (m.split && m.y > 300 && !m.didSplit) { m.didSplit = true; for (var k = 0; k < 2; k++) { var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) break; var tg = A.pick(alive), a = Math.atan2(GY - m.y, tg.x - m.x), sp = Math.hypot(m.vx, m.vy); missiles.push({ x: m.x, y: m.y, sx: m.x, sy: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, tg: tg }); } }
       if (m.y >= GY - 20) {
-        missiles.splice(i, 1); fx.burst(m.x, GY - 20, '#ff4d6d', 30, 320, 0.7, 4); fx.shake(8, 0.3); A.sfx('bigboom'); A.vibrate(120);
+        missiles.splice(i, 1); fx.burst(m.x, GY - 20, '#ff4d6d', 30, 320, 0.7, 4); fx.shake(8, 0.3); A.sfx('bigboom', 1, A.clamp(m.x / W * 2 - 1, -1, 1)); A.vibrate(120);
         cities.forEach(function (c) { if (c.alive && Math.abs(c.x - m.x) < 46) { c.alive = false; lostThisWave++; fx.text(c.x, GY - 60, '도시 파괴', '#ff4d6d', 18); } });
-        if (!cities.some(function (c) { return c.alive; })) { dyingT = 1.4; fx.flashIt('#ff2244', 0.7); }
+        if (!cities.some(function (c) { return c.alive; })) { dyingT = 1.4; fx.flashIt('#ff2244', 0.7); } else if (cities.filter(function (c) { return c.alive; }).length === 1) A.sfx('warn');
       }
     }
     if (toSpawn <= 0 && !missiles.length && dyingT <= 0) { waveT += dt; if (waveT > 1.2) { waveT = 0; var alive = cities.filter(function (c) { return c.alive; }).length, bonus = alive * 100 + ammo * 5; score += bonus; fx.text(W / 2, H / 2, '도시 ' + alive + '곳 보너스 +' + bonus, '#ffd166', 22);
       if (!lostThisWave) { score += 300 * wave; fx.text(W / 2, H / 2 + 40, '완벽 방어 +' + 300 * wave, '#7dff9b', 22); A.sfx('gold'); }
-      if (wave % 3 === 0) { var rb = 0; cities.forEach(function (c) { if (!c.alive && (Math.random() < 0.5 || (rb === 0 && alive <= 2))) { c.alive = true; rb++; } }); if (rb) fx.text(W / 2, H / 2 + 80, '도시 ' + rb + '곳 복구', '#5ee7ff', 20); }
+      if (wave % 3 === 0) { var rb = 0; cities.forEach(function (c) { if (!c.alive && (Math.random() < 0.5 || (rb === 0 && alive <= 2))) { c.alive = true; rb++; } }); if (rb) { fx.text(W / 2, H / 2 + 80, '도시 ' + rb + '곳 복구', '#5ee7ff', 20); A.sfx('power'); } }
       nextWave(); } }
     hud();
   }

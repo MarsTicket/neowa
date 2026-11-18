@@ -17,7 +17,7 @@
     if (d < MR + PR && d > 0) {
       var nx = dx / d, ny = dy / d; puck.x = m.x + nx * (MR + PR); puck.y = m.y + ny * (MR + PR);
       var rv = (puck.vx - m.vx) * nx + (puck.vy - m.vy) * ny;
-      if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('bounce', pr ? 1.2 : 0.9); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
+      if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('puck', (pr ? 1.1 : 0.9) + Math.min(Math.hypot(puck.vx, puck.vy), 1500) / 1500 * 0.5, A.clamp(puck.x / W * 2 - 1, -1, 1)); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
       var sp = Math.hypot(puck.vx, puck.vy); if (sp > 1500) { puck.vx *= 1500 / sp; puck.vy *= 1500 / sp; }
     }
   }
@@ -29,7 +29,7 @@
     var inGoal = Math.abs(puck.x - W / 2) < GW / 2;
     if (!inGoal && puck.y < TOP + PR) { puck.y = TOP + PR; puck.vy = Math.abs(puck.vy) * 0.92; hit = true; }
     if (!inGoal && puck.y > BOT - PR) { puck.y = BOT - PR; puck.vy = -Math.abs(puck.vy) * 0.92; hit = true; }
-    if (hit && sound) A.sfx('wall');
+    if (hit && sound) A.sfx('wall', 1, A.clamp(puck.x / W * 2 - 1, -1, 1));
     return hit;
   }
   // 말렛이 퍽을 벽(구석)으로 밀어붙이면 퍽은 벽 안에 두고 말렛을 밀어낸다
@@ -43,11 +43,11 @@
     if (duo()) { // 둘이서: mine = P1(아래)이 넣은 골
       var col = mine ? '#5ee7ff' : '#ff4d6d'; if (mine) sMe++; else sCpu++;
       fx.text(W / 2, mine ? TOP + 80 : BOT - 80, (mine ? 'P1' : 'P2') + ' GOAL!', col, 32); fx.burst(W / 2, mine ? TOP : BOT, col, 40, 400, 0.8, 4); A.sfx('gold'); fx.shake(5, 0.2); A.vibrate(80);
-      if (sMe >= 7 || sCpu >= 7) { duoWin = sMe >= 7 ? 1 : 2; tally[duoWin - 1]++; dyingT = 1.2; A.sfx('level'); } else resetPuck(!mine);
+      if (sMe >= 7 || sCpu >= 7) { duoWin = sMe >= 7 ? 1 : 2; tally[duoWin - 1]++; dyingT = 1.2; A.sfx('win'); } else resetPuck(!mine);
       hud(); return;
     }
     if (mine) { sMe++; score += 100 * round; fx.text(W / 2, TOP + 80, 'GOAL!', '#5ee7ff', 34); A.sfx('gold'); fx.burst(W / 2, TOP, '#5ee7ff', 40, 400, 0.8, 4); }
-    else { sCpu++; fx.text(W / 2, BOT - 80, '실점', '#ff4d6d', 30); A.sfx('hurt'); fx.shake(8, 0.3); A.vibrate(120); }
+    else { sCpu++; fx.text(W / 2, BOT - 80, '실점', '#ff4d6d', 30); A.sfx('hurt'); fx.shake(8, 0.3); A.vibrate(120); if (sCpu === 6) A.sfx('warn', 1.2); }
     if (sMe >= 7) { score += 500 * round; round++; S.banner('ROUND ' + round, '더 강한 상대'); A.sfx('level'); newRound(); }
     else if (sCpu >= 7) { dyingT = 1; }
     else resetPuck(!mine);

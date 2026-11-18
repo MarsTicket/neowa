@@ -13,7 +13,7 @@
   var BUMPERS = [{ x: 190, y: 300, r: 34 }, { x: 350, y: 300, r: 34 }, { x: 270, y: 420, r: 30 }, { x: 140, y: 500, r: 24 }, { x: 400, y: 500, r: 24 }];
   var TARGETS = [{ x: 170, y: 170 }, { x: 270, y: 155 }, { x: 370, y: 170 }];
   var FL = { L: { x: 150, y: 850, len: 95, rest: 0.45, up: -0.5, a: 0.45, prev: 0.45 }, R: { x: 390, y: 850, len: 95, rest: Math.PI - 0.45, up: Math.PI + 0.5, a: Math.PI - 0.45, prev: Math.PI - 0.45 } };
-  function newBall() { ball = { x: A.rand(200, 340), y: 150, vx: A.rand(-120, 120), vy: 0 }; saveT = 4; stuck = { x: ball.x, y: ball.y, t: 0 }; A.sfx('start'); }
+  function newBall() { ball = { x: A.rand(200, 340), y: 150, vx: A.rand(-120, 120), vy: 0 }; saveT = 4; stuck = { x: ball.x, y: ball.y, t: 0 }; A.sfx('go'); }
   function reset() { balls = 3; score = 0; nextExtra = 15000; mult = 1; lit = [false, false, false]; dyingT = 0; FL.L.a = FL.L.rest; FL.R.a = FL.R.rest; newBall(); fx.clear(); hud(); }
   function seg(px, py, x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy, t = A.clamp(((px - x1) * dx + (py - y1) * dy) / l, 0, 1); return { x: x1 + dx * t, y: y1 + dy * t, t: t }; }
   function bounce(nx, ny, e, extraVx, extraVy) {
@@ -28,7 +28,7 @@
   function update(dt) {
     fx.update(dt);
     var lUp = keysL || touchL, rUp = keysR || touchR;
-    ['L', 'R'].forEach(function (k) { var f = FL[k], up = k === 'L' ? lUp : rUp, target = up ? f.up : f.rest; f.prev = f.a; var sp = 22 * dt; f.a += A.clamp(target - f.a, -sp, sp); });
+    ['L', 'R'].forEach(function (k) { var f = FL[k], up = k === 'L' ? lUp : rUp, target = up ? f.up : f.rest; if (up && !f.on) A.sfx('tap', k === 'L' ? 0.9 : 1.1, k === 'L' ? -0.6 : 0.6); f.on = up; f.prev = f.a; var sp = 22 * dt; f.a += A.clamp(target - f.a, -sp, sp); });
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최고 배율', '×' + bestMult]]); return; }
     if (!ball) { launchT -= dt; if (launchT <= 0) newBall(); return; }
     if (saveT > 0) saveT -= dt;
@@ -36,9 +36,9 @@
     for (var s = 0; s < steps; s++) {
       ball.vy += G * h; ball.x += ball.vx * h; ball.y += ball.vy * h;
       WALLS.forEach(function (w) { collideSeg(w[0], w[1], w[2], w[3], 0.5); });
-      if (saveT > 0) collideSeg(150, 900, 390, 900, 0.6);
-      BUMPERS.forEach(function (b) { var dx = ball.x - b.x, dy = ball.y - b.y, d = Math.hypot(dx, dy); if (d < b.r + R) { var nx = dx / d, ny = dy / d; ball.x = b.x + nx * (b.r + R); ball.y = b.y + ny * (b.r + R); bounce(nx, ny, 0.9); ball.vx += nx * 260; ball.vy += ny * 260; b.hit = 0.15; score += 100 * mult; A.sfx('bounce', 1.3); fx.burst(ball.x, ball.y, '#ff5ec4', 8, 200, 0.3, 2.5); A.vibrate(10); } });
-      TARGETS.forEach(function (tg, i) { if (!lit[i] && Math.hypot(ball.x - tg.x, ball.y - tg.y) < R + 16) { lit[i] = true; score += 250 * mult; A.sfx('coin'); fx.text(tg.x, tg.y + 30, '+' + 250 * mult, '#ffd166', 18);
+      if (saveT > 0 && collideSeg(150, 900, 390, 900, 0.6)) A.sfx('steel', 0.9);
+      BUMPERS.forEach(function (b) { var dx = ball.x - b.x, dy = ball.y - b.y, d = Math.hypot(dx, dy); if (d < b.r + R) { var nx = dx / d, ny = dy / d; ball.x = b.x + nx * (b.r + R); ball.y = b.y + ny * (b.r + R); bounce(nx, ny, 0.9); ball.vx += nx * 260; ball.vy += ny * 260; b.hit = 0.15; score += 100 * mult; A.sfx('pop', 1 + (36 - b.r) * 0.03, A.clamp(b.x / W * 2 - 1, -1, 1)); fx.burst(ball.x, ball.y, '#ff5ec4', 8, 200, 0.3, 2.5); A.vibrate(10); } });
+      TARGETS.forEach(function (tg, i) { if (!lit[i] && Math.hypot(ball.x - tg.x, ball.y - tg.y) < R + 16) { lit[i] = true; score += 250 * mult; A.sfx('coin', 1 + i * 0.2, A.clamp(tg.x / W * 2 - 1, -1, 1)); fx.text(tg.x, tg.y + 30, '+' + 250 * mult, '#ffd166', 18);
         if (lit.every(Boolean)) { mult++; bestMult = Math.max(bestMult, mult); lit = [false, false, false]; S.banner('×' + mult, '배율 UP'); A.sfx('level'); } } });
       ['L', 'R'].forEach(function (k) {
         // 플리퍼 각도도 서브스텝마다 조금씩 움직여 판정 (한 번에 휙 돌아 공을 통과하던 문제 방지)
@@ -47,7 +47,7 @@
         if (d < R + 8 && d > 0.001) {
           var nx = dx / d, ny = dy / d, w = (f.a - f.prev) / dt, r = q.t * f.len, svx = -Math.sin(fa) * w * r, svy = Math.cos(fa) * w * r;
           ball.x = q.x + nx * (R + 8); ball.y = q.y + ny * (R + 8); bounce(nx, ny, 0.4, svx, svy);
-          if (Math.abs(w) > 1) A.sfx('wall', 1.4);
+          if (Math.abs(w) > 1) A.sfx('puck', 1.1, A.clamp(ball.x / W * 2 - 1, -1, 1));
         }
       });
       var sp = Math.hypot(ball.vx, ball.vy); if (sp > 2200) { ball.vx *= 2200 / sp; ball.vy *= 2200 / sp; }
@@ -58,7 +58,7 @@
     if (score >= nextExtra) { balls++; nextExtra *= 2.5; S.banner('보너스 공 +1', 'EXTRA BALL'); A.sfx('gold'); hud(); }
     if (ball.y > H + 30) {
       balls--; ball = null; fx.shake(6, 0.3); A.sfx('hurt'); hud();
-      if (balls <= 0) dyingT = 1; else { launchT = 1.2; mult = 1; S.banner('남은 공 ' + balls, 'BALL LOST'); }
+      if (balls <= 0) dyingT = 1; else { launchT = 1.2; mult = 1; S.banner('남은 공 ' + balls, 'BALL LOST'); if (balls === 1) A.sfx('warn'); }
     }
     BUMPERS.forEach(function (b) { if (b.hit > 0) b.hit -= dt; });
     hud();

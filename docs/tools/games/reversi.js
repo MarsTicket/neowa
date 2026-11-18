@@ -1,6 +1,8 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, N = 8, CS = 60, GX = (540 - 480) / 2, GY = 230;
+  var A = Arcade, W = 540, H = 960, N = 8, CS = 60, GX = (540 - 480) / 2, GY = 230, land = false;
+  // 판 위치: 세로 540x960, 가로 화면은 720x720 정사각형(판이 훨씬 커짐)
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; if (land) { CS = 78; GX = (W - N * CS) / 2; GY = 76; } else { CS = 60; GX = (W - N * CS) / 2; GY = 230; } }
   var fx = new A.FX();
   var diff = +A.get('neowa_reversi_diff', '1') || 0;
   var WT = [100, -20, 10, 5, 5, 10, -20, 100, -20, -50, -2, -2, -2, -2, -50, -20, 10, -2, 1, 1, 1, 1, -2, 10, 5, -2, 1, 0, 0, 1, -2, 5, 5, -2, 1, 0, 0, 1, -2, 5, 10, -2, 1, 1, 1, 1, -2, 10, -20, -50, -2, -2, -2, -2, -50, -20, 100, -20, 10, 5, 5, 10, -20, 100];
@@ -102,12 +104,12 @@
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#031008'; c.fillRect(-10, -10, W + 20, H + 20);
     if (!bd) newGame();
-    c.fillStyle = '#0d4a26'; A.rr(c, GX - 10, GY - 10, 500, 500, 16); c.fill();
+    c.fillStyle = '#0d4a26'; A.rr(c, GX - 10, GY - 10, N * CS + 20, N * CS + 20, 16); c.fill();
     var legal = S.state === 'playing' && turn && (turn === 1 || duo()) && thinking <= 0 ? moves(bd, turn).map(function (m) { return m.i; }) : [];
     for (var i = 0; i < 64; i++) {
       var x = GX + (i % N) * CS, y = GY + Math.floor(i / N) * CS;
       c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1.5; c.strokeRect(x, y, CS, CS);
-      if (legal.indexOf(i) >= 0) { c.fillStyle = 'rgba(125,255,155,.35)'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, 7, 0, 7); c.fill(); }
+      if (legal.indexOf(i) >= 0) { c.fillStyle = 'rgba(125,255,155,.35)'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, CS * 0.12, 0, 7); c.fill(); }
       if (bd[i]) {
         var f = flips[i], sx = f != null && f > 0 ? Math.abs(Math.cos(Math.min(1, f / 0.35) * Math.PI)) : 1, col = bd[i] === 1 ? '#111' : '#f4f5fb';
         if (f != null && f > 0 && f < 0.175) col = bd[i] === 1 ? '#f4f5fb' : '#111';
@@ -115,12 +117,12 @@
         var pop = lastMv === i && placeT < 1 ? 0.6 + 0.4 * placeT + Math.sin(placeT * Math.PI) * 0.15 : 1;
         c.save(); c.translate(x + CS / 2, y + CS / 2); c.scale(Math.max(0.08, sx) * pop, pop); c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(0, 2.5, CS * 0.41, 0, 7); c.fill(); c.fillStyle = col; c.beginPath(); c.arc(0, 0, CS * 0.4, 0, 7); c.fill(); c.restore();
       }
-      if (lastMv === i) { c.fillStyle = '#ff4d6d'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, 4, 0, 7); c.fill(); }
+      if (lastMv === i) { c.fillStyle = '#ff4d6d'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, CS * 0.07, 0, 7); c.fill(); }
     }
     if (kbd && S.state === 'playing') { c.strokeStyle = '#7dff9b'; c.lineWidth = 3; c.strokeRect(GX + cur.x * CS + 2, GY + cur.y * CS + 2, CS - 4, CS - 4); }
-    c.fillStyle = '#7dff9b'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(passMsg > 0 ? (duo() ? (passWho === 1 ? '흑' : '백') : passWho === 1 ? '나' : '컴퓨터') + ' 둘 곳 없음 → 차례가 넘어갑니다' : S.state === 'playing' ? (duo() ? (turn === 1 ? '흑 차례' : turn === 2 ? '백 차례' : '') : turn === 1 ? '나(흑) 차례' : turn === 2 ? '컴퓨터 생각 중…' : '') : '', W / 2, GY - 60);
-    c.font = '700 24px "Pretendard Variable",system-ui'; c.fillStyle = '#fff'; c.fillText((duo() ? '흑 ' : '나(흑) ') + cnt(1) + '  :  ' + cnt(2) + (duo() ? ' 백' : ' 컴퓨터(백)'), W / 2, GY + 540);
+    c.fillStyle = '#7dff9b'; c.font = '700 ' + (land ? 26 : 20) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(passMsg > 0 ? (duo() ? (passWho === 1 ? '흑' : '백') : passWho === 1 ? '나' : '컴퓨터') + ' 둘 곳 없음 → 차례가 넘어갑니다' : S.state === 'playing' ? (duo() ? (turn === 1 ? '흑 차례' : turn === 2 ? '백 차례' : '') : turn === 1 ? '나(흑) 차례' : turn === 2 ? '컴퓨터 생각 중…' : '') : '', W / 2, land ? 36 : GY - 60);
+    if (!land) { c.font = '700 24px "Pretendard Variable",system-ui'; c.fillStyle = '#fff'; c.fillText((duo() ? '흑 ' : '나(흑) ') + cnt(1) + '  :  ' + cnt(2) + (duo() ? ' 백' : ' 컴퓨터(백)'), W / 2, GY + 540); } // 가로에선 패널 점수판(돌 수)에 표시
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = cnt(1) + ' : ' + cnt(2); document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff];
@@ -129,8 +131,20 @@
   var dbtns = document.querySelectorAll('[data-diff]');
   function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_reversi_diff', diff); A.sfx('click'); pd(); }); }); pd();
-  var S = null; S = new A.Shell({ id: 'reversi', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = null; S = new A.Shell({ id: 'reversi', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { kbd = true; var k = e.key;
       if (k === 'ArrowLeft' || k === 'a') cur.x = Math.max(0, cur.x - 1); if (k === 'ArrowRight' || k === 'd') cur.x = Math.min(N - 1, cur.x + 1); if (k === 'ArrowUp' || k === 'w') cur.y = Math.max(0, cur.y - 1); if (k === 'ArrowDown' || k === 's') cur.y = Math.min(N - 1, cur.y + 1);
       if ((k === ' ' || k === 'Enter') && !e.repeat) human(cur.y * N + cur.x); } });
+  // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)
+  function landStats(sh, extra) {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !sh.panelSlot) return;
+    hudEl.setAttribute('data-land-hide', '');
+    var ids = ['hA', 'hB', 'hC'];
+    sh.panelSlot.innerHTML = '<div class="g-card gp-stats">' + ids.map(function (id) { return '<div><span id="p' + id + 'L"></span><b id="p' + id + '"></b>' + (id === 'hA' ? '<em id="phM" style="font-style:normal;font-size:12px;font-weight:700;color:#ffd166"></em>' : '') + '</div>'; }).join('') + '</div>' + (extra || '');
+    function sync() { var m = document.getElementById('hMult'); document.getElementById('phM').textContent = m ? m.textContent : '';
+      ids.forEach(function (id) { var v = document.getElementById(id), lb = v && v.parentNode.querySelector('.h-lb');
+        document.getElementById('p' + id).textContent = v ? v.textContent : ''; document.getElementById('p' + id + 'L').textContent = lb ? lb.textContent : ''; }); }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true }); sync();
+  }
+  landStats(S);
 })();

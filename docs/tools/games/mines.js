@@ -4,7 +4,7 @@
   var DIFFS = [{ c: 8, r: 10, m: 12, base: 800, name: '쉬움' }, { c: 10, r: 14, m: 24, base: 2500, name: '보통' }, { c: 12, r: 17, m: 42, base: 6000, name: '어려움' }];
   var diff = +A.get('neowa_mines_diff', '0') || 0;
   var fx = new A.FX();
-  var D, cols, rows, CS, GX, GY, cells, started, time, flags, opened, dyingT, winT, flagMode, cur = { x: 0, y: 0 }, kbd = false, boomAt = null, press = null;
+  var D, cols, rows, CS, GX, GY, cells, started, time, flags, opened, dyingT, winT, flagMode, cur = { x: 0, y: 0 }, kbd = false, boomAt = null, press = null, reveals = [], revT = 0;
   var NUMC = ['', '#5ee7ff', '#7dff9b', '#ff7aa8', '#b48cff', '#ffb547', '#4dffd2', '#ffe066', '#ffffff'];
   var BTN = { x: W / 2 - 130, y: 880, w: 260, h: 58 };
 
@@ -16,19 +16,65 @@
   function reset() {
     layout();
     cells = []; for (var y = 0; y < rows; y++) for (var x = 0; x < cols; x++) cells.push({ x: x, y: y, mine: false, n: 0, open: false, flag: false, t: 0 });
-    started = false; time = 0; flags = 0; opened = 0; dyingT = 0; winT = 0; flagMode = false; boomAt = null; cur = { x: Math.floor(cols / 2), y: Math.floor(rows / 2) };
+    started = false; time = 0; flags = 0; opened = 0; dyingT = 0; winT = 0; flagMode = false; boomAt = null; reveals = []; revT = 0; press = null; cur = { x: Math.floor(cols / 2), y: Math.floor(rows / 2) };
     fx.clear(); hud();
   }
   function at(x, y) { return x < 0 || y < 0 || x >= cols || y >= rows ? null : cells[y * cols + x]; }
   function around(c, f) { for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; var n = at(c.x + dx, c.y + dy); if (n) f(n); } }
-  function plant(safe) {
-    var pool = cells.filter(function (c) { return Math.abs(c.x - safe.x) > 1 || Math.abs(c.y - safe.y) > 1; });
-    for (var i = 0; i < D.m; i++) { var k = Math.floor(Math.random() * pool.length); pool[k].mine = true; pool.splice(k, 1); }
+  // 지뢰 배치: 첫 칸 주변 3x3은 비우고, 논리만으로 끝까지 풀리는 판이 나올 때까지 다시 섞음 (찍기 없는 판)
+  function layMines(safe) {
+    var pool = []; for (var i = 0; i < cells.length; i++) { var c = cells[i]; c.mine = false; if (Math.abs(c.x - safe.x) > 1 || Math.abs(c.y - safe.y) > 1) pool.push(c); }
+    for (i = 0; i < D.m; i++) { var k = Math.floor(Math.random() * pool.length); pool[k].mine = true; pool.splice(k, 1); }
     cells.forEach(function (c) { var n = 0; around(c, function (q) { if (q.mine) n++; }); c.n = n; });
+  }
+  function solvable(safe) {
+    var N = cells.length, known = [], i; // 0 모름, 1 열림, 2 지뢰 확정
+    for (i = 0; i < N; i++) known.push(0);
+    function nbs(k) { var c = cells[k], out = []; around(c, function (q) { out.push(q.y * cols + q.x); }); return out; }
+    var NBS = []; for (i = 0; i < N; i++) NBS.push(nbs(i));
+    var left = N - D.m;
+    function reveal(k) {
+      var q = [k]; if (known[k]) return; known[k] = 1; left--;
+      while (q.length) { var a = q.pop(); if (cells[a].n) continue; var nb = NBS[a]; for (var j = 0; j < nb.length; j++) if (!known[nb[j]]) { known[nb[j]] = 1; left--; q.push(nb[j]); } }
+    }
+    reveal(safe.y * cols + safe.x);
+    var changed = true;
+    while (changed && left > 0) {
+      changed = false;
+      var cons = [];
+      for (i = 0; i < N; i++) {
+        if (known[i] !== 1 || !cells[i].n) continue;
+        var nb = NBS[i], unk = [], m = cells[i].n;
+        for (var j = 0; j < nb.length; j++) { if (known[nb[j]] === 2) m--; else if (!known[nb[j]]) unk.push(nb[j]); }
+        if (!unk.length) continue;
+        if (m === 0) { unk.forEach(function (u) { if (!known[u]) { reveal(u); changed = true; } }); }
+        else if (m === unk.length) { unk.forEach(function (u) { if (!known[u]) { known[u] = 2; changed = true; } }); }
+        else cons.push({ u: unk, m: m });
+      }
+      if (changed) continue;
+      // 두 단서 비교 (한쪽 미지 칸이 다른 쪽에 다 들어 있을 때)
+      for (var a = 0; a < cons.length && !changed; a++) for (var b = 0; b < cons.length && !changed; b++) {
+        if (a === b) continue;
+        var A1 = cons[a], B1 = cons[b];
+        if (A1.u.length >= B1.u.length) continue;
+        var sub = A1.u.every(function (u) { return B1.u.indexOf(u) >= 0; });
+        if (!sub) continue;
+        var rest = B1.u.filter(function (u) { return A1.u.indexOf(u) < 0; }), dm = B1.m - A1.m;
+        if (dm === 0) rest.forEach(function (u) { if (!known[u]) { reveal(u); changed = true; } });
+        else if (dm === rest.length) rest.forEach(function (u) { if (!known[u]) { known[u] = 2; changed = true; } });
+      }
+      // 남은 지뢰 수 = 남은 칸 수
+      if (!changed) { var unknown = 0, flagged = 0; for (i = 0; i < N; i++) { if (!known[i]) unknown++; else if (known[i] === 2) flagged++; } if (unknown && unknown === D.m - flagged) return true; }
+    }
+    return left <= 0;
+  }
+  function plant(safe) {
+    var t0 = performance.now(), tries = 0;
+    do { layMines(safe); tries++; } while (!solvable(safe) && performance.now() - t0 < 120 && tries < 400);
     started = true;
   }
   function open(c, chain) {
-    if (!c || c.open || c.flag) return;
+    if (!c || c.open || c.flag || dyingT > 0 || winT > 0) return;
     if (!started) plant(c);
     c.open = true; c.t = S.time + (chain || 0) * 0.015; opened++;
     if (c.mine) { lose(c); return; }
@@ -54,7 +100,17 @@
   function lose(c) {
     boomAt = c; dyingT = 1.8; fx.burst(GX + c.x * CS + CS / 2, GY + c.y * CS + CS / 2, '#ff4d6d', 50, 420, 0.9, 4);
     fx.shake(12, 0.5); fx.flashIt('#ff2244', 0.6); A.sfx('bigboom'); A.vibrate(220);
-    var k = 0; cells.forEach(function (q) { if (q.mine && q !== c) { k++; (function (qq, kk) { setTimeout(function () { qq.open = true; fx.burst(GX + qq.x * CS + CS / 2, GY + qq.y * CS + CS / 2, '#ff4d6d', 8, 200, 0.4, 3); if (kk % 4 === 0) A.sfx('boom'); }, 200 + kk * 40); })(q, k); } });
+    // 남은 지뢰를 차례로 보여 줌 (setTimeout 대신 시간표로 → 일시정지·다시 하기 때 꼬이지 않음)
+    var list = cells.filter(function (q) { return q.mine && q !== c && !q.flag; }), gap = Math.min(0.04, 1.3 / Math.max(1, list.length));
+    reveals = list.map(function (q, k) { return { q: q, t: 0.2 + k * gap, k: k }; });
+  }
+  function stepReveals(dt) {
+    revT += dt;
+    for (var i = reveals.length - 1; i >= 0; i--) {
+      var r = reveals[i]; if (revT < r.t) continue;
+      r.q.open = true; r.q.t = 0; fx.burst(GX + r.q.x * CS + CS / 2, GY + r.q.y * CS + CS / 2, '#ff4d6d', 8, 200, 0.4, 3); if (r.k % 4 === 0) A.sfx('boom');
+      reveals.splice(i, 1);
+    }
   }
   function checkWin() {
     if (opened >= cols * rows - D.m && dyingT <= 0) {
@@ -69,7 +125,7 @@
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(finalScore(false), [['난이도', D.name], ['연 칸', opened + '/' + (cols * rows - D.m)], ['시간', Math.floor(time) + '초']]); return; }
+    if (dyingT > 0) { stepReveals(dt); dyingT -= dt; if (dyingT <= 0) S.gameOver(finalScore(false), [['난이도', D.name], ['연 칸', opened + '/' + (cols * rows - D.m)], ['시간', Math.floor(time) + '초']]); return; }
     if (winT > 0) { winT -= dt; if (winT <= 0) { saveTime(); S.gameOver(finalScore(true), [['난이도', D.name], ['기록', time.toFixed(1) + '초'], ['최단', bestTimeTxt()]], { kick: 'CLEAR!', win: true }); } return; }
     if (started) time += dt;
     // 길게 누르기 → 깃발
@@ -101,6 +157,8 @@
         c.fillStyle = gg; A.rr(c, px + pad, py + pad, CS - pad * 2, CS - pad * 2, CS * 0.16); c.fill();
         c.fillStyle = 'rgba(255,255,255,.12)'; c.fillRect(px + pad * 3, py + pad * 2, CS - pad * 6, 2);
         if (q.flag) { c.fillStyle = '#ff4d6d'; c.beginPath(); c.moveTo(px + CS * 0.38, py + CS * 0.22); c.lineTo(px + CS * 0.72, py + CS * 0.36); c.lineTo(px + CS * 0.38, py + CS * 0.5); c.fill(); c.fillStyle = '#fff'; c.fillRect(px + CS * 0.36, py + CS * 0.22, CS * 0.05, CS * 0.56); }
+        // 졌을 때: 잘못 꽂은 깃발에 X 표시
+        if (q.flag && boomAt && !q.mine) { c.strokeStyle = '#ffd166'; c.lineWidth = Math.max(2, CS * 0.08); c.beginPath(); c.moveTo(px + CS * 0.24, py + CS * 0.24); c.lineTo(px + CS * 0.76, py + CS * 0.76); c.moveTo(px + CS * 0.76, py + CS * 0.24); c.lineTo(px + CS * 0.24, py + CS * 0.76); c.stroke(); }
       }
     }
     if (kbd && cells && S.state === 'playing') { c.strokeStyle = '#4dffd2'; c.lineWidth = 3; A.rr(c, GX + cur.x * CS + 1, GY + cur.y * CS + 1, CS - 2, CS - 2, CS * 0.18); c.stroke(); }
@@ -116,7 +174,7 @@
   function hud() {
     if (!D) return;
     var k = Math.floor(time) + '|' + flags; if (k === lastHud) return; lastHud = k;
-    document.getElementById('hA').textContent = started ? A.fmt(Math.max(0, Math.round(D.base * 2.5 - time * (D.base / 120)))) : A.fmt(D.base * 2.5);
+    document.getElementById('hA').textContent = started ? A.fmt(Math.max(D.base, Math.round(D.base * 2.5 - time * (D.base / 120)))) : A.fmt(D.base * 2.5);
     document.getElementById('hB').textContent = Math.floor(time);
     document.getElementById('hC').textContent = (D.m - flags);
     document.getElementById('hMult').textContent = D.name;
@@ -146,7 +204,7 @@
   paintDiff();
 
   var S = new A.Shell({
-    id: 'mines', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    id: 'mines', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); if (reveals.length) stepReveals(dt); }, render: render,
     keydown: function (e) {
       var k = e.key; kbd = true;
       if (k === 'ArrowLeft' || k === 'a') cur.x = Math.max(0, cur.x - 1);

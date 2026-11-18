@@ -69,15 +69,15 @@
   function put(d) {
     if (winT > 0 || dyingT > 0) return;
     var i = idx(); if (given[i] || (val[i] && !wrong[i] && val[i] === sol[i])) { A.sfx('wall'); return; }
-    if (noteMode) { if (val[i]) { val[i] = 0; wrong[i] = false; } notes[i] ^= 1 << d; A.sfx('tick'); return; }
+    if (noteMode) { if (val[i]) { val[i] = 0; wrong[i] = false; } notes[i] ^= 1 << d; A.sfx('tap', 1.3); return; }
     if (val[i] === d && wrong[i]) { A.sfx('wall'); return; } // 같은 오답을 다시 눌러도 실수로 세지 않음
     val[i] = d; notes[i] = 0;
     if (d !== sol[i]) {
-      wrong[i] = true; mistakes++; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2);
+      wrong[i] = true; mistakes++; A.sfx('wrong'); A.vibrate(80); fx.shake(5, 0.2);
       fx.text(GX + sel.x * CS + CS / 2, GY + sel.y * CS - 6, '✕', '#ff4d6d', 24);
       if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.5); }
     } else {
-      wrong[i] = false; A.sfx('eat', 1 + d * 0.04);
+      wrong[i] = false; A.sfx('right', 1 + d * 0.04);
       clearNotes(i, d); celebrate(i);
       if (val.every(function (v, k) { return v === sol[k]; })) win();
     }
@@ -93,9 +93,9 @@
     var row = [], col = [], bx = []; for (var k = 0; k < 81; k++) { if (Math.floor(k / 9) === r) row.push(k); if (k % 9 === c) col.push(k); if (box(k) === b) bx.push(k); }
     [row, col, bx].forEach(function (g) { if (groupDone(g)) groups.push(g); });
     groups.forEach(function (g) { g.forEach(function (k, n) { flash.push({ k: k, t: -n * 0.03 }); }); });
-    if (groups.length) { A.sfx('coin', 1 + groups.length * 0.1); fx.text(GX + c * CS + CS / 2, GY + r * CS - 10, groups.length > 1 ? '완성 ×' + groups.length : '완성!', '#c3ff5e', 20); }
+    if (groups.length) { A.sfx('line', 1 + groups.length * 0.1); fx.text(GX + c * CS + CS / 2, GY + r * CS - 10, groups.length > 1 ? '완성 ×' + groups.length : '완성!', '#c3ff5e', 20); }
   }
-  function erase() { var i = idx(); if (given[i] || (val[i] === sol[i])) return; val[i] = 0; wrong[i] = false; notes[i] = 0; A.sfx('click'); hud(); }
+  function erase() { var i = idx(); if (given[i] || (val[i] === sol[i])) return; val[i] = 0; wrong[i] = false; notes[i] = 0; A.sfx('slide', 0.8); hud(); }
   function hint() {
     if (hints >= 3 || winT > 0 || dyingT > 0) { A.sfx('wall'); return; }
     var i = idx();
@@ -106,7 +106,7 @@
     hud();
   }
   function win() {
-    winT = 1.6; A.sfx('level'); fx.flashIt('#c3ff5e', 0.3);
+    winT = 1.6; A.sfx('win'); fx.flashIt('#c3ff5e', 0.3);
     for (var k = 0; k < 81; k++) flash.push({ k: k, t: -((k % 9) + Math.floor(k / 9)) * 0.03 });
     for (var i = 0; i < 6; i++) fx.burst(A.rand(80, W - 80), A.rand(150, 600), A.pick(['#c3ff5e', '#ffd166', '#5ee7ff']), 26, 400, 0.9, 4);
   }
@@ -194,9 +194,9 @@
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return;
     var p = S.toLocal(e);
-    if (p.x >= GX && p.x < GX + 9 * CS && p.y >= GY && p.y < GY + 9 * CS) { sel = { x: Math.floor((p.x - GX) / CS), y: Math.floor((p.y - GY) / CS) }; A.sfx('tick'); return; }
+    if (p.x >= GX && p.x < GX + 9 * CS && p.y >= GY && p.y < GY + 9 * CS) { sel = { x: Math.floor((p.x - GX) / CS), y: Math.floor((p.y - GY) / CS) }; A.sfx('select'); return; }
     for (var d = 1; d <= 9; d++) if (inR(p, padRect(d))) { put(d); return; }
-    for (var t = 0; t < 3; t++) if (inR(p, toolRect(t))) { if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else hint(); return; }
+    for (var t = 0; t < 3; t++) if (inR(p, toolRect(t))) { if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('select', noteMode ? 1.2 : 0.9); } else hint(); return; }
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
@@ -212,7 +212,7 @@
       else if (k === 'ArrowDown' || k === 's') sel.y = (sel.y + 1) % 9;
       else if (/^[1-9]$/.test(k)) put(+k);
       else if (k === 'Backspace' || k === 'Delete' || k === '0') { e.preventDefault(); erase(); }
-      else if (k === 'n' || k === 'N') { noteMode = !noteMode; A.sfx('click'); }
+      else if (k === 'n' || k === 'N') { noteMode = !noteMode; A.sfx('select', noteMode ? 1.2 : 0.9); }
       else if (k === 'h' || k === 'H') hint();
     }
   });

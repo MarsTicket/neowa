@@ -19,7 +19,7 @@
   function canSplit() { var h = cur(); return phase === 'play' && hands.length === 1 && h.c.length === 2 && cv(h.c[0]) === cv(h.c[1]) && chips >= h.bet; }
   function deal() {
     if (phase !== 'bet' || S.state !== 'playing') return; bet = Math.min(bet, chips); if (bet <= 0) return;
-    chips -= bet; hands = [{ c: [drawC(), drawC()], bet: bet }]; hi = 0; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('click');
+    chips -= bet; hands = [{ c: [drawC(), drawC()], bet: bet }]; hi = 0; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('deal');
     // 딜러가 A·10을 보이면 블랙잭인지 먼저 확인(피크). 나나 딜러가 블랙잭이면 바로 결과
     var dlBJ = (dl[0].r === 0 || cv(dl[0]) === 10) && val([dl[0], { r: dl[1].r, up: true }]) === 21;
     if (dlBJ || bj(hands[0].c)) { if (dlBJ) msg = '딜러 블랙잭!'; finish(); }
@@ -33,9 +33,9 @@
     if (hands.every(function (h) { return val(h.c) > 21; })) { finish(); return; } // 모두 버스트면 딜러는 더 받지 않음
     phase = 'dealer'; dealerT = 0.6;
   }
-  function hit() { if (phase !== 'play') return; var h = cur(); h.c.push(drawC()); A.sfx('click', 1.2); if (val(h.c) >= 21) nextHand(); hud(); }
-  function stand() { if (phase !== 'play') return; nextHand(); hud(); }
-  function dbl() { if (!canDbl()) { A.sfx('wall'); return; } var h = cur(); chips -= h.bet; h.bet *= 2; h.dbl = true; h.c.push(drawC()); A.sfx('coin'); nextHand(); hud(); }
+  function hit() { if (phase !== 'play') return; var h = cur(); h.c.push(drawC()); A.sfx('flip', 1.2); if (val(h.c) >= 21) nextHand(); hud(); }
+  function stand() { if (phase !== 'play') return; A.sfx('flip', 0.9); nextHand(); hud(); }
+  function dbl() { if (!canDbl()) { A.sfx('wall'); return; } var h = cur(); chips -= h.bet; h.bet *= 2; h.dbl = true; h.c.push(drawC()); A.sfx('chip'); A.sfx('flip', 1.2); nextHand(); hud(); }
   function split() {
     if (!canSplit()) { A.sfx('wall'); return; }
     var h = hands[0], ace = h.c[0].r === 0; chips -= h.bet;
@@ -63,13 +63,13 @@
     else if (parts[0] === '승') { msg = (dv > 21 ? '딜러 버스트! +' : '승리! +') + net; msgC = '#4dffd2'; }
     else if (parts[0] === '푸시') { msg = '무승부 (푸시)'; msgC = '#fff'; }
     else { msg = dBJ ? '딜러 블랙잭' : '딜러 승'; msgC = '#ff4d6d'; }
-    if (net > 0) { streak++; A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'coin'); fx.burst(TX(), MY(), '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(TX(), MY() - 40, streak + '연승!', '#ffd166', 24); }
-    else if (net < 0) { streak = 0; A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
+    if (net > 0) { streak++; A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'right'); fx.burst(TX(), MY(), '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(TX(), MY() - 40, streak + '연승!', '#ffd166', 24); }
+    else if (net < 0) { streak = 0; A.sfx(mv > 21 ? 'hurt' : 'wrong'); fx.shake(4, 0.2); }
     hud();
   }
   function update(dt) {
     fx.update(dt); var all = dl.slice(); hands.forEach(function (h) { all = all.concat(h.c); }); all.forEach(function (c) { c.t = Math.min(1, (c.t || 0) + dt * 5); });
-    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17) { dl.push(drawC()); A.sfx('click', 0.9); dealerT = 0.55; } else finish(); } }
+    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17) { dl.push(drawC()); A.sfx('flip', 0.9); dealerT = 0.55; } else finish(); } }
     if (phase === 'result') { endT -= dt; if (endT <= 0) {
       if (chips <= 0) { S.gameOver(0, [['라운드', String(round)]]); return; }
       if (round >= MAXR) { S.gameOver(chips, [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)]], { kick: 'FINISH', win: chips > 1000 }); return; }
@@ -115,7 +115,7 @@
   }
   function hud() { var b = hands && hands.length ? hands.reduce(function (a, h) { return a + h.bet; }, 0) : bet; document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(b); }
   function step(b) { return b < 100 ? 10 : b < 500 ? 50 : b < 2000 ? 100 : 500; }
-  function act(a) { if (phase === 'bet') { if (a === 'minus') bet = Math.max(Math.min(10, chips), bet - step(bet - 1)); if (a === 'plus') bet = Math.min(chips, bet + step(bet)); if (a === 'half') bet = Math.max(Math.min(10, chips), Math.floor(chips / 2)); if (a === 'all') bet = chips; if (a !== 'deal') { A.sfx('tick'); hud(); } }
+  function act(a) { if (phase === 'bet') { if (a === 'minus') bet = Math.max(Math.min(10, chips), bet - step(bet - 1)); if (a === 'plus') bet = Math.min(chips, bet + step(bet)); if (a === 'half') bet = Math.max(Math.min(10, chips), Math.floor(chips / 2)); if (a === 'all') bet = chips; if (a !== 'deal') { A.sfx('chip', a === 'minus' ? 0.9 : 1.1); hud(); } }
     if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); if (a === 'split') split(); }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); btns.forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + (b[5] || 66)) act(b[4]); }); });
   var S = new A.Shell({ id: 'blackjack', W: W, H: H, land: [900, 600], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,

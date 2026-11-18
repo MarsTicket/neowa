@@ -89,18 +89,18 @@
     c.open = true; c.t = S.time + (chain || 0) * 0.015; opened++;
     if (c.mine) { lose(c); return; }
     if (c.n === 0) { var q = [c], seen = 0; while (q.length) { var cc = q.shift(); around(cc, function (n) { if (!n.open && !n.flag && !n.mine) { n.open = true; opened++; seen++; n.t = S.time + seen * 0.006; if (n.n === 0) q.push(n); } }); } }
-    if (!chain) A.sfx('click');
+    if (!chain) A.sfx(c.n === 0 ? 'slide' : 'tap', 1 + c.n * 0.06);
     checkWin();
   }
   function chord(c) {
     var f = 0; around(c, function (n) { if (n.flag) f++; });
     if (f !== c.n) { A.sfx('wall'); return; }
     var k = 0; around(c, function (n) { if (!n.open && !n.flag) open(n, ++k); });
-    A.sfx('click', 1.2);
+    A.sfx('select', 1.1);
   }
   function toggleFlag(c) {
     if (!c || c.open) return;
-    c.flag = !c.flag; flags += c.flag ? 1 : -1; A.sfx(c.flag ? 'turn' : 'click', c.flag ? 1.5 : 0.8); A.vibrate(25); hud();
+    c.flag = !c.flag; flags += c.flag ? 1 : -1; A.sfx(c.flag ? 'place' : 'tap', c.flag ? 1.4 : 0.8); A.vibrate(25); hud();
   }
   function act(c, asFlag) {
     if (!c || dyingT > 0 || winT > 0) return;
@@ -124,7 +124,7 @@
   }
   function checkWin() {
     if (opened >= cols * rows - D.m && dyingT <= 0) {
-      winT = 1.4; A.sfx('level'); fx.flashIt('#4dffd2', 0.3);
+      winT = 1.4; A.sfx('win'); fx.flashIt('#4dffd2', 0.3);
       cells.forEach(function (q) { if (q.mine && !q.flag) { q.flag = true; flags++; } });
       for (var i = 0; i < 6; i++) fx.burst(A.rand(80, W - 80), A.rand(200, 700), A.pick(['#4dffd2', '#ffd166', '#5ee7ff']), 26, 400, 0.9, 4);
     }
@@ -199,7 +199,7 @@
     pEl.flag.innerHTML = flagMode ? '🚩 깃발 꽂기 모드 <span class="cnt">켜짐</span>' : '⛏ 열기 모드 <span class="cnt">탭해서 깃발로</span>';
     pEl.flag.disabled = !S || S.state !== 'playing';
   }
-  function toggleFlagMode() { if (S.state !== 'playing') return; flagMode = !flagMode; A.sfx('click'); paintPanel(); }
+  function toggleFlagMode() { if (S.state !== 'playing') return; flagMode = !flagMode; A.sfx('select', flagMode ? 1.2 : 0.9); paintPanel(); }
   function cellAt(p) { var a = Math.floor((p.x - GX) / CS), b = Math.floor((p.y - GY) / CS); return land ? at(b, a) : at(a, b); }
   var stage = document.getElementById('stage');
   stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });

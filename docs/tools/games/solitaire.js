@@ -31,14 +31,14 @@
     st.stock = deck;
   }
   function snap() { hist.push(JSON.stringify({ st: st, score: score })); if (hist.length > 60) hist.shift(); }
-  function undo() { if (!hist.length) { A.sfx('wall'); return; } var h = JSON.parse(hist.pop()); st = h.st; hintMv = null; hintT = 0; score = Math.max(0, h.score - 5); A.sfx('click'); hud(); }
+  function undo() { if (!hist.length) { A.sfx('wall'); return; } var h = JSON.parse(hist.pop()); st = h.st; hintMv = null; hintT = 0; score = Math.max(0, h.score - 5); A.sfx('slide', 0.8); hud(); }
   function reset() { deal(); score = 0; moves = 0; time = 0; hist = []; drag = null; winT = 0; auto = false; flyers = []; hintT = 0; hintMv = null; quitT = 0; hintsUsed = 0; fx.clear(); hud(); }
   function canFound(c, f) { var top = st.found[f][st.found[f].length - 1]; return top ? top.s === c.s && c.r === top.r + 1 : c.r === 0; }
   function canTab(c, t) { var top = st.tab[t][st.tab[t].length - 1]; return top ? top.up && red(top) !== red(c) && c.r === top.r - 1 : c.r === 12; }
-  function flipTops() { st.tab.forEach(function (col) { var t = col[col.length - 1]; if (t && !t.up) { t.up = true; score += 5; } }); }
+  function flipTops() { st.tab.forEach(function (col) { var t = col[col.length - 1]; if (t && !t.up) { t.up = true; score += 5; A.sfx('flip', 1.3); } }); }
   function afterMove() { moves++; hintMv = null; hintT = 0; flipTops(); hud(); checkWin(); }
   function checkWin() {
-    if (st.found.every(function (f) { return f.length === 13; })) { winT = 1.8; A.sfx('level'); for (var i = 0; i < 8; i++) fx.burst(A.rand(60, W - 60), A.rand(200, 700), A.pick(['#ff7aa8', '#ffd166', '#5ee7ff']), 26, 380, 0.9, 4); return; }
+    if (st.found.every(function (f) { return f.length === 13; })) { winT = 1.8; A.sfx('win'); for (var i = 0; i < 8; i++) fx.burst(A.rand(60, W - 60), A.rand(200, 700), A.pick(['#ff7aa8', '#ffd166', '#5ee7ff']), 26, 380, 0.9, 4); return; }
     if (!auto && !st.stock.length && !st.waste.length && st.tab.every(function (col) { return col.every(function (c) { return c.up; }); })) { auto = true; }
   }
   // 출발지에서 카드(들) 떼기
@@ -46,8 +46,8 @@
   function cardsOf(src) { if (src.from === 'waste') return [st.waste[st.waste.length - 1]]; if (src.from === 'found') return [st.found[src.i][st.found[src.i].length - 1]]; return st.tab[src.i].slice(src.k); }
   function tryMove(src, dst) {
     var cards = cardsOf(src); if (!cards[0]) return false;
-    if (dst.to === 'found') { if (cards.length !== 1 || !canFound(cards[0], dst.i)) return false; snap(); take(src); st.found[dst.i].push(cards[0]); score += 10; A.sfx('coin', 1 + cards[0].r * 0.03); afterMove(); return true; }
-    if (dst.to === 'tab') { if (src.from === 'tab' && src.i === dst.i) return false; if (!canTab(cards[0], dst.i)) return false; snap(); take(src); st.tab[dst.i] = st.tab[dst.i].concat(cards); if (src.from === 'waste') score += 5; if (src.from === 'found') score = Math.max(0, score - 15); A.sfx('tick', 1.2); afterMove(); return true; }
+    if (dst.to === 'found') { if (cards.length !== 1 || !canFound(cards[0], dst.i)) return false; snap(); take(src); st.found[dst.i].push(cards[0]); score += 10; A.sfx('coin', 1 + cards[0].r * 0.04); afterMove(); return true; }
+    if (dst.to === 'tab') { if (src.from === 'tab' && src.i === dst.i) return false; if (!canTab(cards[0], dst.i)) return false; snap(); take(src); st.tab[dst.i] = st.tab[dst.i].concat(cards); if (src.from === 'waste') score += 5; if (src.from === 'found') score = Math.max(0, score - 15); A.sfx('place', 1.2); afterMove(); return true; }
     return false;
   }
   function autoMove(src) {
@@ -59,8 +59,8 @@
   function drawStock() {
     hintMv = null; hintT = 0;
     snap();
-    if (st.stock.length) { var c = st.stock.pop(); c.up = true; st.waste.push(c); A.sfx('click', 1.2); }
-    else if (st.waste.length) { st.stock = st.waste.reverse().map(function (c) { c.up = false; return c; }); st.waste = []; score = Math.max(0, score - 20); A.sfx('turn'); }
+    if (st.stock.length) { var c = st.stock.pop(); c.up = true; st.waste.push(c); A.sfx('flip'); }
+    else if (st.waste.length) { st.stock = st.waste.reverse().map(function (c) { c.up = false; return c; }); st.waste = []; score = Math.max(0, score - 20); A.sfx('deal', 1.2); }
     else hist.pop();
     hud();
   }

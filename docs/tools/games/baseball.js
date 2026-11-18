@@ -5,15 +5,15 @@
   var diff = +A.get('neowa_baseball_diff', '0') || 0, LEN, secret, input, tries, log, score, streak, solved, endT, shake = 0;
   function newSecret() { LEN = diff ? 4 : 3; var d = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; for (var i = d.length - 1; i > 0; i--) { var j = A.irand(0, i), t = d[i]; d[i] = d[j]; d[j] = t; } secret = d.slice(0, LEN); input = []; tries = 0; log = []; endT = 0; }
   function reset() { score = 0; streak = 0; solved = 0; newSecret(); fx.clear(); hud(); }
-  function press(n) { if (S.state !== 'playing' || endT > 0) return; if (input.length >= LEN || input.indexOf(n) >= 0) { A.sfx('wall'); return; } input.push(n); A.sfx('tick', 1 + n * 0.04); }
-  function back() { if (input.length) { input.pop(); A.sfx('click'); } }
+  function press(n) { if (S.state !== 'playing' || endT > 0) return; if (input.length >= LEN || input.indexOf(n) >= 0) { A.sfx('wall'); return; } input.push(n); A.sfx('tap', 1 + n * 0.04); }
+  function back() { if (input.length) { input.pop(); A.sfx('slide', 0.8); } }
   function submit() {
     if (S.state !== 'playing' || endT > 0) return; if (input.length !== LEN) { shake = 0.3; A.sfx('wall'); return; }
     var s = 0, b = 0; input.forEach(function (v, i) { if (secret[i] === v) s++; else if (secret.indexOf(v) >= 0) b++; });
     tries++; log.push({ g: input.slice(), s: s, b: b }); input = [];
-    if (s === LEN) { var pts = (MAXT - tries + 1) * 50 * (diff + 1); score += pts; streak++; solved++; endT = 1.4; A.sfx('level'); fx.text(W / 2, 330, '정답! +' + pts, '#9be7ff', 30); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(200, 500), '#9be7ff', 20, 300, 0.7, 4); }
-    else if (tries >= MAXT) { endT = 2; A.sfx('over'); }
-    else A.sfx(s ? 'coin' : b ? 'eat' : 'hit', 1 + s * 0.2);
+    if (s === LEN) { var pts = (MAXT - tries + 1) * 50 * (diff + 1); score += pts; streak++; solved++; endT = 1.4; A.sfx('win'); fx.text(W / 2, 330, '정답! +' + pts, '#9be7ff', 30); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(200, 500), '#9be7ff', 20, 300, 0.7, 4); }
+    else if (tries >= MAXT) { endT = 2; A.sfx('hurt'); }
+    else A.sfx(s ? 'match' : b ? 'select' : 'wrong', 1 + s * 0.1);
     hud();
   }
   function update(dt) {

@@ -47,6 +47,7 @@
         <div class="g-keys">
           <div>한 번 밟은 칸은 다시 못 감</div>
           <div>갈 곳이 없으면 끝 · 밟은 칸 × 10점</div>
+          <div><kbd style="color:#ffd166">힌트</kbd> = 완주 가능한 곳까지 되돌려 다음 칸 표시</div>
           <div><kbd style="color:#ffd166">완주</kbd> = 칸 수 × 20 보너스, 다음 판</div>
         </div>
       </div>
@@ -121,7 +122,7 @@
   var fx = new A.FX();
   var MOVES = [[1, -2], [2, -1], [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [-1, -2]]; // 시계 방향 (후보 번호 순서)
   var land = false, BX = 20, BY = 170, BS = 500, CS = 100;
-  var N, path, seen, phase, banked, boards, total, undo, hint, hintCell, okStart, anim, endT, cur = { x: 0, y: 0 }, kbd = false, stuckMsg = '', maxN;
+  var tut = !A.get('neowa_knight_tut', ''), N, path, seen, phase, banked, boards, total, undo, hint, hintCell, okStart, anim, endT, cur = { x: 0, y: 0 }, kbd = false, stuckMsg = '', maxN;
 
   function geo(sh) {
     land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
@@ -210,8 +211,8 @@
     }
     if (!cands().length) { // 막힘: 즉시 판정
       phase = 'stuck'; fx.shake(8, 0.35); fx.flashIt('#ff2244', 0.35); A.sfx('hurt'); A.vibrate(140);
-      stuckMsg = undo > 0 ? '막혔어요! 되돌리거나 여기서 끝내세요' : '막혔어요!';
-      if (undo <= 0) endT = 1.1;
+      stuckMsg = undo > 0 || hint > 0 ? '막혔어요! 되돌리기·힌트로 살리거나 끝내세요' : '막혔어요!';
+      if (undo <= 0 && hint <= 0) endT = 1.1;
       hud();
     }
   }
@@ -222,10 +223,16 @@
     fx.ring(cx(p[0]), cy(p[1]), '#ff7aa8', CS * 0.5, 0.35); A.sfx('click'); hud();
   }
   function doHint() {
-    if (S.state !== 'playing' || phase !== 'move' || anim || hint <= 0 || hintCell) { A.sfx('wall'); return; }
-    var p = path[path.length - 1], r = solve(p[0], p[1], seen, path.length);
-    if (r && r.fail) { fx.text(W / 2, BY + BS / 2, '이대로는 완주가 안 돼요. 되돌려 보세요', '#ff7aa8', 20); A.sfx('wall'); return; }
-    hint--;
+    if (S.state !== 'playing' || (phase !== 'move' && phase !== 'stuck') || anim || hint <= 0 || hintCell || endT > 0) { A.sfx('wall'); return; }
+    var p = path[path.length - 1], r = solve(p[0], p[1], seen, path.length), back = 0;
+    // 이대로는 완주가 안 되면, 완주할 수 있는 곳까지 자동으로 되돌린 뒤 다음 칸을 알려 줌 (되돌리기 횟수는 안 씀)
+    while (r && r.fail && path.length > 1 && back < 60) {
+      var q = path.pop(); seen[q[1] * N + q[0]] = 0; total--; back++;
+      p = path[path.length - 1]; r = solve(p[0], p[1], seen, path.length);
+    }
+    if (r && r.fail) { A.sfx('wall'); return; }
+    hint--; phase = 'move'; endT = 0; cur = { x: p[0], y: p[1] };
+    if (back) { fx.text(A.clamp(cx(p[0]), BX + 110, BX + BS - 110), cy(p[1]) - CS * 0.5, back + '칸 되돌렸어요', '#ff7aa8', 20); fx.ring(cx(p[0]), cy(p[1]), '#ff7aa8', CS * 0.7, 0.45); }
     if (r && r.path.length) hintCell = r.path[0];
     else { // 시간 초과면 바른스도르프 규칙으로 추천
       var c = cands(), best = null, bd = 99; for (var i = 0; i < c.length; i++) { seen[c[i][1] * N + c[i][0]] = 1; var d = deg(c[i][0], c[i][1], seen); seen[c[i][1] * N + c[i][0]] = 0; if (d < bd) { bd = d; best = c[i]; } } hintCell = best;
@@ -326,6 +333,15 @@
       A.draw(c, KN, kp[0], kp[1] - hop - CS * 0.04, sc);
     }
     if (phase === 'stuck' && path.length) { var sp = path[path.length - 1]; c.strokeStyle = 'rgba(255,77,109,' + (0.6 + 0.4 * Math.sin(t * 10)) + ')'; c.lineWidth = 4; c.strokeRect(BX + sp[0] * CS + 3, BY + sp[1] * CS + 3, CS - 6, CS - 6); }
+    // 첫 판 안내: 처음 두 번 움직일 때까지 판 아래쪽에 짧은 설명
+    if (tut && S.state === 'playing' && (phase === 'start' || phase === 'move') && path.length < 3) {
+      var tm = phase === 'start' ? (document.body.classList.contains('touch') ? '아무 칸이나 눌러 나이트를 놓으세요' : '방향키로 칸을 고르고 Space') : (document.body.classList.contains('touch') ? '파란 칸 = L자로 갈 수 있는 곳. 눌러 보세요' : '파란 칸 = L자로 갈 수 있는 곳 · 숫자 키로 이동');
+      c.save(); c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 19px "Pretendard Variable", system-ui';
+      var tw = c.measureText(tm).width + 40, ty2 = BY + BS - 34;
+      c.fillStyle = 'rgba(11,11,30,.86)'; A.rr(c, W / 2 - tw / 2, ty2 - 22, tw, 44, 22); c.fill(); c.strokeStyle = 'rgba(155,231,255,.7)'; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = '#9be7ff'; c.fillText(tm, W / 2, ty2 + 1); c.restore();
+    }
+    if (tut && path && path.length >= 3) { tut = false; A.set('neowa_knight_tut', 1); }
     // 세로 화면: 안내 글·버튼
     if (!land) {
       c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#e8e8ff'; c.font = '700 21px "Pretendard Variable", system-ui';
@@ -345,9 +361,10 @@
   function kbdHint() { return document.body.classList.contains('touch') ? '파란 칸을 눌러 이동 · 판을 다 밟으면 다음 판' : '숫자 1~8 이동 · U 되돌리기 · H 힌트'; }
   function btns() {
     var y = BY + BS + 46, st = phase === 'stuck';
-    if (st && undo > 0) return [
-      { id: 'undo', x: 40, y: y, w: 220, h: 66, label: '되돌리기 ' + undo, on: true, fg: '#ff7aa8', bg: 'rgba(255,122,168,.15)' },
-      { id: 'end', x: 280, y: y, w: 220, h: 66, label: '여기서 끝내기', on: true, fg: '#e8e8ff', bg: 'rgba(232,232,255,.1)' }];
+    if (st && (undo > 0 || hint > 0)) return [
+      { id: 'undo', x: 40, y: y, w: 144, h: 66, label: '되돌리기 ' + undo, on: undo > 0, fg: '#ff7aa8', bg: 'rgba(255,122,168,.15)' },
+      { id: 'hint', x: 198, y: y, w: 144, h: 66, label: '힌트 ' + hint, on: hint > 0, fg: '#ffd166', bg: 'rgba(255,209,102,.15)' },
+      { id: 'end', x: 356, y: y, w: 144, h: 66, label: '끝내기', on: true, fg: '#e8e8ff', bg: 'rgba(232,232,255,.1)' }];
     var mv = phase === 'move' && !anim;
     return [
       { id: 'undo', x: 40, y: y, w: 220, h: 66, label: '되돌리기 ' + undo, on: mv && undo > 0 && path.length > 1, fg: '#ff7aa8', bg: 'rgba(255,122,168,.15)' },
@@ -368,13 +385,13 @@
     if (!pEl.turn) return;
     var play = S && S.state === 'playing';
     pEl.turn.textContent = !play ? N + '×' + N + ' 판' : phase === 'start' ? '출발할 칸을 고르세요' : phase === 'stuck' ? '막혔어요!' : phase === 'clear' ? '완주!' : '남은 칸 ' + (N * N - path.length);
-    pEl.sub.textContent = !play ? '시작하기를 누르세요' : phase === 'start' ? (N % 2 ? '× 표시 칸에서는 완주할 수 없어요' : '아무 칸이나 괜찮아요') : phase === 'stuck' ? (undo > 0 ? '되돌리거나 끝내세요' : '잠시 후 결과') : 'L자로 갈 수 있는 파란 칸을 누르세요';
+    pEl.sub.textContent = !play ? '시작하기를 누르세요' : phase === 'start' ? (N % 2 ? '× 표시 칸에서는 완주할 수 없어요' : '아무 칸이나 괜찮아요') : phase === 'stuck' ? (undo > 0 || hint > 0 ? '되돌리기·힌트로 살리거나 끝내기' : '잠시 후 결과') : 'L자로 갈 수 있는 파란 칸을 누르세요';
     pEl.score.textContent = A.fmt(sc); pEl.vis.textContent = path.length + '/' + N * N; pEl.board.textContent = N + '×' + N;
     pEl.undoN.textContent = undo; pEl.hintN.textContent = hint;
     var st = phase === 'stuck';
     pEl.undoB.disabled = !play || undo <= 0 || path.length < 2 || phase === 'clear';
-    pEl.hintB.disabled = !play || phase !== 'move' || hint <= 0 || !!hintCell;
-    pEl.endB.style.display = st && undo > 0 ? '' : 'none'; pEl.hintB.style.display = st && undo > 0 ? 'none' : '';
+    pEl.hintB.disabled = !play || (phase !== 'move' && phase !== 'stuck') || hint <= 0 || !!hintCell || endT > 0;
+    pEl.endB.style.display = st && (undo > 0 || hint > 0) ? '' : 'none';
   }
 
   // ---------- 입력 ----------

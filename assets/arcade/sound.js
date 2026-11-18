@@ -233,7 +233,8 @@
     reversi: 'zen', solitaire: 'casino', blackjack: 'casino', baseball: 'casino', reaction: 'brain', math: 'brain', stroop: 'brain',
     aim: 'brain', oddcolor: 'brain', schulte: 'brain', baduk: 'zen', fall: 'chip', _template: 'chip',
     bridge: 'puzzle', knight: 'zen', four: 'brain', merge: 'chip', paint: 'puzzle',
-    sort: 'zen', sum: 'brain', hexa: 'puzzle'
+    sort: 'zen', sum: 'brain', hexa: 'puzzle',
+    cannon: 'chip', golf: 'sport', bowling: 'sport', tank: 'synth', yacht: 'casino', td: 'drive'
   };
   // 집중이 필요한 게임은 음악을 조금 작게
   var SOFT = { reaction: 0.6, sequence: 0.6, baduk: 0.8, stroop: 0.8, math: 0.85 };

@@ -152,21 +152,40 @@
     x.fillStyle = '#e8e8ff'; A.rr(x, 24, 86, 54, 8, 3); x.fill();
   });
   var GL = A.glowDot('#e8e8ff', 6), GOLD = A.glowDot('#ffd166', 6);
+  /* 그림: 대리석 체스판(칸 수·크기별 캐시), 금테 액자, 별밤 서재 배경 */
+  function boardSpr(n, bs) {
+    return A.sprite('knb' + n + '_' + Math.round(bs), bs + 28, bs + 28, function (x) {
+      var cs = bs / n; x.translate(14, 14);
+      x.fillStyle = 'rgba(0,0,0,.5)'; A.rr(x, -10, -6, bs + 24, bs + 24, 14); x.fill();
+      var fg = x.createLinearGradient(-12, -12, bs + 12, bs + 12); fg.addColorStop(0, '#ffe8a8'); fg.addColorStop(0.5, '#8a6a20'); fg.addColorStop(1, '#ffd166'); x.fillStyle = fg; A.rr(x, -12, -12, bs + 24, bs + 24, 14); x.fill();
+      x.fillStyle = '#1a1430'; x.fillRect(-4, -4, bs + 8, bs + 8);
+      for (var yy = 0; yy < n; yy++) for (var xx = 0; xx < n; xx++) {
+        var light = (xx + yy) % 2 === 0, g = x.createLinearGradient(xx * cs, yy * cs, (xx + 1) * cs, (yy + 1) * cs);
+        if (light) { g.addColorStop(0, '#3a3470'); g.addColorStop(1, '#2a2458'); } else { g.addColorStop(0, '#1c1838'); g.addColorStop(1, '#141028'); }
+        x.fillStyle = g; x.fillRect(xx * cs, yy * cs, cs, cs);
+        x.strokeStyle = light ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.025)'; x.lineWidth = 1; for (var v = 0; v < 2; v++) { x.beginPath(); var sy = yy * cs + Math.random() * cs; x.moveTo(xx * cs, sy); x.quadraticCurveTo(xx * cs + cs / 2, sy + (Math.random() - 0.5) * cs, (xx + 1) * cs, sy + (Math.random() - 0.5) * cs * 0.5); x.stroke(); }
+      }
+      x.fillStyle = 'rgba(255,255,255,.05)'; x.fillRect(0, 0, bs, bs * 0.4);
+    });
+  }
+  var KBG = A.sprite('knbg', W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, H * 0.45, 40, W / 2, H * 0.45, 640); g.addColorStop(0, '#1a1840'); g.addColorStop(1, '#04040c'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 120; i++) { x.globalAlpha = Math.random() * 0.6; x.fillStyle = '#e8e8ff'; x.fillRect(Math.random() * W, Math.random() * H, 1.2, 1.2); }
+    x.globalAlpha = 1;
+  });
   function render(c) {
     var o = fx.offset(), t = S.time;
     if (!seen) { N = 5; path = []; seen = []; for (var z = 0; z < 25; z++) seen.push(0); okStart = []; for (z = 0; z < 25; z++) okStart.push(true); phase = 'start'; undo = 3; hint = 3; CS = BS / N; }
     c.save(); c.translate(o[0], o[1]);
-    var bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0b0b1e'); bg.addColorStop(1, '#05050f'); c.fillStyle = bg; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(KBG, -10, -10, W + 20, H + 20);
     c.save(); c.globalCompositeOperation = 'lighter';
     for (var s = 0; s < 26; s++) { var sx = (s * 197 + t * 6) % W, sy = (s * 331) % H; c.fillStyle = 'rgba(232,232,255,' + (0.05 + 0.05 * Math.sin(t + s)) + ')'; c.fillRect(sx, sy, 2, 2); }
     c.restore();
     // 판
-    c.fillStyle = '#1b1b36'; A.rr(c, BX - 8, BY - 8, BS + 16, BS + 16, land ? 6 : 16); c.fill();
-    c.strokeStyle = 'rgba(232,232,255,.35)'; c.lineWidth = 2; c.stroke();
+    c.drawImage(boardSpr(N, BS), BX - 14, BY - 14, BS + 28, BS + 28);
     var cs = cands(), done = phase === 'clear';
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
       var i = y * N + x, px = BX + x * CS, py = BY + y * CS;
-      c.fillStyle = (x + y) % 2 ? '#15152c' : '#23234a'; c.fillRect(px, py, CS, CS);
       if (seen[i]) { c.fillStyle = done ? 'rgba(255,209,102,' + (0.18 + 0.12 * Math.sin(t * 6 + i)) + ')' : 'rgba(180,140,255,.2)'; c.fillRect(px + 2, py + 2, CS - 4, CS - 4); }
       if (phase === 'start' && S.state === 'playing') {
         if (okStart[i]) { c.fillStyle = 'rgba(232,232,255,' + (0.18 + 0.1 * Math.sin(t * 4 + i * 0.7)) + ')'; c.beginPath(); c.arc(px + CS / 2, py + CS / 2, CS * 0.12, 0, 7); c.fill(); }

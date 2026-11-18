@@ -23,7 +23,8 @@
  ],
  "rules": [
   "<kbd style=\"color:#7dff9b\">○</kbd> 먹을 수 있음",
-  "<kbd style=\"color:#ff4d6d\">○</kbd> 위험",
+  "<kbd style=\"color:#ff4d6d\">○</kbd> 위험 · 화면 끝 ▶ 표시 = 큰 물고기 접근",
+  "연달아 먹으면 최대 ×5, 황금 물고기 5배",
   "크기 10단계"
  ],
  "hud": [

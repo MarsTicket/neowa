@@ -2,18 +2,20 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, G = 400, STEP = 6;
   var fx = new A.FX();
-  var ground, me, foe, shell, turn, wind, battle, score, hp, foeHp, aim = { a: -0.9, p: 0.6 }, pulling = null, keys = {}, dyingT, aiErr, foeAim;
+  var ground, me, foe, shell, turn, wind, battle, score, hp, foeHp, aim = { a: -0.9, p: 0.6 }, pulling = null, keys = {}, dyingT, aiErr, foeAim, pending = null;
+  // 다음 차례로 넘기는 대기 시간은 setTimeout 대신 update에서 셈 → 일시정지·다시 하기에도 꼬이지 않음
+  function later(sec, fn) { pending = { t: sec, fn: fn }; }
   function makeGround() {
     ground = []; var base = A.rand(640, 720), hill = A.rand(160, 300), hx = A.rand(220, 320);
     for (var x = 0; x <= W; x += STEP) ground.push(base - Math.exp(-Math.pow((x - hx) / 90, 2)) * hill - Math.sin(x * 0.02 + battle) * 20);
   }
   function gy(x) { var i = A.clamp(Math.floor(x / STEP), 0, ground.length - 1); return ground[i]; }
   function newBattle() {
-    battle++; makeGround(); me = { x: 60, hp: 3 }; foe = { x: W - 60 }; foeHp = 3; turn = 'me'; shell = null; wind = A.rand(-1, 1) * (1 + battle * 0.3); aiErr = Math.max(0.03, 0.35 - battle * 0.05);
+    battle++; makeGround(); me = { x: 60, hp: 3 }; foe = { x: W - 60 }; foeHp = 3; turn = 'me'; shell = null; wind = A.rand(-1, 1) * (1 + battle * 0.3); aiErr = Math.max(0.09, 0.35 - battle * 0.04);
     foeAim = { a: -Math.PI + 0.9, p: 0.6 };
     if (battle > 1) { S.banner('BATTLE ' + battle, '새로운 적'); A.sfx('level'); } hud();
   }
-  function reset() { battle = 0; score = 0; hp = 3; dyingT = 0; pulling = null; keys = {}; newBattle(); fx.clear(); }
+  function reset() { battle = 0; score = 0; hp = 3; dyingT = 0; pulling = null; keys = {}; pending = null; newBattle(); fx.clear(); }
   function fire(a, p, who) {
     var v = 300 + p * 520, sx = who === 'me' ? me.x : foe.x, sy = gy(sx) - 24;
     shell = { x: sx + Math.cos(a) * 30, y: sy + Math.sin(a) * 30, vx: Math.cos(a) * v, vy: Math.sin(a) * v, who: who };
@@ -21,18 +23,17 @@
   }
   function blast(x, y, who) {
     shell = null; fx.burst(x, y, '#ff9e4d', 30, 340, 0.6, 4); fx.ring(x, y, '#ff9e4d', 90, 0.4); fx.shake(7, 0.3); A.sfx('bigboom');
-    for (var i = 0; i < ground.length; i++) { var gx = i * STEP, d = Math.abs(gx - x); if (d < 44) { var depth = Math.sqrt(44 * 44 - d * d); if (ground[i] < y + depth) ground[i] = Math.max(ground[i], y + depth * 0.8); } }
-    var hitMe = Math.hypot(me.x - x, gy(me.x) - 12 - y) < 46, hitFoe = Math.hypot(foe.x - x, gy(foe.x) - 12 - y) < 46;
-    if (hitFoe) { foeHp--; score += 100 * battle; fx.text(foe.x, gy(foe.x) - 70, '명중!', '#ffd166', 26); A.vibrate(40); }
+    var dFoe = Math.hypot(foe.x - x, gy(foe.x) - 12 - y), hitMe = Math.hypot(me.x - x, gy(me.x) - 12 - y) < 46, hitFoe = dFoe < 46;
+    for (var i = 0; i < ground.length; i++) { var gx = i * STEP, d = Math.abs(gx - x); if (d < 44) { var depth = Math.sqrt(44 * 44 - d * d); if (ground[i] < y + depth) ground[i] = Math.min(H - 60, Math.max(ground[i], y + depth * 0.8)); } }
+    if (hitFoe) { foeHp--; var direct = dFoe < 22; score += 100 * battle * (direct ? 2 : 1); fx.text(foe.x, gy(foe.x) - 70, direct ? '직격! ×2' : '명중!', '#ffd166', 26); A.vibrate(40); }
     if (hitMe) { hp--; fx.flashIt('#ff2244', 0.5); fx.text(me.x + 40, gy(me.x) - 70, '피격', '#ff4d6d', 24); A.vibrate(150); }
     hud();
-    setTimeout(function () {
-      if (S.state !== 'playing') return;
+    later(0.7, function () {
       if (hp <= 0) { dyingT = 0.8; return; }
-      if (foeHp <= 0) { score += 300 * battle + hp * 100; newBattle(); return; }
+      if (foeHp <= 0) { score += 300 * battle + hp * 100; if (hp < 3) { hp++; fx.text(me.x + 40, gy(me.x) - 70, '체력 +1', '#7dff9b', 22); } A.sfx('power'); newBattle(); return; }
       turn = who === 'me' ? 'foe' : 'me'; wind = A.clamp(wind + A.rand(-0.6, 0.6), -3, 3); hud();
-      if (turn === 'foe') setTimeout(aiShot, 700);
-    }, 700);
+      if (turn === 'foe') later(0.7, aiShot);
+    });
   }
   function simulate(a, p) { // AI용: 낙하 지점 x
     var v = 300 + p * 520, x = foe.x + Math.cos(a) * 30, y = gy(foe.x) - 24 + Math.sin(a) * 30, vx = Math.cos(a) * v, vy = Math.sin(a) * v;
@@ -49,6 +50,7 @@
   function update(dt) {
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['전투', String(battle)]]); return; }
+    if (pending) { pending.t -= dt; if (pending.t <= 0) { var pf = pending.fn; pending = null; pf(); } }
     if (keys.up) aim.a = Math.max(-1.5, aim.a - dt * 1.2); if (keys.down) aim.a = Math.min(-0.05, aim.a + dt * 1.2);
     if (keys.left) aim.p = Math.max(0.05, aim.p - dt * 0.7); if (keys.right) aim.p = Math.min(1, aim.p + dt * 0.7);
     if (shell) {
@@ -82,6 +84,7 @@
       for (var i = 0; i < 10; i++) { for (var q = 0; q < 4; q++) { vy += G * 0.012; x += vx * 0.012; y += vy * 0.012; } c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); }
       c.fillStyle = '#5ee7ff'; c.font = '700 15px "Pretendard Variable",system-ui'; c.fillText('힘 ' + Math.round(am.p * 100) + '%', me.x + 30, gy(me.x) - 70);
     }
+    if (turn === 'me' && battle === 1 && hp === 3 && foeHp === 3 && S.state === 'playing' && !shell && !pulling) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(document.body.classList.contains('touch') ? '화면을 누르고 왼쪽 아래로 당겼다 놓으세요' : '드래그로 당겼다 놓거나 ↑↓←→ + Space', W / 2, 200); }
     if (turn === 'foe' && S.state === 'playing' && !shell) { c.fillStyle = '#ff4d6d'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText('적이 조준 중…', W / 2, 200); }
     if (shell) { c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ffd166', 5), shell.x, shell.y, 1); c.restore(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);

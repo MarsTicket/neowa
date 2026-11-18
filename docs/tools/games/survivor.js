@@ -2,7 +2,7 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 70;
   var fx = new A.FX();
-  var P, foes, bullets, gems, orbs, time, score, kills, lvl, xp, need, choosing, choices, spawnT, dyingT, drag = null, keys = {}, cam = { x: 0, y: 0 }, bossOut;
+  var P, foes, bullets, gems, orbs, time, score, kills, lvl, xp, need, choosing, choices, spawnT, dyingT, drag = null, keys = {}, cam = { x: 0, y: 0 }, bossN, hearts;
   var UP = [
     { id: 'rate', name: '연사 속도', d: '공격이 20% 빨라짐' },
     { id: 'dmg', name: '공격력', d: '총알 피해 +1' },
@@ -15,23 +15,27 @@
   ];
   function reset() {
     P = { x: 0, y: 0, hp: 5, max: 5, inv: 0, rate: 0.45, dmg: 1, multi: 1, spd: 230, orbs: 0, magnet: 90, pierce: 0, fire: 0 };
-    foes = []; bullets = []; gems = []; orbs = []; time = 0; score = 0; kills = 0; lvl = 1; xp = 0; need = 5; choosing = false; spawnT = 0; dyingT = 0; drag = null; keys = {}; bossOut = false; fx.clear(); hud();
+    foes = []; bullets = []; gems = []; orbs = []; time = 0; score = 0; kills = 0; lvl = 1; xp = 0; need = 5; choosing = false; spawnT = 0; dyingT = 0; drag = null; keys = {}; bossN = 0; hearts = []; choices = []; fx.clear(); hud();
   }
   function spawnFoe(boss) {
     var a = Math.random() * Math.PI * 2, d = 560, lv = time / 60;
     var tp = boss ? 'boss' : Math.random() < Math.min(0.35, lv * 0.08) ? 'tank' : Math.random() < Math.min(0.3, lv * 0.1) ? 'fast' : 'grunt';
     var base = { grunt: [14, 2, 70, '#ff4d6d'], fast: [11, 1, 130, '#ffb547'], tank: [24, 8, 45, '#b48cff'], boss: [56, 160, 55, '#ff7aa8'] }[tp];
-    foes.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: base[0], hp: Math.ceil(base[1] * (1 + lv * 0.35)), sp: base[2] + lv * 6, c: base[3], tp: tp, hit: 0 });
+    foes.push({ x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: base[0], hp: Math.ceil(base[1] * (1 + lv * 0.35)), sp: base[2] + lv * 6, c: base[3], tp: tp, hit: 0 }); var nf = foes[foes.length - 1]; if (boss) nf.hp = Math.ceil(nf.hp * (1 + (bossN - 1) * 0.6)); nf.mhp = nf.hp;
   }
   function levelUp() {
     lvl++; xp -= need; need = Math.floor(need * 1.35 + 3); choosing = true; A.sfx('level');
-    var pool = UP.slice(); choices = []; for (var i = 0; i < 3; i++) choices.push(pool.splice(A.irand(0, pool.length - 1), 1)[0]);
+    // 상한에 닿은 능력은 후보에서 뺌
+    var pool = UP.filter(function (u) { return !maxed(u.id); }); if (pool.length < 3) pool = pool.concat(UP.filter(function (u) { return u.id === 'heal'; })); choices = []; for (var i = 0; i < 3 && pool.length; i++) choices.push(pool.splice(A.irand(0, pool.length - 1), 1)[0]);
   }
+  function maxed(id) { return id === 'rate' ? P.rate < 0.1 : id === 'multi' ? P.multi >= 7 : id === 'orb' ? P.orbs >= 6 : id === 'pierce' ? P.pierce >= 5 : id === 'magnet' ? P.magnet >= 400 : id === 'speed' ? P.spd > 420 : id === 'heal' ? P.max >= 10 && P.hp >= P.max : false; }
   function pick(i) {
     if (!choosing || !choices[i]) return; var u = choices[i].id;
     if (u === 'rate') P.rate *= 0.8; if (u === 'dmg') P.dmg++; if (u === 'multi') P.multi++; if (u === 'speed') P.spd *= 1.15;
-    if (u === 'heal') { P.max++; P.hp = P.max; } if (u === 'orb') P.orbs++; if (u === 'magnet') P.magnet += 70; if (u === 'pierce') P.pierce++;
-    choosing = false; A.sfx('power'); fx.ring(P.x, P.y, '#c3ff5e', 120, 0.4); hud();
+    if (u === 'heal') { P.max = Math.min(10, P.max + 1); P.hp = P.max; } if (u === 'orb') P.orbs++; if (u === 'magnet') P.magnet += 70; if (u === 'pierce') P.pierce++;
+    choosing = false; drag = null; A.sfx('power'); fx.ring(W / 2, H / 2, '#c3ff5e', 120, 0.4);
+    if (xp >= need) levelUp(); // 보석을 한꺼번에 많이 먹었을 때 남은 레벨업
+    hud();
   }
   function update(dt) {
     fx.update(dt);
@@ -45,8 +49,8 @@
     P.x += tx * P.spd * dt; P.y += ty * P.spd * dt; if (P.inv > 0) P.inv -= dt;
     cam.x = A.lerp(cam.x, P.x - W / 2, Math.min(1, dt * 8)); cam.y = A.lerp(cam.y, P.y - H / 2, Math.min(1, dt * 8));
     // 적 생성
-    spawnT -= dt; if (spawnT <= 0) { var n = 1 + Math.floor(time / 40); for (var i = 0; i < n; i++) spawnFoe(false); spawnT = Math.max(0.25, 1.1 - time / 200); }
-    if (time > 300 && !bossOut) { bossOut = true; spawnFoe(true); S.banner('보스 출현', 'WARNING'); A.sfx('bigboom'); }
+    spawnT -= dt; if (spawnT <= 0 && foes.length < 150) { var n = 1 + Math.floor(time / 40); for (var i = 0; i < n; i++) spawnFoe(false); spawnT = Math.max(0.25, 1.1 - time / 200); }
+    if (time > 150 * (bossN + 1)) { bossN++; spawnFoe(true); S.banner('보스 출현', 'WARNING'); A.sfx('bigboom'); }
     // 사격
     P.fire -= dt;
     if (P.fire <= 0 && foes.length) {
@@ -68,19 +72,22 @@
       if (f.hp <= 0) {
         foes.splice(i, 1); kills++; score += f.tp === 'boss' ? 5000 : f.tp === 'tank' ? 40 : 10;
         fx.burst(f.x - cam.x, f.y - cam.y, f.c, f.tp === 'boss' ? 60 : 10, 240, 0.5, 3); A.sfx(f.tp === 'boss' ? 'bigboom' : 'boom', A.rand(1, 1.5));
-        gems.push({ x: f.x, y: f.y, v: f.tp === 'boss' ? 30 : f.tp === 'tank' ? 4 : 1 }); continue;
+        gems.push({ x: f.x, y: f.y, v: f.tp === 'boss' ? 30 : f.tp === 'tank' ? 4 : 1 }); if (f.tp === 'boss' || Math.random() < 0.012) hearts.push({ x: f.x + 20, y: f.y }); continue;
       }
       if (Math.hypot(f.x - P.x, f.y - P.y) < f.r + 12 && P.inv <= 0) {
         P.hp--; P.inv = 1; fx.shake(8, 0.25); fx.flashIt('#ff2244', 0.4); A.sfx('hurt'); A.vibrate(100);
-        if (P.hp <= 0) { dyingT = 1.4; fx.burst(W / 2, H / 2, '#c3ff5e', 50, 420, 0.9, 4); A.sfx('bigboom'); }
+        if (P.hp <= 0) { dyingT = 1.4; fx.burst(P.x - cam.x, P.y - cam.y, '#c3ff5e', 50, 420, 0.9, 4); A.sfx('bigboom'); }
       }
-      if (Math.hypot(f.x - P.x, f.y - P.y) > 900) foes.splice(i, 1);
+      if (f.tp !== 'boss' && Math.hypot(f.x - P.x, f.y - P.y) > 900) foes.splice(i, 1);
     }
     for (i = gems.length - 1; i >= 0; i--) {
       var g = gems[i], gd = Math.hypot(P.x - g.x, P.y - g.y);
       if (gd < P.magnet) { g.x += (P.x - g.x) * 8 * dt; g.y += (P.y - g.y) * 8 * dt; }
-      if (gd < 22) { gems.splice(i, 1); xp += g.v; score += g.v * 2; A.sfx('tick', 1.5); if (xp >= need) levelUp(); }
+      if (gd < 22) { gems.splice(i, 1); xp += g.v; score += g.v * 2; A.sfx('tick', 1.5); if (xp >= need && !choosing) levelUp(); }
+      else if (gd > 1100) gems.splice(i, 1); // 멀리 두고 온 보석은 정리 (배열 누수 방지)
     }
+    for (i = hearts.length - 1; i >= 0; i--) { var ht = hearts[i], hd = Math.hypot(P.x - ht.x, P.y - ht.y);
+      if (hd < 26) { hearts.splice(i, 1); if (P.hp < P.max) P.hp++; score += 50; fx.text(W / 2, H / 2 - 40, '체력 +1', '#ff4d6d', 20); A.sfx('power'); } else if (hd > 1100) hearts.splice(i, 1); }
     hud();
   }
   function fmtT(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
@@ -98,6 +105,7 @@
     (bullets || []).forEach(function (b) { A.draw(c, A.glowDot('#ffffff', 3), b.x, b.y, 0.9); });
     (orbs || []).forEach(function (ob) { A.draw(c, A.glowDot('#5ee7ff', 6), ob.x, ob.y, 1.1); });
     c.restore();
+    (hearts || []).forEach(function (ht) { var hs = 1 + Math.sin(t * 6) * 0.12; c.fillStyle = '#ff4d6d'; c.beginPath(); c.arc(ht.x - 6 * hs, ht.y - 3, 7 * hs, 0, 7); c.arc(ht.x + 6 * hs, ht.y - 3, 7 * hs, 0, 7); c.fill(); c.beginPath(); c.moveTo(ht.x - 13 * hs, ht.y); c.lineTo(ht.x, ht.y + 14 * hs); c.lineTo(ht.x + 13 * hs, ht.y); c.fill(); });
     (foes || []).forEach(function (f) { c.fillStyle = f.hit > 0 ? '#fff' : f.c; c.beginPath(); if (f.tp === 'fast') { c.moveTo(f.x, f.y - f.r); c.lineTo(f.x + f.r, f.y + f.r); c.lineTo(f.x - f.r, f.y + f.r); } else c.arc(f.x, f.y, f.r, 0, 7); c.fill(); c.fillStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.arc(f.x, f.y, f.r * 0.4, 0, 7); c.fill(); });
     if (P && dyingT <= 0 && !(P.inv > 0 && Math.floor(P.inv * 14) % 2)) { c.save(); c.shadowColor = '#c3ff5e'; c.shadowBlur = 18; c.fillStyle = '#efffd6'; c.beginPath(); c.arc(P.x, P.y, 14, 0, 7); c.fill(); c.restore(); }
     if (!P) { c.fillStyle = '#efffd6'; c.beginPath(); c.arc(cx + W / 2, cy + H / 2, 14, 0, 7); c.fill(); }
@@ -105,6 +113,8 @@
     if (P) { // 체력·경험치 바
       for (var h = 0; h < P.max; h++) { c.fillStyle = h < P.hp ? '#ff4d6d' : 'rgba(255,255,255,.15)'; c.fillRect(16 + h * 22, H - 34, 18, 10); }
       c.fillStyle = 'rgba(255,255,255,.1)'; c.fillRect(0, H - 8, W, 8); c.fillStyle = '#c3ff5e'; c.fillRect(0, H - 8, W * Math.min(1, xp / need), 8);
+      foes.forEach(function (f) { if (f.tp !== 'boss') return; c.fillStyle = 'rgba(255,255,255,.12)'; c.fillRect(70, 96, W - 140, 10); c.fillStyle = '#ff7aa8'; c.fillRect(70, 96, (W - 140) * Math.max(0, f.hp / f.mhp), 10);
+        var dx = f.x - P.x, dy = f.y - P.y; if (Math.abs(dx) > W / 2 || Math.abs(dy) > H / 2) { var a = Math.atan2(dy, dx), ex = A.clamp(W / 2 + Math.cos(a) * 240, 20, W - 20), ey = A.clamp(H / 2 + Math.sin(a) * 420, 120, H - 50); c.fillStyle = '#ff7aa8'; c.beginPath(); c.arc(ex, ey, 9 + Math.sin(t * 8) * 3, 0, 7); c.fill(); } });
     }
     if (choosing) {
       c.fillStyle = 'rgba(5,8,2,.82)'; c.fillRect(0, 0, W, H);

@@ -24,7 +24,8 @@
  "rules": [
   "떨어지면 끝",
   "<kbd style=\"color:#ff4d6d\">━</kbd> 빨간 발판은 부서짐",
-  "양옆 화면은 이어짐"
+  "<kbd style=\"color:#ffd166\">━</kbd> 스프링 · <kbd style=\"color:#ff9ecf\">▲</kbd> 로켓",
+  "양옆 화면은 이어짐 · 250m마다 보너스"
  ],
  "hud": [
   [

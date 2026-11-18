@@ -2,7 +2,8 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
-  var N, CS, GX, GY, cells, P, goal, stars, stage, time, score, moving, dyingT, trail;
+  var N, CS, GX, GY, cells, P, goal, stars, stage, time, score, moving, dyingT, trail, queued, moves, par;
+  var SIDE = { e: ['n', 's'], w: ['n', 's'], n: ['e', 'w'], s: ['e', 'w'] }, DIRS = [[1, 0, 'e'], [-1, 0, 'w'], [0, 1, 's'], [0, -1, 'n']];
   // 미로 생성 (재귀적 백트래킹). cells[y][x] = {n,e,s,w 벽}
   function build(n) {
     N = n; CS = Math.floor(Math.min(500 / n, 780 / n)); GX = (W - N * CS) / 2; GY = 110 + (800 - N * CS) / 2;
@@ -17,17 +18,26 @@
     // 벽 몇 개 더 뚫어 길을 여러 갈래로
     for (var k = 0; k < N; k++) { var rx = A.irand(1, N - 2), ry = A.irand(1, N - 2); cells[ry][rx].e = 0; cells[ry][rx + 1].w = 0; }
     P = { x: 0, y: 0, px: 0, py: 0 }; goal = { x: N - 1, y: N - 1 }; stars = [];
-    for (k = 0; k < Math.floor(N / 2); k++) stars.push({ x: A.irand(1, N - 1), y: A.irand(1, N - 1) });
-    trail = [];
+    for (k = 0; k < Math.floor(N / 2); k++) { var sx = A.irand(1, N - 1), sy = A.irand(1, N - 1); if ((sx !== goal.x || sy !== goal.y) && !stars.some(function (q) { return q.x === sx && q.y === sy; })) stars.push({ x: sx, y: sy }); }
+    trail = []; queued = null; moves = 0; par = solve();
   }
-  function newStage() { stage++; var n = Math.min(17, 6 + stage); build(n); time += 12 + n * 1.2; if (stage > 1) { S.banner('STAGE ' + stage, '탈출 성공'); A.sfx('level'); } hud(); }
+  // 한 번 밀었을 때 멈추는 칸: 벽 앞, 갈림길(옆으로 길이 열린 칸), 출구
+  function dest(x, y, dx, dy, key, path) { while (!cells[y][x][key]) { x += dx; y += dy; if (path) path.push([x, y]); if (x === goal.x && y === goal.y) break; if (!cells[y][x][SIDE[key][0]] || !cells[y][x][SIDE[key][1]]) break; } return [x, y]; }
+  function solve() { // 출구까지 최소 몇 번 밀어야 하는지 (BFS)
+    var seen = {}, q = [[0, 0, 0]]; seen['0,0'] = 1;
+    while (q.length) { var c = q.shift(); if (c[0] === goal.x && c[1] === goal.y) return c[2];
+      DIRS.forEach(function (d) { var t = dest(c[0], c[1], d[0], d[1], d[2]), k = t[0] + ',' + t[1]; if (!seen[k]) { seen[k] = 1; q.push([t[0], t[1], c[2] + 1]); } }); }
+    return 99;
+  }
+  function newStage() { stage++; var n = Math.min(17, 6 + stage); build(n); time = Math.min(90, time + 10 + n * 1.1); /* 남는 시간이 끝없이 쌓이지 않게 상한 90초 */ if (stage > 1) { S.banner('STAGE ' + stage, '탈출 성공'); A.sfx('level'); } hud(); }
   function reset() { stage = 0; time = 18; score = 0; dyingT = 0; moving = null; newStage(); fx.clear(); }
   function slide(dx, dy) {
-    if (S.state !== 'playing' || moving || dyingT > 0) return;
-    var key = dx > 0 ? 'e' : dx < 0 ? 'w' : dy > 0 ? 's' : 'n', x = P.x, y = P.y, path = [];
-    while (!cells[y][x][key]) { x += dx; y += dy; path.push([x, y]); if (x === goal.x && y === goal.y) break; }
+    if (S.state !== 'playing' || dyingT > 0) return;
+    if (moving) { queued = [dx, dy]; return; } // 움직이는 중 입력은 한 개 저장했다가 멈추면 실행
+    var key = dx > 0 ? 'e' : dx < 0 ? 'w' : dy > 0 ? 's' : 'n', path = [];
+    dest(P.x, P.y, dx, dy, key, path);
     if (!path.length) { A.sfx('wall', 0.8); return; }
-    moving = { path: path, i: 0, t: 0 }; A.sfx('turn', 1.2);
+    moving = { path: path, i: 0, t: 0 }; moves++; A.sfx('turn', 1.2);
   }
   function update(dt) {
     fx.update(dt);
@@ -38,8 +48,8 @@
       while (moving && moving.t >= 1) {
         moving.t -= 1; var c = moving.path[moving.i++]; trail.push({ x: P.x, y: P.y, t: 0.5 }); P.x = c[0]; P.y = c[1];
         for (var i = stars.length - 1; i >= 0; i--) if (stars[i].x === P.x && stars[i].y === P.y) { stars.splice(i, 1); time += 3; score += 50; fx.burst(GX + (P.x + 0.5) * CS, GY + (P.y + 0.5) * CS, '#ffd166', 12, 200, 0.4, 3); fx.text(GX + (P.x + 0.5) * CS, GY + P.y * CS, '+3초', '#ffd166', 18); A.sfx('coin'); }
-        if (P.x === goal.x && P.y === goal.y) { moving = null; var bonus = Math.round(100 * stage + time * 10); score += bonus; fx.burst(GX + (goal.x + 0.5) * CS, GY + (goal.y + 0.5) * CS, '#7dff9b', 40, 360, 0.8, 4); fx.text(W / 2, H / 2, '탈출! +' + bonus, '#7dff9b', 28); newStage(); return; }
-        if (moving.i >= moving.path.length) moving = null;
+        if (P.x === goal.x && P.y === goal.y) { moving = null; var bonus = Math.round(100 * stage + time * 10); if (moves <= par) { bonus += 100 * stage; fx.text(W / 2, H / 2 + 44, '최단 경로 ' + par + '수!', '#ffd166', 24); A.sfx('gold'); } score += bonus; fx.burst(GX + (goal.x + 0.5) * CS, GY + (goal.y + 0.5) * CS, '#7dff9b', 40, 360, 0.8, 4); fx.text(W / 2, H / 2, '탈출! +' + bonus, '#7dff9b', 28); newStage(); return; }
+        if (moving.i >= moving.path.length) { moving = null; if (queued) { var qd = queued; queued = null; slide(qd[0], qd[1]); } }
       }
     }
     for (i = trail.length - 1; i >= 0; i--) { trail[i].t -= dt; if (trail[i].t <= 0) trail.splice(i, 1); }
@@ -67,12 +77,12 @@
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
-  function hud() { var k = score + '|' + stage + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 6 ? '#ff4d6d' : ''; }
+  function hud() { var k = score + '|' + stage + '|' + Math.ceil(time) + '|' + moves; if (k === last) return; last = k; document.getElementById('hMult').textContent = moves + ' / 최단 ' + par + '수'; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 6 ? '#ff4d6d' : ''; }
   var stage_ = document.getElementById('stage'), sw = null;
   stage_.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; sw = { x: e.clientX, y: e.clientY }; });
-  stage_.addEventListener('pointermove', function (e) { if (!sw) return; var dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; if (Math.abs(dx) > Math.abs(dy)) slide(dx > 0 ? 1 : -1, 0); else slide(0, dy > 0 ? 1 : -1); sw = null; });
+  stage_.addEventListener('pointermove', function (e) { if (!sw) return; var dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; if (Math.abs(dx) > Math.abs(dy)) slide(dx > 0 ? 1 : -1, 0); else slide(0, dy > 0 ? 1 : -1); sw = { x: e.clientX, y: e.clientY }; }); // 손을 떼지 않고 이어서 스와이프 가능
   stage_.addEventListener('pointerup', function () { sw = null; });
   var MAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
   var S = new A.Shell({ id: 'maze', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
-    keydown: function (e) { var m = MAP[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (m) slide(m[0], m[1]); } });
+    keydown: function (e) { var m = MAP[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (m && !e.repeat) slide(m[0], m[1]); } });
 })();

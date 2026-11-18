@@ -70,7 +70,7 @@
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭 열기 · 길게 깃발</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>빨리 풀수록 고득점</span>
         </div>
-        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">쉬움</button><button type="button" data-diff="1">보통</button><button type="button" data-diff="2">어려움</button></div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">쉬움</button><button type="button" data-diff="1">보통</button><button type="button" data-diff="2">어려움</button><button type="button" data-diff="3">오늘의 퍼즐</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -118,7 +118,15 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960;
-  var DIFFS = [{ c: 8, r: 10, m: 12, base: 800, name: '쉬움' }, { c: 10, r: 14, m: 24, base: 2500, name: '보통' }, { c: 12, r: 17, m: 42, base: 6000, name: '어려움' }];
+  var DIFFS = [{ c: 8, r: 10, m: 12, base: 800, name: '쉬움' }, { c: 10, r: 14, m: 24, base: 2500, name: '보통' }, { c: 12, r: 17, m: 42, base: 6000, name: '어려움' },
+    { c: 10, r: 14, m: 26, base: 2500, name: '오늘의 퍼즐', daily: true }];
+  // 오늘의 퍼즐: 날짜(로컬 YYYYMMDD)로 고정한 난수 → 오늘은 누구나 같은 판 (가운데 칸이 처음부터 열려 있음)
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function seeded(a) { return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var rnd = Math.random;
+  // 첫 판 안내 (본 적 있으면 neowa_mines_tut = 1)
+  var tut = A.get('neowa_mines_tut', '') !== '1' ? 1 : 0, tutT = 0;
+  function isTouch() { return document.body.classList.contains('touch'); }
   var diff = +A.get('neowa_mines_diff', '0') || 0;
   var fx = new A.FX();
   var land = false, D, cols, rows, CS, GX, GY, cells, started, time, flags, opened, dyingT, winT, flagMode, cur = { x: 0, y: 0 }, kbd = false, boomAt = null, press = null, reveals = [], revT = 0;
@@ -144,14 +152,16 @@
     layout();
     cells = []; for (var y = 0; y < rows; y++) for (var x = 0; x < cols; x++) cells.push({ x: x, y: y, mine: false, n: 0, open: false, flag: false, t: 0 });
     started = false; time = 0; flags = 0; opened = 0; dyingT = 0; winT = 0; flagMode = false; boomAt = null; reveals = []; revT = 0; press = null; cur = { x: Math.floor(cols / 2), y: Math.floor(rows / 2) };
-    fx.clear(); lastHud = ''; hud();
+    fx.clear(); lastHud = ''; tutT = 0;
+    if (D.daily) { rnd = seeded(today() * 7 + 13); open(at(Math.floor(cols / 2), Math.floor(rows / 2))); if (tut === 1) tut = 2; }
+    hud();
   }
   function at(x, y) { return x < 0 || y < 0 || x >= cols || y >= rows ? null : cells[y * cols + x]; }
   function around(c, f) { for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; var n = at(c.x + dx, c.y + dy); if (n) f(n); } }
   // 지뢰 배치: 첫 칸 주변 3x3은 비우고, 논리만으로 끝까지 풀리는 판이 나올 때까지 다시 섞음 (찍기 없는 판)
   function layMines(safe) {
     var pool = []; for (var i = 0; i < cells.length; i++) { var c = cells[i]; c.mine = false; if (Math.abs(c.x - safe.x) > 1 || Math.abs(c.y - safe.y) > 1) pool.push(c); }
-    for (i = 0; i < D.m; i++) { var k = Math.floor(Math.random() * pool.length); pool[k].mine = true; pool.splice(k, 1); }
+    for (i = 0; i < D.m; i++) { var k = Math.floor(rnd() * pool.length); pool[k].mine = true; pool.splice(k, 1); }
     cells.forEach(function (c) { var n = 0; around(c, function (q) { if (q.mine) n++; }); c.n = n; });
   }
   function solvable(safe) {
@@ -197,8 +207,9 @@
   }
   function plant(safe) {
     var t0 = performance.now(), tries = 0;
-    do { layMines(safe); tries++; } while (!solvable(safe) && performance.now() - t0 < 120 && tries < 400);
-    started = true;
+    // 오늘의 퍼즐은 기기 속도와 상관없이 같은 판이 나오도록 시간 제한 없이 횟수로만
+    do { layMines(safe); tries++; } while (!solvable(safe) && (D.daily || performance.now() - t0 < 120) && tries < 400);
+    started = true; rnd = Math.random;
   }
   function open(c, chain) {
     if (!c || c.open || c.flag || dyingT > 0 || winT > 0) return;
@@ -222,6 +233,8 @@
   function act(c, asFlag) {
     if (!c || dyingT > 0 || winT > 0) return;
     if (asFlag) toggleFlag(c); else if (c.open) chord(c); else open(c);
+    if (tut === 1 && started && !asFlag) { tut = 2; tutT = 0; A.set('neowa_mines_tut', '1'); }
+    else if (tut === 2 && asFlag) tut = 0;
     hud();
   }
   function lose(c) {
@@ -253,14 +266,18 @@
   function update(dt) {
     fx.update(dt);
     if (dyingT > 0) { stepReveals(dt); dyingT -= dt; if (dyingT <= 0) S.gameOver(finalScore(false), [['난이도', D.name], ['연 칸', opened + '/' + (cols * rows - D.m)], ['시간', Math.floor(time) + '초']]); return; }
-    if (winT > 0) { winT -= dt; if (winT <= 0) { saveTime(); S.gameOver(finalScore(true), [['난이도', D.name], ['기록', time.toFixed(1) + '초'], ['최단', bestTimeTxt()]], { kick: 'CLEAR!', win: true }); } return; }
+    if (winT > 0) { winT -= dt; if (winT <= 0) { var prev = bestT(); saveTime(); S.gameOver(finalScore(true), [['난이도', D.name], ['기록', time.toFixed(1) + '초' + (prev && time < prev ? ' 🏅' : '')], [D.daily ? '오늘 최단' : '최단', bestTimeTxt()]], { kick: 'CLEAR!', win: true }); } return; }
     if (started) time += dt;
+    if (tut) { tutT += dt; if (tut === 2 && tutT > 9) tut = 0; }
     // 길게 누르기 → 깃발
     if (press && !press.done && performance.now() - press.t > 380) { press.done = true; act(press.c, !flagMode); fx.ring(sx(press.c) + CS / 2, sy(press.c) + CS / 2, '#4dffd2', CS, 0.3); }
     hud();
   }
-  function saveTime() { var k = 'neowa_mines_time_' + diff, b = parseFloat(A.get(k, '0')) || 0; if (!b || time < b) A.set(k, time.toFixed(1)); }
-  function bestTimeTxt() { var b = parseFloat(A.get('neowa_mines_time_' + diff, '0')); return b ? b.toFixed(1) + '초' : '-'; }
+  // 최단 기록 키: 일반은 neowa_mines_time_<난이도>, 오늘의 퍼즐은 neowa_mines_daily_<YYYYMMDD>
+  function timeKey() { return D.daily ? 'neowa_mines_daily_' + today() : 'neowa_mines_time_' + diff; }
+  function bestT() { return parseFloat(A.get(timeKey(), '0')) || 0; }
+  function saveTime() { var b = bestT(); if (!b || time < b) A.set(timeKey(), time.toFixed(1)); }
+  function bestTimeTxt() { var b = bestT(); return b ? b.toFixed(1) + '초' : '-'; }
 
   var TILE = null;
   function render(c) {
@@ -296,8 +313,23 @@
     c.fillStyle = flagMode ? '#2a0410' : '#e8fffa'; c.font = '700 18px "Pretendard Variable",system-ui';
     c.fillText(flagMode ? '🚩 깃발 꽂기 모드' : '⛏ 열기 모드 (탭해서 전환)', W / 2, BTN.y + BTN.h / 2 + 1);
     }
+    if (tut && cells && S.state === 'playing' && dyingT <= 0 && winT <= 0) drawTut(c);
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
+  }
+  // 첫 판 안내: 판 아래쪽에 반투명 말풍선 + 가운데 칸 손가락 표시
+  function drawTut(c) {
+    var touch = isTouch(), lines;
+    if (tut === 1) lines = [touch ? '아무 칸이나 탭해서 시작!' : '아무 칸이나 클릭해서 시작!', '숫자 = 주변 8칸에 숨은 지뢰 수'];
+    else lines = [touch ? '지뢰 같으면 길게 눌러 🚩 깃발' : '지뢰 같으면 우클릭(X 키)으로 🚩 깃발', '깃발 수가 맞는 숫자를 누르면 한 번에 열려요'];
+    var a = Math.min(1, tutT * 3), bw = Math.min(W - 40, 470), bx = (W - bw) / 2, by = land ? H - 112 : 784;
+    c.globalAlpha = a * 0.92; c.fillStyle = '#04201a'; A.rr(c, bx, by, bw, 92, 18); c.fill();
+    c.strokeStyle = '#4dffd2'; c.lineWidth = 2; c.stroke(); c.globalAlpha = a;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#4dffd2'; c.font = '800 22px "Pretendard Variable",system-ui'; c.fillText(lines[0], W / 2, by + 32);
+    c.fillStyle = 'rgba(232,255,250,.8)'; c.font = '600 17px "Pretendard Variable",system-ui'; c.fillText(lines[1], W / 2, by + 64);
+    if (tut === 1) { var q = at(cur.x, cur.y), r = CS * (0.6 + 0.15 * Math.sin(S.time * 6)); c.strokeStyle = '#ffd166'; c.lineWidth = 3; c.beginPath(); c.arc(sx(q) + CS / 2, sy(q) + CS / 2, r, 0, 7); c.stroke(); }
+    c.globalAlpha = 1;
   }
   var lastHud = '';
   function hud() {

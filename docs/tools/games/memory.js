@@ -23,22 +23,22 @@
     // 틀린 두 장이 보이는 동안 다른 카드를 누르면 바로 덮고 새 카드를 뒤집음 (기다리지 않아도 됨)
     if (lock > 0 && open.length === 2) { if (open.indexOf(i) >= 0) return; open.forEach(function (k) { cards[k].up = false; }); open = []; lock = 0; }
     if (c.up || lock > 0) return;
-    c.up = true; open.push(i); A.sfx('click', 1.2);
+    c.up = true; open.push(i); A.sfx('flip', 1 + (open.length - 1) * 0.1);
     if (open.length === 2) {
       var a = cards[open[0]], b = cards[open[1]];
-      if (a.id === b.id) { a.done = b.done = true; combo++; var pts = 20 * Math.min(5, combo); score += pts; A.sfx('coin', 1 + combo * 0.05); fx.text(GX + (open[1] % cols + 0.5) * CW, GY + Math.floor(open[1] / cols) * CH, '+' + pts, '#ffd166', 20); open = [];
+      if (a.id === b.id) { a.done = b.done = true; combo++; var pts = 20 * Math.min(5, combo); score += pts; A.sfx('match', 1 + Math.min(combo, 12) * 0.05); if (combo > 1) A.sfx('combo', 1 + Math.min(combo, 12) * 0.05); fx.text(GX + (open[1] % cols + 0.5) * CW, GY + Math.floor(open[1] / cols) * CH, '+' + pts, '#ffd166', 20); open = [];
         if (cards.every(function (q) { return q.done; })) { var bonus = Math.round(time) * 5 + stage * 50; score += bonus; var add = 10 + stage * 2; time += add; fx.text(W / 2, H / 2, '단계 클리어! +' + bonus, '#b48cff', 26); A.sfx('level'); for (var k = 0; k < 3; k++) fx.burst(A.rand(120, W - 120), A.rand(H * 0.3, H * 0.7), '#b48cff', 18, 300, 0.7, 4); stage++; nextT = 0.9; addSec = add; } }
-      else { combo = 0; lock = 0.7; A.sfx('wall'); }
+      else { combo = 0; lock = 0.7; A.sfx('wrong'); }
     }
     hud();
   }
   function update(dt) {
     fx.update(dt);
     if (nextT > 0) { nextT -= dt; if (nextT <= 0) { setup(); S.banner('STAGE ' + stage, '+' + addSec + '초'); } cards.forEach(function (c) { c.f = A.lerp(c.f, 1, Math.min(1, dt * 14)); }); hud(); return; }
-    if (peekT > 0) { peekT -= dt; if (peekT <= 0) cards.forEach(function (c) { if (!c.done) c.up = false; }); }
+    if (peekT > 0) { peekT -= dt; if (peekT <= 0) { cards.forEach(function (c) { if (!c.done) c.up = false; }); A.sfx('deal'); } }
     if (lock > 0) { lock -= dt; if (lock <= 0 && open.length === 2) { open.forEach(function (i) { cards[i].up = false; }); open = []; } }
     cards.forEach(function (c) { c.f = A.lerp(c.f, c.up || c.done ? 1 : 0, Math.min(1, dt * 14)); });
-    if (peekT <= 0) { time -= dt; if (time <= 0) { time = 0; S.gameOver(score, [['단계', String(stage)]]); return; } }
+    if (peekT <= 0) { time -= dt; if (time > 5) warnN = 0; else if (time > 0 && Math.ceil(time) !== warnN) { warnN = Math.ceil(time); A.sfx('warn'); } if (time <= 0) { time = 0; S.gameOver(score, [['단계', String(stage)]]); return; } }
     hud();
   }
   function render(c) {
@@ -59,7 +59,7 @@
     if (peekT > 0 && S.state === 'playing') { c.fillStyle = '#b48cff'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText('잘 기억하세요!', W / 2, GY - 30); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  var last = '';
+  var last = '', warnN = 0;
   function hud() { var k = score + '|' + stage + '|' + Math.ceil(time) + '|' + combo; if (k === last) return; last = k; document.getElementById('hMult').textContent = combo > 1 ? '콤보 ×' + Math.min(5, combo) : ''; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var t = document.getElementById('hC'); t.textContent = Math.ceil(time); t.style.color = time < 8 ? '#ff4d6d' : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), x = Math.floor((p.x - GX) / CW), y = Math.floor((p.y - GY) / CH); if (x >= 0 && x < cols && y >= 0 && y < rows) flip(y * cols + x); });
     // 가로 화면 패널: 점수판 복사본 + 큰 버튼 (게임판 위 점수판은 가로에서 숨김)

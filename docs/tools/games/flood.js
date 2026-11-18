@@ -37,10 +37,11 @@
     if (S.state !== 'playing' || dyingT > 0 || nextT > 0 || col === grid[0]) return;
     var before = Object.keys(region).length;
     Object.keys(region).forEach(function (k) { grid[k] = col; ripple[k] = region[k] * 0.012; });
-    moves++; calc(); var gained = Object.keys(region).length - before; A.sfx('eat', 0.8 + Math.min(1, gained / 20));
+    moves++; calc(); var gained = Object.keys(region).length - before; A.sfx('splash', 0.8 + Math.min(1, gained / 20));
     Object.keys(region).forEach(function (k) { if (ripple[k] == null) ripple[k] = region[k] * 0.012; });
-    if (Object.keys(region).length === N * N) { var beat = moves <= cpu, pts = CFG[diff].b + (maxM - moves) * 30 + (beat ? CFG[diff].b : 0); score += pts; wins++; nextT = 1.2; A.sfx(beat ? 'gold' : 'level'); fx.text(W / 2, land ? H / 2 : GY - 30, (moves < cpu ? '컴퓨터 이김! +' : beat ? '컴퓨터와 동점! +' : '완성! +') + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(H * 0.25, H * 0.7), COLS[col], 20, 300, 0.7, 4); }
+    if (Object.keys(region).length === N * N) { var beat = moves <= cpu, pts = CFG[diff].b + (maxM - moves) * 30 + (beat ? CFG[diff].b : 0); score += pts; wins++; nextT = 1.2; A.sfx('win'); if (beat) A.sfx('gold'); fx.text(W / 2, land ? H / 2 : GY - 30, (moves < cpu ? '컴퓨터 이김! +' : beat ? '컴퓨터와 동점! +' : '완성! +') + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(H * 0.25, H * 0.7), COLS[col], 20, 300, 0.7, 4); }
     else if (moves >= maxM) { dyingT = 1.2; A.sfx('hurt'); fx.flashIt('#ff2244', 0.4); }
+    else if (maxM - moves <= 3) A.sfx('warn');
     hud();
   }
   function update(dt) {
@@ -73,7 +74,7 @@
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
-  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flood_diff', diff); A.sfx('click'); paint(); grid = null; }); }); paint();
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flood_diff', diff); A.sfx('select'); paint(); grid = null; }); }); paint();
     // 가로 화면 패널: 점수판 복사본 + 큰 버튼 (게임판 위 점수판은 가로에서 숨김)
   function landPanel(btns) {
     var hudEl = document.querySelector('.g-hud'), ids = ['hA', 'hB', 'hC'], h = '<div class="g-card gp-stats">';

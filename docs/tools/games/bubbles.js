@@ -35,12 +35,12 @@
       // 연속으로 터뜨리면 콤보 배율 (최대 ×3)
       combo++; var mul = Math.min(3, 1 + (combo - 1) * 0.5);
       var pts = Math.round((group.length * 10 + fell * 20 * 2) * mul); score += pts; bestChain = Math.max(bestChain, group.length + fell);
-      fx.text(pos(r, c).x, pos(r, c).y, (fell ? '떨어뜨리기 ' : '') + '+' + pts + (combo > 1 ? ' (콤보×' + mul + ')' : ''), fell || combo > 1 ? '#ffd166' : '#fff', fell ? 24 : 20); A.sfx(fell ? 'gold' : 'coin', 1 + Math.min(1, group.length / 10) + Math.min(5, combo) * 0.04); fx.shake(2 + fell * 0.5, 0.15);
-    } else { combo = 0; A.sfx('bounce', 1.4); }
+      fx.text(pos(r, c).x, pos(r, c).y, (fell ? '떨어뜨리기 ' : '') + '+' + pts + (combo > 1 ? ' (콤보×' + mul + ')' : ''), fell || combo > 1 ? '#ffd166' : '#fff', fell ? 24 : 20); A.sfx('pop', 1 + Math.min(1, group.length / 10) + Math.min(5, combo) * 0.04); if (fell) A.sfx('combo', 1 + Math.min(fell, 12) * 0.05); fx.shake(2 + fell * 0.5, 0.15);
+    } else { combo = 0; A.sfx('tap', 0.9); }
     while (grid.length && grid[grid.length - 1].every(function (b) { return b == null; })) grid.pop();
     shots++;
-    if (!grid.length) { score += 1000; S.banner('판 비우기!', '+1000'); A.sfx('level'); ncol = Math.min(6, ncol + 1); for (var rr = 0; rr < 5; rr++) addRowTop(); }
-    if (shots % 5 === 0) { addRowTop(); A.sfx('wall', 0.6); fx.shake(4, 0.2); }
+    if (!grid.length) { score += 1000; S.banner('판 비우기!', '+1000'); A.sfx('win'); ncol = Math.min(6, ncol + 1); for (var rr = 0; rr < 5; rr++) addRowTop(); }
+    if (shots % 5 === 0) { addRowTop(); A.sfx('drop', 0.8); fx.shake(4, 0.2); }
     if (shots % 25 === 0) ncol = Math.min(6, ncol + 1);
     if (grid.length && pos(grid.length - 1, 0).y + R > LOSE) { dyingT = 1.2; A.sfx('hurt'); fx.flashIt('#ff2244', 0.5); }
     if (present().indexOf(cur) < 0 && grid.length) cur = pickColor(); if (present().indexOf(next) < 0 && grid.length) next = pickColor();
@@ -55,8 +55,8 @@
     if (shot) {
       for (var s = 0; s < 6; s++) {
         var h = dt / 6; shot.x += shot.vx * h; shot.y += shot.vy * h;
-        if (shot.x < R + (W - COLSN * R * 2 - R) / 2) { shot.x = R + (W - COLSN * R * 2 - R) / 2; shot.vx *= -1; A.sfx('wall', 1.5); }
-        if (shot.x > W - R - (W - COLSN * R * 2 - R) / 2) { shot.x = W - R - (W - COLSN * R * 2 - R) / 2; shot.vx *= -1; A.sfx('wall', 1.5); }
+        if (shot.x < R + (W - COLSN * R * 2 - R) / 2) { shot.x = R + (W - COLSN * R * 2 - R) / 2; shot.vx *= -1; A.sfx('bounce', 1.2, -0.6); }
+        if (shot.x > W - R - (W - COLSN * R * 2 - R) / 2) { shot.x = W - R - (W - COLSN * R * 2 - R) / 2; shot.vx *= -1; A.sfx('bounce', 1.2, 0.6); }
         var hit = shot.y < TOP + R;
         if (!hit) for (var r = 0; r < grid.length && !hit; r++) for (var c = 0; c < grid[r].length; c++) if (grid[r][c] != null) { var p = pos(r, c); if (Math.hypot(p.x - shot.x, p.y - shot.y) < R * 1.75) { hit = true; break; } }
         if (hit) { var cell = snap(shot.x, shot.y, shot.c); shot = null; land(cell[0], cell[1]); break; }
@@ -93,10 +93,10 @@
   function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = shots; document.getElementById('hC').textContent = bestChain; document.getElementById('hMult').textContent = '천장까지 ' + (5 - shots % 5); }
   var stage = document.getElementById('stage');
   function aimAt(p) { return Math.atan2(Math.min(p.y, SY - 20) - SY, p.x - SX); }
-  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); if (Math.hypot(p.x - (SX + 90), p.y - (SY + 20)) < 34) { var t = cur; cur = next; next = t; A.sfx('click'); return; } aim = aimAt(p); try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); if (Math.hypot(p.x - (SX + 90), p.y - (SY + 20)) < 34) { var t = cur; cur = next; next = t; A.sfx('select'); return; } aim = aimAt(p); try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (aim == null) return; aim = aimAt(S.toLocal(e)); });
   stage.addEventListener('pointerup', function () { if (aim != null) { fire(aim); aim = null; } });
   var S = new A.Shell({ id: 'bubbles', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
-    keydown: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'a') keyL = true; if (k === 'ArrowRight' || k === 'd') keyR = true; if ((k === ' ' || k === 'Enter' || k === 'ArrowUp') && !e.repeat) fire(keyAim); if ((k === 'ArrowDown' || k === 's') && !e.repeat) { var t = cur; cur = next; next = t; } },
+    keydown: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'a') keyL = true; if (k === 'ArrowRight' || k === 'd') keyR = true; if ((k === ' ' || k === 'Enter' || k === 'ArrowUp') && !e.repeat) fire(keyAim); if ((k === 'ArrowDown' || k === 's') && !e.repeat) { var t = cur; cur = next; next = t; A.sfx('select'); } },
     keyup: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'a') keyL = false; if (k === 'ArrowRight' || k === 'd') keyR = false; } });
 })();

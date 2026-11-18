@@ -217,7 +217,7 @@
       var px = GX + (cur.x + cs[i][0]) * CS + CS / 2, py = GY + (cur.y + cs[i][1] - HID) * CS;
       for (var j = 0; j < 3; j++) fx.spark(px + A.rand(-12, 12), py - A.rand(0, Math.min(d, 6) * CS), col, 0, -A.rand(40, 160), 0.35, 2.5);
     }
-    fx.shake(d > 4 ? 4 : 2, 0.12); A.sfx('wall', 0.8); A.vibrate(12);
+    fx.shake(d > 4 ? 4 : 2, 0.12); A.sfx('drop', d > 4 ? 0.9 : 1.2); A.vibrate(12);
     lockPiece();
   }
   function doHold() {
@@ -225,7 +225,7 @@
     var t = cur.t;
     if (holdT < 0) { holdT = t; spawnNext(); }
     else { var h = holdT; holdT = t; spawn(h); }
-    canHold = false; A.sfx('power', 0.9);
+    canHold = false; A.sfx('select', 0.9);
   }
 
   function lockPiece() {
@@ -235,7 +235,7 @@
       if (gy >= 0) { grid[gy][gx] = col; pops.push({ x: gx, y: gy, t: 0 }); }
       top = Math.min(top, gy);
     }
-    cur = null; A.sfx('click', 0.8);
+    cur = null; A.sfx('land', 1.1);
     // 꽉 찬 줄 찾기
     var full = [];
     for (var y = 0; y < ROWS; y++) if (grid[y].every(Boolean)) full.push(y);
@@ -264,9 +264,9 @@
     if (combo > 1) fx.text(cx, midY + 26, 'COMBO ×' + combo, '#5ee7ff', 20);
     if (isQuad) {
       fx.shake(12, 0.45); fx.flashIt('#5ee7ff', 0.35); fx.ring(cx, midY, '#ffd166', 220, 0.6);
-      A.sfx('bigboom'); A.sfx('gold'); A.vibrate([30, 40, 30]);
+      A.sfx('bigboom'); A.sfx('line', 1.3); A.vibrate([30, 40, 30]);
     } else {
-      fx.shake(3 + n * 2, 0.25); A.sfx(n >= 2 ? 'gold' : 'coin', 1 + combo * 0.05); A.vibrate(n >= 2 ? [20, 30, 20] : 15);
+      fx.shake(3 + n * 2, 0.25); A.sfx('line', 1 + n * 0.08); if (combo > 1) A.sfx('combo', 1 + Math.min(combo, 12) * 0.05); A.vibrate(n >= 2 ? [20, 30, 20] : 15);
     }
     hud();
   }

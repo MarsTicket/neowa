@@ -152,17 +152,17 @@
     var key = dx > 0 ? 'e' : dx < 0 ? 'w' : dy > 0 ? 's' : 'n', path = [];
     dest(P.x, P.y, dx, dy, key, path);
     if (!path.length) { A.sfx('wall', 0.8); return; }
-    moving = { path: path, i: 0, t: 0 }; moves++; A.sfx('turn', 1.2);
+    moving = { path: path, i: 0, t: 0 }; moves++; A.sfx('whoosh', 1 + Math.min(path.length, 8) * 0.03);
   }
   function update(dt) {
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['단계', String(stage)]]); return; }
-    time -= dt; if (time <= 0) { time = 0; dyingT = 1; A.sfx('over'); fx.flashIt('#ff2244', 0.4); hud(); return; }
+    time -= dt; if (time > 5) warnN = 0; else if (time > 0 && Math.ceil(time) !== warnN) { warnN = Math.ceil(time); A.sfx('warn'); } if (time <= 0) { time = 0; dyingT = 1; A.sfx('hurt'); fx.flashIt('#ff2244', 0.4); hud(); return; }
     if (moving) {
       moving.t += dt * 22;
       while (moving && moving.t >= 1) {
         moving.t -= 1; var c = moving.path[moving.i++]; trail.push({ x: P.x, y: P.y, t: 0.5 }); P.x = c[0]; P.y = c[1];
-        for (var i = stars.length - 1; i >= 0; i--) if (stars[i].x === P.x && stars[i].y === P.y) { stars.splice(i, 1); time += 3; score += 50; fx.burst(GX + (P.x + 0.5) * CS, GY + (P.y + 0.5) * CS, '#ffd166', 12, 200, 0.4, 3); fx.text(GX + (P.x + 0.5) * CS, GY + P.y * CS, '+3초', '#ffd166', 18); A.sfx('coin'); }
+        for (var i = stars.length - 1; i >= 0; i--) if (stars[i].x === P.x && stars[i].y === P.y) { stars.splice(i, 1); time += 3; score += 50; fx.burst(GX + (P.x + 0.5) * CS, GY + (P.y + 0.5) * CS, '#ffd166', 12, 200, 0.4, 3); fx.text(GX + (P.x + 0.5) * CS, GY + P.y * CS, '+3초', '#ffd166', 18); A.sfx('coin', 1, A.clamp((P.x + 0.5) / N * 2 - 1, -1, 1)); }
         if (P.x === goal.x && P.y === goal.y) { moving = null; var bonus = Math.round(100 * stage + time * 10); if (moves <= par) { bonus += 100 * stage; fx.text(W / 2, H / 2 + 44, '최단 경로 ' + par + '수!', '#ffd166', 24); A.sfx('gold'); } score += bonus; fx.burst(GX + (goal.x + 0.5) * CS, GY + (goal.y + 0.5) * CS, '#7dff9b', 40, 360, 0.8, 4); fx.text(W / 2, H / 2, '탈출! +' + bonus, '#7dff9b', 28); newStage(); return; }
         if (moving.i >= moving.path.length) { moving = null; if (queued) { var qd = queued; queued = null; slide(qd[0], qd[1]); } }
       }
@@ -191,7 +191,7 @@
     c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; c.fillStyle = '#fff'; c.beginPath(); c.arc(GX + (mx + 0.5) * CS, GY + (my + 0.5) * CS, CS * 0.32, 0, 7); c.fill(); c.restore();
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  var last = '';
+  var last = '', warnN = 0;
   function hud() { var k = score + '|' + stage + '|' + Math.ceil(time) + '|' + moves; if (k === last) return; last = k; document.getElementById('hMult').textContent = moves + ' / 최단 ' + par + '수'; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 6 ? '#ff4d6d' : ''; }
   var stage_ = document.getElementById('stage'), sw = null;
   stage_.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; sw = { x: e.clientX, y: e.clientY }; });

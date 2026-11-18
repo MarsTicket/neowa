@@ -19,13 +19,13 @@
   function tap(i) {
     if (done || S.state !== 'playing') return;
     var ex = empty % N, ey = Math.floor(empty / N), x = i % N, y = Math.floor(i / N);
-    if (x !== ex && y !== ey) { A.sfx('wall', 0.8); return; }
+    if (x !== ex && y !== ey) { A.sfx('wrong', 0.9); return; }
     if (i === empty) return;
     // 같은 줄이면 한 번에 여러 칸 밀기
     var step = x === ex ? (y < ey ? -N : N) : (x < ex ? -1 : 1);
     while (empty !== i) { swap(empty + step); moves++; }
-    A.sfx('tick', 1.3); hud();
-    if (solved()) { done = 1.2; A.sfx('level'); for (var k = 0; k < 5; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), A.pick(['#5ee7ff', '#ffd166', '#7dff9b']), 24, 360, 0.8, 4); }
+    A.sfx('slide', 1.1); hud();
+    if (solved()) { done = 1.2; A.sfx('win'); for (var k = 0; k < 5; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), A.pick(['#5ee7ff', '#ffd166', '#7dff9b']), 24, 360, 0.8, 4); }
   }
   // 기준 시간·이동 수(보통 실력)에서 기본 점수, 더 빠르고 적게 움직일수록 최대 4배까지
   // (예전 식은 4×4·5×5에서 몇 분만 지나도 최저점 50으로 떨어졌음)
@@ -60,7 +60,7 @@
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); if (x >= 0 && y >= 0 && x < N && y < N) tap(y * N + x); });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
-  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_slide_diff', diff); A.sfx('click'); paint(); tiles = null; }); }); paint();
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_slide_diff', diff); A.sfx('select'); paint(); tiles = null; }); }); paint();
     // 가로 화면 패널: 점수판 복사본 + 큰 버튼 (게임판 위 점수판은 가로에서 숨김)
   function landPanel(btns) {
     var hudEl = document.querySelector('.g-hud'), ids = ['hA', 'hB', 'hC'], h = '<div class="g-card gp-stats">';

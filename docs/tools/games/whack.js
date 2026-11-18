@@ -2,10 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, CX = [110, 270, 430], CY = [330, 540, 750], HR = 62;
   var fx = new A.FX();
-  var holes, time, score, combo, bestCombo, hits, spawnT, over;
-  function reset() { holes = []; for (var i = 0; i < 9; i++) holes.push({ x: CX[i % 3], y: CY[Math.floor(i / 3)], up: 0, kind: null, life: 0, hit: 0 }); time = 60; score = 0; combo = 0; bestCombo = 0; hits = 0; spawnT = 0.5; over = false; fx.clear(); hud(); }
+  var holes, time, score, combo, bestCombo, hits, spawnT, over, el, feverShown;
+  function reset() { holes = []; for (var i = 0; i < 9; i++) holes.push({ x: CX[i % 3], y: CY[Math.floor(i / 3)], up: 0, kind: null, life: 0, hit: 0 }); time = 60; score = 0; combo = 0; bestCombo = 0; hits = 0; spawnT = 0.5; over = false; el = 0; feverShown = false; fx.clear(); hud(); }
   function spawn() {
-    var lv = Math.min(1, (60 - time) / 60), free = holes.filter(function (h) { return !h.kind; }); if (!free.length) return;
+    var lv = Math.min(1, el / 60), free = holes.filter(function (h) { return !h.kind; }); if (!free.length) return;
     var h = A.pick(free), r = Math.random();
     h.kind = r < 0.1 ? 'gold' : r < 0.1 + 0.12 + lv * 0.08 ? 'bomb' : 'mole';
     h.life = A.rand(0.9, 1.3) - lv * 0.5; h.up = 0; h.hit = 0;
@@ -13,20 +13,26 @@
   }
   function whack(i) {
     if (S.state !== 'playing' || over) return; var h = holes[i];
-    if (!h.kind || h.hit) { combo = 0; A.sfx('wall', 0.8); hud(); return; }
+    if (h.hit > 0) return; // 이미 잡은 두더지를 한 번 더 눌러도 콤보는 그대로
+    if (!h.kind) { if (combo > 0) fx.text(h.x, h.y - 60, '헛방!', '#ff9e9e', 18); combo = 0; A.sfx('wall', 0.8); hud(); return; }
     h.hit = 0.25;
     if (h.kind === 'bomb') { time = Math.max(0, time - 5); combo = 0; fx.burst(h.x, h.y - 30, '#ff4d6d', 30, 360, 0.6, 4); fx.flashIt('#ff2244', 0.4); fx.shake(8, 0.3); fx.text(h.x, h.y - 80, '-5초', '#ff4d6d', 26); A.sfx('boom'); A.vibrate(120); }
     else {
       combo++; hits++; bestCombo = Math.max(bestCombo, combo);
-      var pts = (h.kind === 'gold' ? 30 : 10) * Math.min(4, 1 + Math.floor(combo / 5)); score += pts;
+      var pts = (h.kind === 'gold' ? 30 : 10) * Math.min(4, 1 + Math.floor(combo / 5)) * (fever() ? 2 : 1); score += pts;
+      if (h.kind === 'gold') { time = Math.min(99, time + 2); fx.text(h.x, h.y - 120, '+2초', '#7dff9b', 20); }
+      if (combo % 10 === 0) { fx.text(W / 2, 200, combo + ' 콤보!', '#ffd166', 34); A.sfx('level'); fx.ring(h.x, h.y - 30, '#ffd166', 110, 0.4); }
       fx.burst(h.x, h.y - 30, h.kind === 'gold' ? '#ffd166' : '#ffb547', 16, 260, 0.45, 3); fx.text(h.x, h.y - 90, '+' + pts, h.kind === 'gold' ? '#ffd166' : '#fff', 22);
       A.sfx(h.kind === 'gold' ? 'gold' : 'hit', 1 + Math.min(combo, 15) * 0.04); A.vibrate(12); fx.shake(2, 0.06);
     }
     hud();
   }
+  function fever() { return time <= 10 && time > 0; }
   function update(dt) {
     fx.update(dt); if (over) return;
-    time -= dt; if (time <= 0) { time = 0; over = true; hud(); S.gameOver(score, [['잡은 두더지', String(hits)], ['최대 콤보', String(bestCombo)]], { kick: 'TIME UP', win: true }); return; }
+    var pt = Math.ceil(time); time -= dt; el += dt;
+    if (!feverShown && time <= 10) { feverShown = true; S.banner('FEVER!', '마지막 10초 점수 2배'); A.sfx('level'); }
+    if (pt !== Math.ceil(time) && pt <= 5 && time > 0) A.sfx('tick', 1.3); if (time <= 0) { time = 0; over = true; hud(); S.gameOver(score, [['잡은 두더지', String(hits)], ['최대 콤보', String(bestCombo)]], { kick: 'TIME UP', win: true }); return; }
     spawnT -= dt; if (spawnT <= 0) spawn();
     holes.forEach(function (h) {
       if (!h.kind) return;
@@ -60,10 +66,11 @@
       c.fillStyle = '#2d1b08'; c.fillRect(h.x - 80, h.y + 2, 160, 60);
       { c.fillStyle = 'rgba(255,255,255,.12)'; c.font = '700 13px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String([7, 8, 9, 4, 5, 6, 1, 2, 3][i]), h.x, h.y + 40); }
     });
+    if (holes && fever() && S.state === 'playing') { c.strokeStyle = 'rgba(255,209,102,' + (0.35 + Math.sin(t * 10) * 0.25) + ')'; c.lineWidth = 8; c.strokeRect(4, 4, W - 8, H - 8); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
-  function hud() { var k = score + '|' + Math.ceil(time) + '|' + combo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.ceil(time); document.getElementById('hC').textContent = combo; document.getElementById('hMult').textContent = combo >= 5 ? '×' + Math.min(4, 1 + Math.floor(combo / 5)) : ''; }
+  function hud() { var k = score + '|' + Math.ceil(time) + '|' + combo + '|' + fever(); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.ceil(time); document.getElementById('hC').textContent = combo; var tt = document.getElementById('hB'); tt.style.color = time <= 10 ? '#ff4d6d' : ''; var m = Math.min(4, 1 + Math.floor(combo / 5)) * (fever() ? 2 : 1); document.getElementById('hMult').textContent = m > 1 ? '×' + m : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; var p = S.toLocal(e), best = -1, bd = 1e9;
     holes.forEach(function (h, i) { var d = Math.hypot(p.x - h.x, (p.y - (h.y - 40)) * 0.8); if (d < bd) { bd = d; best = i; } });

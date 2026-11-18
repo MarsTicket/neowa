@@ -68,7 +68,7 @@
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭하면 자동 이동</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>빠를수록 고득점</span>
         </div>
-        
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">무작위 판</button><button type="button" data-diff="1">오늘의 판</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -118,6 +118,11 @@
   var A = Arcade, W = 540, H = 960, CW = 70, CH = 98, GAP = (540 - 7 * 70) / 8, TY = 250, TOPY = 120;
   var SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   var fx = new A.FX();
+  // 판 고르기: 0 무작위 판, 1 오늘의 판(날짜 시드로 누구나 같은 배치). 새 키 neowa_solitaire_diff
+  var diff = +A.get('neowa_solitaire_diff', '0') || 0;
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function seeded(a) { return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var tut = A.get('neowa_solitaire_tut', '') !== '1'; // 첫 판 안내
   var st, score, moves, time, hist, drag = null, winT, auto, flyers = [], hintT = 0, hintMv = null, quitT = 0, hintsUsed = 0;
   // 화면 배치: 세로 540x960 (위 줄: 덱·넘긴 카드·모으기 4칸) / 가로 960x640 (왼쪽: 덱·넘긴 카드·점수, 가운데: 바닥 7줄, 오른쪽: 모으기 4칸)
   var land = false;
@@ -140,7 +145,8 @@
   function red(c) { return c.s === 1 || c.s === 2; }
   function deal() {
     var deck = []; for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) deck.push({ s: s, r: r, up: false });
-    for (var i = deck.length - 1; i > 0; i--) { var j = A.irand(0, i), t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    var rnd = diff === 1 && S ? seeded(today() * 13 + 3) : Math.random;
+    for (var i = deck.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
     st = { stock: [], waste: [], found: [[], [], [], []], tab: [[], [], [], [], [], [], []] };
     for (var c = 0; c < 7; c++) for (var k = 0; k <= c; k++) { var cd = deck.pop(); cd.up = k === c; st.tab[c].push(cd); }
     st.stock = deck;
@@ -151,7 +157,8 @@
   function canFound(c, f) { var top = st.found[f][st.found[f].length - 1]; return top ? top.s === c.s && c.r === top.r + 1 : c.r === 0; }
   function canTab(c, t) { var top = st.tab[t][st.tab[t].length - 1]; return top ? top.up && red(top) !== red(c) && c.r === top.r - 1 : c.r === 12; }
   function flipTops() { st.tab.forEach(function (col) { var t = col[col.length - 1]; if (t && !t.up) { t.up = true; score += 5; } }); }
-  function afterMove() { moves++; hintMv = null; hintT = 0; flipTops(); hud(); checkWin(); }
+  function afterMove() { if (tut) { tut = false; A.set('neowa_solitaire_tut', '1'); }
+    moves++; hintMv = null; hintT = 0; flipTops(); hud(); checkWin(); }
   function checkWin() {
     if (st.found.every(function (f) { return f.length === 13; })) { winT = 1.8; A.sfx('level'); for (var i = 0; i < 8; i++) fx.burst(A.rand(60, W - 60), A.rand(200, 700), A.pick(['#ff7aa8', '#ffd166', '#5ee7ff']), 26, 380, 0.9, 4); return; }
     if (!auto && !st.stock.length && !st.waste.length && st.tab.every(function (col) { return col.every(function (c) { return c.up; }); })) { auto = true; }
@@ -232,7 +239,7 @@
     if (hintT > 0) { hintT -= dt; if (hintT <= 0) hintMv = null; }
     if (quitT > 0) { quitT -= dt; if (quitT <= 0) paintPanel(); }
     fx.update(dt);
-    if (winT > 0) { winT -= dt; if (winT <= 0) { var bonus = Math.max(0, Math.round(1500 - time * 2)); S.gameOver(score + bonus, [['시간', fmt(time)], ['이동', String(moves)], ['시간 보너스', '+' + bonus]], { kick: 'YOU WIN!', win: true }); } return; }
+    if (winT > 0) { winT -= dt; if (winT <= 0) { var bonus = Math.max(0, Math.round(1500 - time * 2)); S.gameOver(score + bonus, [[diff === 1 ? '오늘의 판 · 시간' : '시간', fmt(time)], ['이동', String(moves)], ['시간 보너스', '+' + bonus]], { kick: 'YOU WIN!', win: true }); } return; }
     time += dt;
     if (auto) { autoT -= dt; if (autoT <= 0) { autoT = 0.08; var moved = false; for (var t = 0; t < 7 && !moved; t++) if (st.tab[t].length) { var src = { from: 'tab', i: st.tab[t].length - 1 >= 0 ? t : t, k: st.tab[t].length - 1 }; for (var f = 0; f < 4 && !moved; f++) if (canFound(st.tab[t][st.tab[t].length - 1], f)) { moved = tryMove(src, { to: 'found', i: f }); } } } }
     hud();
@@ -266,6 +273,15 @@
       var rs = hintMv.stock ? srcRect({ from: 'stock' }) : srcRect(hintMv.src);
       c.strokeStyle = 'rgba(255,122,168,' + (0.45 + pa * 0.55) + ')'; A.rr(c, rs[0] - 3, rs[1] - 3, rs[2] + 6, rs[3] + 6, 10); c.stroke();
       if (hintMv.dst) { var rd = dstRect(hintMv.dst); c.strokeStyle = 'rgba(255,209,102,' + (0.45 + pa * 0.55) + ')'; A.rr(c, rd[0] - 3, rd[1] - 3, rd[2] + 6, rd[3] + 6, 10); c.stroke(); }
+    }
+    // 첫 판 안내: 옮길 수 있는 카드를 깜빡여 주고 말풍선
+    if (tut && st && S.state === 'playing' && !drag) {
+      if (!hintMv && moves === 0) { hintMv = findMove(); hintT = hintMv ? 999 : 0; }
+      var tw = land ? 640 : 500, tx = land ? 154 : (W - tw) / 2, ty = land ? H - 108 : 724, touch = document.body.classList.contains('touch');
+      c.globalAlpha = 0.93; c.fillStyle = '#2a0818'; A.rr(c, tx, ty, tw, 92, 18); c.fill(); c.strokeStyle = '#ff7aa8'; c.lineWidth = 2; c.stroke(); c.globalAlpha = 1;
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = '#ff7aa8'; c.font = '800 21px "Pretendard Variable",system-ui'; c.fillText(touch ? '카드를 탭하면 갈 수 있는 곳으로 자동 이동!' : '카드를 클릭하면 갈 수 있는 곳으로 자동 이동!', tx + tw / 2, ty + 32);
+      c.fillStyle = 'rgba(255,214,228,.85)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.fillText('깜빡이는 카드부터 · 끌어 놓아도 되고, 막히면 힌트', tx + tw / 2, ty + 64);
     }
     if (land) {
       // 가로 화면: 왼쪽 아래에 점수·이동·시간 (버튼은 오른쪽 패널)
@@ -334,6 +350,11 @@
   pEl.quit.addEventListener('click', quitPress);
   new MutationObserver(function () { paintPanel(); }).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
   paintPanel();
+  // 판 고르기 버튼
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_solitaire_diff', diff); A.sfx('click'); paintDiff(); }); });
+  paintDiff();
 })();
 
 </script>

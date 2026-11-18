@@ -1,6 +1,10 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, TOP = 110;
+  var A = Arcade, W = 540, H = 960, TOP = 110, land = false;
+  // 가로 화면은 900x600 가로형 사격장(점수판은 패널로). 화면을 돌리면 과녁·조준점을 새 범위 안으로 옮김
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; TOP = land ? 24 : 110;
+    if (tg) tg.forEach(function (t) { t.x = A.clamp(t.x, 60, W - 60); t.y = A.clamp(t.y, TOP + 60, H - 70); });
+    if (typeof cx === 'number') { cx = A.clamp(cx, 10, W - 10); cy = A.clamp(cy, TOP, H - 10); } }
   var fx = new A.FX();
   var holdT = 0, tg, time, score, hits, shots, combo, spawnT, endT, cx = 270, cy = 520, keys = {}, kbd = false, best = 0;
   function reset() { tg = []; keys = {}; best = 0; time = 30; score = 0; hits = 0; shots = 0; combo = 0; spawnT = 0; endT = 0; fx.clear(); hud(); }
@@ -33,6 +37,7 @@
     c.strokeStyle = 'rgba(94,231,255,.06)'; for (var x = 0; x < W; x += 45) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); } for (var y = 0; y < H; y += 45) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
     var list = tg || [{ x: 270, y: 480, r: 52, life: 1, max: 1 }];
     list.forEach(function (t) { var k = t.life / t.max, r = t.r * (0.4 + 0.6 * k); (t.gold ? ['#ffd166', '#fff6d6', '#ffb020', '#fff6d6', '#ff7a00'] : ['#ff4d6d', '#fff', '#ff4d6d', '#fff', '#ffd166']).forEach(function (col, i) { c.fillStyle = col; c.beginPath(); c.arc(t.x, t.y, r * (1 - i * 0.2), 0, 7); c.fill(); }); c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 3; c.beginPath(); c.arc(t.x, t.y, t.r + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); c.stroke(); });
+    if (land && tg) { c.fillStyle = 'rgba(94,231,255,.15)'; c.fillRect(0, 0, W, 6); c.fillStyle = time < 10 ? '#ff4d6d' : '#5ee7ff'; c.fillRect(0, 0, W * Math.max(0, time / 30), 6); } // 가로: 남은 시간 막대
     if (kbd && tg) { c.strokeStyle = '#5ee7ff'; c.lineWidth = 2.5; c.beginPath(); c.arc(cx, cy, 16, 0, 7); c.moveTo(cx - 26, cy); c.lineTo(cx - 8, cy); c.moveTo(cx + 8, cy); c.lineTo(cx + 26, cy); c.moveTo(cx, cy - 26); c.lineTo(cx, cy - 8); c.moveTo(cx, cy + 8); c.lineTo(cx, cy + 26); c.stroke(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
@@ -40,7 +45,19 @@
   function hud() { var k = score + '|' + Math.ceil(time) + '|' + hits + shots; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.ceil(time); document.getElementById('hC').textContent = (shots ? Math.round(hits / shots * 100) : 100) + '%'; document.getElementById('hMult').textContent = combo >= 3 ? combo + ' 연속' : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; e.preventDefault(); kbd = false; shoot(S.toLocal(e)); });
   function kn(e) { return e.key.length === 1 ? e.key.toLowerCase() : e.key; }
-  var S = new A.Shell({ id: 'aim', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'aim', W: W, H: H, land: [900, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = kn(e); keys[k] = true; if (/^Arrow|^[wasd]$/.test(k)) kbd = true; if ((k === ' ' || k === 'Enter') && !e.repeat) { kbd = true; shoot({ x: cx, y: cy }); } },
     keyup: function (e) { keys[kn(e)] = false; } });
+  // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)
+  function landStats(sh, extra) {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !sh.panelSlot) return;
+    hudEl.setAttribute('data-land-hide', '');
+    var ids = ['hA', 'hB', 'hC'];
+    sh.panelSlot.innerHTML = '<div class="g-card gp-stats">' + ids.map(function (id) { return '<div><span id="p' + id + 'L"></span><b id="p' + id + '"></b>' + (id === 'hA' ? '<em id="phM" style="font-style:normal;font-size:12px;font-weight:700;color:#ffd166"></em>' : '') + '</div>'; }).join('') + '</div>' + (extra || '');
+    function sync() { var m = document.getElementById('hMult'); document.getElementById('phM').textContent = m ? m.textContent : '';
+      ids.forEach(function (id) { var v = document.getElementById(id), lb = v && v.parentNode.querySelector('.h-lb');
+        document.getElementById('p' + id).textContent = v ? v.textContent : ''; document.getElementById('p' + id + 'L').textContent = lb ? lb.textContent : ''; }); }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true }); sync();
+  }
+  landStats(S);
 })();

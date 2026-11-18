@@ -1,6 +1,9 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, CW = 78, CH = 110;
+  var A = Arcade, W = 540, H = 960, CW = 78, CH = 110, land = false;
+  // 가로 화면은 900x600: 왼쪽 탁자(가운데 x=310), 오른쪽에 큰 버튼 세로 배치
+  function TX() { return land ? 310 : W / 2; }
+  function MY() { return land ? 470 : 640; }
   var SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   var fx = new A.FX();
   // hands: 내 손패 목록 (분할하면 2개). 각 {c: 카드들, bet: 건 칩, dbl: 더블 여부, split: 분할된 손인지}
@@ -60,7 +63,7 @@
     else if (parts[0] === '승') { msg = (dv > 21 ? '딜러 버스트! +' : '승리! +') + net; msgC = '#4dffd2'; }
     else if (parts[0] === '푸시') { msg = '무승부 (푸시)'; msgC = '#fff'; }
     else { msg = dBJ ? '딜러 블랙잭' : '딜러 승'; msgC = '#ff4d6d'; }
-    if (net > 0) { streak++; A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'coin'); fx.burst(W / 2, 640, '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(W / 2, 600, streak + '연승!', '#ffd166', 24); }
+    if (net > 0) { streak++; A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'coin'); fx.burst(TX(), MY(), '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(TX(), MY() - 40, streak + '연승!', '#ffd166', 24); }
     else if (net < 0) { streak = 0; A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
     hud();
   }
@@ -80,38 +83,53 @@
     c.font = '700 44px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(SUITS[cd.s], x + CW / 2, y + CH * 0.6); c.globalAlpha = 1;
   }
   function hand(c, h, y, label, cx, wid, active) {
-    cx = cx == null ? W / 2 : cx; wid = wid || W - 80;
-    var k = wid < 300 ? 0.8 : 1, room = wid / k, n = h.length, step = Math.min(CW + 8, (room - CW) / Math.max(1, n - 1)), x0 = cx - ((n - 1) * step + CW) / 2;
+    cx = cx == null ? TX() : cx; wid = wid || (land ? 560 : W - 80);
+    var k = (wid < 300 ? 0.8 : 1) * (land ? 1.25 : 1), room = wid / k, n = h.length, step = Math.min(CW + 8, (room - CW) / Math.max(1, n - 1)), x0 = cx - ((n - 1) * step + CW) / 2;
     c.save(); c.translate(cx, y); c.scale(k, k); c.translate(-cx, -y); // 분할하면 카드를 조금 작게
     h.forEach(function (cd, i) { cardDraw(c, cd, x0 + i * step, y); }); c.restore();
-    if (n) { c.fillStyle = active ? '#ffd166' : 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label + ' ' + val(h), cx, y - 22); }
+    if (n) { c.fillStyle = active ? '#ffd166' : 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label + ' ' + val(h), cx, y - (land ? 26 : 22)); }
   }
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    var g = c.createRadialGradient(W / 2, 420, 60, W / 2, 420, 700); g.addColorStop(0, '#0f5a46'); g.addColorStop(1, '#03160f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
-    c.strokeStyle = 'rgba(255,209,102,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(W / 2, -200, 640, 0.4, Math.PI - 0.4); c.stroke();
-    c.fillStyle = 'rgba(255,209,102,.5)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('딜러는 16 이하에서 받고 17 이상에서 멈춥니다 · 블랙잭 1.5배', W / 2, 415);
-    if (dl) hand(c, dl, 170, '딜러');
-    if (hands && hands.length === 1) hand(c, hands[0].c, 470, '나');
-    else if (hands && hands.length === 2) hands.forEach(function (h, i) { var act = phase === 'play' && i === hi; if (act) { c.fillStyle = 'rgba(255,209,102,.12)'; A.rr(c, 20 + i * 255, 432, 245, 150, 14); c.fill(); } hand(c, h.c, 470, (i ? '오른쪽' : '왼쪽') + (h.dbl ? ' ×2' : ''), 142 + i * 255, 230, act); });
-    if (msg) { c.fillStyle = msgC; c.font = '400 34px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, W / 2, 640); }
+    var g = c.createRadialGradient(TX(), land ? 260 : 420, 60, TX(), land ? 260 : 420, 700); g.addColorStop(0, '#0f5a46'); g.addColorStop(1, '#03160f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    c.strokeStyle = 'rgba(255,209,102,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(TX(), land ? -400 : -200, 640, 0.4, Math.PI - 0.4); c.stroke(); if (land) { c.strokeStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.moveTo(632, 20); c.lineTo(632, H - 20); c.stroke(); }
+    c.fillStyle = 'rgba(255,209,102,.5)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('딜러는 16 이하에서 받고 17 이상에서 멈춥니다 · 블랙잭 1.5배', TX(), land ? 222 : 415);
+    var PY = land ? 290 : 470;
+    if (dl) hand(c, dl, land ? 62 : 170, '딜러');
+    if (hands && hands.length === 1) hand(c, hands[0].c, PY, '나');
+    else if (hands && hands.length === 2) hands.forEach(function (h, i) { var act = phase === 'play' && i === hi; if (act) { c.fillStyle = 'rgba(255,209,102,.12)'; A.rr(c, (land ? 20 + i * 300 : 20 + i * 255), PY - 38, land ? 280 : 245, 150, 14); c.fill(); } hand(c, h.c, PY, (i ? '오른쪽' : '왼쪽') + (h.dbl ? ' ×2' : ''), land ? 160 + i * 300 : 142 + i * 255, land ? 260 : 230, act); });
+    if (msg) { c.fillStyle = msgC; c.font = '400 34px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, TX(), MY()); }
     btns = [];
     if (S.state === 'playing') {
       if (phase === 'bet') {
-        c.fillStyle = '#fff'; c.font = '700 22px "Chakra Petch",system-ui'; c.fillText('베팅 ' + A.fmt(Math.min(bet, chips)), W / 2, 720);
-        btns.push(['−', 60, 760, 90, 'minus'], ['+', 390, 760, 90, 'plus'], ['딜 (Space)', 170, 760, 200, 'deal'], ['절반', 60, 838, 90, 'half'], ['올인', 390, 838, 90, 'all']);
-      } else if (phase === 'play') btns.push(['히트 H', 24, 760, 112, 'hit'], ['스탠드 S', 152, 760, 112, 'stand'], ['더블 D', 280, 760, 112, 'dbl'], ['분할 X', 408, 760, 112, 'split']);
-      btns.forEach(function (b) { var on = !(b[4] === 'dbl' && !canDbl()) && !(b[4] === 'split' && !canSplit()); c.fillStyle = b[4] === 'deal' ? '#4dffd2' : on ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; A.rr(c, b[1], b[2], b[3], 66, 16); c.fill(); c.fillStyle = b[4] === 'deal' ? '#00241b' : on ? '#fff' : 'rgba(255,255,255,.3)'; c.font = '700 20px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + b[3] / 2, b[2] + 34); });
+        c.fillStyle = '#fff'; c.font = '700 22px "Chakra Petch",system-ui'; c.fillText('베팅 ' + A.fmt(Math.min(bet, chips)), land ? 766 : W / 2, land ? 52 : 720);
+        if (land) btns.push(['−', 650, 90, 110, 'minus', 90], ['+', 772, 90, 110, 'plus', 90], ['딜 (Space)', 650, 200, 232, 'deal', 120], ['절반', 650, 340, 110, 'half', 80], ['올인', 772, 340, 110, 'all', 80]);
+        else btns.push(['−', 60, 760, 90, 'minus'], ['+', 390, 760, 90, 'plus'], ['딜 (Space)', 170, 760, 200, 'deal'], ['절반', 60, 838, 90, 'half'], ['올인', 390, 838, 90, 'all']);
+      } else if (phase === 'play') { if (land) btns.push(['히트 H', 650, 30, 232, 'hit', 120], ['스탠드 S', 650, 165, 232, 'stand', 120], ['더블 D', 650, 300, 232, 'dbl', 120], ['분할 X', 650, 435, 232, 'split', 120]); // 가로: 판 오른쪽에 큰 버튼 세로로
+        else btns.push(['히트 H', 24, 760, 112, 'hit'], ['스탠드 S', 152, 760, 112, 'stand'], ['더블 D', 280, 760, 112, 'dbl'], ['분할 X', 408, 760, 112, 'split']); }
+      btns.forEach(function (b) { var on = !(b[4] === 'dbl' && !canDbl()) && !(b[4] === 'split' && !canSplit()); c.fillStyle = b[4] === 'deal' ? '#4dffd2' : on ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; A.rr(c, b[1], b[2], b[3], b[5] || 66, 16); c.fill(); c.fillStyle = b[4] === 'deal' ? '#00241b' : on ? '#fff' : 'rgba(255,255,255,.3)'; c.font = '700 ' + (land ? 24 : 20) + 'px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + b[3] / 2, b[2] + (b[5] || 66) / 2 + 1); });
     }
-    c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 12px "Pretendard Variable",system-ui'; c.fillText('가상 칩만 사용합니다. 실제 돈은 쓰이지 않습니다.', W / 2, 935);
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 12px "Pretendard Variable",system-ui'; c.fillText('가상 칩만 사용합니다. 실제 돈은 쓰이지 않습니다.', TX(), land ? 585 : 935);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { var b = hands && hands.length ? hands.reduce(function (a, h) { return a + h.bet; }, 0) : bet; document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(b); }
   function step(b) { return b < 100 ? 10 : b < 500 ? 50 : b < 2000 ? 100 : 500; }
   function act(a) { if (phase === 'bet') { if (a === 'minus') bet = Math.max(Math.min(10, chips), bet - step(bet - 1)); if (a === 'plus') bet = Math.min(chips, bet + step(bet)); if (a === 'half') bet = Math.max(Math.min(10, chips), Math.floor(chips / 2)); if (a === 'all') bet = chips; if (a !== 'deal') { A.sfx('tick'); hud(); } }
     if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); if (a === 'split') split(); }
-  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); btns.forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + 66) act(b[4]); }); });
-  var S = new A.Shell({ id: 'blackjack', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); btns.forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + (b[5] || 66)) act(b[4]); }); });
+  var S = new A.Shell({ id: 'blackjack', W: W, H: H, land: [900, 600], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key.toLowerCase(); if (e.repeat) return; if (k === 'h') hit(); if (k === 's') stand(); if (k === 'd') dbl(); if (k === 'x') split(); if (k === ' ' || k === 'enter') deal(); if (k === 'arrowleft') act('minus'); if (k === 'arrowright') act('plus'); } });
+  // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)
+  function landStats(sh, extra) {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !sh.panelSlot) return;
+    hudEl.setAttribute('data-land-hide', '');
+    var ids = ['hA', 'hB', 'hC'];
+    sh.panelSlot.innerHTML = '<div class="g-card gp-stats">' + ids.map(function (id) { return '<div><span id="p' + id + 'L"></span><b id="p' + id + '"></b>' + (id === 'hA' ? '<em id="phM" style="font-style:normal;font-size:12px;font-weight:700;color:#ffd166"></em>' : '') + '</div>'; }).join('') + '</div>' + (extra || '');
+    function sync() { var m = document.getElementById('hMult'); document.getElementById('phM').textContent = m ? m.textContent : '';
+      ids.forEach(function (id) { var v = document.getElementById(id), lb = v && v.parentNode.querySelector('.h-lb');
+        document.getElementById('p' + id).textContent = v ? v.textContent : ''; document.getElementById('p' + id + 'L').textContent = lb ? lb.textContent : ''; }); }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true }); sync();
+  }
+  landStats(S);
 })();

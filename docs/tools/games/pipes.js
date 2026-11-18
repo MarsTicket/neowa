@@ -6,18 +6,41 @@
   // 연결 비트: 1=위 2=오른쪽 4=아래 8=왼쪽
   var DX = { 1: [0, -1], 2: [1, 0], 4: [0, 1], 8: [-1, 0] }, OPP = { 1: 4, 2: 8, 4: 1, 8: 2 };
   function rotm(m) { return ((m << 1) | (m >> 3)) & 15; }
+  // 오늘의 퍼즐: 로컬 날짜(YYYYMMDD)로 시드를 고정 → 오늘은 누구나 같은 판
+  function ymd() { var d = new Date(); return '' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2); }
+  function seeded(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  // 첫 플레이 안내: 처음 한 판에만 판 위에 손가락 안내를 띄우고, 첫 올바른 행동을 하면 사라짐 (neowa_pipes_tut = 1)
+  var tut = A.get('neowa_pipes_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_pipes_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function drawTut(c, x, y, msg, up) {
+    if (!tut || S.state !== 'playing') return;
+    var t = S.time, by = up ? y - 70 : y + 70;
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.strokeStyle = 'rgba(255,255,255,' + (0.5 + 0.4 * Math.sin(t * 6)) + ')'; c.lineWidth = 4; c.beginPath(); c.arc(x, y, 26 + 6 * Math.sin(t * 6), 0, 7); c.stroke();
+    c.font = '700 18px "Pretendard Variable",system-ui'; var w = Math.min(W - 24, c.measureText(msg).width + 32), bx = A.clamp(x, w / 2 + 12, W - w / 2 - 12);
+    c.fillStyle = 'rgba(0,0,0,.78)'; A.rr(c, bx - w / 2, by - 22, w, 44, 14); c.fill(); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5; c.stroke();
+    c.fillStyle = '#fff'; c.fillText(msg, bx, by + 1);
+    c.fillStyle = 'rgba(255,255,255,.9)'; c.beginPath(); var ay = up ? y - 44 + 4 * Math.sin(t * 6) : y + 44 - 4 * Math.sin(t * 6), d = up ? -1 : 1; c.moveTo(x, ay - d * 10); c.lineTo(x - 9, ay + d * 2); c.lineTo(x + 9, ay + d * 2); c.closePath(); c.fill();
+    c.restore();
+  }
+  // 난이도 버튼: 0 = 일반, 1 = 오늘의 퍼즐 (단계마다 날짜 시드로 같은 판)
+  var diff = +A.get('neowa_pipes_diff', '0') || 0;
+  function daily() { return diff === 1; }
   function setup() {
     N = Math.min(9, 3 + stage); layout();
+    var rnd = daily() ? seeded(+ymd() * 37 + stage * 1013 + (setup.re || 0)) : Math.random;
+    function ri(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
     cell = []; for (var i = 0; i < N * N; i++) cell.push(0);
     var c0 = Math.floor(N / 2) * N + Math.floor(N / 2), seen = {}, st = [c0]; seen[c0] = 1;
     while (st.length) {
-      var cur0 = st[Math.random() < 0.6 ? st.length - 1 : A.irand(0, st.length - 1)], x = cur0 % N, y = Math.floor(cur0 / N), opts = [];
+      var cur0 = st[rnd() < 0.6 ? st.length - 1 : ri(0, st.length - 1)], x = cur0 % N, y = Math.floor(cur0 / N), opts = [];
       [1, 2, 4, 8].forEach(function (d) { var nx = x + DX[d][0], ny = y + DX[d][1], ni = ny * N + nx; if (nx >= 0 && ny >= 0 && nx < N && ny < N && !seen[ni]) opts.push([d, ni]); });
       if (!opts.length) { st.splice(st.indexOf(cur0), 1); continue; }
-      var o = A.pick(opts); cell[cur0] |= o[0]; cell[o[1]] |= OPP[o[0]]; seen[o[1]] = 1; st.push(o[1]);
+      var o = opts[ri(0, opts.length - 1)]; cell[cur0] |= o[0]; cell[o[1]] |= OPP[o[0]]; seen[o[1]] = 1; st.push(o[1]);
     }
-    rot = cell.map(function (m) { var r = A.irand(0, 3); for (var k = 0; k < r; k++) m = rotm(m); return m; });
-    if (solved()) return setup();
+    rot = cell.map(function (m) { var r = ri(0, 3); for (var k = 0; k < r; k++) m = rotm(m); return m; });
+    if (solved()) { setup.re = (setup.re || 0) + 1; return setup(); } setup.re = 0;
     done = 0; cur = c0; flow();
   }
 // 세로: 540×960 / 가로 화면: 720×720 정사각형 판 (점수판은 오른쪽 패널)
@@ -32,7 +55,7 @@
   // 남은 시간제: 120초로 시작, 단계를 풀 때마다 판 크기만큼 시간 추가
   function reset() { stage = 1; score = 0; time = 120; setup(); fx.clear(); hud(); }
   function turn(i) {
-    if (S.state !== 'playing' || done) return; rot[i] = rotm(rot[i]); A.sfx('tick', 1.2);
+    if (S.state !== 'playing' || done) return; rot[i] = rotm(rot[i]); tutDone(); A.sfx('tick', 1.2);
     if (solved()) { var pts = Math.max(50, Math.round(N * N * 15 - stageT * 4)), add = Math.round(15 + N * N * 0.4); score += pts; time += add; done = 1.2; A.sfx('level'); fx.text(W / 2, land ? H / 2 - 20 : GY - 40, '연결 완료! +' + pts, '#5effc8', 26); fx.text(W / 2, land ? H / 2 + 14 : GY - 8, '+' + add + '초', '#ffd166', 20); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(H * 0.25, H * 0.75), '#5effc8', 20, 300, 0.7, 4); }
     hud();
   }
@@ -62,6 +85,7 @@
     // 물이 새는 끝(막힌 곳) 표시: 어디로 돌려야 할지 힌트
     if (S.state === 'playing' && !done) { c.fillStyle = '#ff4d6d'; for (var wi in wet) { var wx = wi % N, wy = Math.floor(wi / N); [1, 2, 4, 8].forEach(function (d) { if (!(rot[wi] & d)) return; var nx = wx + DX[d][0], ny = wy + DX[d][1]; if (nx >= 0 && ny >= 0 && nx < N && ny < N && (rot[ny * N + nx] & OPP[d])) return; c.beginPath(); c.arc(GX + wx * CS + CS / 2 + DX[d][0] * CS * 0.42, GY + wy * CS + CS / 2 + DX[d][1] * CS * 0.42, Math.max(3, CS * 0.07) * (1 + 0.25 * Math.sin(t * 8)), 0, 7); c.fill(); }); } }
     if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 3; A.rr(c, GX + (cur % N) * CS + 2, GY + Math.floor(cur / N) * CS + 2, CS - 4, CS - 4, 12); c.stroke(); }
+    if (tut && rot && !done) { var ti = -1; for (var q = 0; q < N * N; q++) if (rot[q] !== cell[q] && !wet[q]) { ti = q; break; } if (ti >= 0) { var tx = GX + (ti % N + 0.5) * CS, ty = GY + (Math.floor(ti / N) + 0.5) * CS; drawTut(c, tx, ty, isTouch() ? '탭하면 파이프가 90도 돌아가요' : '클릭(또는 방향키+Space)으로 90도 회전', ty > H / 2); } }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
@@ -80,8 +104,13 @@
     new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style'] });
     sync();
   }
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_pipes_diff', diff); A.sfx('click'); paint(); }); }); paint();
   var S = new A.Shell({ id: 'pipes', W: W, H: H, land: [720, 720], onResize: geo, reset: function () { stageT = 0; reset(); }, render: render, idle: function (dt) { fx.update(dt); },
-    update: function (dt) { update(dt); if (time <= 0 && done <= 0) { time = 0; hud(); S.gameOver(score, [['단계', String(stage)], ['마지막 판', N + '×' + N]], { kick: 'TIME UP', win: true }); } },
+    update: function (dt) { update(dt); if (time <= 0 && done <= 0) { time = 0; hud(); var bk = 'neowa_pipes_stage', bs = A.getInt(bk), meta = [['푼 판', (stage - 1) + (stage - 1 > bs ? ' (최고!)' : ' / 최고 ' + bs)], ['마지막 판', N + '×' + N]]; if (stage - 1 > bs) A.set(bk, stage - 1);
+      if (daily()) { var dk = 'neowa_pipes_daily_' + ymd(), db = A.getInt(dk); if (score > db) A.set(dk, score); meta.push(['오늘 최고', A.fmt(Math.max(score, db))]); }
+      S.gameOver(score, meta, { kick: daily() ? '오늘의 퍼즐 · TIME UP' : 'TIME UP', win: true }); } },
     keydown: function (e) { kbd = true; var k = e.key, x = cur % N, y = Math.floor(cur / N);
       if (k === 'ArrowLeft' || k === 'a') x = Math.max(0, x - 1); if (k === 'ArrowRight' || k === 'd') x = Math.min(N - 1, x + 1); if (k === 'ArrowUp' || k === 'w') y = Math.max(0, y - 1); if (k === 'ArrowDown' || k === 's') y = Math.min(N - 1, y + 1);
       cur = y * N + x; if ((k === ' ' || k === 'Enter') && !e.repeat) turn(cur); } });

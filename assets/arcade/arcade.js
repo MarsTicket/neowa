@@ -14,7 +14,7 @@
      불러오기 전(또는 실패했을 때)에도 게임이 멈추지 않도록 빈 함수를 먼저 둡니다. */
   var muted = A.get('neowa_mute', '0') === '1';
   A.sfx = function () {};
-  A.music = { play: function () {}, stop: function () {}, paused: function () {}, intensity: function () {}, tempo: function () {}, style: function () {}, isOn: function () { return false; } };
+  A.music = { play: function () {}, stop: function () {}, paused: function () {}, intensity: function () {}, tempo: function () {}, style: function () {}, mood: function () {}, isOn: function () { return false; } };
   A.isMuted = function () { return muted; };
   A.setMuted = function (m) { muted = !!m; A.set('neowa_mute', muted ? '1' : '0'); document.body.classList.toggle('muted', muted); };
   A.unlockAudio = function () {};

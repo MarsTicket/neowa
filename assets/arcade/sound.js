@@ -188,6 +188,7 @@
     lastPlay[name] = now;
     if (!unlocked || !audio()) return;
     if (voices > MAXV && !TUNED[name]) return; // 소리가 너무 많이 겹치면 작은 소리는 생략
+    if ((name === 'over' || name === 'record' || name === 'win') && !pitch && jingle(name)) { duck(0.3, 1.2); if (name === 'win') M.levelUp(); return; }
     var p = (pitch || 1) * (TUNED[name] ? 1 : 1 + (Math.random() - 0.5) * 0.04);
     try { for (var i = 0; i < list.length; i++) tone(list[i], p, pan); } catch (e) {}
     if (DUCK[name]) duck(DUCK[name][0], DUCK[name][1]);
@@ -230,7 +231,8 @@
     maze: 'space', jumper: 'chip', artillery: 'sport', pinball: 'synth', slide: 'puzzle', lights: 'puzzle', gems: 'puzzle', memory: 'puzzle',
     sequence: 'zen', pipes: 'puzzle', nonogram: 'zen', bubbles: 'chip', flood: 'puzzle', pairs: 'puzzle', dots: 'zen', gomoku: 'zen',
     reversi: 'zen', solitaire: 'casino', blackjack: 'casino', baseball: 'casino', reaction: 'brain', math: 'brain', stroop: 'brain',
-    aim: 'brain', oddcolor: 'brain', schulte: 'brain', baduk: 'zen', fall: 'chip', _template: 'chip'
+    aim: 'brain', oddcolor: 'brain', schulte: 'brain', baduk: 'zen', fall: 'chip', _template: 'chip',
+    bridge: 'puzzle', knight: 'zen', four: 'brain', merge: 'chip', paint: 'puzzle'
   };
   // 집중이 필요한 게임은 음악을 조금 작게
   var SOFT = { reaction: 0.6, sequence: 0.6, baduk: 0.8, stroop: 0.8, math: 0.85 };
@@ -239,8 +241,11 @@
     var st = STY[styleName] || STY.chip, R = rng(hash('neowa:' + id));
     var s = { id: id, st: st, scale: SC[st.scale], root: st.roots[Math.floor(R() * st.roots.length)], bpm: st.bpm + Math.round((R() - 0.5) * 10) };
     var progs = st.prog.slice().sort(function () { return R() - 0.5; });
-    s.progA = progs[0]; s.progB = progs[1];
-    s.leadW = st.lead[Math.floor(R() * st.lead.length)];
+    s.progA = progs[0]; s.progB = progs[1]; s.progC = progs[2] || [progs[0][2], progs[0][3], progs[1][0], progs[1][1]];
+    var li = Math.floor(R() * st.lead.length);
+    s.leadW = st.lead[li]; s.lead2W = st.lead[(li + 1) % st.lead.length]; // C부분은 다른 악기로
+    s.form = ['ABAC', 'AABC', 'ABCB', 'ABAB'][Math.floor(R() * 4)]; // 8마디 단위 곡 구성
+    s.counter = R() < 0.5; // 신나는 구간에서 3도 아래 화음(아니면 옥타브 겹침)
     function motif(seedOff) {
       var r = rng(hash(id + ':m' + seedOff)), out = [], prev = [2, 4, 0, 7][Math.floor(r() * 4)], chordT = st.penta ? [0, 2, 4, 7, 9] : [0, 2, 4, 7];
       for (var i = 0; i < 32; i++) {
@@ -257,7 +262,7 @@
       for (var k = 0; k < out.length; k++) { var nx = k + 1 < out.length ? out[k + 1].s : 32; out[k].l = Math.max(1, Math.min(st.dens < 0.5 ? 6 : 3, nx - out[k].s)); }
       return out;
     }
-    s.m = [motif(1), motif(2), motif(3), motif(4)];
+    s.m = [motif(1), motif(2), motif(3), motif(4), motif(5), motif(6)];
     // 마무리 변형: 마지막 음을 으뜸음으로
     s.mEnd = s.m[0].map(function (n) { return { s: n.s, o: n.o, l: n.l }; });
     var last = s.mEnd[s.mEnd.length - 1]; if (last) { last.o = 0; last.l = Math.max(last.l, 4); }
@@ -265,8 +270,9 @@
   }
   function deg(s, d) { var L = s.scale.length, o = Math.floor(d / L); return 12 * o + s.scale[((d % L) + L) % L]; }
 
-  var M = { on: false, song: null, step: 0, next: 0, timer: 0, bar: 0, tempo: 1, inten: -1, autoI: true, lvl: 0, vol: 1 };
-  function stepDur() { return 60 / (M.song.bpm * M.tempo) / 4; }
+  var M = { on: false, song: null, boss: null, mood: null, want: null, step: 0, next: 0, timer: 0, bar: 0, tempo: 1, inten: -1, autoI: true, lvl: 0, vol: 1 };
+  function cur() { return M.mood === 'boss' && M.boss ? M.boss : M.song; }
+  function stepDur() { return 60 / (cur().bpm * M.tempo * (M.mood === 'danger' ? 1.08 : 1)) / 4; }
 
   /* 악기 */
   function vEnv(t, a, v, len, rel) {
@@ -275,10 +281,11 @@
     g.gain.setTargetAtTime(0.0001, t + Math.max(a, len), rel / 3);
     return g;
   }
+  var toBus = null; // 징글은 효과음 통로로
   function out(node, rev, dl) {
-    node.connect(musBus);
+    node.connect(toBus || musBus);
     if (rev) { var g = ac.createGain(); g.gain.value = rev; node.connect(g); g.connect(revIn); }
-    if (dl) { var g2 = ac.createGain(); g2.gain.value = dl; node.connect(g2); g2.connect(dlyIn); }
+    if (dl && !toBus) { var g2 = ac.createGain(); g2.gain.value = dl; node.connect(g2); g2.connect(dlyIn); }
   }
   function inst(kind, t, m, len, v, extra) {
     if (voices > MAXV + 10) return;
@@ -317,7 +324,7 @@
   }
   function drum(kind, t, v) {
     if (voices > MAXV + 10) return;
-    var g, s, f, o, chip = M.song.st.chipdrum, brush = M.song.st.brush;
+    var g, s, f, o, cs = cur().st, chip = cs.chipdrum, brush = cs.brush && M.mood !== 'boss';
     if (kind === 'k') {
       o = ac.createOscillator(); o.type = chip ? 'triangle' : 'sine';
       o.frequency.setValueAtTime(chip ? 220 : 165, t); o.frequency.exponentialRampToValueAtTime(chip ? 55 : 42, t + (chip ? 0.08 : 0.12));
@@ -330,7 +337,7 @@
       else { f.type = 'highpass'; f.frequency.value = 1100; g = vEnv(t, 0.002, 0.38 * v, 0.01, 0.16); }
       s.connect(f); f.connect(g); out(g, 0.2, 0); s.stop(t + 0.4);
       if (!brush) { o = ac.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(140, t + 0.08); var tg = vEnv(t, 0.002, 0.25 * v, 0.01, 0.07); o.connect(tg); out(tg, 0.1, 0); o.start(t); o.stop(t + 0.2); track(o); }
-      if (M.song.st.clap) { var s2 = noiseSrc(t + 0.012), f2 = ac.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 1500; f2.Q.value = 1.2; var g2 = vEnv(t + 0.012, 0.002, 0.25 * v, 0.01, 0.12); s2.connect(f2); f2.connect(g2); out(g2, 0.25, 0); s2.stop(t + 0.3); }
+      if (cs.clap) { var s2 = noiseSrc(t + 0.012), f2 = ac.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 1500; f2.Q.value = 1.2; var g2 = vEnv(t + 0.012, 0.002, 0.25 * v, 0.01, 0.12); s2.connect(f2); f2.connect(g2); out(g2, 0.25, 0); s2.stop(t + 0.3); }
     } else { // 하이햇 h, 열린 햇 H
       s = noiseSrc(t); f = ac.createBiquadFilter(); f.type = brush ? 'bandpass' : 'highpass'; f.frequency.value = brush ? 7500 : chip ? 9000 : 7200;
       g = vEnv(t, 0.001, (brush ? 0.07 : 0.1) * v, 0.005, kind === 'H' ? 0.2 : brush ? 0.06 : 0.035);
@@ -339,16 +346,23 @@
   }
 
   function playStep(i, t) {
-    var s = M.song, st = s.st, k = i % 16, bar = Math.floor(i / 16), sec = Math.floor(bar / 8) % 2, pb = bar % 8;
-    var prog = sec ? s.progB : s.progA, cd = prog[pb % 4];
+    if (i % 16 === 0 && M.want !== M.mood) M.mood = M.want; // 분위기 전환은 마디 첫 박에서
+    var s = cur(), st = s.st, k = i % 16, bar = Math.floor(i / 16), pb = bar % 8, secI = Math.floor(bar / 8);
+    var secL = s.form[secI % s.form.length], round = Math.floor(secI / s.form.length);
+    var prog = secL === 'C' ? s.progC : secL === 'B' ? s.progB : s.progA, cd = prog[pb % 4];
     var I = M.autoI ? (bar < 2 ? 0 : bar < 18 ? 1 : (bar % 32 >= 28 ? 0 : 2)) : M.inten;
     if (M.autoI && bar >= 2) I = Math.min(2, I + Math.min(1, M.lvl)); // 레벨이 오르면 바로 풍성하게
+    if (M.mood) I = 2;
+    var danger = M.mood === 'danger';
+    if (danger && k % 2 === 0) inst('saw', t, s.root - 12 + deg(s, cd) - (deg(s, cd) >= 7 ? 12 : 0), stepDur() * 0.6, 0.07, { cut: 380, q: 6, rel: 0.03, rev: 0 }); // 위기: 쿵쿵 맥박
+    if (danger && k % 2 === 1) drum('h', t, 0.6);
     var sw = (st.swing && k % 2 === 1) ? stepDur() * st.swing : 0, tt = t + sw;
     var R = Math.random;
     var calm = !st.kick;
     // 드럼
     var fill = pb === 7 && k >= 12 && I >= 1 && !calm;
     if (st.kick && st.kick[k] !== '.' && st.kick[k]) drum('k', tt, st.kick[k] === 'x' ? 1 : 0.6);
+    else if (!calm && I >= 1 && bar % 4 === 3 && k === 14) drum('k', tt, 0.55); // 드럼 변주
     if (I >= 1 && st.snare && st.snare[k] !== '.' && st.snare[k]) drum('s', tt, st.snare[k] === 'x' ? 1 : 0.55);
     if (fill && k % (I >= 2 ? 1 : 2) === 0) drum('s', tt, 0.45 + (k - 12) * 0.12);
     var hp = I >= 2 ? st.hat2 : st.hat;
@@ -382,18 +396,44 @@
     }
     // 멜로디
     if (I >= 1) {
-      var plan = sec ? [s.m[2], s.m[2], s.m[3], s.mEnd] : [s.m[0], s.m[0], s.m[1], s.mEnd];
+      var plan = secL === 'C' ? [s.m[4], s.m[5], s.m[4], s.mEnd] : secL === 'B' ? [s.m[2], s.m[2], s.m[3], s.mEnd] : [s.m[0], s.m[0], s.m[1], s.mEnd];
       var mot = plan[Math.floor(pb / 2)], pos = (pb % 2) * 16 + k;
       for (var q = 0; q < mot.length; q++) if (mot[q].s === pos) {
         var nn = mot[q], lm = s.root + st.oct + deg(s, cd + nn.o);
         if (st.penta) { var pc = ((lm - s.root) % 12 + 12) % 12; if (pc === 5 || pc === 11) lm -= 1; }
         while (lm > s.root + st.oct + 16) lm -= 12;
-        var lk = s.leadW, len = nn.l * stepDur();
+        if (secL === 'A' && round % 2 === 1 && I >= 2 && lm + 12 <= s.root + st.oct + 19) lm += 12; // 두 번째 돌 때는 한 옥타브 위
+        var lk = secL === 'C' ? s.lead2W : s.leadW, len = nn.l * stepDur();
         var lv = lk === 'ep' || lk === 'bell' ? 0.1 : lk === 'tri' ? 0.12 : lk === 'saw' ? 0.05 : 0.06;
         inst(lk, tt, lm, len * 0.92, lv, { vib: len > 0.3, cut: lk === 'saw' ? 2600 : 0, q: 1, rel: 0.1, rev: 0.22, dl: 0.25 });
-        if (I >= 2 && !calm && lk !== 'bell') inst(lk === 'ep' ? 'ep' : 'tri', tt, lm + 12, len * 0.9, lv * 0.35, { rel: 0.08, rev: 0.25, pan: 0.3 });
+        if (I >= 2 && !calm && lk !== 'bell') {
+          if (s.counter) { var hm = s.root + st.oct + deg(s, cd + nn.o - 2); while (hm > lm) hm -= 12; inst(lk === 'ep' ? 'ep' : 'tri', tt, hm, len * 0.9, lv * 0.45, { rel: 0.08, rev: 0.25, pan: -0.3 }); }
+          else inst(lk === 'ep' ? 'ep' : 'tri', tt, lm + 12, len * 0.9, lv * 0.35, { rel: 0.08, rev: 0.25, pan: 0.3 });
+        }
       }
     }
+  }
+  /* 곡 조성에 맞춘 짧은 징글: 승리·패배·신기록 */
+  function jingle(kind) {
+    var s = M.song; if (!s || !ac) return false;
+    var t0 = ac.currentTime + 0.04, st = s.st, chip = st.chipdrum, w = chip ? 'p2' : (s.leadW === 'saw' ? 'tri' : s.leadW), dt = kind === 'over' ? 0.17 : 0.085;
+    var top = s.root + 24, notes, chord, v = w === 'ep' || w === 'bell' ? 0.13 : w === 'tri' ? 0.16 : 0.07;
+    if (kind === 'over') { notes = [4, 3, 2, 0]; chord = [-7, -3, 0]; }
+    else if (kind === 'record') { notes = [0, 2, 4, 7, 9, 11, 14]; chord = [0, 2, 4, 7]; }
+    else { notes = [0, 2, 4, 7]; chord = [0, 2, 4, 7]; }
+    toBus = sfxBus;
+    try {
+      notes.forEach(function (n, j) {
+        var last = j === notes.length - 1, m = top + deg(s, n); if (kind === 'over') m -= 12;
+        inst(w, t0 + j * dt, m, last ? (kind === 'over' ? 0.7 : 0.5) : dt * 0.9, v, { vib: last, rel: last ? 0.4 : 0.06, rev: 0.3 });
+      });
+      var tc = t0 + notes.length * dt;
+      chord.forEach(function (n) { inst(kind === 'over' ? 'tri' : 'ep', tc - (kind === 'over' ? dt : 0), s.root + 12 + deg(s, n), kind === 'over' ? 0.9 : 0.8, kind === 'over' ? 0.09 : 0.08, { rel: 0.5, rev: 0.4 }); });
+      if (kind !== 'over') { inst('bell', tc, top + 12 + deg(s, kind === 'record' ? 7 : 0), 1.2, 0.05, { rev: 0.5 }); drum('k', tc, 0.8); }
+      else inst('sine', tc, s.root - 12, 0.9, 0.2, { rel: 0.5, rev: 0.1 });
+    } catch (e) {}
+    toBus = null;
+    return true;
   }
   function sched() {
     if (!M.on || !ac || ac.state !== 'running') return;
@@ -418,7 +458,8 @@
       var sn = style || curStyle || GAME[id] || ['synth', 'chip', 'puzzle', 'sport'][hash(id) % 4];
       if (!M.song || M.song.id !== id || M.styleName !== sn) { M.song = makeSong(id, sn); M.styleName = sn; }
       curId = id; M.vol = SOFT[id] || 1;
-      M.step = 0; M.tempo = 1; M.lvl = 0; M.autoI = true; M.next = ac.currentTime + 0.08;
+      M.step = 0; M.tempo = 1; M.lvl = 0; M.autoI = true; M.mood = M.want = null; M.next = ac.currentTime + 0.08;
+      M.boss = makeSong(id + ':boss', sn === 'drive' ? 'synth' : 'drive'); M.boss.root = M.song.root; M.boss.bpm = Math.max(M.song.bpm, 140);
       musDuck.gain.cancelScheduledValues(ac.currentTime); musDuck.gain.setValueAtTime(1, ac.currentTime);
       this.paused(false);
       musBus.gain.cancelScheduledValues(ac.currentTime); musBus.gain.setValueAtTime(0.0001, ac.currentTime);
@@ -443,6 +484,8 @@
     intensity: function (n) { if (n == null) M.autoI = true; else { M.autoI = false; M.inten = Math.max(0, Math.min(2, n | 0)); } },
     // 위기 상황 등에서 빠르기 바꾸기 (1 = 원래, 1.15 = 15% 빠르게)
     tempo: function (x) { M.tempo = Math.max(0.6, Math.min(1.5, x || 1)); },
+    // 분위기 바꾸기: 'danger'(위기: 맥박 베이스·빠르게) · 'boss'(보스: 거센 전투곡) · null(원래 곡). 다음 마디부터 바뀝니다.
+    mood: function (m) { M.want = m === 'danger' || m === 'boss' ? m : null; },
     levelUp: function () { M.lvl++; M.tempo = Math.min(1.1, M.tempo + 0.015); },
     style: function (sn) { curStyle = sn; if (M.on) this.play(curId, sn); },
     isOn: function () { return M.on; }

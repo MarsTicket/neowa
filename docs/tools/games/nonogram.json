@@ -14,11 +14,15 @@
  "keys": [
   [
    "k-only",
-   "<kbd>↑↓←→</kbd> 이동 <kbd>Space</kbd> 칠하기 <kbd>X</kbd> 빈칸"
+   "<kbd>↑↓←→</kbd> 이동 <kbd>Space</kbd> 칠하기 <kbd>X</kbd> 빈칸 <kbd>H</kbd> 힌트"
   ],
   [
    "",
-   "<kbd>탭</kbd> 칠하기 · 끌어서 여러 칸"
+   "<kbd>탭</kbd> 칠하기 · 끌어서 한 줄 여러 칸"
+  ],
+  [
+   "",
+   "<kbd>힌트</kbd> 3번 · 확실한 칸을 대신 채움 (감점)"
   ]
  ],
  "rules": [

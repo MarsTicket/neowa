@@ -32,7 +32,7 @@
 
   var grid, cur, bag, queue, holdT, canHold, score, lines, level, combo, maxCombo, b2b, quads;
   var fallT, lockT, lockResets, clearRows, clearT, dyingT, dieRow, pops, lastHud;
-  var heldDir = 0, dasT = 0, arrT = 0, keySoft = false, btnSoft = false;
+  var heldDir = 0, dasT = 0, arrT = 0, keySoft = false, btnSoft = false, keyL = false, keyR = false;
   var ptrs = {}, btnDown = {};
 
   function emptyRow() { var r = []; for (var x = 0; x < COLS; x++) r.push(0); return r; }
@@ -56,7 +56,7 @@
 
   function spawn(t) {
     var n = TYPES[t].n;
-    cur = { t: t, r: 0, x: Math.floor((COLS - n) / 2), y: 1 };
+    cur = { t: t, r: 0, x: Math.floor((COLS - n) / 2), y: 1, low: 1 };
     if (!fits(cur.t, cur.r, cur.x, cur.y)) {
       cur.y = 0;
       if (!fits(cur.t, cur.r, cur.x, cur.y)) { die(); return; }
@@ -79,7 +79,9 @@
       var k = KICKS[i], dx = k[0], dy = k[1];
       if (cur.t === 0 && Math.abs(dx) === 1 && i >= 4) dx *= 2; // 긴 막대는 2칸까지
       if (fits(cur.t, nr, cur.x + dx, cur.y + dy)) {
-        cur.r = nr; cur.x += dx; cur.y += dy; A.sfx('turn', 1.2); afterMove(); return;
+        cur.r = nr; cur.x += dx; cur.y += dy; A.sfx('turn', 1.2);
+        if (dy < 0) lockResets++; // 위로 튕긴 회전도 버티기 횟수에 셈
+        afterMove(); return;
       }
     }
     A.sfx('wall', 1.4);
@@ -177,7 +179,7 @@
     grid = newGrid(); bag = []; queue = [nextType(), nextType(), nextType()];
     holdT = -1; canHold = true; score = 0; lines = 0; level = 1; combo = 0; maxCombo = 0; b2b = false; quads = 0;
     clearRows = []; clearT = 0; dyingT = 0; pops = []; lastHud = '';
-    heldDir = 0; dasT = 0; arrT = 0; keySoft = false; btnSoft = false; ptrs = {}; btnDown = {};
+    heldDir = 0; dasT = 0; arrT = 0; keySoft = false; btnSoft = false; keyL = keyR = false; ptrs = {}; btnDown = {};
     fx.clear(); spawnNext(); hud();
   }
 
@@ -203,11 +205,14 @@
       if (dasT > 0.17) { arrT += dt; while (arrT > 0.045) { arrT -= 0.045; if (!move(heldDir)) { arrT = 0; break; } } }
     }
     var soft = keySoft || btnSoft, g = soft ? Math.min(gravity(), 0.035) : gravity();
+    // 더 아래로 내려가면 고정 대기 횟수를 다시 채워 줌 (같은 높이에서 회전으로 위로 튕기며 끝없이 버티기 방지)
+    if (cur.y > cur.low) { cur.low = cur.y; lockResets = 0; }
     if (grounded()) {
       fallT = 0; lockT += dt;
       if (lockT >= 0.5) lockPiece();
     } else {
-      lockT = 0; fallT += dt;
+      if (lockResets < 15) lockT = 0;
+      fallT += dt;
       while (fallT >= g) {
         fallT -= g;
         if (fits(cur.t, cur.r, cur.x, cur.y + 1)) { cur.y++; if (soft) score += 1; }
@@ -424,8 +429,8 @@
     keydown: function (e) {
       if (e.repeat) return;
       var k = keyName(e);
-      if (k === 'ArrowLeft' || k === 'a') pressDir(-1);
-      else if (k === 'ArrowRight' || k === 'd') pressDir(1);
+      if (k === 'ArrowLeft' || k === 'a') { keyL = true; pressDir(-1); }
+      else if (k === 'ArrowRight' || k === 'd') { keyR = true; pressDir(1); }
       else if (k === 'ArrowDown' || k === 's') { keySoft = true; if (cur && clearT <= 0 && dyingT <= 0) softStep(); }
       else if (k === 'ArrowUp' || k === 'w' || k === 'x') rotate(1);
       else if (k === 'z') rotate(-1);
@@ -434,11 +439,12 @@
     },
     keyup: function (e) {
       var k = keyName(e);
-      if (k === 'ArrowLeft' || k === 'a') releaseDir(-1);
-      else if (k === 'ArrowRight' || k === 'd') releaseDir(1);
+      // 양쪽을 같이 누르다 하나를 떼면 남은 쪽으로 계속 이동
+      if (k === 'ArrowLeft' || k === 'a') { keyL = false; releaseDir(-1); if (keyR && !heldDir && S.state === 'playing') pressDir(1); }
+      else if (k === 'ArrowRight' || k === 'd') { keyR = false; releaseDir(1); if (keyL && !heldDir && S.state === 'playing') pressDir(-1); }
       else if (k === 'ArrowDown' || k === 's') keySoft = false;
     }
   });
   // 일시정지·탭 이동 때 눌린 상태 풀기 (다시 시작했을 때 혼자 움직이지 않게)
-  window.addEventListener('blur', function () { heldDir = 0; keySoft = false; btnSoft = false; btnDown = {}; ptrs = {}; });
+  window.addEventListener('blur', function () { heldDir = 0; keyL = keyR = false; keySoft = false; btnSoft = false; btnDown = {}; ptrs = {}; });
 })();

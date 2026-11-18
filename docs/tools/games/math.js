@@ -4,22 +4,26 @@
   var fx = new A.FX();
   var q, ans, input, time, score, combo, solved, endT, flash = 0, flashC = '#fff';
   function makeQ() {
-    var lv = solved, ops = ['+', '-']; if (lv >= 10) ops.push('×'); var op = A.pick(ops), a, b;
+    var lv = solved, ops = ['+', '-']; if (lv >= 10) ops.push('×'); if (lv >= 20) ops.push('÷'); var op = A.pick(ops), a, b;
     var m = Math.min(99, 9 + lv * 4);
     if (op === '+') { a = A.irand(2, m); b = A.irand(2, m); ans = a + b; }
     else if (op === '-') { a = A.irand(5, m); b = A.irand(1, a + (lv > 15 ? 20 : 0)); ans = a - b; }
-    else { a = A.irand(2, Math.min(12, 3 + Math.floor(lv / 4))); b = A.irand(2, 9); ans = a * b; }
+    else if (op === '÷') { b = A.irand(2, 9); ans = A.irand(2, Math.min(12, 2 + Math.floor(lv / 5))); a = b * ans; }
+    else { a = A.irand(2, Math.min(lv >= 30 ? 19 : 12, 3 + Math.floor(lv / 4))); b = A.irand(2, 9); ans = a * b; }
+    if (q === a + ' ' + op + ' ' + b) return makeQ(); // 같은 문제 연속 방지
     q = a + ' ' + op + ' ' + b; input = '';
   }
   function reset() { time = 60; score = 0; combo = 0; solved = 0; endT = 0; makeQ(); fx.clear(); hud(); }
+  // 정답 보너스 시간은 오래 갈수록 줄어 한 판이 끝없이 길어지지 않게 함. 자릿수가 찼거나 부호가 다르면 오답
   function type(ch) {
     if (S.state !== 'playing' || endT > 0) return;
     if (ch === 'del') { input = input.slice(0, -1); A.sfx('click'); return; }
     if (ch === 'skip') { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('wall'); makeQ(); hud(); return; }
     if (ch === '-') { if (!input) input = '-'; return; }
     if (input.length >= 4) return; input += ch; A.sfx('tick', 1.2);
-    if (+input === ans) { solved++; combo++; var pts = 10 + combo * 2; score += pts; time = Math.min(99, time + 2); flash = 0.25; flashC = '#7dff9b'; A.sfx('coin', 1 + Math.min(combo, 15) * 0.04); fx.text(W / 2, 260, '+' + pts, '#ffd166', 24); makeQ(); }
-    else if (String(ans).length <= input.replace('-', '').length && input !== '-') { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.5); fx.shake(5, 0.15); input = ''; }
+    if (+input === ans) { solved++; combo++; var pts = 10 + combo * 2; score += pts; time = Math.min(99, time + (solved <= 15 ? 2 : solved <= 30 ? 1.5 : solved <= 50 ? 1 : solved <= 80 ? 0.7 : 0.5));
+      if (solved % 10 === 0 && solved <= 50) { time = Math.min(99, time + 3); S.banner(solved + '문제!', '보너스 +3초'); A.sfx('level'); } flash = 0.25; flashC = '#7dff9b'; A.sfx('coin', 1 + Math.min(combo, 15) * 0.04); fx.text(W / 2, 260, '+' + pts, '#ffd166', 24); makeQ(); }
+    else if (input !== '-' && (input.replace('-', '').length >= String(Math.abs(ans)).length || (ans >= 0) !== (input.charAt(0) !== '-'))) { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.5); fx.shake(5, 0.15); input = ''; }
     hud();
   }
   function update(dt) { fx.update(dt); if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['맞힌 문제', String(solved)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); } hud(); }

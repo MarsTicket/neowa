@@ -45,6 +45,7 @@
         <div class="g-keys">
           <div>같은 숫자는 두 번 안 씀</div>
           <div>10번 안에 맞히기</div>
+          <div>OUT 나온 숫자는 숫자판에 흐리게 표시</div>
           <div>맞히면 다음 문제로 연속 도전</div>
         </div>
       </div>
@@ -137,6 +138,8 @@
       else S.gameOver(score, [['맞힌 문제', String(solved)], ['정답', secret.join('')]]);
     } }
   }
+  // OUT(0S 0B)이 나온 숫자는 정답에 없으므로 숫자판에서 흐리게 표시 (누를 수는 있음)
+  function outDigits() { var o = {}; (log || []).forEach(function (r) { if (!r.s && !r.b) r.g.forEach(function (d) { o[d] = 1; }); }); return o; }
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0] + (shake > 0 ? Math.sin(t * 60) * 6 : 0), o[1]);
@@ -148,11 +151,15 @@
       c.fillStyle = '#fff'; c.font = '700 48px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; var show = endT > 0 && log.length && (log[log.length - 1].s === LEN || tries >= MAXT) ? secret[i] : input[i]; if (show != null) c.fillText(String(show), x + bw / 2, 156); }
     // 기록
     c.font = '600 20px "Chakra Petch",system-ui';
-    log.slice(-8).forEach(function (r, k) { var y = 238 + k * 42, n = log.length - Math.min(8, log.length) + k + 1; c.fillStyle = 'rgba(255,255,255,.04)'; A.rr(c, 40, y, W - 80, 36, 10); c.fill();
-      c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,.4)'; c.fillText(n + '.', 56, y + 19); c.fillStyle = '#fff'; c.fillText(r.g.join(' '), 100, y + 19);
-      c.textAlign = 'right'; c.fillStyle = r.s ? '#ffd166' : r.b ? '#9be7ff' : 'rgba(255,255,255,.5)'; c.fillText(r.s || r.b ? r.s + 'S ' + r.b + 'B' : 'OUT', W - 56, y + 19); });
+    // 10번 기록을 모두 보여 줌 (추리에 필요)
+    log.forEach(function (r, k) { var y = 226 + k * 35, n = k + 1; c.fillStyle = 'rgba(255,255,255,.04)'; A.rr(c, 40, y, W - 80, 31, 9); c.fill();
+      c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,.4)'; c.fillText(n + '.', 56, y + 16); c.fillStyle = '#fff'; c.fillText(r.g.join(' '), 100, y + 16);
+      c.textAlign = 'right'; c.fillStyle = r.s ? '#ffd166' : r.b ? '#9be7ff' : 'rgba(255,255,255,.5)'; c.fillText(r.s || r.b ? r.s + 'S ' + r.b + 'B' : 'OUT', W - 56, y + 16); });
+    if (!log.length) { c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('숫자 ' + LEN + '개를 고르고 확인을 누르세요', W / 2, 300); c.fillText('예) 결과 1S 1B = 하나는 자리까지, 하나는 숫자만 맞음', W / 2, 330); }
+    var out = outDigits();
     // 숫자 패드
-    for (var n = 0; n < 10; n++) { var col = n % 5, row = Math.floor(n / 5), px = 40 + col * 94, py = 600 + row * 86, used = input.indexOf(n) >= 0; c.fillStyle = used ? 'rgba(155,231,255,.35)' : 'rgba(255,255,255,.08)'; A.rr(c, px, py, 84, 74, 14); c.fill(); c.fillStyle = '#fff'; c.font = '700 32px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(n), px + 42, py + 38); }
+    for (var n = 0; n < 10; n++) { var col = n % 5, row = Math.floor(n / 5), px = 40 + col * 94, py = 600 + row * 86, used = input.indexOf(n) >= 0, gone = out[n]; c.fillStyle = used ? 'rgba(155,231,255,.35)' : gone ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.08)'; A.rr(c, px, py, 84, 74, 14); c.fill(); c.fillStyle = gone && !used ? 'rgba(255,255,255,.3)' : '#fff'; c.font = '700 32px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(n), px + 42, py + 38);
+      if (gone) { c.strokeStyle = 'rgba(255,77,109,.55)'; c.lineWidth = 2; c.beginPath(); c.moveTo(px + 24, py + 56); c.lineTo(px + 60, py + 20); c.stroke(); } }
     [['지우기', 40, 'rgba(255,255,255,.08)', '#fff'], ['확인', 290, '#9be7ff', '#03141c']].forEach(function (b) { c.fillStyle = b[2]; A.rr(c, b[1], 790, 210, 70, 16); c.fill(); c.fillStyle = b[3]; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + 105, 826); });
     c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '500 14px "Pretendard Variable",system-ui'; c.fillText('S 스트라이크 = 숫자·자리 모두 맞음 · B 볼 = 숫자만 맞음', W / 2, 900);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);

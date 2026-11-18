@@ -46,7 +46,8 @@
         <div class="g-keys">
           <div><kbd style="color:#ff4d6d">▲</kbd> 가시·톱날에 닿으면 끝</div>
           <div><kbd>⬛</kbd> 블록 위는 밟을 수 있음</div>
-          <div><kbd style="color:#ffd166">●</kbd> 코인 10점</div>
+          <div><kbd style="color:#ffd166">●</kbd> 코인 10점, 연달아 주우면 최대 ×5</div>
+          <div><kbd style="color:#7dffd0">!</kbd> 가시를 아슬아슬하게 넘으면 +20</div>
         </div>
       </div>
     </aside>
@@ -66,7 +67,7 @@
         <p class="ov-desc">탭하면 점프, 공중에서 한 번 더 탭하면 이단 점프. 길게 누를수록 높이 뜁니다.</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭 점프 · 이단 점프</span>
-          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>코인 10점</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>코인 연속 = 배율</span>
         </div>
         
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>달리기</button>
@@ -117,7 +118,8 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, G = 720;           // G = 바닥 높이
   var fx = new A.FX();
-  var P, obs, coins, speed, dist, coinN, score, nextX, holding, dyingT, groundOff, keyHeld, runT;
+  var P, obs, coins, speed, dist, coinN, score, nextX, holding, dyingT, groundOff, runT;
+  var coyote = 0, buffer = 0, coinPts = 0, chainN = 0, chainT = 0, nearN = 0, nearPts = 0, nextMile = 500;
 
   var BG = A.sprite('rbg', W, H, function (x) {
     var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0d0620'); g.addColorStop(0.7, '#24103f'); g.addColorStop(1, '#090410');
@@ -143,17 +145,28 @@
   }
   var SKY1 = skyline(7, '#1c0d33', 120, 300, 50, 110), SKY2 = skyline(3, '#120822', 60, 200, 40, 90);
   var COIN = A.glowDot('#ffd166', 6);
+  // 플레이어 큐브: 빛 번짐은 미리 한 번만 그림 (매 프레임 shadowBlur 금지)
+  var CUBE = A.sprite('rcube', 72, 72, function (x) {
+    x.translate(36, 36); x.shadowColor = '#b48cff'; x.shadowBlur = 18; x.fillStyle = '#e9dcff'; A.rr(x, -18, -18, 36, 36, 7); x.fill();
+    x.shadowBlur = 0; x.fillStyle = '#7d4fd6'; A.rr(x, -11, -11, 22, 22, 4); x.fill();
+    x.fillStyle = '#fff'; x.fillRect(2, -6, 5, 6);
+  });
 
   function reset() {
     P = { x: 140, y: G, vy: 0, ground: true, jumps: 0, rot: 0, squash: 0 };
     obs = []; coins = []; speed = 330; dist = 0; coinN = 0; score = 0; nextX = W + 200; holding = false; dyingT = 0; groundOff = 0; runT = 0;
+    coyote = 0; buffer = 0; coinPts = 0; chainN = 0; chainT = 0; nearN = 0; nearPts = 0; nextMile = 500;
     fx.clear(); hud();
   }
   function jump() {
     if (S.state !== 'playing' || dyingT > 0) return;
-    if (P.ground) { P.vy = -980; P.ground = false; P.jumps = 1; A.sfx('bounce', 1.4); fx.burst(P.x, P.y, '#b48cff', 8, 160, 0.3, 2.5); }
-    else if (P.jumps < 2) { P.vy = -860; P.jumps = 2; A.sfx('bounce', 1.8); fx.ring(P.x, P.y - 20, '#b48cff', 50, 0.3); }
     holding = true;
+    if (!tryJump()) buffer = 0.13; // 착지 직전에 누른 점프는 잠깐 기억했다가 착지하면 바로 뜀
+  }
+  function tryJump() {
+    if (P.ground || coyote > 0) { P.vy = -980; P.ground = false; coyote = 0; P.jumps = 1; A.sfx('bounce', 1.4); fx.burst(P.x, P.y, '#b48cff', 8, 160, 0.3, 2.5); return true; }
+    if (P.jumps < 2) { P.vy = -860; P.jumps = 2; A.sfx('bounce', 1.8); fx.ring(P.x, P.y - 20, '#b48cff', 50, 0.3); return true; }
+    return false;
   }
   function release() { holding = false; if (P && P.vy < -380) P.vy = -380; }
 
@@ -182,7 +195,7 @@
 
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['코인', String(coinN)], ['최고 속도', Math.round(speed / 10) + '']]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['코인', String(coinN)], ['아슬아슬', String(nearN)]]); return; }
     runT += dt;
     speed = Math.min(820, 330 + runT * 7);
     var dx = speed * dt; dist += dx; groundOff = (groundOff + dx) % 60;
@@ -192,9 +205,11 @@
 
     // 물리
     var g = holding && P.vy < 0 ? 2300 : 3400;
+    var wasGround = P.ground;
     P.vy += g * dt; var py = P.y; P.y += P.vy * dt;
     P.ground = false;
-    var floor = groundAt(P.x) ? G : 99999;
+    // 이미 구덩이 아래로 빠졌으면(바닥선보다 아래) 다시 땅 위로 튀어 오르지 않음
+    var floor = groundAt(P.x) && py <= G + 2 ? G : 99999;
     for (i = 0; i < obs.length; i++) {
       var o = obs[i];
       if (o.t === 'block' && P.x + 18 > o.x && P.x - 18 < o.x + o.w) {
@@ -204,6 +219,10 @@
       }
     }
     if (P.y >= floor) { if (!P.ground && P.vy > 400) { P.squash = 0.12; fx.burst(P.x, floor, '#b48cff', 6, 120, 0.25, 2); } P.y = floor; P.vy = 0; P.ground = true; P.jumps = 0; }
+    // 발판 끝에서 살짝 늦게 눌러도 점프되게(코요테 타임), 착지 직전 입력은 기억(점프 버퍼)
+    if (P.ground) coyote = 0.09; else if (wasGround && P.vy >= 0) coyote = Math.max(coyote, 0.09); else coyote -= dt;
+    if (buffer > 0) { buffer -= dt; if (P.ground && tryJump()) buffer = 0; }
+    if (P.y > G + 6 && P.vy > 0 && floor > G) { if (P.y > G + 200) die(); } // 구덩이: 빨리 끝내기
     if (P.y > H + 60) die();
     P.rot = P.ground ? 0 : P.rot + dt * 9;
     if (P.squash > 0) P.squash -= dt;
@@ -212,14 +231,32 @@
       o = obs[i];
       if (o.t === 'spike' && P.x + 14 > o.x + 6 && P.x - 14 < o.x + o.w - 6 && P.y > G - o.h + 12) die();
       if (o.t === 'saw' && Math.hypot(P.x - o.x, P.y - 22 - o.y) < o.r + 16) die();
+      // 아슬아슬 보너스: 가시·톱날 바로 위(또는 옆)를 스치듯 넘으면 추가 점수
+      if ((o.t === 'spike' || o.t === 'saw') && !o.near) {
+        var gapY = o.t === 'spike' ? (G - o.h) - P.y : Math.hypot(P.x - o.x, P.y - 22 - o.y) - (o.r + 16);
+        if (Math.abs(P.x - (o.t === 'spike' ? o.x + o.w / 2 : o.x)) < 30) o.minGap = Math.min(o.minGap == null ? 999 : o.minGap, gapY);
+        if ((o.t === 'spike' ? o.x + o.w : o.x + o.r) < P.x - 20) {
+          o.near = true;
+          if (o.minGap != null && o.minGap < 24 && dyingT <= 0) { nearN++; nearPts += 20; fx.text(P.x, P.y - 70, '아슬아슬! +20', '#7dffd0', 18); A.sfx('tick', 1.5); }
+        }
+      }
     }
     // 코인
     for (i = coins.length - 1; i >= 0; i--) {
       var c = coins[i];
-      if (Math.abs(c.x - P.x) < 30 && Math.abs(c.y - (P.y - 22)) < 34) { coins.splice(i, 1); coinN++; fx.burst(c.x, c.y, '#ffd166', 8, 160, 0.35, 2.4); A.sfx('coin'); }
+      if (Math.abs(c.x - P.x) < 30 && Math.abs(c.y - (P.y - 22)) < 34) {
+        coins.splice(i, 1); coinN++;
+        // 코인 연속 줍기: 0.7초 안에 계속 주우면 배율 (최대 ×5)
+        chainN = chainT > 0 ? chainN + 1 : 1; chainT = 0.7;
+        var cm = Math.min(5, 1 + Math.floor(chainN / 4)); coinPts += 10 * cm;
+        if (cm > 1 && chainN % 4 === 0) fx.text(c.x, c.y - 24, 'COIN ×' + cm, '#ffd166', 18);
+        fx.burst(c.x, c.y, '#ffd166', 8, 160, 0.35, 2.4); A.sfx('coin', 1 + Math.min(chainN, 12) * 0.03);
+      }
     }
+    if (chainT > 0) { chainT -= dt; if (chainT <= 0) chainN = 0; }
     if (P.ground && Math.random() < 0.5) fx.spark(P.x - 16, P.y - 4, '#b48cff', -speed * 0.3, A.rand(-60, -10), 0.25, 2);
-    score = Math.floor(dist / 10) + coinN * 10;
+    score = Math.floor(dist / 10) + coinPts + nearPts;
+    if (dist / 10 >= nextMile) { S.banner(nextMile + 'm', nextMile >= 1500 ? '최고 속도에 가까워져요' : '속도가 올라갑니다'); A.sfx('level'); nextMile += 500; }
     hud();
   }
 
@@ -263,16 +300,16 @@
     var px = P ? P.x : 140, py = P ? P.y : G, rot = P ? P.rot : 0, sq = P && P.squash > 0 ? P.squash / 0.12 : 0;
     if (!P || dyingT <= 0) {
       c.save(); c.translate(px, py - 22); c.rotate(rot); c.scale(1 + sq * 0.25, 1 - sq * 0.25);
-      c.shadowColor = '#b48cff'; c.shadowBlur = 18; c.fillStyle = '#e9dcff'; A.rr(c, -18, -18, 36, 36, 7); c.fill();
-      c.shadowBlur = 0; c.fillStyle = '#7d4fd6'; A.rr(c, -11, -11, 22, 22, 4); c.fill();
-      c.fillStyle = '#fff'; c.fillRect(2, -6, 5, 6); c.restore();
+      c.drawImage(CUBE, -36, -36, 72, 72); c.restore();
     }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }
   var lastHud = '';
   function hud() {
-    var k = score + '|' + coinN; if (k === lastHud) return; lastHud = k;
+    var cm = chainN >= 4 ? Math.min(5, 1 + Math.floor(chainN / 4)) : 1;
+    var k = score + '|' + coinN + '|' + cm; if (k === lastHud) return; lastHud = k;
+    document.getElementById('hMult').textContent = cm > 1 ? 'COIN ×' + cm : '';
     document.getElementById('hA').textContent = A.fmt(score);
     document.getElementById('hB').textContent = Math.floor(dist / 10) + 'm';
     document.getElementById('hC').textContent = coinN;

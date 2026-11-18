@@ -2,21 +2,22 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 70;
   var fx = new A.FX();
-  var P, fish, bubbles = [], score, eaten, size, xp, dyingT, drag = null, keys = {}, spawnT;
+  var P, fish, bubbles = [], score, eaten, size, xp, dyingT, drag = null, keys = {}, spawnT, inv, combo, comboT, bestCombo, MAXS = 10;
   var COLS = ['#ffb547', '#ff7aa8', '#7dff9b', '#b48cff', '#ffe066', '#5ee7ff', '#ff7a45'];
   function rFor(s) { return 14 + s * 6; }
-  function reset() { P = { x: W / 2, y: H / 2, vx: 0, vy: 0, face: 1 }; fish = []; score = 0; eaten = 0; size = 1; xp = 0; dyingT = 0; drag = null; keys = {}; spawnT = 0; for (var i = 0; i < 8; i++) spawnFish(true); fx.clear(); hud(); }
-  function spawnFish(init) {
-    var s = A.clamp(size + A.irand(-2, 3) + (Math.random() < 0.15 ? 3 : 0), 0.5, 14), side = Math.random() < 0.5 ? -1 : 1;
-    var f = { s: s, r: rFor(s) * A.rand(0.9, 1.1), x: init ? A.rand(0, W) : (side < 0 ? -60 : W + 60), y: A.rand(TOP + 40, H - 40), c: A.pick(COLS), wob: Math.random() * 6 };
-    f.vx = -side * A.rand(40, 110) / (1 + s * 0.05); if (init) f.vx = A.pick([-1, 1]) * A.rand(40, 100);
-    if (init && Math.hypot(f.x - W / 2, f.y - H / 2) < 160) f.x = (f.x + 300) % W;
+  function reset() { P = { x: W / 2, y: H / 2, vx: 0, vy: 0, face: 1 }; fish = []; score = 0; eaten = 0; size = 1; xp = 0; dyingT = 0; drag = null; keys = {}; spawnT = 0; inv = 2; combo = 0; comboT = 0; bestCombo = 0; for (var i = 0; i < 8; i++) spawnFish(true, i < 5); fx.clear(); hud(); }
+  function spawnFish(init, small) {
+    // 작은 물고기(먹이)가 절반 이상 나오게. 가끔 아주 큰 포식자
+    var gold = !init && Math.random() < 0.05, s = gold ? Math.max(0.5, size - 1) : A.clamp(size + (small ? A.irand(-3, -1) : (Math.random() < 0.35 ? A.irand(0, 3) : A.irand(-3, -1))), 0.5, MAXS + 3), side = Math.random() < 0.5 ? -1 : 1;
+    var r = rFor(s) * A.rand(0.9, 1.1), f = { s: s, r: r, x: init ? A.rand(0, W) : (side < 0 ? -r * 1.5 - 10 : W + r * 1.5 + 10), y: A.rand(TOP + 40, H - 40), c: gold ? '#ffd166' : A.pick(COLS), wob: Math.random() * 6, gold: gold };
+    f.vx = -side * A.rand(40, 110) / (1 + s * 0.05) * (gold ? 2.2 : 1); if (init) f.vx = A.pick([-1, 1]) * A.rand(40, 100);
+    if (init) for (var k = 0; k < 6 && Math.hypot(f.x - W / 2, f.y - H / 2) < 230; k++) { f.x = A.rand(0, W); f.y = A.rand(TOP + 40, H - 40); }
     fish.push(f);
   }
   function update(dt) {
     fx.update(dt);
     fish.forEach(function (f) { f.x += f.vx * dt; f.wob += dt * 3; f.y += Math.sin(f.wob) * 12 * dt; });
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최대 크기', String(size)], ['먹은 물고기', String(eaten)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최대 크기', String(size)], ['먹은 물고기', String(eaten)], ['최대 연속', String(bestCombo)]]); return; }
     var tx = 0, ty = 0;
     if (drag) { tx = drag.x - P.x; ty = drag.y - P.y; var d = Math.hypot(tx, ty); if (d > 8) { tx /= d; ty /= d; } else tx = ty = 0; }
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
@@ -25,21 +26,23 @@
     P.vx = A.lerp(P.vx, tx * maxs, Math.min(1, dt * 4)); P.vy = A.lerp(P.vy, ty * maxs, Math.min(1, dt * 4));
     P.x = A.clamp(P.x + P.vx * dt, 20, W - 20); P.y = A.clamp(P.y + P.vy * dt, TOP + 20, H - 20);
     if (Math.abs(P.vx) > 20) P.face = P.vx > 0 ? 1 : -1;
-    var pr = rFor(size);
+    var pr = rFor(size); if (inv > 0) inv -= dt; if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
     for (var i = fish.length - 1; i >= 0; i--) {
-      var f = fish[i];
-      if (f.x < -120 || f.x > W + 120) { fish.splice(i, 1); continue; }
+      var f = fish[i], m = f.r * 1.6 + 40;
+      if ((f.x < -m && f.vx < 0) || (f.x > W + m && f.vx > 0)) { fish.splice(i, 1); continue; }
       var dd = Math.hypot(f.x - P.x, f.y - P.y);
       if (dd < (pr + f.r) * 0.7) {
         if (f.r < pr * 0.95) {
-          fish.splice(i, 1); eaten++; var pts = Math.round(10 * f.s); score += pts; xp += f.s;
-          fx.burst(f.x, f.y, f.c, 12, 200, 0.4, 3); fx.text(f.x, f.y - 20, '+' + pts, '#fff', 16); A.sfx('eat', 1.4 - Math.min(0.6, f.s * 0.05)); A.vibrate(10);
-          var need = 6 + size * 4;
-          if (xp >= need && size < 14) { xp -= need; size++; S.banner('크기 ' + size, '더 커졌다!'); A.sfx('level'); fx.ring(P.x, P.y, '#4dd8ff', 140, 0.5); }
-        } else { dyingT = 1.2; fx.burst(P.x, P.y, '#4dd8ff', 40, 380, 0.8, 4); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(180); hud(); return; }
+          combo++; comboT = 1.6; bestCombo = Math.max(bestCombo, combo);
+          fish.splice(i, 1); eaten++; var pts = Math.round(10 * Math.max(1, f.s) * (f.gold ? 5 : 1)) * Math.min(5, combo); score += pts; xp += Math.max(1, f.s) * (f.gold ? 3 : 1);
+          fx.burst(f.x, f.y, f.c, 12, 200, 0.4, 3); fx.text(f.x, f.y - 20, '+' + pts + (combo > 1 ? ' ×' + Math.min(5, combo) : ''), f.gold ? '#ffd166' : '#fff', 16 + Math.min(4, combo) * 2); if (f.gold) A.sfx('gold'); A.sfx('eat', 1.4 - Math.min(0.6, f.s * 0.05)); A.vibrate(10);
+          var need = 5 + size * 3;
+          if (xp >= need && size < MAXS) { xp -= need; size++; S.banner('크기 ' + size, size === MAXS ? '최대 크기! 이제부터 먹을 때마다 보너스' : '더 커졌다!'); A.sfx('level'); fx.ring(P.x, P.y, '#4dd8ff', 140, 0.5); }
+          else if (xp >= need) { xp -= need; score += 500; fx.text(P.x, P.y - pr - 30, '바다의 왕 +500', '#ffd166', 22); A.sfx('gold'); }
+        } else if (inv <= 0) { dyingT = 1.2; fx.burst(P.x, P.y, '#4dd8ff', 40, 380, 0.8, 4); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(180); hud(); return; }
       }
     }
-    spawnT -= dt; if (spawnT <= 0 && fish.length < 14) { spawnFish(false); spawnT = A.rand(0.4, 0.9); }
+    spawnT -= dt; if (spawnT <= 0 && fish.length < 15) { spawnFish(false); spawnT = A.rand(0.35, 0.8); }
     if (Math.random() < 0.05) bubbles.push({ x: A.rand(0, W), y: H + 10, r: A.rand(2, 6) });
     hud();
   }
@@ -62,11 +65,13 @@
     var pr = P ? rFor(size) : 20;
     (fish || []).forEach(function (f) { drawFish(c, f.x, f.y, f.r, f.c, f.vx > 0 ? 1 : -1, P ? (f.r < pr * 0.95 ? 'rgba(125,255,155,.7)' : 'rgba(255,77,109,.8)') : null); });
     if (!fish) { drawFish(c, 150, 400, 30, '#ffb547', 1); drawFish(c, 380, 600, 60, '#ff7aa8', -1); drawFish(c, 260, 760, 20, '#7dff9b', 1); }
-    if (P && dyingT <= 0) { c.save(); c.shadowColor = '#4dd8ff'; c.shadowBlur = 20; drawFish(c, P.x, P.y, pr, '#4dd8ff', P.face); c.restore(); }
+    if (P && dyingT <= 0 && !(inv > 0 && Math.floor(inv * 10) % 2)) { c.save(); c.shadowColor = '#4dd8ff'; c.shadowBlur = 20; drawFish(c, P.x, P.y, pr, '#4dd8ff', P.face); c.restore(); }
+    // 화면 밖에서 다가오는 위험한 물고기 경고
+    if (P && S.state === 'playing') (fish || []).forEach(function (f) { if (f.r >= pr * 0.95 && (f.x < 0 || f.x > W) && f.x * f.vx < W * f.vx / 2 + 1) { var ex = f.x < 0 ? 18 : W - 18; c.globalAlpha = 0.6 + Math.sin(t * 12) * 0.3; c.fillStyle = '#ff4d6d'; c.beginPath(); c.moveTo(ex + (f.x < 0 ? -12 : 12), f.y); c.lineTo(ex + (f.x < 0 ? 8 : -8), f.y - 14); c.lineTo(ex + (f.x < 0 ? 8 : -8), f.y + 14); c.fill(); c.globalAlpha = 1; } });
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
-  function hud() { var k = score + '|' + size + '|' + eaten; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = size; document.getElementById('hC').textContent = eaten; }
+  function hud() { var k = score + '|' + size + '|' + eaten + '|' + combo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = size >= MAXS ? 'MAX' : size; document.getElementById('hMult').textContent = combo > 1 ? '×' + Math.min(5, combo) : ''; document.getElementById('hC').textContent = eaten; }
   var stage = document.getElementById('stage');
   stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (drag && drag.id === e.pointerId) { var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; } });

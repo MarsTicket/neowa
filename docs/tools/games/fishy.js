@@ -9,6 +9,24 @@
     W = nW; H = nH; TOP = nT;
   }
   var fx = new A.FX();
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_fishy_tut)
+  var tutOn = A.get('neowa_fishy_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_fishy_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
   var P, fish, bubbles = [], score, eaten, size, xp, dyingT, drag = null, keys = {}, spawnT, inv, combo, comboT, bestCombo, MAXS = 10;
   var COLS = ['#ffb547', '#ff7aa8', '#7dff9b', '#b48cff', '#ffe066', '#5ee7ff', '#ff7a45'];
   function rFor(s) { return 14 + s * 6; }
@@ -24,7 +42,7 @@
   function update(dt) {
     fx.update(dt);
     fish.forEach(function (f) { f.x += f.vx * dt; f.wob += dt * 3; f.y += Math.sin(f.wob) * 12 * dt; });
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최대 크기', String(size)], ['먹은 물고기', String(eaten)], ['최대 연속', String(bestCombo)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최대 크기', String(size) + ' (' + eaten + '마리)'], ['최대 연속', String(bestCombo)], ['최고 대비', vsBest(score)]]); return; }
     var tx = 0, ty = 0;
     if (drag) { tx = drag.x - P.x; ty = drag.y - P.y; var d = Math.hypot(tx, ty); if (d > 8) { tx /= d; ty /= d; } else tx = ty = 0; }
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
@@ -40,7 +58,7 @@
       var dd = Math.hypot(f.x - P.x, f.y - P.y);
       if (dd < (pr + f.r) * 0.7) {
         if (f.r < pr * 0.95) {
-          combo++; comboT = 1.6; bestCombo = Math.max(bestCombo, combo);
+          tutDone(); combo++; comboT = 1.6; bestCombo = Math.max(bestCombo, combo);
           fish.splice(i, 1); eaten++; var pts = Math.round(10 * Math.max(1, f.s) * (f.gold ? 5 : 1)) * Math.min(5, combo); score += pts; xp += Math.max(1, f.s) * (f.gold ? 3 : 1);
           fx.burst(f.x, f.y, f.c, 12, 200, 0.4, 3); fx.text(f.x, f.y - 20, '+' + pts + (combo > 1 ? ' ×' + Math.min(5, combo) : ''), f.gold ? '#ffd166' : '#fff', 16 + Math.min(4, combo) * 2); if (f.gold) A.sfx('gold'); A.sfx('eat', 1.4 - Math.min(0.6, f.s * 0.05)); A.vibrate(10);
           var need = 5 + size * 3;
@@ -76,6 +94,10 @@
     // 화면 밖에서 다가오는 위험한 물고기 경고
     if (P && S.state === 'playing') (fish || []).forEach(function (f) { if (f.r >= pr * 0.95 && (f.x < 0 || f.x > W) && f.x * f.vx < W * f.vx / 2 + 1) { var ex = f.x < 0 ? 18 : W - 18; c.globalAlpha = 0.6 + Math.sin(t * 12) * 0.3; c.fillStyle = '#ff4d6d'; c.beginPath(); c.moveTo(ex + (f.x < 0 ? -12 : 12), f.y); c.lineTo(ex + (f.x < 0 ? 8 : -8), f.y - 14); c.lineTo(ex + (f.x < 0 ? 8 : -8), f.y + 14); c.fill(); c.globalAlpha = 1; } });
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+    // 다음 크기까지 남은 양 (아래 막대)
+    if (P && S.state === 'playing' && dyingT <= 0) { var nd = 5 + size * 3, bw = W - 40; c.fillStyle = 'rgba(0,0,0,.4)'; A.rr(c, 20, H - 26, bw, 12, 6); c.fill(); c.fillStyle = '#4dd8ff'; A.rr(c, 20, H - 26, Math.max(12, bw * (size >= MAXS ? 1 : Math.min(1, xp / nd))), 12, 6); c.fill();
+      c.fillStyle = '#fff'; c.font = '700 15px "Pretendard Variable",system-ui'; c.textAlign = 'left'; c.textBaseline = 'bottom'; c.fillText(size >= MAXS ? '최대 크기! 먹을수록 보너스' : '다음 크기 ' + (size + 1) + '까지', 22, H - 30); }
+    if (P && tutOn) tutDraw(c, TOP + 70, '끄는 쪽으로 헤엄 · 초록 테두리만 먹어요', '방향키로 헤엄 · 초록 테두리만 먹어요');
   }
   var last = '';
   function hud() { var k = score + '|' + size + '|' + eaten + '|' + combo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = size >= MAXS ? 'MAX' : size; document.getElementById('hMult').textContent = combo > 1 ? '×' + Math.min(5, combo) : ''; document.getElementById('hC').textContent = eaten; }

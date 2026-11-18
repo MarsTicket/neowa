@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/yacht.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>주사위 족보 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 주사위 족보 게임. 주사위 5개를 턴마다 3번까지 굴려 풀하우스, 스트레이트, 요트 같은 족보 12칸을 채우세요. 위쪽 합 63점을 넘기면 보너스 35점.">
+<meta property="og:title" content="주사위 족보 · 너와 아케이드">
+<meta property="og:description" content="굴릴까, 멈출까? 주사위 5개로 족보 12칸을 채우는 두뇌 게임.">
+<meta property="og:image" content="https://neowa.kr/assets/yacht-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=5">
+<style>:root{--accent:#ff7aa8;--accent-ink:#2a0515;--ar:255,122,168}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 65</small>주사위 족보</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>Space</kbd> 굴리기 · <kbd>1</kbd>~<kbd>5</kbd> 고정</div>
+          <div class="k-only"><kbd>←↑↓→</kbd> 칸 고르기 · <kbd>Enter</kbd> 기록</div>
+          <div class="t-only"><kbd>굴리기</kbd> → <kbd>주사위 탭</kbd> 고정 → <kbd>칸 두 번 탭</kbd> 기록</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>턴마다 최대 3번 굴림 · 고정한 주사위는 그대로</div>
+          <div>칸마다 한 번만 기록 · 맞지 않는 칸에 쓰면 0점</div>
+          <div>요트(5개 같음) 50 · L 스트레이트 30 · S 스트레이트 15</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">TURN</span><span class="h-v sm" id="hB">1/12</span></div>
+        <div class="h-box r"><span class="h-lb">ROLL</span><span class="h-v sm" id="hC">0/3</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 65</p>
+        <h1 class="ov-title">주사위 족보</h1>
+        <p class="ov-desc">주사위를 굴리고 마음에 드는 눈은 고정! 12턴 동안 족보 12칸을 한 번씩 채워 최고 점수에 도전하세요.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>주사위 탭 = 고정</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>위쪽 합 63 → +35</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>게임 시작</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=5"></script>
+<script>
+(function () {
+  'use strict';
+  // 주사위 족보: 주사위 5개, 턴마다 3번까지 굴려 족보 12칸을 한 번씩 채우기. 위쪽 합 63 이상이면 +35
+  var A = Arcade, W = 540, H = 960;
+  var CATS = [
+    { k: 'n1', n: '1', d: '1의 합' }, { k: 'n2', n: '2', d: '2의 합' }, { k: 'n3', n: '3', d: '3의 합' },
+    { k: 'n4', n: '4', d: '4의 합' }, { k: 'n5', n: '5', d: '5의 합' }, { k: 'n6', n: '6', d: '6의 합' },
+    { k: 'ch', n: '초이스', d: '전부 더하기' }, { k: 'fk', n: '포카드', d: '같은 눈 4개 → 전부 더하기' }, { k: 'fh', n: '풀하우스', d: '3개+2개 → 전부 더하기' },
+    { k: 'ss', n: 'S 스트레이트', d: '4개 연속 → 15' }, { k: 'ls', n: 'L 스트레이트', d: '5개 연속 → 30' }, { k: 'ya', n: '요트', d: '5개 모두 같음 → 50' }
+  ];
+  var fx = new A.FX();
+  var dice, held, rollsLeft, turn, sheet, sel, armed, rollT, phase, yachts, tim = 0, flick = [1, 1, 1, 1, 1];
+
+  // ---------- 족보 계산 ----------
+  function counts(d) { var c = [0, 0, 0, 0, 0, 0, 0]; d.forEach(function (v) { c[v]++; }); return c; }
+  function sum(d) { return d.reduce(function (a, b) { return a + b; }, 0); }
+  function hasRun(c, len) { var run = 0; for (var v = 1; v <= 6; v++) { run = c[v] ? run + 1 : 0; if (run >= len) return true; } return false; }
+  function scoreOf(k, d) {
+    var c = counts(d), mx = Math.max.apply(null, c);
+    if (k.charAt(0) === 'n') { var v = +k.charAt(1); return c[v] * v; }
+    if (k === 'ch') return sum(d);
+    if (k === 'fk') return mx >= 4 ? sum(d) : 0;
+    if (k === 'fh') { var three = false, two = false; c.forEach(function (n) { if (n === 3) three = true; if (n === 2) two = true; }); return (three && two) || mx === 5 ? sum(d) : 0; }
+    if (k === 'ss') return hasRun(c, 4) ? 15 : 0;
+    if (k === 'ls') return hasRun(c, 5) ? 30 : 0;
+    if (k === 'ya') return mx === 5 ? 50 : 0;
+    return 0;
+  }
+  function upper() { var s = 0; for (var i = 0; i < 6; i++) if (sheet[CATS[i].k] != null) s += sheet[CATS[i].k]; return s; }
+  function bonus() { return upper() >= 63 ? 35 : 0; }
+  function total() { var s = 0; CATS.forEach(function (c) { if (sheet[c.k] != null) s += sheet[c.k]; }); return s + bonus(); }
+  // 콘솔에서 Arcade.yachtTest() 로 족보 계산을 점검할 수 있음
+  A.yachtTest = function () {
+    var T = [['n3', [3, 3, 1, 3, 5], 9], ['n6', [1, 2, 3, 4, 5], 0], ['ch', [6, 6, 5, 4, 1], 22], ['fk', [2, 2, 2, 2, 6], 14], ['fk', [5, 5, 5, 5, 5], 25], ['fk', [2, 2, 2, 6, 6], 0],
+      ['fh', [3, 3, 3, 6, 6], 21], ['fh', [4, 4, 4, 4, 4], 20], ['fh', [3, 3, 3, 3, 6], 0], ['ss', [1, 2, 3, 4, 6], 15], ['ss', [3, 4, 5, 6, 6], 15], ['ss', [1, 2, 4, 5, 6], 0],
+      ['ls', [2, 3, 4, 5, 6], 30], ['ls', [1, 2, 3, 4, 6], 0], ['ss', [2, 3, 4, 5, 6], 15], ['ya', [6, 6, 6, 6, 6], 50], ['ya', [6, 6, 6, 6, 5], 0]];
+    var bad = T.filter(function (t) { return scoreOf(t[0], t[1]) !== t[2]; });
+    return { total: T.length, fail: bad };
+  };
+
+  // ---------- 진행 ----------
+  function reset() {
+    dice = [1, 2, 3, 4, 5]; held = [false, false, false, false, false]; rollsLeft = 3; turn = 1; sheet = {}; sel = -1; armed = -1; rollT = 0; phase = 'turn'; yachts = 0;
+    fx.clear(); hud();
+  }
+  function roll() {
+    if (phase !== 'turn' || rollsLeft <= 0 || rollT > 0 || S.state !== 'playing') return;
+    if (held.every(Boolean)) { S.banner('모두 고정됨', '주사위를 눌러 풀어 주세요'); return; }
+    rollsLeft--; rollT = 0.6; armed = -1;
+    for (var i = 0; i < 5; i++) if (!held[i]) dice[i] = A.irand(1, 6);
+    A.sfx('shoot', 0.5); A.vibrate(15); hud();
+  }
+  function rolled() { return rollsLeft < 3; }
+  function toggleHold(i) {
+    if (phase !== 'turn' || !rolled() || rollT > 0 || rollsLeft === 0) return;
+    held[i] = !held[i]; A.sfx(held[i] ? 'click' : 'turn'); A.vibrate(8);
+  }
+  function record(ci) {
+    var c = CATS[ci]; if (!c || sheet[c.k] != null || !rolled() || rollT > 0 || phase !== 'turn') return;
+    var hadBonus = bonus(), v = scoreOf(c.k, dice); sheet[c.k] = v; sel = -1; armed = -1;
+    var r = rowRect(ci);
+    fx.text(r.x + r.w - 40, r.y + 26, v ? '+' + v : '0', v ? '#ff7aa8' : '#8a8a9a', 24);
+    if (c.k === 'ya' && v) { yachts++; S.banner('요트!', '+50'); A.sfx('record'); fx.flashIt('#ff7aa8', 0.35); fx.burst(W / 2, 640, '#ff7aa8', 40, 420, 0.9, 4); fx.burst(W / 2, 640, '#ffd166', 30, 360, 0.9, 3); A.vibrate([30, 40, 30, 40, 60]); }
+    else if (v >= 25) { A.sfx('level'); fx.burst(r.x + r.w / 2, r.y + 26, '#ff7aa8', 20, 260, 0.6, 3); }
+    else A.sfx(v ? 'coin' : 'hurt');
+    if (!hadBonus && bonus()) { S.banner('보너스 +35', '위쪽 합 63 달성!'); A.sfx('record'); }
+    if (turn >= 12) { phase = 'done'; hud(); setTimeout(function () { S.gameOver(total(), [['위쪽 합', upper() + (bonus() ? ' (+35)' : '')], ['요트', yachts + '번']], { win: true, title: total() >= 200 ? '대단해요!' : '게임 완료' }); }, 900); return; }
+    turn++; rollsLeft = 3; held = [false, false, false, false, false]; hud();
+  }
+
+  // ---------- 화면 배치 ----------
+  var SX = 20, SY = 112, SW = 500, RH = 50, CW = 246;
+  function rowRect(ci) { var col = ci < 6 ? 0 : 1, row = ci < 6 ? ci : ci - 6; return { x: SX + col * (CW + 8), y: SY + row * (RH + 6), w: CW, h: RH }; }
+  var DY = 560, DS = 84, DG = 13, DX = (W - (5 * DS + 4 * DG)) / 2, BY = 760;
+  function dieRect(i) { return { x: DX + i * (DS + DG), y: DY, w: DS, h: DS }; }
+
+  // ---------- 그리기 ----------
+  var PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+  function dieSprite(v, h) {
+    return A.sprite('yd' + v + (h ? 'h' : ''), 92, 92, function (x) {
+      x.shadowColor = h ? '#ff7aa8' : 'rgba(0,0,0,.6)'; x.shadowBlur = h ? 14 : 8; x.shadowOffsetY = h ? 0 : 4;
+      x.fillStyle = h ? '#ffe3ee' : '#fbf7f2'; A.rr(x, 4, 4, 84, 84, 16); x.fill(); x.shadowBlur = 0; x.shadowOffsetY = 0;
+      var g = x.createLinearGradient(0, 4, 0, 88); g.addColorStop(0, 'rgba(255,255,255,.7)'); g.addColorStop(1, 'rgba(0,0,0,.12)'); x.fillStyle = g; A.rr(x, 4, 4, 84, 84, 16); x.fill();
+      if (h) { x.strokeStyle = '#ff7aa8'; x.lineWidth = 4; A.rr(x, 6, 6, 80, 80, 14); x.stroke(); }
+      x.fillStyle = v === 1 ? '#e8324a' : '#2a1a24';
+      PIPS[v].forEach(function (p) { x.beginPath(); x.arc(46 + p[0] * 22, 46 + p[1] * 22, v === 1 ? 11 : 8, 0, Math.PI * 2); x.fill(); });
+    });
+  }
+  function render(c, t) {
+    if (!sheet) reset();
+    c.fillStyle = '#12060c'; c.fillRect(0, 0, W, H);
+    var o = fx.offset(); c.save(); c.translate(o[0], o[1]);
+    // 점수표
+    c.textBaseline = 'middle';
+    CATS.forEach(function (cat, ci) {
+      var r = rowRect(ci), done = sheet[cat.k] != null, pv = !done && rolled() && phase === 'turn' ? scoreOf(cat.k, dice) : null, on = ci === sel;
+      c.fillStyle = done ? 'rgba(255,255,255,.04)' : on ? 'rgba(255,122,168,.28)' : 'rgba(255,255,255,.08)'; A.rr(c, r.x, r.y, r.w, r.h, 12); c.fill();
+      if (on) { c.strokeStyle = armed === ci ? '#ffffff' : '#ff7aa8'; c.lineWidth = armed === ci ? 3 : 2; A.rr(c, r.x + 1, r.y + 1, r.w - 2, r.h - 2, 11); c.stroke(); }
+      c.textAlign = 'left'; c.fillStyle = done ? 'rgba(255,255,255,.4)' : '#ffffff'; c.font = '800 ' + (ci < 6 ? 22 : 17) + 'px "Pretendard Variable",system-ui';
+      if (ci < 6) { A.draw(c, dieSprite(ci + 1, false), r.x + 26, r.y + r.h / 2, 0.36); c.fillText(cat.d, r.x + 50, r.y + r.h / 2 + 1); }
+      else c.fillText(cat.n, r.x + 14, r.y + r.h / 2 + 1);
+      c.textAlign = 'right';
+      if (done) { c.fillStyle = sheet[cat.k] ? '#ff9ec0' : 'rgba(255,255,255,.35)'; c.font = '800 24px "Pretendard Variable",system-ui'; c.fillText(String(sheet[cat.k]), r.x + r.w - 14, r.y + r.h / 2 + 1); }
+      else if (pv != null) { c.fillStyle = pv ? (on ? '#ffffff' : 'rgba(255,214,102,.95)') : 'rgba(255,255,255,.3)'; c.font = '800 22px "Pretendard Variable",system-ui'; c.fillText(String(pv), r.x + r.w - 14, r.y + r.h / 2 + 1); }
+    });
+    // 보너스 줄
+    var br = rowRect(5), by = br.y + RH + 10, up = upper();
+    c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,.7)'; c.font = '700 15px "Pretendard Variable",system-ui'; c.fillText('위쪽 합 ' + up + ' / 63', SX + 6, by + 14);
+    c.fillStyle = 'rgba(255,255,255,.1)'; A.rr(c, SX + 122, by + 9, 40, 10, 5); c.fill(); c.fillStyle = bonus() ? '#7dff9b' : '#ff7aa8'; A.rr(c, SX + 122, by + 9, Math.max(10, 40 * Math.min(1, up / 63)), 10, 5); c.fill();
+    c.textAlign = 'right'; c.fillStyle = bonus() ? '#7dff9b' : 'rgba(255,255,255,.45)'; c.font = '800 17px "Pretendard Variable",system-ui'; c.fillText(bonus() ? '보너스 +35' : '보너스 35', SX + CW, by + 14);
+    var cr = rowRect(11); c.fillStyle = '#ffffff'; c.font = '900 22px "Pretendard Variable",system-ui'; c.fillText('합계 ' + total(), cr.x + cr.w - 6, by + 14);
+    // 주사위
+    var rolling = rollT > 0;
+    for (var i = 0; i < 5; i++) {
+      var d = dieRect(i), v = rolling && !held[i] ? flick[i] : dice[i], lift = held[i] ? -14 : 0, jig = rolling && !held[i] ? Math.sin(t * 40 + i) * 0.25 : 0;
+      if (!rolled()) { c.globalAlpha = 0.35; }
+      A.draw(c, dieSprite(v, held[i]), d.x + DS / 2, d.y + DS / 2 + lift, 1, jig);
+      c.globalAlpha = 1;
+      if (held[i]) { c.textAlign = 'center'; c.fillStyle = '#ff7aa8'; c.font = '800 15px "Pretendard Variable",system-ui'; c.fillText('고정', d.x + DS / 2, d.y + DS + 12); }
+      if (!document.body.classList.contains('touch') && rolled() && rollsLeft > 0) { c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.fillText(String(i + 1), d.x + DS / 2, d.y - 24); }
+    }
+    // 굴리기 버튼
+    var canRoll = phase === 'turn' && rollsLeft > 0 && !rolling;
+    c.fillStyle = canRoll ? '#ff7aa8' : 'rgba(255,122,168,.18)'; A.rr(c, 70, BY, 400, 76, 22); c.fill();
+    c.textAlign = 'center'; c.fillStyle = canRoll ? '#2a0515' : 'rgba(255,255,255,.5)'; c.font = '900 28px "Pretendard Variable",system-ui';
+    c.fillText(rollsLeft > 0 ? '굴리기' : '칸을 골라 기록하세요', W / 2, BY + 32);
+    if (rollsLeft > 0) { for (var k = 0; k < 3; k++) { c.fillStyle = k < rollsLeft ? (canRoll ? '#2a0515' : '#ff7aa8') : 'rgba(0,0,0,.25)'; c.beginPath(); c.arc(W / 2 - 20 + k * 20, BY + 58, 5, 0, Math.PI * 2); c.fill(); } }
+    // 안내
+    c.fillStyle = 'rgba(255,230,240,' + (0.55 + 0.25 * Math.sin(t * 3)) + ')'; c.font = '700 17px "Pretendard Variable",system-ui';
+    var touch = document.body.classList.contains('touch'), msg = '';
+    if (phase === 'turn') {
+      if (!rolled()) msg = touch ? '굴리기를 눌러 시작' : 'Space 로 굴리기';
+      else if (armed >= 0) msg = touch ? '한 번 더 누르면 「' + CATS[armed].n + '」에 기록' : 'Enter 로 「' + CATS[armed].n + '」에 기록';
+      else if (rollsLeft > 0) msg = touch ? '주사위를 눌러 고정 · 칸을 눌러 기록' : '1~5 고정 · ←↑↓→ 칸 고르기 · Enter 기록';
+      else msg = touch ? '빈 칸을 눌러 기록' : '←↑↓→ 칸 고르기 · Enter 기록';
+    }
+    c.fillText(msg, W / 2, BY + 112);
+    c.textBaseline = 'alphabetic';
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function update(dt) {
+    tim += dt; fx.update(dt);
+    if (rollT > 0) {
+      rollT -= dt; if (Math.floor(tim * 20) !== Math.floor((tim - dt) * 20)) for (var i = 0; i < 5; i++) flick[i] = A.irand(1, 6);
+      if (rollT <= 0) { rollT = 0; A.sfx('brick', 0.9); var c = counts(dice); if (Math.max.apply(null, c) === 5) { fx.burst(W / 2, DY + DS / 2, '#ffd166', 30, 360, 0.8, 3); A.sfx('power'); } hud(); }
+    }
+  }
+  var lastHud = '';
+  function hud() {
+    var k = total() + '|' + turn + '|' + rollsLeft; if (k === lastHud) return; lastHud = k;
+    document.getElementById('hA').textContent = total(); document.getElementById('hB').textContent = turn + '/12'; document.getElementById('hC').textContent = (3 - rollsLeft) + '/3';
+    document.getElementById('hMult').textContent = '';
+  }
+
+  // ---------- 입력 ----------
+  function pickRow(ci) {
+    if (ci < 0 || sheet[CATS[ci].k] != null || !rolled() || rollT > 0) return;
+    if (armed === ci) { record(ci); return; }
+    sel = ci; armed = ci; A.sfx('tick');
+  }
+  var stage = document.getElementById('stage');
+  stage.addEventListener('click', function (e) {
+    if (S.state !== 'playing' || phase !== 'turn') return;
+    var p = S.toLocal(e), i;
+    for (i = 0; i < 5; i++) { var d = dieRect(i); if (p.x > d.x - 4 && p.x < d.x + d.w + 4 && p.y > d.y - 20 && p.y < d.y + d.h + 22) { toggleHold(i); return; } }
+    if (p.x > 70 && p.x < 470 && p.y > BY && p.y < BY + 76) { roll(); return; }
+    for (i = 0; i < CATS.length; i++) { var r = rowRect(i); if (p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h) { pickRow(i); return; } }
+  });
+  function moveSel(dc, dr) {
+    // 빈 칸 사이를 방향키로 이동(그 열이 다 찼으면 다른 열로)
+    var cur = sel < 0 ? (dr > 0 ? -1 : dr < 0 ? 6 : 0) : sel, col = cur < 6 && cur >= 0 ? 0 : cur < 0 ? 0 : 1, row = cur < 0 ? -1 : cur < 6 ? cur : cur - 6;
+    if (sel < 0 && dr < 0) { col = 0; row = 6; }
+    function empty(ci) { return sheet[CATS[ci].k] == null; }
+    if (dc) {
+      var nc = (col + dc + 2) % 2, best = -1, bd = 99;
+      for (var r = 0; r < 6; r++) if (empty(nc * 6 + r) && Math.abs(r - Math.max(0, row)) < bd) { bd = Math.abs(r - Math.max(0, row)); best = nc * 6 + r; }
+      if (best < 0) return; sel = armed = best; A.sfx('tick'); return;
+    }
+    for (var n = 1; n <= 12; n++) {
+      var lin = col * 6 + row + dr * n; lin = ((lin % 12) + 12) % 12;
+      if (empty(lin)) { sel = armed = lin; A.sfx('tick'); return; }
+    }
+  }
+  var S = new A.Shell({
+    id: 'yacht', W: W, H: H, reset: reset, update: update, idle: function (dt) { tim += dt; fx.update(dt); }, render: render,
+    keydown: function (e) {
+      var k = e.key;
+      if (phase !== 'turn') return;
+      if (k >= '1' && k <= '5') toggleHold(+k - 1);
+      else if (k === ' ') { if (!e.repeat) roll(); }
+      else if (k === 'ArrowUp') moveSel(0, -1); else if (k === 'ArrowDown') moveSel(0, 1);
+      else if (k === 'ArrowLeft') moveSel(-1, 0); else if (k === 'ArrowRight') moveSel(1, 0);
+      else if (k === 'Enter') { if (armed >= 0) record(armed); }
+    }
+  });
+})();
+
+</script>
+</body>
+</html>

@@ -1258,5 +1258,65 @@
   "new": true,
   "art": "capture",
   "maxScore": 300
+ },
+ {
+  "id": "tank",
+  "name": "미로 탱크",
+  "genre": "MAZE TANK",
+  "kgenre": "탱크 슈팅",
+  "cat": "액션",
+  "accent": "#ffd166",
+  "rgb": "255,209,102",
+  "ink": "#2a1d00",
+  "desc": "벽에 튕기는 포탄으로 모퉁이 너머 적 탱크를 맞히세요. 판마다 새 미로, 점점 똑똑해지는 적.",
+  "tags": [
+   "튕기는 포탄",
+   "무작위 미로",
+   "조이스틱"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
+ },
+ {
+  "id": "yacht",
+  "name": "주사위 족보",
+  "genre": "DICE",
+  "kgenre": "주사위 족보",
+  "cat": "보드·카드",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "주사위 5개를 3번까지 굴려 풀하우스·스트레이트·요트! 족보 12칸을 채워 최고 점수에 도전.",
+  "tags": [
+   "주사위",
+   "족보",
+   "12턴"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 400
+ },
+ {
+  "id": "td",
+  "name": "타워 디펜스",
+  "genre": "TOWER DEFENSE",
+  "kgenre": "타워 디펜스",
+  "cat": "액션",
+  "accent": "#ff7a45",
+  "rgb": "255,122,69",
+  "ink": "#2a0d00",
+  "desc": "길을 따라 몰려오는 적을 타워 4종으로 막으세요. 업그레이드·판매·배속, 10웨이브마다 보스.",
+  "tags": [
+   "타워 4종",
+   "업그레이드",
+   "보스"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 5000000
  }
 ]

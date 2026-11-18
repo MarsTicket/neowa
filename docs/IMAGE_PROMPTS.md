@@ -95,6 +95,9 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 55 | 사목 | `assets/four-card.jpg` | ⬜ 임시 캡처 | 돌을 떨어뜨려 4개를 잇는 판 |
 | 56 | 숫자 합치기 | `assets/merge-card.jpg` | ⬜ 임시 캡처 | 숫자 블록을 쏘아 올려 합치는 장면 |
 | 57 | 한붓 그리기 | `assets/paint-card.jpg` | ⬜ 임시 캡처 | 한붓으로 격자를 칠해 가는 장면 |
+| 58 | 색 병 정렬 | `assets/sort-card.jpg` | ⬜ 임시 캡처 | 색 병 사이로 액체를 부어 정리하는 장면 |
+| 59 | 합 퍼즐 | `assets/sum-card.jpg` | ⬜ 임시 캡처 | 합계 단서로 숫자를 채우는 퍼즐판 |
+| 60 | 육각 블록 | `assets/hexa-card.jpg` | ⬜ 임시 캡처 | 육각 판에서 한 줄이 터지는 순간 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -636,4 +639,34 @@ glossy rounded number tiles in warm amber, teal and magenta stacked in five colu
 
 ```
 a glowing pink-to-orange brush stroke snaking through a grid of rounded tiles, filling each square exactly once around a few dark blocked squares, a bright white brush tip glowing, dominant glow color #ff7aa8. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 58. 색 병 정렬 (`sort`)
+
+- 파일: `assets/sort-card.jpg`
+- 대표색: `#b48cff` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 색 병 사이로 액체를 부어 정리하는 장면
+
+```
+a row of tall glass test-tube bottles on a dark shelf filled with stacked layers of glossy liquid in red, yellow, cyan and violet, one bottle tilted pouring a violet stream into another, soft purple glow, dominant glow color #b48cff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 59. 합 퍼즐 (`sum`)
+
+- 파일: `assets/sum-card.jpg`
+- 대표색: `#c3ff5e` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 합계 단서로 숫자를 채우는 퍼즐판
+
+```
+a glowing lime-green number cross puzzle grid with dark clue squares split diagonally holding small sums, bright digits filling white squares, one row lighting up as it completes, dominant glow color #c3ff5e. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 60. 육각 블록 (`hexa`)
+
+- 파일: `assets/hexa-card.jpg`
+- 대표색: `#4dffd2` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 육각 판에서 한 줄이 터지는 순간
+
+```
+a glowing hexagonal board made of small hexagon cells, glossy mint, cyan and pink hex tiles filling it, one straight diagonal line of hexes bursting into light as it clears, a hex piece hovering above, dominant glow color #4dffd2. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

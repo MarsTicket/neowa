@@ -55,7 +55,8 @@
   function put(d) {
     if (winT > 0 || dyingT > 0) return;
     var i = idx(); if (given[i] || (val[i] && !wrong[i] && val[i] === sol[i])) { A.sfx('wall'); return; }
-    if (noteMode) { notes[i] ^= 1 << d; A.sfx('tick'); return; }
+    if (noteMode) { if (val[i]) { val[i] = 0; wrong[i] = false; } notes[i] ^= 1 << d; A.sfx('tick'); return; }
+    if (val[i] === d && wrong[i]) { A.sfx('wall'); return; } // 같은 오답을 다시 눌러도 실수로 세지 않음
     val[i] = d; notes[i] = 0;
     if (d !== sol[i]) {
       wrong[i] = true; mistakes++; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2);

@@ -1318,5 +1318,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 5000000
+ },
+ {
+  "id": "hangul",
+  "name": "한글 단어 맞히기",
+  "genre": "WORD GUESS",
+  "kgenre": "낱말 추리",
+  "cat": "두뇌",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "2글자 낱말을 자모 칸으로 풀어 6번 안에 맞히세요. 초록·노랑 힌트로 좁혀 가는 추리, 오늘의 단어도!",
+  "tags": [
+   "자모 힌트",
+   "오늘의 단어",
+   "연속 배율"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
  }
 ]

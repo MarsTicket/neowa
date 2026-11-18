@@ -45,7 +45,8 @@
       <div class="g-card"><h3>RULES</h3>
         <div class="g-keys">
           <div><kbd>⇄</kbd> 벽 통과 가능</div>
-          <div><kbd style="color:#ffd166">★</kbd> 황금 먹이는 5배 점수</div>
+          <div><kbd style="color:#7dff9b">»</kbd> 먹이로 곧장 가면 2배</div>
+          <div><kbd style="color:#ffd166">★</kbd> 황금 먹이: 빨리 먹을수록 큰 점수(6초)</div>
           <div><kbd style="color:#8a90b8">■</kbd> 레벨 3부터 바위 등장</div>
         </div>
       </div>
@@ -66,7 +67,7 @@
         <p class="ov-desc">먹을수록 길어지고, 길어질수록 빨라집니다. 내 꼬리만 피하면 벽은 통과해도 괜찮아요.</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>스와이프 · 방향키</span>
-          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>황금 먹이 5배</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>황금 먹이 보너스</span>
         </div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
@@ -123,9 +124,11 @@
 (function () {
   'use strict';
   var A = Arcade;
-  var COLS = 20, ROWS = 22, CELL = 30, TOP = 60, W = COLS * CELL, H = ROWS * CELL + TOP;
+  var COLS = 20, ROWS = 22, CELL = 30, TOP = 60, W = COLS * CELL, H = ROWS * CELL + TOP, land = false;
+  // 가로 화면: 점수판을 오른쪽 패널로 옮기고 판 위 60px 여백을 없애 600x660(판만)으로 그림 → 판이 조금 더 커짐
+  function geo(sh) { land = !!(sh && sh.land); TOP = land ? 0 : 60; H = ROWS * CELL + TOP; }
   var fx = new A.FX();
-  var snake, prev, dir, queue, food, gold, rocks, acc, interval, score, level, eaten, dying, dieT, dieIdx, grow, goldCount, maxLen;
+  var snake, prev, dir, queue, food, gold, rocks, acc, interval, score, level, eaten, dying, dieT, dieIdx, grow, goldCount, maxLen, foodSteps = 0, foodNeed = 0, fastN = 0;
 
   var BG = A.sprite('snbg', W, H, function (x) {
     x.fillStyle = '#04070a'; x.fillRect(0, 0, W, H);
@@ -156,14 +159,32 @@
     if (gold && gold.x === c && gold.y === r) return true;
     return false;
   }
-  function freeCell(awayFromHead) {
+  // 머리가 지금 가는 줄(앞쪽 9칸, 벽 통과 포함)이면 true: 바위가 갑자기 코앞에 생기지 않게
+  function inPath(c, r) {
+    var h = snake[0], d = queue.length ? queue[queue.length - 1] : dir;
+    for (var k = 1; k <= 9; k++) if ((h.x + d.x * k + COLS * 9) % COLS === c && (h.y + d.y * k + ROWS * 9) % ROWS === r) return true;
+    return false;
+  }
+  function freeCell(awayFromHead, rock) {
     for (var t = 0; t < 500; t++) {
       var c = A.irand(0, COLS - 1), r = A.irand(0, ROWS - 1);
       if (occupied(c, r)) continue;
       if (awayFromHead && Math.abs(c - snake[0].x) + Math.abs(r - snake[0].y) < 6) continue;
+      if (rock && (inPath(c, r) || (food && Math.abs(c - food.x) + Math.abs(r - food.y) < 2))) continue;
       return { x: c, y: r };
     }
-    return null;
+    // 무작위로 못 찾으면 빈칸을 전부 훑어서 하나 고름 (판이 거의 찼을 때 먹이가 사라지는 문제 방지)
+    var free = [];
+    for (var yy = 0; yy < ROWS; yy++) for (var xx = 0; xx < COLS; xx++) if (!occupied(xx, yy) && !(rock && inPath(xx, yy))) free.push({ x: xx, y: yy });
+    return free.length ? A.pick(free) : null;
+  }
+  function wrapDist(a, b) {
+    var dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+    return Math.min(dx, COLS - dx) + Math.min(dy, ROWS - dy);
+  }
+  function newFood() {
+    food = freeCell(false); foodSteps = 0;
+    foodNeed = food ? wrapDist(snake[0], food) + 4 : 0; // 이 걸음 수 안에 먹으면 빠른 먹기 보너스
   }
 
   function reset() {
@@ -171,10 +192,10 @@
     snake = [{ x: sx, y: sy }, { x: sx - 1, y: sy }, { x: sx - 2, y: sy }, { x: sx - 3, y: sy }];
     prev = snake.map(function (s) { return { x: s.x, y: s.y }; });
     dir = { x: 1, y: 0 }; queue = []; rocks = []; food = null; gold = null;
-    acc = 0; score = 0; level = 1; eaten = 0; dying = false; grow = 0; goldCount = 0; maxLen = 4;
+    acc = 0; score = 0; level = 1; eaten = 0; dying = false; grow = 0; goldCount = 0; maxLen = 4; fastN = 0;
     interval = speedFor(1);
     fx.clear();
-    food = freeCell(false);
+    newFood();
     hud();
   }
   function speedFor(lv) { return Math.max(0.055, 0.135 - (lv - 1) * 0.01); }
@@ -199,13 +220,16 @@
     snake.unshift({ x: nx, y: ny });
     if (grow > 0) { grow--; var tl = prev[prev.length - 1]; prev.push({ x: tl.x, y: tl.y }); } else snake.pop();
     // 먹이
+    foodSteps++;
+    if (!food) newFood();
     if (food && nx === food.x && ny === food.y) {
       eaten++; grow += 1; goldCount++;
-      var pts = 10 * level; score += pts;
+      var fast = foodSteps <= foodNeed, pts = 10 * level * (fast ? 2 : 1); score += pts;
+      if (fast) fastN++;
       fx.burst(cx(nx), cy(ny), '#ff5d8f', 18, 260, 0.5, 3); fx.ring(cx(nx), cy(ny), '#ff5d8f', 60, 0.35);
-      fx.text(cx(nx), cy(ny) - 20, '+' + pts, '#ffd0dc', 18);
+      fx.text(cx(nx), cy(ny) - 20, (fast ? '빠르게! ' : '') + '+' + pts, fast ? '#7dff9b' : '#ffd0dc', fast ? 20 : 18);
       A.sfx('eat', 1 + Math.min(eaten % 6, 5) * 0.06); A.vibrate(12);
-      food = freeCell(false);
+      newFood();
       if (!gold && goldCount >= 5) { goldCount = 0; gold = freeCell(true); if (gold) { gold.t = 6; A.sfx('coin'); } }
       if (eaten % 6 === 0) levelUp();
     }
@@ -223,7 +247,7 @@
     level++; interval = speedFor(level);
     S.banner('LEVEL ' + level, level >= 3 ? '바위 조심' : 'SPEED UP'); A.sfx('level');
     if (level >= 3 && rocks.length < 16) {
-      for (var i = 0; i < 2; i++) { var c = freeCell(true); if (c) { rocks.push(c); fx.burst(cx(c.x), cy(c.y), '#8a90b8', 14, 200, 0.5, 3); } }
+      for (var i = 0; i < 2; i++) { var c = freeCell(true, true); if (c) { rocks.push(c); fx.burst(cx(c.x), cy(c.y), '#8a90b8', 14, 200, 0.5, 3); } }
     }
   }
   function die() {
@@ -242,7 +266,7 @@
         if (dieIdx % 3 === 0) A.sfx('hit', 1 + dieIdx * 0.02);
         dieIdx++;
       }
-      if (dieT > snake.length * 0.035 + 0.7) S.gameOver(score, [['레벨', String(level)], ['최대 길이', String(maxLen)], ['먹이', String(eaten)]]);
+      if (dieT > snake.length * 0.035 + 0.7) S.gameOver(score, [['레벨', String(level)], ['최대 길이', String(maxLen)], ['빠르게 먹기', fastN + '/' + eaten]]);
       return;
     }
     if (gold) { gold.t -= dt; if (gold.t <= 0) { fx.burst(cx(gold.x), cy(gold.y), '#ffd166', 10, 120, 0.4, 2); gold = null; } }
@@ -265,7 +289,7 @@
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(BG, 0, 0, W, H);
+    c.drawImage(BG, 0, TOP - 60, W, ROWS * CELL + 60);
     if (!snake) { c.restore(); return; }
     var t = S.time;
     // 바위
@@ -343,6 +367,7 @@
     document.getElementById('hLevel').textContent = level;
     document.getElementById('hLen').textContent = snake.length + grow;
     document.getElementById('hProg').style.width = ((eaten % 6) / 6 * 100) + '%';
+    if (pEl.score) { pEl.score.textContent = A.fmt(score); pEl.level.textContent = level; pEl.len.textContent = snake.length + grow; }
   }
 
   /* ---------- 입력 ---------- */
@@ -372,8 +397,9 @@
     });
   });
 
+  var pEl = {};
   var S = new A.Shell({
-    id: 'snake', W: W, H: H,
+    id: 'snake', W: W, H: H, land: [600, 660], onResize: geo,
     init: function () {
       // 시작 화면용 장식 뱀
       rocks = []; dir = { x: 1, y: 0 };
@@ -387,6 +413,9 @@
     render: render,
     keydown: function (e) { var m = KEYMAP[e.key]; if (m) { e.preventDefault(); turn(m[0], m[1]); } }
   });
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>LEVEL</span><b id="pkLevel">1</b></div><div><span>LENGTH</span><b id="pkLen">4</b></div></div>';
+  pEl = { score: document.getElementById('pkScore'), level: document.getElementById('pkLevel'), len: document.getElementById('pkLen') };
 })();
 </script>
 </body>

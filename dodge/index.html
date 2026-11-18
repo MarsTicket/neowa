@@ -49,6 +49,7 @@
           <div>한 번 맞으면 끝</div>
           <div><kbd style="color:#ff4d6d">━</kbd> 레이저는 깜빡인 뒤 발사</div>
           <div><kbd style="color:#ffd166">●</kbd> 에너지 +100, 5개 모으면 폭탄</div>
+          <div><kbd style="color:#9ff3ff">≈</kbd> 탄을 아슬아슬하게 스치면 +10</div>
         </div>
       </div>
     </aside>
@@ -119,11 +120,11 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 70;
   var fx = new A.FX();
-  var P, foes = [], shots = [], lasers = [], orbs = [], time = 0, score = 0, orbN = 0, bombs = 0, dirT = 0, dyingT = 0, keys = {}, drag = null, orbT = 0, grid = [];
+  var P, foes = [], shots = [], lasers = [], orbs = [], time = 0, score = 0, orbN = 0, bombs = 0, dirT = 0, dyingT = 0, keys = {}, drag = null, orbT = 0, grid = [], pend = [], grazeN = 0;
 
   function reset() {
     P = { x: W / 2, y: H * 0.65, r: 10, inv: 1 };
-    foes = []; shots = []; lasers = []; orbs = []; time = 0; score = 0; orbN = 0; bombs = 0; dirT = 1.2; dyingT = 0; orbT = 2; keys = {}; drag = null;
+    foes = []; shots = []; lasers = []; orbs = []; time = 0; score = 0; orbN = 0; bombs = 0; dirT = 1.2; dyingT = 0; orbT = 2; keys = {}; drag = null; pend = []; grazeN = 0;
     fx.clear(); hud();
   }
   // 공격 패턴 감독: 시간이 갈수록 강하고 자주
@@ -137,10 +138,10 @@
     var k = A.pick(opts);
     if (k === 'rain') { var n = 6 + Math.floor(lv * 8), side = A.irand(0, 3); for (var i = 0; i < n; i++) edgeShot(side, i / n); }
     if (k === 'seeker') { for (var j = 0; j < 1 + Math.floor(lv * 2); j++) foes.push({ x: A.rand(40, W - 40), y: TOP - 20, vx: 0, vy: 0, life: 6 + lv * 3, sp: 150 + lv * 90 }); }
-    if (k === 'laser') { var cnt = 1 + Math.floor(lv * 2.5); for (var q = 0; q < cnt; q++) { var hor = Math.random() < 0.5; lasers.push({ hor: hor, pos: hor ? A.rand(TOP + 40, H - 40) : A.rand(30, W - 30), warn: 1.1 - lv * 0.35, on: 0.45, w: 26 }); } }
+    if (k === 'laser') { var cnt = 1 + Math.floor(lv * 2.5); for (var q = 0; q < cnt; q++) { var hor = Math.random() < 0.5; lasers.push({ hor: hor, pos: hor ? A.rand(TOP + 40, H - 40) : A.rand(30, W - 30), warn: 1.1 - lv * 0.35, on: 0.45, w: 26 }); } A.sfx('tick', 0.8); }
     if (k === 'ring') { var cx = A.rand(80, W - 80), cy = A.rand(TOP + 80, H * 0.45), m = 12 + Math.floor(lv * 10); for (var z = 0; z < m; z++) { var a = z / m * Math.PI * 2; shots.push({ x: cx, y: cy, vx: Math.cos(a) * 190, vy: Math.sin(a) * 190, r: 8, delay: 0.5 }); } fx.ring(cx, cy, '#ff4d6d', 90, 0.5); }
     if (k === 'cross') { [[0, TOP], [W, TOP], [0, H], [W, H]].forEach(function (c) { var a = Math.atan2(P.y - c[1], P.x - c[0]); for (var s = -1; s <= 1; s++) shots.push({ x: c[0], y: c[1], vx: Math.cos(a + s * 0.15) * 260, vy: Math.sin(a + s * 0.15) * 260, r: 8 }); }); }
-    if (k === 'spiral') { var sx = W / 2, sy = TOP + 120; for (var u = 0; u < 36; u++) (function (u2) { setTimeout(function () { if (S.state !== 'playing' || dyingT > 0) return; var a2 = u2 * 0.5; shots.push({ x: sx, y: sy, vx: Math.cos(a2) * 210, vy: Math.sin(a2) * 210, r: 8 }); }, u2 * 70); })(u); }
+    if (k === 'spiral') { var sx = W / 2, sy = TOP + 120; for (var u = 0; u < 36; u++) pend.push({ t: u * 0.07, x: sx, y: sy, a: u * 0.5 }); }
     dirT = Math.max(0.55, 2.0 - lv * 1.4) * A.rand(0.8, 1.2);
   }
   function edgeShot(side, f) {
@@ -153,7 +154,7 @@
   }
   function bomb() {
     if (bombs <= 0 || dyingT > 0) return;
-    bombs--; fx.ring(P.x, P.y, '#ffd166', 700, 0.8); fx.flashIt('#ffd166', 0.5); fx.shake(8, 0.3); A.sfx('bigboom');
+    bombs--; pend = []; fx.ring(P.x, P.y, '#ffd166', 700, 0.8); fx.flashIt('#ffd166', 0.5); fx.shake(8, 0.3); A.sfx('bigboom');
     shots.forEach(function (s) { fx.burst(s.x, s.y, '#ff8fb8', 3, 120, 0.3, 2); }); foes.forEach(function (f) { fx.burst(f.x, f.y, '#ff4d6d', 10, 200, 0.4, 3); });
     score += (shots.length + foes.length * 5) * 5; shots = []; foes = []; lasers = []; P.inv = 1; hud();
   }
@@ -166,7 +167,7 @@
     fx.update(dt);
     if (dyingT > 0) {
       dyingT -= dt; moveAll(dt);
-      if (dyingT <= 0) S.gameOver(score, [['버틴 시간', time.toFixed(1) + '초'], ['에너지', String(orbN)], ['폭탄 사용', String(usedBombs)]]);
+      if (dyingT <= 0) S.gameOver(Math.floor(score), [['버틴 시간', time.toFixed(1) + '초'], ['스침', String(grazeN)], ['에너지', String(orbN)]]);
       return;
     }
     time += dt; score += dt * 10;
@@ -175,11 +176,21 @@
     if (kx || ky) { var l = Math.hypot(kx, ky); P.x += kx / l * 420 * dt; P.y += ky / l * 420 * dt; }
     P.x = A.clamp(P.x, 14, W - 14); P.y = A.clamp(P.y, TOP + 14, H - 14);
     dirT -= dt; if (dirT <= 0) director();
+    // 예약된 탄(나선 패턴): 게임 시간 기준이라 일시정지·다시 하기와 꼬이지 않음
+    for (var pi = pend.length - 1; pi >= 0; pi--) { var pq = pend[pi]; pq.t -= dt; if (pq.t <= 0) { shots.push({ x: pq.x, y: pq.y, vx: Math.cos(pq.a) * 210, vy: Math.sin(pq.a) * 210, r: 8 }); pend.splice(pi, 1); } }
     orbT -= dt; if (orbT <= 0) { orbs.push({ x: A.rand(40, W - 40), y: A.rand(TOP + 60, H - 60), t: 0 }); orbT = A.rand(2.5, 4); }
     moveAll(dt);
     // 충돌
     var i;
-    for (i = 0; i < shots.length; i++) { var s = shots[i]; if (s.delay > 0) continue; if (Math.hypot(s.x - P.x, s.y - P.y) < s.r + P.r - 3) die(); }
+    for (i = 0; i < shots.length; i++) {
+      var s = shots[i]; if (s.delay > 0) continue;
+      var sd = Math.hypot(s.x - P.x, s.y - P.y);
+      if (sd < s.r + P.r - 3) die();
+      else if (!s.gz && sd < s.r + P.r + 16 && P.inv <= 0) { // 스침(그레이즈) 보너스
+        s.gz = true; grazeN++; score += 10; fx.spark(P.x, P.y, '#9ff3ff', (P.x - s.x) * 3, (P.y - s.y) * 3, 0.25, 2.2);
+        if (grazeN % 5 === 0) { fx.text(P.x, P.y - 28, '스침 ×' + grazeN, '#9ff3ff', 16); A.sfx('tick', 1.6); }
+      }
+    }
     for (i = 0; i < foes.length; i++) if (Math.hypot(foes[i].x - P.x, foes[i].y - P.y) < 22) die();
     for (i = 0; i < lasers.length; i++) { var L = lasers[i]; if (L.warn <= 0 && L.on > 0) { if (L.hor ? Math.abs(P.y - L.pos) < L.w / 2 + P.r - 4 : Math.abs(P.x - L.pos) < L.w / 2 + P.r - 4) die(); } }
     for (i = orbs.length - 1; i >= 0; i--) {
@@ -261,11 +272,14 @@
     document.getElementById('hC').textContent = bombs;
     document.getElementById('hMult').textContent = bombs > 0 ? '두 번 탭 = 폭탄' : '';
   }
-  var stage = document.getElementById('stage'), lastTap = 0;
+  var stage = document.getElementById('stage'), lastTap = 0, lastTapX = 0, lastTapY = 0;
+  window.addEventListener('blur', function () { keys = {}; }); // 창을 벗어날 때 눌린 키가 남지 않게
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return;
-    var now = performance.now(); if (now - lastTap < 300) { if (bombs > 0) usedBombs++; bomb(); } lastTap = now;
-    var p = S.toLocal(e); drag = { id: e.pointerId, sx: p.x, sy: p.y, px: P.x, py: P.y };
+    var now = performance.now(), p = S.toLocal(e);
+    // 두 번 탭: 0.3초 안에, 거의 같은 자리를 다시 눌러야 폭탄 (드래그 중 실수 방지)
+    if (now - lastTap < 300 && Math.hypot(p.x - lastTapX, p.y - lastTapY) < 60) { if (bombs > 0) usedBombs++; bomb(); lastTap = 0; } else lastTap = now;
+    lastTapX = p.x; lastTapY = p.y; drag = { id: e.pointerId, sx: p.x, sy: p.y, px: P.x, py: P.y };
     try { stage.setPointerCapture(e.pointerId); } catch (er) {}
   });
   stage.addEventListener('pointermove', function (e) {

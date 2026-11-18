@@ -8,13 +8,13 @@
   function shoot(p) {
     if (S.state !== 'playing' || endT > 0) return; shots++;
     for (var i = tg.length - 1; i >= 0; i--) { var t = tg[i], k = t.life / t.max, r = t.r * (0.4 + 0.6 * k), d = Math.hypot(p.x - t.x, p.y - t.y);
-      if (d < r) { tg.splice(i, 1); hits++; combo++; var acc = 1 - d / r, pts = Math.round(20 + acc * 80) + combo * 2; score += pts; fx.burst(t.x, t.y, acc > 0.7 ? '#ffd166' : '#5ee7ff', 16, 260, 0.4, 3); fx.text(t.x, t.y - 30, (acc > 0.8 ? '정중앙 ' : '') + '+' + pts, acc > 0.8 ? '#ffd166' : '#fff', 20); A.sfx(acc > 0.8 ? 'gold' : 'hit', 1.2 + acc * 0.4); hud(); return; } }
+      if (d < r) { tg.splice(i, 1); hits++; combo++; var acc = 1 - d / r, pts = Math.round(20 + acc * 80) + combo * 2; score += pts; fx.burst(t.x, t.y, acc > 0.7 ? '#ffd166' : '#5ee7ff', 16, 260, 0.4, 3); fx.text(t.x, t.y - 30, (acc > 0.8 ? '정중앙 ' : '') + '+' + pts, acc > 0.8 ? '#ffd166' : '#fff', 20); A.sfx(acc > 0.8 ? 'gold' : 'pop', 1 + acc * 0.3); hud(); return; } }
     combo = 0; A.sfx('wall', 1.5); fx.burst(p.x, p.y, '#ff4d6d', 4, 100, 0.2, 2); hud();
   }
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['명중', hits + '/' + shots], ['정확도', (shots ? Math.round(hits / shots * 100) : 0) + '%']], { kick: 'TIME UP', win: true }); return; }
-    time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); hud(); return; }
+    time -= dt; if (time > 0 && time <= 5 && Math.ceil(time) < Math.ceil(time + dt)) A.sfx('warn'); if (time <= 0) { time = 0; endT = 0.6; hud(); return; }
     spawnT -= dt; if (spawnT <= 0 && tg.length < 4) spawn();
     for (var i = tg.length - 1; i >= 0; i--) { tg[i].life -= dt; if (tg[i].life <= 0) { tg.splice(i, 1); combo = 0; } }
     hud();

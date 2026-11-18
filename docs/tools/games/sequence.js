@@ -15,8 +15,8 @@
     if (S.state !== 'playing' || mode !== 'input' || dyingT > 0 || i >= pads.length) return;
     light(i, 0.25);
     if (seq[step] === i) {
-      step++; if (step >= seq.length) { score += level * 10; fx.text(CX, CY, '+' + level * 10, '#4dffd2', 26); mode = 'wait'; setTimeout(function () { if (S.state === 'playing') { if (level % 5 === 0) { S.banner('LEVEL ' + (level + 1), level + 1 >= 10 ? '6색 모드' : '더 빠르게'); A.sfx('level'); } nextLevel(); } }, 700); }
-    } else { mode = 'over'; dyingT = 1.2; fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(160); lit[seq[step]] = 1.2; }
+      step++; if (step >= seq.length) { score += level * 10; fx.text(CX, CY, '+' + level * 10, '#4dffd2', 26); mode = 'wait'; A.sfx('right', 1.5); setTimeout(function () { if (S.state === 'playing') { if (level % 5 === 0) { S.banner('LEVEL ' + (level + 1), level + 1 >= 10 ? '6색 모드' : '더 빠르게'); A.sfx('level'); } nextLevel(); } }, 700); }
+    } else { mode = 'over'; dyingT = 1.2; fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('wrong'); A.sfx('hurt'); A.vibrate(160); lit[seq[step]] = 1.2; }
     hud();
   }
   function update(dt) {

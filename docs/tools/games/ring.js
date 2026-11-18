@@ -16,7 +16,7 @@
     if (d <= zoneW / 2) {
       hits++; var acc = 1 - d / (zoneW / 2), pts = 10 + Math.round(acc * 20);
       if (acc > 0.8) { pts += 20; perfect++; fx.text(CX, CY - 40, 'PERFECT +' + pts, '#ffd166', 26); A.sfx('gold'); }
-      else { fx.text(CX, CY - 40, '+' + pts, '#fff', 22); A.sfx('coin', 1 + Math.min(hits, 20) * 0.03); }
+      else { fx.text(CX, CY - 40, '+' + pts, '#fff', 22); A.sfx('right', 1 + Math.min(hits, 20) * 0.03); }
       score += pts; dir *= -1; spd = Math.min(6.5, 2.2 + hits * 0.12);
       var nx = CX + Math.cos(ang) * R, ny = CY + Math.sin(ang) * R;
       fx.burst(nx, ny, '#ff9ecf', 18, 260, 0.5, 3); fx.ring(CX, CY, '#ff9ecf', R * 1.3, 0.4); fx.shake(3, 0.1); A.vibrate(15); pulse = 1;

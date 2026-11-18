@@ -18,11 +18,11 @@
     if (ch === 'skip') { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('wall'); makeQ(); hud(); return; }
     if (ch === '-') { if (!input) input = '-'; return; }
     if (input.length >= 4) return; input += ch; A.sfx('tick', 1.2);
-    if (+input === ans) { solved++; combo++; var pts = 10 + combo * 2; score += pts; time = Math.min(99, time + 2); flash = 0.25; flashC = '#7dff9b'; A.sfx('coin', 1 + Math.min(combo, 15) * 0.04); fx.text(W / 2, 260, '+' + pts, '#ffd166', 24); makeQ(); }
-    else if (String(ans).length <= input.replace('-', '').length && input !== '-') { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.5); fx.shake(5, 0.15); input = ''; }
+    if (+input === ans) { solved++; combo++; var pts = 10 + combo * 2; score += pts; time = Math.min(99, time + 2); flash = 0.25; flashC = '#7dff9b'; A.sfx(combo >= 3 ? 'combo' : 'right', 1 + Math.min(combo, 15) * 0.03); fx.text(W / 2, 260, '+' + pts, '#ffd166', 24); makeQ(); }
+    else if (String(ans).length <= input.replace('-', '').length && input !== '-') { time -= 3; combo = 0; flash = 0.3; flashC = '#ff4d6d'; A.sfx('wrong'); fx.shake(5, 0.15); input = ''; }
     hud();
   }
-  function update(dt) { fx.update(dt); if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['맞힌 문제', String(solved)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); } hud(); }
+  function update(dt) { fx.update(dt); if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['맞힌 문제', String(solved)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time > 0 && time <= 5 && Math.ceil(time) < Math.ceil(time + dt)) A.sfx('warn'); if (time <= 0) { time = 0; endT = 0.6; } hud(); }
   var KEYS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '-', '0', 'del'];
   function render(c) {
     var o = fx.offset();

@@ -8,9 +8,9 @@
   function cs() { return 480 / n; }
   function tap(i) {
     if (S.state !== 'playing' || endT > 0 || done[i]) return;
-    if (nums[i] === nextN) { done[i] = 1; flashI[i] = 0.3; nextN++; A.sfx('tick', 1 + nextN * 0.02);
-      if (nextN > n * n) { endT = 1; A.sfx('level'); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), '#ff9e4d', 20, 300, 0.7, 4); } }
-    else { time += 1; flashI[i] = -0.3; A.sfx('wall'); fx.text(W / 2, 150, '+1초', '#ff4d6d', 22); }
+    if (nums[i] === nextN) { done[i] = 1; flashI[i] = 0.3; nextN++; A.sfx('tap', 1 + nextN * 0.02);
+      if (nextN > n * n) { endT = 1; A.sfx('win'); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), '#ff9e4d', 20, 300, 0.7, 4); } }
+    else { time += 1; flashI[i] = -0.3; A.sfx('wrong'); fx.text(W / 2, 150, '+1초', '#ff4d6d', 22); }
     hud();
   }
   function score() { var par = [12, 22, 40][diff]; return Math.max(10, Math.round(1000 * (diff + 1) * par / Math.max(par * 0.3, time))); }

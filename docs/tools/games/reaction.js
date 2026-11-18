@@ -7,7 +7,7 @@
   function ready() { phase = 'wait'; waitT = A.rand(1.4, 3.6); msg = '초록색이 되면 탭!'; }
   function tap() {
     if (S.state !== 'playing' || endT > 0) return;
-    if (phase === 'wait') { times.push(500); msg = '너무 빨라요! +500ms'; A.sfx('hurt', 1.4); fx.shake(6, 0.2); phase = 'show'; showT = 1.2; }
+    if (phase === 'wait') { times.push(500); msg = '너무 빨라요! +500ms'; A.sfx('wrong'); fx.shake(6, 0.2); phase = 'show'; showT = 1.2; }
     else if (phase === 'go') { var ms = Math.round(performance.now() - goAt); times.push(ms); msg = ms + ' ms'; A.sfx(ms < 250 ? 'gold' : 'coin'); fx.burst(W / 2, 480, ms < 250 ? '#ffd166' : '#7dff9b', 30, 340, 0.6, 4); phase = 'show'; showT = 1.1; A.vibrate(15); }
     hud();
   }
@@ -16,7 +16,7 @@
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) { var a = avg(), sc = Math.max(0, Math.round((600 - a) * 3)); var best = A.getInt('neowa_reaction_ms'); if (!best || a < best) A.set('neowa_reaction_ms', a); S.gameOver(sc, [['평균', a + 'ms'], ['최고', Math.min.apply(null, times) + 'ms'], ['내 최단 평균', (A.getInt('neowa_reaction_ms') || a) + 'ms']], { kick: 'RESULT', win: true }); } return; }
-    if (phase === 'wait') { waitT -= dt; if (waitT <= 0) { phase = 'go'; goAt = performance.now(); A.sfx('tick', 2); } }
+    if (phase === 'wait') { waitT -= dt; if (waitT <= 0) { phase = 'go'; goAt = performance.now(); A.sfx('go'); } }
     if (phase === 'show') { showT -= dt; if (showT <= 0) { if (round >= ROUNDS) { endT = 0.6; } else { round++; ready(); } hud(); } }
   }
   function render(c) {

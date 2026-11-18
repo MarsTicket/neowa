@@ -2,24 +2,32 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, land = false;
   var fx = new A.FX();
-  var level, n, odd, base, oddC, time, score, endT, shakeI = -1, shakeT = 0, qT = 0, cur = { x: 0, y: 0 }, kbd = false, streak = 0;
+  var level, n, odd, base, oddC, time, score, endT, shakeI = -1, shakeT = 0, qT = 0, cur = { x: 0, y: 0 }, kbd = false, streak = 0, fastN = 0, bestStreak = 0, diff = A.get('neowa_oddcolor_diff', '0') === '1' ? 1 : 0;
+  // 오늘의 도전: 로컬 날짜(YYYYMMDD)로 시드를 고정해 오늘은 누구나 같은 문제. rnd()는 평소엔 Math.random
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  var rnd = Math.random;
+  function seedRnd(on) { if (!on) { rnd = Math.random; return; } var a = (Math.imul(today(), 0x9E3779B1) ^ 0x5bd1e995) >>> 0;
+    rnd = function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // mulberry32
+  function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
+  function dailyBest(sc) { var k = 'neowa_oddcolor_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); b = sc; } return b; } // 오늘 최고 점수
+
   function hsl(h, s, l) { return 'hsl(' + h + ',' + s + '%,' + l + '%)'; }
   function next() {
-    n = Math.min(9, 2 + Math.floor((level + 1) / 2)); odd = A.irand(0, n * n - 1);
-    var h = A.irand(0, 359), s = A.irand(55, 85), l = A.irand(40, 62), d = Math.max(3, 24 - level * 1.1);
+    n = Math.min(9, 2 + Math.floor((level + 1) / 2)); odd = ri(0, n * n - 1);
+    var h = ri(0, 359), s = ri(55, 85), l = ri(40, 62), d = Math.max(3, 24 - level * 1.1);
     base = hsl(h, s, l); oddC = hsl(h, s, l + (l > 52 ? -d : d)); qT = 0;
     cur.x = Math.min(cur.x, n - 1); cur.y = Math.min(cur.y, n - 1);
   }
-  function reset() { level = 1; time = 60; score = 0; endT = 0; streak = 0; next(); fx.clear(); hud(); }
+  function reset() { level = 1; time = 60; score = 0; endT = 0; streak = 0; fastN = 0; bestStreak = 0; seedRnd(diff === 1); next(); document.getElementById('hMult') && (document.getElementById('hMult').textContent = diff === 1 ? '오늘의 도전' : ''); fx.clear(); hud(); }
   function geo() { var size = land ? 600 : 480, gap = n > 6 ? 4 : 8, cs = (size - gap * (n - 1)) / n; return { x0: (W - size) / 2, y0: land ? 70 : 200, cs: cs, gap: gap }; } // 가로 화면은 720x720 정사각형 판
   function tap(i) {
     if (S.state !== 'playing' || endT > 0) return;
-    if (i === odd) { var fast = qT < 2, pts = 10 * level + (fast ? 5 * level : 0); score += pts; streak = fast ? streak + 1 : 0; // 2초 안에 찾으면 1.5배
+    if (i === odd) { var fast = qT < 2, pts = 10 * level + (fast ? 5 * level : 0); score += pts; streak = fast ? streak + 1 : 0; if (fast) fastN++; bestStreak = Math.max(bestStreak, streak); // 2초 안에 찾으면 1.5배
       if (fast) fx.text(W / 2, 180, '빠름! +' + pts, '#ffd166', 22); var g = geo(); fx.burst(g.x0 + (i % n + 0.5) * (g.cs + g.gap), g.y0 + (Math.floor(i / n) + 0.5) * (g.cs + g.gap), '#fff', 16, 260, 0.4, 3); A.sfx('coin', 1 + Math.min(level, 20) * 0.03); level++; time = Math.min(99, time + 1); next(); }
     else { time -= 3; streak = 0; shakeI = i; shakeT = 0.3; A.sfx('hurt', 1.4); fx.flashIt('#ff2244', 0.2); }
     hud();
   }
-  function update(dt) { fx.update(dt); qT += dt; if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 1; A.sfx('over'); } hud(); }
+  function update(dt) { fx.update(dt); qT += dt; if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)], ['빠른 찾기', fastN + '번 (최고 ' + bestStreak + '연속)'], diff === 1 ? ['오늘 최고', A.fmt(dailyBest(score))] : ['마지막 색 차이', Math.round(Math.max(3, 24 - level * 1.1)) + '%']], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 1; A.sfx('over'); } hud(); }
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
@@ -35,6 +43,10 @@
   var last = '';
   function hud() { var k = score + '|' + level + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = level; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 10 ? '#ff4d6d' : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), g = geo(), x = Math.floor((p.x - g.x0) / (g.cs + g.gap)), y = Math.floor((p.y - g.y0) / (g.cs + g.gap)); if (x >= 0 && y >= 0 && x < n && y < n) { kbd = false; tap(y * n + x); } });
+  // 모드 버튼: 0 = 기본, 1 = 오늘의 도전
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_oddcolor_diff', diff); A.sfx('click'); pd(); }); }); pd();
   var S = new A.Shell({ id: 'oddcolor', W: W, H: H, land: [720, 720], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; kbd = true;
       if (k === 'ArrowLeft' || k === 'a') cur.x = (cur.x + n - 1) % n; if (k === 'ArrowRight' || k === 'd') cur.x = (cur.x + 1) % n;

@@ -1198,5 +1198,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 2000000
+ },
+ {
+  "id": "cannon",
+  "name": "대포 블록 부수기",
+  "genre": "BALL BLAST",
+  "kgenre": "블록 부수기",
+  "cat": "액션",
+  "accent": "#ff4d6d",
+  "rgb": "255,77,109",
+  "ink": "#2a0410",
+  "desc": "조준해서 공 수십 개를 한 번에 쏘아 숫자 블록을 부수세요. 턴마다 블록이 내려오니 서둘러요!",
+  "tags": [
+   "끌어서 조준",
+   "공 늘리기",
+   "빨리 감기"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000000
  }
 ]

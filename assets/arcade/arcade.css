@@ -316,6 +316,11 @@ body.rot-tip .gp-tip{display:flex}
   .g-name{font-size:16px}
 }
 /* 휴대폰 가로(키 낮은 화면): 패널 정리 */
+/* 패널 버튼이 많은 게임(나이트 투어 등)은 키 낮은 화면에서 패널이 넘칠 수 있으므로 패널만 스크롤 */
+body.land .g-panel{overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain}
+body.land .g-panel::-webkit-scrollbar{display:none}
+body.land .g-panel>*{flex-shrink:0}
+body.land .g-panel>.gp-cards{flex-shrink:1}
 @media (max-height:480px){
   body.land .g-wrap{padding:8px 12px;gap:14px}
   .g-panel{gap:8px}

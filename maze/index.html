@@ -115,13 +115,16 @@
 <script>
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960;
+  var A = Arcade, W = 540, H = 960, land = false;
+  // 칸 크기·판 위치. 가로 화면은 720x720 정사각형 판을 거의 꽉 채움 (미로 내용은 그대로)
+  function layout() { if (land) { CS = Math.floor(690 / N); GX = (W - N * CS) / 2; GY = (H - N * CS) / 2; } else { CS = Math.floor(Math.min(500 / N, 780 / N)); GX = (W - N * CS) / 2; GY = 110 + (800 - N * CS) / 2; } }
+  function geo(sh) { W = sh ? sh.W : 540; H = sh ? sh.H : 960; land = !!(sh && sh.land); if (N) layout(); }
   var fx = new A.FX();
   var N, CS, GX, GY, cells, P, goal, stars, stage, time, score, moving, dyingT, trail, queued, moves, par;
   var SIDE = { e: ['n', 's'], w: ['n', 's'], n: ['e', 'w'], s: ['e', 'w'] }, DIRS = [[1, 0, 'e'], [-1, 0, 'w'], [0, 1, 's'], [0, -1, 'n']];
   // 미로 생성 (재귀적 백트래킹). cells[y][x] = {n,e,s,w 벽}
   function build(n) {
-    N = n; CS = Math.floor(Math.min(500 / n, 780 / n)); GX = (W - N * CS) / 2; GY = 110 + (800 - N * CS) / 2;
+    N = n; layout();
     cells = []; for (var y = 0; y < N; y++) { cells.push([]); for (var x = 0; x < N; x++) cells[y].push({ n: 1, e: 1, s: 1, w: 1, v: 0 }); }
     var st = [[0, 0]]; cells[0][0].v = 1;
     while (st.length) {
@@ -198,8 +201,20 @@
   stage_.addEventListener('pointermove', function (e) { if (!sw) return; var dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; if (Math.abs(dx) > Math.abs(dy)) slide(dx > 0 ? 1 : -1, 0); else slide(0, dy > 0 ? 1 : -1); sw = { x: e.clientX, y: e.clientY }; }); // 손을 떼지 않고 이어서 스와이프 가능
   stage_.addEventListener('pointerup', function () { sw = null; });
   var MAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
-  var S = new A.Shell({ id: 'maze', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'maze', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var m = MAP[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (m && !e.repeat) slide(m[0], m[1]); } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();
 
 </script>

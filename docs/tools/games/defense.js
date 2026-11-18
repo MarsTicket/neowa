@@ -1,16 +1,28 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, GY = 880;
+  var A = Arcade, W = 540, H = 960, GY = 880, MY = 70, KV = 1;
+  function cityX(i) { return W * (50 + i * 88) / 540; }
+  // 가로 화면은 900x600 가로 전장. 화면을 돌리면 도시·미사일·폭발 위치를 새 크기에 맞춰 옮김
+  function geo(sh) {
+    var nW = sh ? sh.W : 540, nH = sh ? sh.H : 960, land = !!(sh && sh.land), nGY = land ? nH - 70 : 880, nMY = land ? 20 : 70;
+    var kx = nW / W, ky = (nGY - nMY) / (GY - MY);
+    function mx(o, a, b) { o[a] *= kx; o[b] = nMY + (o[b] - MY) * ky; }
+    if (cities) { cities.forEach(function (c, i) { c.x = nW * (50 + i * 88) / 540; });
+      missiles.forEach(function (m) { mx(m, 'x', 'y'); mx(m, 'sx', 'sy'); m.vx *= kx; m.vy *= ky; });
+      blasts.forEach(function (b) { mx(b, 'x', 'y'); }); shots.forEach(function (s) { mx(s, 'x', 'y'); mx(s, 'tx', 'ty'); });
+      mx(cur, 'x', 'y'); }
+    W = nW; H = nH; GY = nGY; MY = nMY; KV = Math.max(0.7, (GY - MY) / 810); BASE.x = W / 2; BASE.y = GY - 10;
+  }
   var fx = new A.FX();
   var cities, missiles, blasts, shots, wave, score, toSpawn, spawnT, dyingT, cur = { x: W / 2, y: 500 }, kbd = false, waveT, ammo, lostThisWave, noAmmoT = 0;
   var BASE = { x: W / 2, y: GY - 10 };
-  function reset() { cities = []; for (var i = 0; i < 6; i++) cities.push({ x: 50 + i * 88 + (i >= 3 ? 0 : 0), alive: true }); missiles = []; blasts = []; shots = []; wave = 0; score = 0; dyingT = 0; waveT = 0; nextWave(); fx.clear(); hud(); }
+  function reset() { cities = []; for (var i = 0; i < 6; i++) cities.push({ x: cityX(i), alive: true }); missiles = []; blasts = []; shots = []; wave = 0; score = 0; dyingT = 0; waveT = 0; nextWave(); fx.clear(); hud(); }
   function nextWave() { wave++; lostThisWave = 0; toSpawn = 6 + wave * 3; spawnT = 1; ammo = toSpawn + 10; S.banner('WAVE ' + wave, '미사일 접근'); if (wave > 1) A.sfx('level'); }
   function spawn() {
     var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) return;
-    var tg = A.pick(alive), sx = A.rand(0, W), fast = wave >= 4 && Math.random() < Math.min(0.3, 0.08 + wave * 0.02), sp = Math.min(240, 66 + wave * 9 + A.rand(0, 30)) * (fast ? 1.6 : 1);
-    var a = Math.atan2(GY - 80, tg.x - sx);
-    missiles.push({ x: sx, y: 70, sx: sx, sy: 70, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, split: !fast && wave >= 3 && Math.random() < 0.2, fast: fast, tg: tg });
+    var tg = A.pick(alive), sx = A.rand(0, W), fast = wave >= 4 && Math.random() < Math.min(0.3, 0.08 + wave * 0.02), sp = Math.min(240, 66 + wave * 9 + A.rand(0, 30)) * (fast ? 1.6 : 1) * KV;
+    var a = Math.atan2(GY - 10 - MY, tg.x - sx);
+    missiles.push({ x: sx, y: MY, sx: sx, sy: MY, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, split: !fast && wave >= 3 && Math.random() < 0.2, fast: fast, tg: tg });
     toSpawn--; spawnT = Math.max(0.35, 1.6 - wave * 0.12) * A.rand(0.6, 1.3);
   }
   function fire(x, y) {
@@ -31,7 +43,7 @@
       var m = missiles[i]; m.x += m.vx * dt; m.y += m.vy * dt;
       var hit = null; for (j = 0; j < blasts.length; j++) if (Math.hypot(m.x - blasts[j].x, m.y - blasts[j].y) < blasts[j].r) { hit = blasts[j]; break; }
       if (hit) { missiles.splice(i, 1); var chainCount = ++hit.root.n; if (chainCount > bestChain) bestChain = chainCount; var pts = 25 * chainCount * (m.fast ? 2 : 1); score += pts; fx.text(m.x, m.y - 20, (chainCount > 1 ? chainCount + '연쇄 ' : '') + '+' + pts, chainCount > 1 ? '#ffd166' : '#fff', 18); fx.burst(m.x, m.y, '#ff7a45', 14, 240, 0.5, 3); explode(m.x, m.y, true, hit.root); if (chainCount >= 3) A.sfx('combo', 1 + Math.min(chainCount, 12) * 0.05); continue; }
-      if (m.split && m.y > 300 && !m.didSplit) { m.didSplit = true; for (var k = 0; k < 2; k++) { var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) break; var tg = A.pick(alive), a = Math.atan2(GY - m.y, tg.x - m.x), sp = Math.hypot(m.vx, m.vy); missiles.push({ x: m.x, y: m.y, sx: m.x, sy: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, tg: tg }); } }
+      if (m.split && m.y > MY + (GY - MY) * 0.28 && !m.didSplit) { m.didSplit = true; for (var k = 0; k < 2; k++) { var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) break; var tg = A.pick(alive), a = Math.atan2(GY - m.y, tg.x - m.x), sp = Math.hypot(m.vx, m.vy); missiles.push({ x: m.x, y: m.y, sx: m.x, sy: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, tg: tg }); } }
       if (m.y >= GY - 20) {
         missiles.splice(i, 1); fx.burst(m.x, GY - 20, '#ff4d6d', 30, 320, 0.7, 4); fx.shake(8, 0.3); A.sfx('bigboom', 1, A.clamp(m.x / W * 2 - 1, -1, 1)); A.vibrate(120);
         cities.forEach(function (c) { if (c.alive && Math.abs(c.x - m.x) < 46) { c.alive = false; lostThisWave++; fx.text(c.x, GY - 60, '도시 파괴', '#ff4d6d', 18); } });
@@ -45,10 +57,11 @@
     hud();
   }
   /* 그림: 밤하늘·달·오로라·산맥 배경, 보호막 도시, 무너진 도시, 포대 */
-  var BG = A.sprite('dbg', W, H, function (x) {
+  // 배경은 화면 크기(세로 540x960 / 가로 900x600)별로 따로 그림
+  function bgSpr() { return A.sprite('dbg' + W + 'x' + H, W, H, function (x) {
     var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#03021a'); g.addColorStop(0.55, '#140a36'); g.addColorStop(0.85, '#3a1438'); g.addColorStop(1, '#1a0814');
     x.fillStyle = g; x.fillRect(0, 0, W, H);
-    for (var i = 0; i < 160; i++) { x.globalAlpha = 0.2 + Math.random() * 0.8; x.fillStyle = '#fff'; var r = Math.random() < 0.1 ? 1.6 : 0.9; x.beginPath(); x.arc(Math.random() * W, Math.random() * 680, r, 0, 7); x.fill(); }
+    for (var i = 0; i < 160; i++) { x.globalAlpha = 0.2 + Math.random() * 0.8; x.fillStyle = '#fff'; var r = Math.random() < 0.1 ? 1.6 : 0.9; x.beginPath(); x.arc(Math.random() * W, Math.random() * (GY - 200), r, 0, 7); x.fill(); }
     x.globalAlpha = 1;
     // 오로라
     for (var k = 0; k < 3; k++) {
@@ -63,12 +76,12 @@
     x.fillStyle = '#f4ecdc'; x.beginPath(); x.arc(110, 150, 34, 0, 7); x.fill();
     x.fillStyle = 'rgba(160,150,140,.35)'; [[100, 140, 8], [122, 160, 5], [104, 166, 4]].forEach(function (c) { x.beginPath(); x.arc(c[0], c[1], c[2], 0, 7); x.fill(); });
     // 산맥 두 겹
-    [['#1c0c2e', 760, 90], ['#12081e', 820, 60]].forEach(function (m, n) { x.fillStyle = m[0]; x.beginPath(); x.moveTo(0, H); for (var j = 0; j <= 18; j++) x.lineTo(j * 30, m[1] - Math.abs(Math.sin(j * 1.7 + n * 3)) * m[2] - Math.sin(j * 0.6) * 20); x.lineTo(W, H); x.fill(); });
+    [['#1c0c2e', GY - 120, 90], ['#12081e', GY - 60, 60]].forEach(function (m, n) { x.fillStyle = m[0]; x.beginPath(); x.moveTo(0, H); for (var j = 0; j <= Math.ceil(W / 30); j++) x.lineTo(j * 30, m[1] - Math.abs(Math.sin(j * 1.7 + n * 3)) * m[2] - Math.sin(j * 0.6) * 20); x.lineTo(W, H); x.fill(); });
     // 땅
     var gg = x.createLinearGradient(0, GY, 0, H); gg.addColorStop(0, '#3a1a2a'); gg.addColorStop(1, '#120610'); x.fillStyle = gg; x.fillRect(0, GY, W, H - GY);
     x.fillStyle = 'rgba(255,122,69,.5)'; x.fillRect(0, GY, W, 2);
     for (i = 0; i < 120; i++) { x.fillStyle = 'rgba(0,0,0,' + Math.random() * 0.3 + ')'; x.fillRect(Math.random() * W, GY + 4 + Math.random() * (H - GY), 3 + Math.random() * 6, 2); }
-  });
+  }); }
   var CITY = A.sprite('dcity', 90, 80, function (x) {
     x.translate(45, 70);
     var bs = [[-30, 26, 12], [-18, 44, 13], [-4, 56, 12], [9, 38, 12], [21, 30, 11]];
@@ -101,8 +114,8 @@
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(BG, -10, -10, W + 20, H + 20);
-    (cities || [0, 1, 2, 3, 4, 5].map(function (k) { return { x: 50 + k * 88, alive: true }; })).forEach(function (ct, k) {
+    c.drawImage(bgSpr(), -10, -10, W + 20, H + 20);
+    (cities || [0, 1, 2, 3, 4, 5].map(function (k) { return { x: cityX(k), alive: true }; })).forEach(function (ct, k) {
       if (ct.alive) {
         A.draw(c, CITY, ct.x, GY - 40);
         c.save(); c.globalAlpha = 0.6 + Math.sin(t * 2 + k) * 0.2; A.draw(c, DOME, ct.x, GY - 35); c.restore();
@@ -138,7 +151,19 @@
   function hud() { var alive = cities ? cities.filter(function (c) { return c.alive; }).length : 6; var k = score + '|' + wave + '|' + alive + '|' + ammo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = alive; document.getElementById('hMult').textContent = '요격탄 ' + ammo; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e); fire(p.x, p.y); });
   var keys = {}, bestChain = 0;
-  var S = new A.Shell({ id: 'defense', W: W, H: H, reset: function () { bestChain = 0; noAmmoT = 0; reset(); }, render: render, idle: function (dt) { fx.update(dt); },
-    update: function (dt) { var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0); if (kx || ky) { kbd = true; cur.x = A.clamp(cur.x + kx * 600 * dt, 10, W - 10); cur.y = A.clamp(cur.y + ky * 600 * dt, 90, GY - 60); } update(dt); },
+  var S = new A.Shell({ id: 'defense', W: W, H: H, land: [900, 600], onResize: geo, reset: function () { bestChain = 0; noAmmoT = 0; reset(); }, render: render, idle: function (dt) { fx.update(dt); },
+    update: function (dt) { var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0); if (kx || ky) { kbd = true; cur.x = A.clamp(cur.x + kx * 600 * dt, 10, W - 10); cur.y = A.clamp(cur.y + ky * 600 * dt, MY + 20, GY - 60); } update(dt); },
     keydown: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keys[k] = true; if ((k === ' ' || k === 'Enter') && !e.repeat) { kbd = true; fire(cur.x, cur.y); } }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();

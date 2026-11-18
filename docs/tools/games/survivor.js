@@ -1,6 +1,9 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, TOP = 70;
+  var A = Arcade, W = 540, H = 960, TOP = 70, land = false;
+  // 가로 화면은 900x600으로 시야를 넓힘. 돌려도 내 캐릭터가 화면 가운데에 오도록 카메라만 보정
+  function geo(sh) { var nW = sh ? sh.W : 540, nH = sh ? sh.H : 960; land = !!(sh && sh.land); TOP = land ? 16 : 70; cam.x += (W - nW) / 2; cam.y += (H - nH) / 2; W = nW; H = nH; }
+  function cardY(i) { return land ? 130 + i * 145 : 320 + i * 150; }
   var fx = new A.FX();
   var P, foes, bullets, gems, orbs, time, score, kills, lvl, xp, need, choosing, choices, spawnT, dyingT, drag = null, keys = {}, cam = { x: 0, y: 0 }, bossN, hearts;
   var UP = [
@@ -161,14 +164,14 @@
     if (P) { // 체력·경험치 바
       for (var h = 0; h < P.max; h++) { c.fillStyle = h < P.hp ? '#ff4d6d' : 'rgba(255,255,255,.15)'; c.fillRect(16 + h * 22, H - 34, 18, 10); }
       c.fillStyle = 'rgba(255,255,255,.1)'; c.fillRect(0, H - 8, W, 8); c.fillStyle = '#c3ff5e'; c.fillRect(0, H - 8, W * Math.min(1, xp / need), 8);
-      foes.forEach(function (f) { if (f.tp !== 'boss') return; c.fillStyle = 'rgba(255,255,255,.12)'; c.fillRect(70, 96, W - 140, 10); c.fillStyle = '#ff7aa8'; c.fillRect(70, 96, (W - 140) * Math.max(0, f.hp / f.mhp), 10);
-        var dx = f.x - P.x, dy = f.y - P.y; if (Math.abs(dx) > W / 2 || Math.abs(dy) > H / 2) { var a = Math.atan2(dy, dx), ex = A.clamp(W / 2 + Math.cos(a) * 240, 20, W - 20), ey = A.clamp(H / 2 + Math.sin(a) * 420, 120, H - 50); c.fillStyle = '#ff7aa8'; c.beginPath(); c.arc(ex, ey, 9 + Math.sin(t * 8) * 3, 0, 7); c.fill(); } });
+      foes.forEach(function (f) { if (f.tp !== 'boss') return; c.fillStyle = 'rgba(255,255,255,.12)'; c.fillRect(70, TOP + 26, W - 140, 10); c.fillStyle = '#ff7aa8'; c.fillRect(70, TOP + 26, (W - 140) * Math.max(0, f.hp / f.mhp), 10);
+        var dx = f.x - P.x, dy = f.y - P.y; if (Math.abs(dx) > W / 2 || Math.abs(dy) > H / 2) { var a = Math.atan2(dy, dx), ex = A.clamp(W / 2 + Math.cos(a) * (W / 2 - 30), 20, W - 20), ey = A.clamp(H / 2 + Math.sin(a) * (H / 2 - 60), TOP + 50, H - 50); c.fillStyle = '#ff7aa8'; c.beginPath(); c.arc(ex, ey, 9 + Math.sin(t * 8) * 3, 0, 7); c.fill(); } });
     }
     if (choosing) {
       c.fillStyle = 'rgba(5,8,2,.82)'; c.fillRect(0, 0, W, H);
-      c.fillStyle = '#c3ff5e'; c.font = '400 40px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.fillText('레벨 업! 하나를 고르세요', W / 2, 250);
+      c.fillStyle = '#c3ff5e'; c.font = '400 40px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.fillText('레벨 업! 하나를 고르세요', W / 2, land ? 95 : 250);
       choices.forEach(function (u, i) {
-        var by = 320 + i * 150; c.fillStyle = 'rgba(195,255,94,.12)'; A.rr(c, 50, by, W - 100, 124, 18); c.fill(); c.strokeStyle = '#c3ff5e'; c.lineWidth = 2; c.stroke();
+        var by = cardY(i); c.fillStyle = 'rgba(195,255,94,.12)'; A.rr(c, 50, by, W - 100, 124, 18); c.fill(); c.strokeStyle = '#c3ff5e'; c.lineWidth = 2; c.stroke();
         c.fillStyle = '#fff'; c.font = '700 26px "Pretendard Variable",system-ui'; c.fillText((i + 1) + '. ' + u.name, W / 2, by + 52);
         c.fillStyle = 'rgba(255,255,255,.7)'; c.font = '500 17px "Pretendard Variable",system-ui'; c.fillText(u.d, W / 2, by + 88);
       });
@@ -180,12 +183,24 @@
   var stage = document.getElementById('stage');
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; var p = S.toLocal(e);
-    if (choosing) { for (var i = 0; i < 3; i++) { var by = 320 + i * 150; if (p.y > by && p.y < by + 124) pick(i); } return; }
+    if (choosing) { for (var i = 0; i < 3; i++) { var by = cardY(i); if (p.y > by && p.y < by + 124) pick(i); } return; }
     drag = { id: e.pointerId, sx: p.x, sy: p.y, x: p.x, y: p.y }; try { stage.setPointerCapture(e.pointerId); } catch (er) {}
   });
   stage.addEventListener('pointermove', function (e) { if (drag && drag.id === e.pointerId) { var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; if (Math.hypot(drag.x - drag.sx, drag.y - drag.sy) > 90) { var a = Math.atan2(drag.y - drag.sy, drag.x - drag.sx); drag.sx = drag.x - Math.cos(a) * 90; drag.sy = drag.y - Math.sin(a) * 90; } } });
   stage.addEventListener('pointerup', function () { drag = null; });
-  var S = new A.Shell({ id: 'survivor', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'survivor', W: W, H: H, land: [900, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keys[k] = true; if (choosing && /^[123]$/.test(k)) pick(+k - 1); },
     keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();

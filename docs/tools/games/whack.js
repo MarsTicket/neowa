@@ -1,6 +1,10 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960, CX = [110, 270, 430], CY = [330, 540, 750], HR = 62;
+  // 가로 화면은 720x720 정사각형 판: 구멍 간격을 넓혀 판이 크게 보이게. 진행 중인 두더지는 위치만 옮김
+  function geo(sh) { W = sh ? sh.W : 540; H = sh ? sh.H : 960; var land = !!(sh && sh.land);
+    CX = land ? [160, 360, 560] : [110, 270, 430]; CY = land ? [210, 425, 640] : [330, 540, 750];
+    if (holes) holes.forEach(function (h, i) { h.x = CX[i % 3]; h.y = CY[Math.floor(i / 3)]; }); }
   var fx = new A.FX();
   var holes, time, score, combo, bestCombo, hits, spawnT, over, el, feverShown;
   function reset() { holes = []; for (var i = 0; i < 9; i++) holes.push({ x: CX[i % 3], y: CY[Math.floor(i / 3)], up: 0, kind: null, life: 0, hit: 0 }); time = 60; score = 0; combo = 0; bestCombo = 0; hits = 0; spawnT = 0.5; over = false; el = 0; feverShown = false; A.music.mood(null); fx.clear(); hud(); }
@@ -22,7 +26,7 @@
       combo++; hits++; bestCombo = Math.max(bestCombo, combo);
       var pts = (h.kind === 'gold' ? 30 : 10) * Math.min(4, 1 + Math.floor(combo / 5)) * (fever() ? 2 : 1); score += pts;
       if (h.kind === 'gold') { time = Math.min(99, time + 2); fx.text(h.x, h.y - 120, '+2초', '#7dff9b', 20); }
-      if (combo % 10 === 0) { fx.text(W / 2, 200, combo + ' 콤보!', '#ffd166', 34); A.sfx('level'); fx.ring(h.x, h.y - 30, '#ffd166', 110, 0.4); }
+      if (combo % 10 === 0) { fx.text(W / 2, Math.round(H * 0.21), combo + ' 콤보!', '#ffd166', 34); A.sfx('level'); fx.ring(h.x, h.y - 30, '#ffd166', 110, 0.4); }
       fx.burst(h.x, h.y - 30, h.kind === 'gold' ? '#ffd166' : '#ffb547', 16, 260, 0.45, 3); fx.text(h.x, h.y - 90, '+' + pts, h.kind === 'gold' ? '#ffd166' : '#fff', 22);
       A.sfx(h.kind === 'gold' ? 'gold' : 'hit', 1 + Math.min(combo, 15) * 0.04, A.clamp(h.x / W * 2 - 1, -1, 1)); if (combo % 5 === 0) A.sfx('combo', 1 + Math.min(combo, 12) * 0.05); A.vibrate(12); fx.shake(2, 0.06);
     }
@@ -44,12 +48,14 @@
     hud();
   }
   /* 그림: 정원 배경, 흙더미 구멍, 두더지·황금 두더지·폭탄 (한 번만 그려 저장) */
-  var BG = A.sprite('wbg', W, H, function (x) {
-    var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2a1640'); g.addColorStop(0.16, '#a8506a'); g.addColorStop(0.24, '#ffb37a'); g.addColorStop(0.25, '#3f7a2c'); g.addColorStop(1, '#1d4a18');
+  // 배경은 화면 크기별로 따로 그림. 가로(720x720)는 구멍이 위로 올라가므로 하늘·울타리를 120 위로 올림
+  function bgSpr() { var dy = H < 900 ? -120 : 0; return A.sprite('wbg' + W + 'x' + H, W, H, function (x) {
+    x.translate(0, dy); var H = H0() - dy; // 이 그림 안의 H = 옮긴 좌표 기준 바닥
+    var g = x.createLinearGradient(0, 0, 0, 960); g.addColorStop(0, '#2a1640'); g.addColorStop(0.16, '#a8506a'); g.addColorStop(0.24, '#ffb37a'); g.addColorStop(0.25, '#3f7a2c'); g.addColorStop(1, '#1d4a18');
     x.fillStyle = g; x.fillRect(0, 0, W, H);
     // 해와 먼 언덕
     var sg = x.createRadialGradient(400, 210, 0, 400, 210, 120); sg.addColorStop(0, 'rgba(255,240,190,1)'); sg.addColorStop(0.3, 'rgba(255,200,130,.6)'); sg.addColorStop(1, 'rgba(255,170,110,0)'); x.fillStyle = sg; x.fillRect(250, 80, 300, 260);
-    [['#5a8a3a', 230, 40], ['#4a7f30', 245, 26]].forEach(function (h, k) { x.fillStyle = h[0]; x.beginPath(); x.moveTo(0, h[1]); for (var i = 0; i <= 12; i++) x.lineTo(i * 45, h[1] - Math.sin(i * 1.1 + k * 2) * h[2] - h[2]); x.lineTo(W, H); x.lineTo(0, H); x.fill(); });
+    [['#5a8a3a', 230, 40], ['#4a7f30', 245, 26]].forEach(function (h, k) { x.fillStyle = h[0]; x.beginPath(); x.moveTo(0, h[1]); for (var i = 0; i <= 12; i++) x.lineTo(i * W / 12, h[1] - Math.sin(i * 1.1 + k * 2) * h[2] - h[2]); x.lineTo(W, H); x.lineTo(0, H); x.fill(); });
     // 울타리
     x.fillStyle = '#e8d2a8'; for (var fx2 = 6; fx2 < W; fx2 += 34) { x.fillRect(fx2, 206, 10, 44); x.beginPath(); x.moveTo(fx2, 206); x.lineTo(fx2 + 5, 198); x.lineTo(fx2 + 10, 206); x.fill(); }
     x.fillRect(0, 216, W, 6); x.fillRect(0, 236, W, 6);
@@ -57,7 +63,8 @@
     for (var i = 0; i < 1400; i++) { var gx = Math.random() * W, gy = 250 + Math.random() * (H - 250); x.strokeStyle = 'hsla(' + (95 + Math.random() * 20) + ',55%,' + (24 + Math.random() * 22) + '%,.8)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(gx, gy); x.lineTo(gx + A.rand(-3, 3), gy - A.rand(5, 11)); x.stroke(); }
     // 꽃
     for (i = 0; i < 40; i++) { var fxx = Math.random() * W, fy = 260 + Math.random() * (H - 280), col = A.pick(['#ff9ecf', '#ffe066', '#ffffff', '#b48cff']); x.fillStyle = col; for (var k = 0; k < 5; k++) { var a = k / 5 * Math.PI * 2; x.beginPath(); x.arc(fxx + Math.cos(a) * 3.5, fy + Math.sin(a) * 3.5, 2.6, 0, 7); x.fill(); } x.fillStyle = '#ffb547'; x.beginPath(); x.arc(fxx, fy, 2, 0, 7); x.fill(); }
-  });
+  }); }
+  function H0() { return H; }
   var HOLE = A.sprite('whole', 200, 120, function (x) { // 흙더미 + 구멍 (뒤쪽)
     x.translate(100, 60);
     var g = x.createRadialGradient(0, -6, 10, 0, 0, 96); g.addColorStop(0, '#8a5a30'); g.addColorStop(0.7, '#6a4020'); g.addColorStop(1, 'rgba(60,35,15,0)');
@@ -105,7 +112,7 @@
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(BG, -10, -10, W + 20, H + 20);
+    c.drawImage(bgSpr(), -10, -10, W + 20, H + 20);
     var hs = holes || CX.concat(CX, CX).map(function (x, i) { return { x: x, y: CY[Math.floor(i / 3)], kind: (i * 7 + Math.floor(t)) % 4 === 0 ? 'mole' : null, up: 1, hit: 0 }; });
     hs.forEach(function (h, i) {
       A.draw(c, HOLE, h.x, h.y);
@@ -136,6 +143,18 @@
     if (bd < 100) whack(best);
   });
   var KEYPAD = { '7': 0, '8': 1, '9': 2, '4': 3, '5': 4, '6': 5, '1': 6, '2': 7, '3': 8 };
-  var S = new A.Shell({ id: 'whack', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'whack', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { if (KEYPAD[e.key] != null && !e.repeat) whack(KEYPAD[e.key]); } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();

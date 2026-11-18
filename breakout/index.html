@@ -196,7 +196,7 @@
   }
   function reset() {
     paddle = { x: W / 2, w: 104, tw: 104, vx: 0 };
-    A.music.tempo(1); score = 0; lives = 3; level = 1; combo = 0; slowT = 0; fireT = 0; wideT = 0; clearT = 0; dyingT = 0;
+    A.music.mood(null); score = 0; lives = 3; level = 1; combo = 0; slowT = 0; fireT = 0; wideT = 0; clearT = 0; dyingT = 0;
     drops = []; fx.clear(); keys = {};
     buildLevel(1);
     balls = [newBall(true)]; launchT = 3;
@@ -355,8 +355,8 @@
     lives--; combo = 0; wideT = 0; paddle.tw = 104; fireT = 0; slowT = 0;
     fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(150);
     fx.burst(paddle.x, PY, '#ff4d6d', 30, 360, 0.7, 3.5);
-    if (lives <= 0) { dyingT = 1; balls = []; A.music.tempo(1); hud(); return; }
-    if (lives === 1) { A.music.tempo(1.12); A.sfx('warn'); }
+    if (lives <= 0) { dyingT = 1; balls = []; A.music.mood(null); hud(); return; }
+    if (lives === 1) { A.music.mood('danger'); A.sfx('warn'); }
     balls = [newBall(true)]; launchT = 3; drops = [];
     S.banner(lives === 1 ? '마지막 기회' : '목숨 ' + lives, 'BALL LOST');
     hud();

@@ -141,7 +141,7 @@
     var mk = Math.floor(dist / 5000); dist += speed * dt; if (boostT > 0) boostT -= dt; if (Math.floor(dist / 5000) !== mk) A.sfx('level');
     fuel -= dt * (onRoad ? 3.2 : 9) * (1 + dist / 80000);
     if (!onRoad && Math.random() < 0.6) fx.spark(car.x + A.rand(-16, 16), PY + 40, '#8a6a3a', A.rand(-60, 60), 120, 0.4, 3);
-    var lowNow = fuel < 25; if (lowNow !== lowF) { lowF = lowNow; A.music.tempo(lowF ? 1.12 : 1); }
+    var lowNow = fuel < 25; if (lowNow !== lowF) { lowF = lowNow; A.music.mood(lowF ? 'danger' : null); }
     if (lowNow && fuel > 0) { lowT -= dt; if (lowT <= 0) { lowT = 1; A.sfx('warn'); } } else lowT = 0;
     if (dist > nextObj) spawn();
     function sy(d) { return PY - (d - dist - (H - PY)) ; }
@@ -150,7 +150,7 @@
     boosts = boosts.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { boostT = 2.5; score += 50; fx.ring(car.x, PY, '#ffe066', 120, 0.5); A.sfx('charge', 1.2); A.sfx('whoosh'); return false; } return y < H + 60; });
     obs = obs.filter(function (o) { return sy(o.d) < H + 60; });
     score += speed * dt / 30;
-    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.music.tempo(1); lowF = false; A.sfx('drop'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
+    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.music.mood(null); lowF = false; A.sfx('drop'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
     hud();
   }
   var maxSp = 0, lowT = 0, lowF = false;

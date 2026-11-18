@@ -441,7 +441,7 @@
     if (e.m === 'dive') { e.vy = 260 * sp; e.vx = (P.x - e.x) * 0.25; }
     if (e.m === 'hover') { e.vy = 160; e.ty = A.rand(150, 300); }
     if (e.m === 'slow') e.vy = 60 * sp;
-    if (s.type === 'boss') { e.vy = 70; e.ty = 200; e.phase = 0; boss = e; document.getElementById('hBossBar').hidden = false; var bp = document.getElementById('bossPortrait'); if (bp) { bp.hidden = false; if (window.__bpT) clearTimeout(window.__bpT); window.__bpT = setTimeout(function () { bp.hidden = true; }, 5000); } A.sfx('bigboom'); A.music.intensity(2); A.music.tempo(1.08); fx.shake(6, 0.6); }
+    if (s.type === 'boss') { e.vy = 70; e.ty = 200; e.phase = 0; boss = e; document.getElementById('hBossBar').hidden = false; var bp = document.getElementById('bossPortrait'); if (bp) { bp.hidden = false; if (window.__bpT) clearTimeout(window.__bpT); window.__bpT = setTimeout(function () { bp.hidden = true; }, 5000); } A.sfx('bigboom'); A.music.mood('boss'); fx.shake(6, 0.6); }
     enemies.push(e);
   }
 
@@ -449,7 +449,7 @@
   function reset() {
     P = { x: W / 2, y: H - 150, inv: 2, pow: 1, shield: 0, fireT: 0, tilt: 0 };
     bullets = []; enemies = []; ebullets = []; items = [];
-    score = 0; chain = 0; chainT = 0; lives = 3; kills = 0; dyingT = 0; boss = null; A.music.tempo(1); A.music.intensity(null); nextWaveT = 0; var bp0 = document.getElementById('bossPortrait'); if (bp0) bp0.hidden = true;
+    score = 0; chain = 0; chainT = 0; lives = 3; kills = 0; dyingT = 0; boss = null; A.music.mood(null); nextWaveT = 0; var bp0 = document.getElementById('bossPortrait'); if (bp0) bp0.hidden = true;
     wave = 0; fx.clear(); fires.length = smokes.length = debris.length = flashes.length = 0; keys = {}; drag = null;
     nextWave();
     hud();
@@ -490,7 +490,7 @@
     fx.burst(e.x, e.y, '#ffffff', big ? 16 : 5, 260, 0.35, 2.5);
     fx.ring(e.x, e.y, TYPES[e.type].c, e.r * (big ? 5 : 3), big ? 0.6 : 0.35);
     if (e.type === 'boss') {
-      boss = null; A.music.intensity(null); A.music.tempo(1); document.getElementById('hBossBar').hidden = true; var bp2 = document.getElementById('bossPortrait'); if (bp2) bp2.hidden = true;
+      boss = null; A.music.mood(null); document.getElementById('hBossBar').hidden = true; var bp2 = document.getElementById('bossPortrait'); if (bp2) bp2.hidden = true;
       fx.shake(14, 1); fx.flashIt('#ffffff', 0.9); A.sfx('bigboom'); A.vibrate([60, 40, 120]);
       var bx = e.x, by = e.y; for (var k = 0; k < 8; k++) setTimeout(function () { var qx = bx + A.rand(-80, 80), qy = by + A.rand(-50, 50); boom(qx, qy, A.rand(1.5, 2.6), A.pick(['#ff4d6d', '#ffd166', '#ff7a45'])); fx.burst(qx, qy, A.pick(['#ff4d6d', '#ffd166', '#fff']), 20, 420, 0.7, 3.5); A.sfx('boom', 1, A.clamp(qx / W * 2 - 1, -1, 1)); }, k * 110);
       ebullets.length = 0;

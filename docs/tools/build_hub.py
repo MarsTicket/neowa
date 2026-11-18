@@ -5,7 +5,7 @@
   /* NAMES:START */ ~ /* NAMES:END */ 사이만 바꿉니다. 나머지는 손대지 않습니다.
 - 사용법: python3 docs/tools/build_hub.py
 """
-import json, os, html
+import json, re, os, html
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 CAT = json.load(open(os.path.join(os.path.dirname(__file__), 'catalog.json'), encoding='utf-8'))
@@ -60,7 +60,7 @@ def build():
     s = s[:a] + block + s[b:]
     a, b = s.index('/* NAMES:START */'), s.index('/* NAMES:END */') + len('/* NAMES:END */')
     s = s[:a] + names + s[b:]
-    s = s.replace('게임 10종과', f'게임 {n}종과')
+    s = re.sub(r'(바로 켜지는 게임 )\d+(종)', lambda m: m.group(1) + str(n) + m.group(2), s)
     open(p, 'w', encoding='utf-8').write(s)
     print(f'메인 갱신: 게임 {n}개', counts)
     # 랭킹 페이지가 쓰는 게임 목록

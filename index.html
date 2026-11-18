@@ -237,6 +237,72 @@ footer nav a:hover{color:var(--ink)}
   .search{width:100%}
 }
 @media (prefers-reduced-motion:reduce){.kicker b{animation:none}html{scroll-behavior:auto}}
+/* ---------- 게임 고르기 편하게 (상단 고정 도구줄, 이어서 하기, 랜덤) ---------- */
+.toolbar{position:-webkit-sticky;position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:10px;margin:-8px 0 22px;padding:10px 0;
+  background:rgba(5,6,12,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 0 0 100vmax rgba(5,6,12,.94);clip-path:inset(0 -100vmax)}
+.toolbar.stuck{border-bottom:1px solid var(--line)}
+.toolbar .filters{flex:1;min-width:0;margin:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:24px}
+.toolbar .filters::-webkit-scrollbar{display:none}
+.toolbar .filters button{flex:none;white-space:nowrap}
+.toolbar .search{flex:none;width:280px;min-width:0;position:relative}
+.toolbar .rand{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;
+  color:var(--ink);background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.4)}
+.toolbar .rand:hover{background:rgba(255,209,102,.2)}
+.toolbar .rand svg{width:18px;height:18px;color:var(--gold)}
+.sec-head .search-slot{display:none}
+.sx{display:none;flex:none;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:var(--sub);font:inherit;font-size:16px;line-height:1;cursor:pointer}
+.search.has .sx{display:grid;place-items:center}
+.search input::-webkit-search-cancel-button{display:none}
+@media (max-width:860px){
+  .toolbar .search{width:46px;padding:0 13px;cursor:pointer}
+  .toolbar .search input{width:0;opacity:0}
+  .toolbar .search.open{position:absolute;left:0;right:0;top:10px;width:auto;z-index:2;background:#11142a;padding:0 14px}
+  .toolbar .search.open input{width:auto;opacity:1}
+  .toolbar .rand span{display:none}
+  .toolbar .rand{padding:0 12px}
+}
+/* 이어서 하기 줄 */
+.mine{display:none;margin:0 0 26px}
+.mine.on{display:block}
+.mine h3{display:flex;align-items:baseline;gap:10px;margin:0 0 12px;font-size:15px;font-weight:800}
+.mine h3 small{font-size:12px;font-weight:600;color:var(--mute)}
+.mine-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 6px;margin:0 -2px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.mine-row::-webkit-scrollbar{display:none}
+.mine-row a{flex:none;width:150px;scroll-snap-align:start;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--line);transition:border-color .2s,transform .2s}
+.mine-row a:hover{border-color:rgba(var(--cr),.6);transform:translateY(-3px)}
+.mine-row img{width:100%;height:80px;object-fit:cover}
+.mine-row span{display:block;padding:8px 12px 10px}
+.mine-row b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mine-row i{font-style:normal;font-size:12px;color:var(--mute);font-family:var(--f-num)}
+.gc.flash{animation:flash 1.6s ease 2}
+@keyframes flash{50%{border-color:var(--c);box-shadow:0 0 0 2px var(--c),0 20px 50px -20px var(--c)}}
+.gc-best b.none{white-space:nowrap}
+/* 테슬라·태블릿 가로·노트북처럼 키가 낮은 넓은 화면: 히어로를 줄여 게임 목록이 바로 보이게 */
+@media (min-width:681px) and (max-height:860px){
+  .hero{min-height:auto;padding:96px 0 36px}
+  h1{font-size:clamp(42px,6vw,72px);margin-bottom:16px}
+  .lead{margin-bottom:22px}
+  .stack{max-width:380px}
+  section{padding:48px 0}
+}
+@media (min-width:681px) and (max-height:780px){
+  .hero{padding:84px 0 28px}
+  h1{font-size:clamp(40px,5vw,62px)}
+  .kicker{margin-bottom:14px}
+  .stack{max-width:320px}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .hero{padding:76px 0 20px}
+  h1{font-size:34px;margin-bottom:12px}
+  section{padding:32px 0}
+  .lead,.kicker{display:none}
+  .stack{display:none}
+  .hero-grid{grid-template-columns:1fr}
+}
+@media (max-width:1023px) and (min-width:861px){.games{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:1024px){.games{grid-template-columns:repeat(4,1fr)}}
+@media (prefers-reduced-motion:reduce){.gc.flash{animation:none}.mine-row a{transition:none}}
 </style>
 </head>
 <body>
@@ -259,7 +325,7 @@ footer nav a:hover{color:var(--ink)}
       <div>
         <p class="kicker" id="kicker"><b></b>무료 · 설치 없음 · 로그인 없음</p>
         <h1>탭 한 번이면<br><em>바로 한 판.</em></h1>
-        <p class="lead">브라우저에서 바로 켜지는 게임 50종과 비주얼노벨 한 편. 매번 새로 만들어지는 맵과 퍼즐이라 질리지 않아요. 휴대폰은 터치로, PC는 키보드로 지금 바로 시작하세요.</p>
+        <p class="lead">브라우저에서 바로 켜지는 게임 52종. 매번 새로 만들어지는 맵과 퍼즐이라 질리지 않아요. 휴대폰은 터치로, PC는 키보드로 지금 바로 시작하세요.</p>
         <p class="tesla-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg><span>테슬라 화면에 맞춰 보여 드립니다. 게임은 <b>주차(P) 상태에서만</b> 즐겨 주세요.</span></p>
         <div class="cta">
           <a class="btn btn-p" id="quickPlay" href="shooting/"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>바로 플레이</a>
@@ -1083,7 +1149,7 @@ footer nav a:hover{color:var(--ink)}
   document.querySelectorAll('[data-key]').forEach(function (el) {
     var v = num(el.getAttribute('data-key'));
     if (v > 0) el.textContent = v.toLocaleString('ko-KR');
-    else { el.textContent = '첫 기록에 도전'; el.classList.add('none'); }
+    else { el.textContent = '첫 도전!'; el.classList.add('none'); }
   });
 
   // 최근 플레이 이어서
@@ -1127,6 +1193,94 @@ footer nav a:hover{color:var(--ink)}
     if (e.target.closest && e.target.closest('input,textarea')) return;
     var ids10 = Object.keys(NAMES).slice(0, 10), m = /^[0-9]$/.test(e.key) ? ids10[(+e.key + 9) % 10] + '/' : null;
     if (m) location.href = m;
+  });
+
+  // ---------- 게임 고르기 편하게 ----------
+  var gamesBox = document.querySelector('.games'), filtersEl = document.querySelector('.filters'), searchEl = document.querySelector('.search');
+  var searchIn = document.getElementById('gameSearch');
+  // 1) 종류 버튼 + 검색 + 랜덤을 한 줄로 묶어 목록을 내려도 위에 붙어 있게
+  var bar = document.createElement('div'); bar.className = 'toolbar';
+  filtersEl.parentNode.insertBefore(bar, filtersEl);
+  bar.appendChild(filtersEl);
+  var rand = document.createElement('button'); rand.type = 'button'; rand.className = 'rand'; rand.setAttribute('aria-label', '아무 게임이나 시작');
+  rand.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg><span>아무거나</span>';
+  bar.appendChild(rand);
+  if (searchEl) {
+    bar.appendChild(searchEl);
+    var sx = document.createElement('button'); sx.type = 'button'; sx.className = 'sx'; sx.setAttribute('aria-label', '검색어 지우기'); sx.textContent = '×';
+    searchEl.appendChild(sx);
+    sx.addEventListener('click', function (e) { e.preventDefault(); searchIn.value = ''; q = ''; searchEl.classList.remove('has'); applyFilter(); searchIn.focus(); });
+    // 좁은 화면: 돋보기만 보이다가 누르면 펼쳐짐
+    searchEl.addEventListener('click', function () { searchEl.classList.add('open'); });
+    searchIn.addEventListener('focus', function () { searchEl.classList.add('open'); });
+    searchIn.addEventListener('blur', function () { setTimeout(function () { if (!searchIn.value) searchEl.classList.remove('open'); }, 150); });
+    searchIn.addEventListener('input', function () { searchEl.classList.toggle('has', !!searchIn.value); });
+    searchIn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { var first = document.querySelector('.gc:not([hidden]) .cover'); if (first) location.href = first.getAttribute('href'); }
+      else if (e.key === 'Escape') { searchIn.value = ''; q = ''; searchEl.classList.remove('has'); applyFilter(); searchIn.blur(); }
+    });
+  }
+  // 종류를 바꾸면 목록 맨 위로 (도구줄 아래)
+  function toList() {
+    var y = gamesBox.getBoundingClientRect().top + window.pageYOffset - bar.offsetHeight - 16;
+    if (window.pageYOffset > y + 4) window.scrollTo(0, y);
+  }
+  fbtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      toList();
+      try { sessionStorage.setItem('neowa_filter', cur); } catch (e) {}
+      if (b.scrollIntoView && filtersEl.scrollWidth > filtersEl.clientWidth) filtersEl.scrollLeft = b.offsetLeft - 20;
+    });
+  });
+  if ('IntersectionObserver' in window) {
+    var sentinel = document.createElement('div'); sentinel.style.height = '1px';
+    bar.parentNode.insertBefore(sentinel, bar);
+    new IntersectionObserver(function (en) { bar.classList.toggle('stuck', !en[0].isIntersecting); }).observe(sentinel);
+  }
+  // 2) 아무거나: 지금 보이는 게임 중 하나로 바로 이동
+  rand.addEventListener('click', function () {
+    var vis = [].slice.call(document.querySelectorAll('.gc:not([hidden]) .cover'));
+    if (!vis.length) vis = [].slice.call(document.querySelectorAll('.gc .cover'));
+    var pick = vis[Math.floor(Math.random() * vis.length)];
+    if (pick) location.href = pick.getAttribute('href');
+  });
+  // 3) 이어서 하기: 해 본 게임 (최근 → 많이 한 순)
+  var played = Object.keys(NAMES).map(function (id) { return { id: id, n: num('neowa_plays_' + id), b: num('neowa_hub_' + id + '_high') }; })
+    .filter(function (g) { return g.n > 0; })
+    .sort(function (a, b) { return (b.id === last) - (a.id === last) || b.n - a.n; }).slice(0, 10);
+  if (played.length) {
+    var mine = document.createElement('div'); mine.className = 'mine on';
+    mine.innerHTML = '<h3>이어서 하기 <small>내가 해 본 게임</small></h3><div class="mine-row"></div>';
+    var row = mine.querySelector('.mine-row');
+    played.forEach(function (g) {
+      var card = document.querySelector('.gc .cover[href="' + g.id + '/"]'), art = card && card.closest('.gc');
+      var a = document.createElement('a'); a.href = g.id + '/';
+      if (art) a.setAttribute('style', art.getAttribute('style'));
+      a.innerHTML = '<img src="assets/' + g.id + '-card.jpg" alt="" loading="lazy"><span><b></b><i></i></span>';
+      a.querySelector('b').textContent = NAMES[g.id];
+      a.querySelector('i').textContent = g.b ? 'BEST ' + g.b.toLocaleString('ko-KR') : g.n + '판';
+      row.appendChild(a);
+    });
+    bar.parentNode.insertBefore(mine, bar.previousSibling && bar.previousSibling.nodeType === 1 && !bar.previousSibling.className ? bar.previousSibling : bar);
+  }
+  // 4) 게임에서 돌아오면 그 게임 카드 자리로 (종류 선택도 유지)
+  try {
+    var savedF = sessionStorage.getItem('neowa_filter');
+    if (savedF && savedF !== 'all') { var fb = document.querySelector('.filters button[data-f="' + savedF + '"]'); if (fb) fb.click(); }
+  } catch (e) {}
+  (function () {
+    var ref = document.referrer || '', m = ref.indexOf(location.origin) === 0 && ref.replace(location.origin, '').match(/\/([a-z0-9]+)\/(?:index\.html)?(?:[?#].*)?$/);
+    if (!m || !NAMES[m[1]] || location.hash) return;
+    var card = document.querySelector('.gc .cover[href="' + m[1] + '/"]'); card = card && card.closest('.gc');
+    if (!card || card.hidden) return;
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    var y = card.getBoundingClientRect().top + window.pageYOffset - bar.offsetHeight - 40;
+    window.scrollTo(0, Math.max(0, y));
+    card.classList.add('flash');
+  })();
+  // 5) 키보드: / 로 검색
+  window.addEventListener('keydown', function (e) {
+    if (e.key === '/' && searchIn && !(e.target.closest && e.target.closest('input,textarea'))) { e.preventDefault(); searchIn.focus(); toList(); }
   });
 
   // 히어로 배경: 별 + 네온 격자 (화면 밖이거나 동작 줄이기 설정이면 멈춤)

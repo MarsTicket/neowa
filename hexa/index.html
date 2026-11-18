@@ -117,7 +117,13 @@
   'use strict';
   // 육각 블록: 반지름 4 육각 판(61칸)에 육각 조각을 끌어다 놓고, 세 방향 중 어느 직선이든 꽉 차면 지워짐
   var A = Arcade, W = 540, H = 960, R = 4, SZ = 31, OX = 270, OY = 360, SQ = Math.sqrt(3);
-  var TRAY_Y = 815, SLOT_X = [95, 270, 445], TS = 0.68;
+  var TRAY_Y = 815, SLOT_X = [95, 270, 445], TS = 0.68, land = false, pEl = {}, kx = null;
+  // 가로 화면: 720x720 정사각형 판 (판 가운데, 받침은 아래)
+  function geo(sh) {
+    land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
+    if (land) { OX = 360; OY = 268; TRAY_Y = 628; SLOT_X = [170, 360, 550]; } else { OX = 270; OY = 360; TRAY_Y = 815; SLOT_X = [95, 270, 445]; }
+    drag = null;
+  }
   var fx = new A.FX();
   var COLORS = ['#4dffd2', '#5ee7ff', '#7aa2ff', '#b48cff', '#ff7aa8', '#ffb547', '#ffe066', '#7dff9b'];
   var DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
@@ -176,7 +182,7 @@
       Object.keys(gone).forEach(function (k) { var c = cells[k], pp = px(c[0], c[1]); fx.burst(pp[0], pp[1], board[k], 10, 220, 0.5, 2.6); board[k] = null; });
       var c0 = cells[full[0][Math.floor(full[0].length / 2)]], p0 = px(c0[0], c0[1]);
       fx.text(p0[0], p0[1] - 30, '+' + A.fmt(pts) + (full.length > 1 ? ' · ' + full.length + '줄!' : ''), '#ffd166', full.length > 1 ? 28 : 22);
-      if (streak >= 2) fx.text(W / 2, OY - 250, '콤보 ×' + Math.min(streak, 8), '#4dffd2', 26);
+      if (streak >= 2) fx.text(W / 2, Math.max(40, OY - 250), '콤보 ×' + Math.min(streak, 8), '#4dffd2', 26);
       fx.shake(3 + full.length * 2, 0.18); A.sfx(full.length > 1 ? 'gold' : 'coin', 1 + Math.min(streak, 8) * 0.06); A.vibrate([15, 30, 15]);
       if (full.length >= 3) fx.flashIt('#4dffd2', 0.25);
     } else streak = 0;
@@ -259,6 +265,7 @@
     var k = score + '|' + lines + '|' + streak; if (k === lastHud) return; lastHud = k;
     document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = lines; document.getElementById('hC').textContent = streak;
     document.getElementById('hMult').textContent = streak >= 2 ? '콤보 ×' + Math.min(streak, 8) : '';
+    if (pEl.score) { pEl.score.textContent = A.fmt(score); pEl.lines.textContent = lines; pEl.combo.textContent = streak >= 2 ? '×' + Math.min(streak, 8) : streak; }
   }
 
   // ---------- 입력: 받침의 조각을 끌어다 놓기 (터치는 손가락 위로 띄움) ----------
@@ -266,7 +273,7 @@
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing' || dyingT > 0) return; e.preventDefault(); kbd = false;
     var p = S.toLocal(e); if (p.y < TRAY_Y - 100) return;
-    var t = p.x < 182 ? 0 : p.x < 358 ? 1 : 2; if (tray[t].used) return;
+    var t = p.x < (SLOT_X[0] + SLOT_X[1]) / 2 ? 0 : p.x < (SLOT_X[1] + SLOT_X[2]) / 2 ? 1 : 2; if (tray[t].used) return;
     var lift = e.pointerType === 'mouse' ? 0 : 110;
     drag = { t: t, x: p.x, y: p.y - lift, lift: lift, id: e.pointerId }; A.sfx('click', 1.2);
   });
@@ -277,21 +284,31 @@
     if (tg && S.state === 'playing') place(t, tg[0], tg[1]); else A.sfx('wall', 0.8);
   }
   window.addEventListener('pointerup', end); window.addEventListener('pointercancel', function () { drag = null; });
-  function moveCur(dq, dr) { var nq = cur.q + dq, nr = cur.r + dr; if (idx[nq + ',' + nr] !== undefined) { cur.q = nq; cur.r = nr; A.sfx('tick'); } }
+  function moveCur(dq, dr) { var nq = cur.q + dq, nr = cur.r + dr; if (idx[nq + ',' + nr] !== undefined) { cur.q = nq; cur.r = nr; A.sfx('tick'); return true; } return false; }
+  // 위·아래: 육각 판에서 한쪽으로 쏠리지 않게, 처음 x 위치에 가까운 쪽(왼쪽 위/오른쪽 위)을 골라 거의 똑바로 이동
+  function moveV(dir) {
+    var x0 = cur.q + cur.r / 2; if (kx === null) kx = x0;
+    var opts = dir < 0 ? [[0, -1], [1, -1]] : [[0, 1], [-1, 1]];
+    opts.sort(function (a, b) { return Math.abs(cur.q + a[0] + (cur.r + a[1]) / 2 - kx) - Math.abs(cur.q + b[0] + (cur.r + b[1]) / 2 - kx); });
+    if (!moveCur(opts[0][0], opts[0][1])) moveCur(opts[1][0], opts[1][1]);
+  }
   var S = new A.Shell({
-    id: 'hexa', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    id: 'hexa', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) {
       if (dyingT > 0) return; kbd = true;
       var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (k === '1' || k === '2' || k === '3') { var t = +k - 1; if (!tray[t].used) { cur.sel = t; A.sfx('click'); } return; }
-      if (k === 'ArrowLeft' || k === 'a') moveCur(-1, 0); else if (k === 'ArrowRight' || k === 'd') moveCur(1, 0);
-      else if (k === 'ArrowUp' || k === 'w') moveCur(0, -1); else if (k === 'ArrowDown' || k === 's') moveCur(0, 1);
+      if (k === 'ArrowLeft' || k === 'a') { kx = null; moveCur(-1, 0); } else if (k === 'ArrowRight' || k === 'd') { kx = null; moveCur(1, 0); }
+      else if (k === 'ArrowUp' || k === 'w') moveV(-1); else if (k === 'ArrowDown' || k === 's') moveV(1);
       else if ((k === ' ' || k === 'Enter') && !e.repeat) {
         if (tray[cur.sel].used) { for (var i = 0; i < 3; i++) if (!tray[i].used) { cur.sel = i; break; } }
         if (place(cur.sel, cur.q, cur.r)) { for (i = 0; i < 3; i++) if (!tray[i].used) { cur.sel = i; break; } }
       }
     }
   });
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>LINES</span><b id="pkLines">0</b></div><div><span>COMBO</span><b id="pkCombo">0</b></div></div>';
+  pEl = { score: document.getElementById('pkScore'), lines: document.getElementById('pkLines'), combo: document.getElementById('pkCombo') };
 })();
 
 </script>

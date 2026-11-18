@@ -556,3 +556,15 @@
     document.head.appendChild(s);
   })();
 })();
+
+/* 홈 화면에 설치(PWA) + 한 번 열어 본 게임은 오프라인에서도 열리게 (sw.js) */
+(function () {
+  try {
+    if (!document.querySelector('link[rel="manifest"]')) {
+      var l = document.createElement('link'); l.rel = 'manifest'; l.href = '/manifest.webmanifest'; document.head.appendChild(l);
+    }
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+    }
+  } catch (e) {}
+})();

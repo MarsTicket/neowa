@@ -121,7 +121,8 @@
   var COLORS = ['#ff4d6d', '#ff8c3a', '#ffe066', '#b6ff4d', '#2ee59d', '#5ee7ff', '#4d7cff', '#a26bff', '#ff7ad9', '#f2f2f2', '#b0703f', '#1aa395'];
   var MARK = ['●', '▲', '■', '◆', '★', '✚', '♥', '▼', '♠', '○', '♣', '✱'];
   var B, nCol, stage, score, time, moves, undos, hist, sel, anim, clearT, added, cur = 0, kbd = false, done = {}, stuck = false;
-  var BW = 58, BH = 206, LH = 44;
+  var BW = 58, BH = 206, LH = 44, land = false, pEl = {};
+  function geo(sh) { land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960; if (B) layout(); }
 
   // ---------- 판 만들기: 무작위로 섞은 뒤 풀이기로 풀리는 것을 확인한 판만 씀 ----------
   function key(b) { return b.map(function (x) { return x.join(''); }).sort().join('|'); }
@@ -183,7 +184,7 @@
     for (var i = 0; i < n; i++) {
       var r = Math.floor(i / per), k = i % per, cnt = r === rows - 1 ? n - per * (rows - 1) : per;
       var tw = cnt * BW + (cnt - 1) * gap, x0 = (W - tw) / 2;
-      pos.push({ x: x0 + k * (BW + gap), y: rows === 1 ? 420 : 250 + r * 300 });
+      pos.push({ x: x0 + k * (BW + gap), y: land ? (rows === 1 ? 250 : 92 + r * 316) : rows === 1 ? 420 : 250 + r * 300 });
     }
   }
 
@@ -207,7 +208,7 @@
   }
   function addBottle() {
     if (S.state !== 'playing' || anim || clearT > 0 || added) { A.sfx('wall'); return; }
-    added = true; B.push([]); score = Math.max(0, score - 50); layout(); stuck = false; fx.text(W / 2, 160, '빈 병 추가 (−50)', '#b48cff', 20); A.sfx('power'); hud();
+    added = true; B.push([]); for (var hi = 0; hi < hist.length; hi++) hist[hi].push([]); /* 되돌려도 추가한 빈 병은 남게 */ score = Math.max(0, score - 50); layout(); stuck = false; fx.text(W / 2, 160, '빈 병 추가 (−50)', '#b48cff', 20); A.sfx('power'); hud();
   }
   function checkDone(quiet) {
     for (var i = 0; i < B.length; i++) {
@@ -301,8 +302,8 @@
     c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 21px "Pretendard Variable", system-ui';
     c.fillStyle = stuck ? '#ff7aa8' : '#e3d6ff';
     var msg = S.state !== 'playing' ? '' : clearT > 0 ? '정리 완료!' : stuck ? '더 부을 곳이 없어요 · 되돌리기나 병 추가' : sel >= 0 ? '부을 병을 고르세요' : '병을 골라 다른 병에 부으세요';
-    c.fillText(msg, W / 2, 150);
-    if (S.state === 'playing') btns().forEach(function (b) {
+    c.fillText(msg, W / 2, land ? 40 : 150);
+    if (S.state === 'playing' && !land) btns().forEach(function (b) {
       c.fillStyle = b.on ? b.bg : 'rgba(255,255,255,.04)'; A.rr(c, b.x, b.y, b.w, b.h, 16); c.fill(); c.strokeStyle = b.on ? b.fg : 'rgba(255,255,255,.12)'; c.lineWidth = 1.5; c.stroke();
       c.fillStyle = b.on ? b.fg : 'rgba(255,255,255,.3)'; c.font = '700 18px "Pretendard Variable", system-ui'; c.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 1);
     });
@@ -320,7 +321,9 @@
     var k = score + '|' + stage + '|' + moves + '|' + fmtT(time); if (k === lastHud) return; lastHud = k;
     document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; document.getElementById('hC').textContent = moves;
     document.getElementById('hMult').textContent = fmtT(time);
+    if (pEl.score) { pEl.score.textContent = A.fmt(score); pEl.stage.textContent = stage; pEl.time.textContent = fmtT(time); }
   }
+  function panelBtns() { if (!pEl.undo || !B) return; var on = S && S.state === 'playing' && !anim && clearT <= 0; pEl.undo.disabled = !on || !hist.length; pEl.add.disabled = !on || added; pEl.add.lastChild.textContent = added ? ' 병 추가 완료' : ' 빈 병 추가 (−50)'; }
 
   // ---------- 입력 ----------
   function hit(p) {
@@ -329,11 +332,11 @@
   }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; e.preventDefault(); kbd = false; var p = S.toLocal(e);
-    var bs = btns(); for (var b = 0; b < bs.length; b++) { var q = bs[b]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) { if (!q.on) { A.sfx('wall'); return; } if (q.id === 'undo') undo(); else addBottle(); return; } }
+    var bs = land ? [] : btns(); for (var b = 0; b < bs.length; b++) { var q = bs[b]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) { if (!q.on) { A.sfx('wall'); return; } if (q.id === 'undo') undo(); else addBottle(); return; } }
     var i = hit(p); if (i >= 0) tap(i); else if (sel >= 0) { sel = -1; A.sfx('click', 0.8); }
   });
   var S = new A.Shell({
-    id: 'sort', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    id: 'sort', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) {
       var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (/^[0-9]$/.test(k)) { var i = k === '0' ? 9 : +k - 1; kbd = true; cur = i; tap(i); return; }
@@ -346,6 +349,13 @@
       if (k === 'Escape') sel = -1;
     }
   });
+  // 가로 화면 오른쪽 패널: 점수판·큰 버튼 (게임판 위 점수판은 가로에서 숨김)
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>STAGE</span><b id="pkStage">1</b></div><div><span>TIME</span><b id="pkTime">10:00</b></div></div>' +
+    '<button class="gp-btn main" id="pkUndo">되돌리기 (−5)</button><button class="gp-btn" id="pkAdd"><span></span> 빈 병 추가 (−50)</button>';
+  pEl = { score: document.getElementById('pkScore'), stage: document.getElementById('pkStage'), time: document.getElementById('pkTime'), undo: document.getElementById('pkUndo'), add: document.getElementById('pkAdd') };
+  pEl.undo.addEventListener('click', undo); pEl.add.addEventListener('click', addBottle);
+  setInterval(panelBtns, 200);
 })();
 
 </script>

@@ -312,7 +312,7 @@ body.rot-tip .gp-tip{display:flex}
   .g-icons{gap:0}
   .touch .g-ic,.g-ic{width:44px;height:44px}
   .touch .g-back{height:44px}
-  .g-back{padding:0 6px}
+  .g-back{padding:0 6px;min-width:44px;justify-content:center}
   .g-name{font-size:16px}
 }
 /* 휴대폰 가로(키 낮은 화면): 패널 정리 */

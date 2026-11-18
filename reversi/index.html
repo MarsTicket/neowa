@@ -204,7 +204,18 @@
     hud();
   }
   function cnt(p) { return bd.filter(function (v) { return v === p; }).length; }
-  function human(i) { var p = duo() ? turn : 1; if (S.state !== 'playing' || !turn || (turn !== 1 && !duo()) || thinking > 0 || endT > 0) return; var f = flipsFor(bd, i, p); if (!f.length) { A.sfx('wall'); return; } play({ i: i, f: f }, p); }
+  function human(i) { var p = duo() ? turn : 1; if (S.state !== 'playing' || !turn || (turn !== 1 && !duo()) || thinking > 0 || endT > 0) return; var f = flipsFor(bd, i, p); if (!f.length) { A.sfx('wall'); return; } tutDone(); play({ i: i, f: f }, p); }
+  // 첫 플레이 안내: 처음 한 번만 판 위에 짧은 안내를 띄우고, 첫 올바른 행동을 하면 사라짐 (neowa_reversi_tut = 1)
+  var tut = A.get('neowa_reversi_tut', '0') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_reversi_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function tutBox(c, x, y, txt, size, tx, ty) { // 글 상자 + (tx, ty)에 깜빡이는 손가락 원
+    c.save(); c.font = '700 ' + size + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(txt).width + size * 1.6; c.fillStyle = 'rgba(0,0,0,.78)'; A.rr(c, x - w / 2, y - size, w, size * 2, size * 0.7); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5; c.stroke(); c.fillStyle = '#fff'; c.fillText(txt, x, y + 1);
+    if (tx != null) { var k = (S.time * 1.6) % 1; c.strokeStyle = 'rgba(255,255,255,' + (1 - k) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(tx, ty, 10 + k * 26, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(tx, ty, 8, 0, 7); c.fill(); }
+    c.restore(); }
+
   function update(dt) {
     fx.update(dt); if (placeT < 1) placeT = Math.min(1, placeT + dt * 6); for (var k in flips) { flips[k] += dt; if (flips[k] > 0.35) delete flips[k]; } if (passMsg > 0) passMsg -= dt;
     if (endT > 0) { endT -= dt; if (endT <= 0) { var me = cnt(1), cp = cnt(2);
@@ -212,7 +223,7 @@
         S.gameOver(0, [['흑 승', String(tally[0])], ['백 승', String(tally[1])], ['마지막', me + ' : ' + cp]], { title: wp ? (wp === 1 ? '흑' : '백') + ' 승리!' : '무승부', kick: '2인 대결', win: true, noRecord: true }); return; }
       if (me > cp) { wins++; var pts = (me - cp) * 10 * (diff + 1) + 100 * (diff + 1); score += pts; S.banner(wins + '승! ' + me + ':' + cp, '+' + pts); A.sfx('level'); newGame(); hud(); }
       else if (me === cp) { score += 50; S.banner('무승부', '+50'); newGame(); hud(); }
-      else S.gameOver(score, [['연승', String(wins)], ['마지막', me + ' : ' + cp]]); } return; }
+      else S.gameOver(score, [['연승', String(wins)], ['마지막', me + ' : ' + cp], ['난이도', ['쉬움', '보통', '어려움'][diff]]]); } return; }
     if (thinking > 0) { thinking -= dt; if (thinking <= 0 && turn === 2) { var ms = moves(bd, 2); if (ms.length) play(aiPick(ms), 2); else next(1); } }
   }
   function render(c) {
@@ -239,6 +250,7 @@
     c.fillStyle = '#7dff9b'; c.font = '700 ' + (land ? 26 : 20) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(passMsg > 0 ? (duo() ? (passWho === 1 ? '흑' : '백') : passWho === 1 ? '나' : '컴퓨터') + ' 둘 곳 없음 → 차례가 넘어갑니다' : S.state === 'playing' ? (duo() ? (turn === 1 ? '흑 차례' : turn === 2 ? '백 차례' : '') : turn === 1 ? '나(흑) 차례' : turn === 2 ? '컴퓨터 생각 중…' : '') : '', W / 2, land ? 36 : GY - 60);
     if (!land) { c.font = '700 24px "Pretendard Variable",system-ui'; c.fillStyle = '#fff'; c.fillText((duo() ? '흑 ' : '나(흑) ') + cnt(1) + '  :  ' + cnt(2) + (duo() ? ' 백' : ' 컴퓨터(백)'), W / 2, GY + 540); } // 가로에선 패널 점수판(돌 수)에 표시
+    if (tut && legal.length) { var ti = legal[0]; tutBox(c, GX + N * CS / 2, GY + N * CS - CS * 0.9, isTouch() ? '초록 점 자리를 탭하면 돌을 놓아요' : '초록 점 자리 클릭 · 방향키 + Space', land ? 26 : 20, GX + (ti % N + 0.5) * CS, GY + (Math.floor(ti / N) + 0.5) * CS); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = cnt(1) + ' : ' + cnt(2); document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff];

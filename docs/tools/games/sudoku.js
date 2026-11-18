@@ -12,17 +12,23 @@
     var w = (290 - 16) / 3, k = d - 1; return [600 + (k % 3) * (w + 8), 30 + Math.floor(k / 3) * (w + 8), w, w];
   }
   function toolRect(i) {
-    if (!land) { var tw = (CS * 9) / 3; return [GX + i * tw + 4, TOOL_Y, tw - 8, TOOL_H]; }
-    return [600, 344 + i * 78, 290, 68];
+    if (!land) { var tw = (CS * 9) / 4; return [GX + i * tw + 4, TOOL_Y, tw - 8, TOOL_H]; }
+    return [600, 340 + i * 58, 290, 50];
   }
   function inR(p, r) { return p.x >= r[0] && p.x <= r[0] + r[2] && p.y >= r[1] && p.y <= r[1] + r[3]; }
-  var DIFFS = [{ clues: 40, base: 1000, name: '쉬움' }, { clues: 32, base: 2500, name: '보통' }, { clues: 26, base: 5000, name: '어려움' }];
+  var DIFFS = [{ clues: 40, base: 1000, name: '쉬움' }, { clues: 32, base: 2500, name: '보통' }, { clues: 26, base: 5000, name: '어려움' }, { clues: 30, base: 3000, name: '오늘의 퍼즐', daily: true }];
+  // 오늘의 퍼즐: 날짜(로컬 YYYYMMDD) 시드 난수로 만들어서 오늘은 누구나 같은 판
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function seeded(a) { return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var rnd = Math.random, undoStack = [];
+  var tut = A.get('neowa_sudoku_tut', '') !== '1', tutT = 0; // 첫 판 안내
+  function isTouch() { return document.body.classList.contains('touch'); }
   var diff = +A.get('neowa_sudoku_diff', '0') || 0;
   var fx = new A.FX();
   var sol, given, val, notes, wrong, sel = { x: 4, y: 4 }, noteMode = false, mistakes = 0, hints = 0, time = 0, D, winT = 0, dyingT = 0, flash = [];
 
   /* ---------- 퍼즐 만들기 ---------- */
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function box(i) { return Math.floor(Math.floor(i / 9) / 3) * 3 + Math.floor((i % 9) / 3); }
   function candMask(g, i) {
     var r = Math.floor(i / 9), c = i % 9, m = 0, b = box(i), br = Math.floor(b / 3) * 3, bc = (b % 3) * 3;
@@ -58,26 +64,34 @@
 
   function reset() {
     D = DIFFS[diff];
-    var p = makePuzzle(D.clues);
+    rnd = D.daily ? seeded(today() * 31 + 7) : Math.random;
+    var p = makePuzzle(D.clues); rnd = Math.random;
     sol = p.sol; given = p.puz.map(function (v) { return v > 0; }); val = p.puz.slice();
     notes = []; wrong = []; for (var i = 0; i < 81; i++) { notes.push(0); wrong.push(false); }
-    mistakes = 0; hints = 0; time = 0; winT = 0; dyingT = 0; noteMode = false; flash = [];
+    mistakes = 0; hints = 0; time = 0; winT = 0; dyingT = 0; noteMode = false; flash = []; undoStack = []; tutT = 0;
     for (i = 0; i < 81; i++) if (!given[i]) { sel = { x: i % 9, y: Math.floor(i / 9) }; break; }
     fx.clear(); hud();
   }
   function idx() { return sel.y * 9 + sel.x; }
+  // 되돌리기: 숫자·메모를 바꾸기 직전 상태를 저장 (실수·힌트 횟수는 되돌리지 않음)
+  function snap() { undoStack.push({ val: val.slice(), notes: notes.slice(), wrong: wrong.slice(), sel: { x: sel.x, y: sel.y } }); if (undoStack.length > 80) undoStack.shift(); }
+  function undo() {
+    if (winT > 0 || dyingT > 0 || !undoStack.length) { A.sfx('wall'); return; }
+    var h = undoStack.pop(); val = h.val; notes = h.notes; wrong = h.wrong; sel = h.sel;
+    A.sfx('click', 0.8); fx.ring(GX + sel.x * CS + CS / 2, GY + sel.y * CS + CS / 2, '#c3ff5e', 40, 0.3); hud();
+  }
   function put(d) {
     if (winT > 0 || dyingT > 0) return;
     var i = idx(); if (given[i] || (val[i] && !wrong[i] && val[i] === sol[i])) { A.sfx('wall'); return; }
-    if (noteMode) { if (val[i]) { val[i] = 0; wrong[i] = false; } notes[i] ^= 1 << d; A.sfx('tick'); return; }
+    if (noteMode) { snap(); if (val[i]) { val[i] = 0; wrong[i] = false; } notes[i] ^= 1 << d; A.sfx('tick'); return; }
     if (val[i] === d && wrong[i]) { A.sfx('wall'); return; } // 같은 오답을 다시 눌러도 실수로 세지 않음
-    val[i] = d; notes[i] = 0;
+    snap(); val[i] = d; notes[i] = 0;
     if (d !== sol[i]) {
       wrong[i] = true; mistakes++; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2);
       fx.text(GX + sel.x * CS + CS / 2, GY + sel.y * CS - 6, '✕', '#ff4d6d', 24);
       if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.5); }
     } else {
-      wrong[i] = false; A.sfx('eat', 1 + d * 0.04);
+      wrong[i] = false; A.sfx('eat', 1 + d * 0.04); if (tut) { tut = false; A.set('neowa_sudoku_tut', '1'); }
       clearNotes(i, d); celebrate(i);
       if (val.every(function (v, k) { return v === sol[k]; })) win();
     }
@@ -95,7 +109,7 @@
     groups.forEach(function (g) { g.forEach(function (k, n) { flash.push({ k: k, t: -n * 0.03 }); }); });
     if (groups.length) { A.sfx('coin', 1 + groups.length * 0.1); fx.text(GX + c * CS + CS / 2, GY + r * CS - 10, groups.length > 1 ? '완성 ×' + groups.length : '완성!', '#c3ff5e', 20); }
   }
-  function erase() { var i = idx(); if (given[i] || (val[i] === sol[i])) return; val[i] = 0; wrong[i] = false; notes[i] = 0; A.sfx('click'); hud(); }
+  function erase() { var i = idx(); if (given[i] || (val[i] === sol[i])) return; if (!val[i] && !notes[i]) return; snap(); val[i] = 0; wrong[i] = false; notes[i] = 0; A.sfx('click'); hud(); }
   function hint() {
     if (hints >= 3 || winT > 0 || dyingT > 0) { A.sfx('wall'); return; }
     var i = idx();
@@ -118,8 +132,9 @@
     if (winT > 0) {
       winT -= dt;
       if (winT <= 0) {
-        var k = 'neowa_sudoku_time_' + diff, b = parseFloat(A.get(k, '0')) || 0; if (!b || time < b) A.set(k, time.toFixed(0));
-        S.gameOver(score(), [['난이도', D.name], ['시간', fmtT(time)], ['최단', fmtT(parseFloat(A.get(k, '0')))]], { kick: 'SOLVED!', win: true });
+        // 최단 기록: 일반은 neowa_sudoku_time_<난이도>, 오늘의 퍼즐은 neowa_sudoku_daily_<YYYYMMDD>
+        var k = D.daily ? 'neowa_sudoku_daily_' + today() : 'neowa_sudoku_time_' + diff, b = parseFloat(A.get(k, '0')) || 0, rec = !b || time < b; if (rec) A.set(k, time.toFixed(0));
+        S.gameOver(score(), [['난이도', D.name], ['시간', fmtT(time) + (b && rec ? ' 🏅' : '')], [D.daily ? '오늘 최단' : '최단', fmtT(parseFloat(A.get(k, '0')))]], { kick: 'SOLVED!', win: true });
       }
       return;
     }
@@ -171,13 +186,26 @@
       c.font = '600 ' + (land ? 14 : 12) + 'px "Chakra Petch",system-ui'; c.fillStyle = 'rgba(255,255,255,.35)'; c.fillText(done ? '✓' : String(9 - counts[d]), pcx, pr[1] + pr[3] * 0.72);
     }
     // 도구
-    var tools = [['지우기', false], [noteMode ? '메모 켜짐' : '메모', noteMode], ['힌트 ' + (3 - hints), false]];
-    for (i = 0; i < 3; i++) {
+    var tools = [['되돌리기', false], ['지우기', false], [noteMode ? '메모 켜짐' : '메모', noteMode], ['힌트 ' + (3 - hints), false]];
+    for (i = 0; i < 4; i++) {
       var tr = toolRect(i); c.fillStyle = tools[i][1] ? '#c3ff5e' : 'rgba(255,255,255,.06)'; A.rr(c, tr[0], tr[1], tr[2], tr[3], 14); c.fill();
       c.font = '700 ' + (land ? 22 : 18) + 'px "Pretendard Variable",system-ui'; c.fillStyle = tools[i][1] ? '#172400' : '#e9ffc9'; c.fillText(tools[i][0], tr[0] + tr[2] / 2, tr[1] + tr[3] / 2 + 1);
     }
+    if (tut && val && S.state === 'playing' && winT <= 0 && dyingT <= 0) drawTut(c);
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
+  }
+  // 첫 판 안내: 고른 칸을 깜빡이고, 판 아래쪽에 말풍선
+  function drawTut(c) {
+    tutT += 1 / 60;
+    var touch = isTouch(), l1 = touch ? '① 빈 칸을 탭 → ② 숫자 버튼을 탭' : '방향키(또는 클릭)로 칸 고르고 숫자키 1~9', l2 = '줄·세로줄·굵은 3×3 칸마다 1~9가 한 번씩';
+    var a = Math.min(1, tutT * 3), bw = 470, bx = GX + (9 * CS - bw) / 2, by = GY + 9 * CS - 104;
+    c.globalAlpha = a * 0.93; c.fillStyle = '#141c06'; A.rr(c, bx, by, bw, 92, 18); c.fill(); c.strokeStyle = '#c3ff5e'; c.lineWidth = 2; c.stroke(); c.globalAlpha = a;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#c3ff5e'; c.font = '800 21px "Pretendard Variable",system-ui'; c.fillText(l1, bx + bw / 2, by + 32);
+    c.fillStyle = 'rgba(233,255,201,.8)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.fillText(l2, bx + bw / 2, by + 64);
+    var pr = 0.5 + 0.5 * Math.sin(S.time * 6); c.strokeStyle = 'rgba(255,209,102,' + (0.5 + pr * 0.5) + ')'; c.lineWidth = 3; c.strokeRect(GX + sel.x * CS + 2, GY + sel.y * CS + 2, CS - 4, CS - 4);
+    c.globalAlpha = 1;
   }
   var lastHud = '';
   function hud() {
@@ -196,7 +224,7 @@
     var p = S.toLocal(e);
     if (p.x >= GX && p.x < GX + 9 * CS && p.y >= GY && p.y < GY + 9 * CS) { sel = { x: Math.floor((p.x - GX) / CS), y: Math.floor((p.y - GY) / CS) }; A.sfx('tick'); return; }
     for (var d = 1; d <= 9; d++) if (inR(p, padRect(d))) { put(d); return; }
-    for (var t = 0; t < 3; t++) if (inR(p, toolRect(t))) { if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else hint(); return; }
+    for (var t = 0; t < 4; t++) if (inR(p, toolRect(t))) { if (t === 0) undo(); else if (t === 1) erase(); else if (t === 2) { noteMode = !noteMode; A.sfx('click'); } else hint(); return; }
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
@@ -214,6 +242,7 @@
       else if (k === 'Backspace' || k === 'Delete' || k === '0') { e.preventDefault(); erase(); }
       else if (k === 'n' || k === 'N') { noteMode = !noteMode; A.sfx('click'); }
       else if (k === 'h' || k === 'H') hint();
+      else if (k === 'u' || k === 'U' || ((k === 'z' || k === 'Z') && (e.ctrlKey || e.metaKey))) { e.preventDefault(); undo(); }
     }
   });
   // 가로 화면: 점수판은 오른쪽 패널로 (게임판 위 점수판은 판을 가리므로 숨김)

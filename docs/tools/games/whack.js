@@ -3,7 +3,7 @@
   var A = Arcade, W = 540, H = 960, CX = [110, 270, 430], CY = [330, 540, 750], HR = 62;
   var fx = new A.FX();
   var holes, time, score, combo, bestCombo, hits, spawnT, over, lastSec;
-  function reset() { holes = []; for (var i = 0; i < 9; i++) holes.push({ x: CX[i % 3], y: CY[Math.floor(i / 3)], up: 0, kind: null, life: 0, hit: 0 }); time = 60; score = 0; combo = 0; bestCombo = 0; hits = 0; spawnT = 0.5; over = false; lastSec = 99; A.music.tempo(1); fx.clear(); hud(); }
+  function reset() { holes = []; for (var i = 0; i < 9; i++) holes.push({ x: CX[i % 3], y: CY[Math.floor(i / 3)], up: 0, kind: null, life: 0, hit: 0 }); time = 60; score = 0; combo = 0; bestCombo = 0; hits = 0; spawnT = 0.5; over = false; lastSec = 99; A.music.mood(null); fx.clear(); hud(); }
   function spawn() {
     var lv = Math.min(1, (60 - time) / 60), free = holes.filter(function (h) { return !h.kind; }); if (!free.length) return;
     var h = A.pick(free), r = Math.random();
@@ -27,7 +27,7 @@
   }
   function update(dt) {
     fx.update(dt); if (over) return;
-    time -= dt; if (time <= 10 && lastSec === 99) { lastSec = 10; A.music.tempo(1.12); } if (time > 0 && time <= 5 && Math.ceil(time) < lastSec) { lastSec = Math.ceil(time); A.sfx('warn'); }
+    time -= dt; if (time <= 10 && lastSec === 99) { lastSec = 10; A.music.mood('danger'); } if (time > 0 && time <= 5 && Math.ceil(time) < lastSec) { lastSec = Math.ceil(time); A.sfx('warn'); }
     if (time <= 0) { time = 0; over = true; hud(); S.gameOver(score, [['잡은 두더지', String(hits)], ['최대 콤보', String(bestCombo)]], { kick: 'TIME UP', win: true }); return; }
     spawnT -= dt; if (spawnT <= 0) spawn();
     holes.forEach(function (h) {

@@ -36,7 +36,7 @@
     <aside class="g-side">
       <div class="g-card"><h3>CONTROLS</h3>
         <div class="g-keys">
-          <div class="k-only"><kbd>↑↓←→</kbd> 이동</div>
+          <div class="k-only"><kbd>↑↓←→</kbd><kbd>WASD</kbd> 이동</div>
           <div><kbd>드래그</kbd> 장갑 이동</div>
           <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
         </div>
@@ -46,6 +46,7 @@
           <div>3골 먹으면 끝</div>
           <div>곡선 슛은 그림자를 보고 판단</div>
           <div>연속 선방하면 점수 배율 UP</div>
+          <div>10연속 선방하면 실점 1 회복</div>
         </div>
       </div>
     </aside>
@@ -128,22 +129,29 @@
     A.sfx('shoot', 0.4);
   }
   function pos(b, k) {
-    var e = k, tx = b.fake ? A.lerp(b.fx, b.tx, Math.max(0, (k - 0.5) * 2)) : b.tx;
+    // 페인트 슛: 35% 지점부터 진짜 방향으로 꺾임 (예전 50% → 반응할 시간 확보)
+    var e = k, tx = b.fake ? A.lerp(b.fx, b.tx, Math.max(0, (k - 0.35) / 0.65)) : b.tx;
     var x = A.lerp(b.sx, tx, e) + Math.sin(k * Math.PI) * b.curve, y = A.lerp(b.sy, b.ty, e) - Math.sin(k * Math.PI) * 120;
     return { x: x, y: y, s: A.lerp(1.8, 0.75, k) };
   }
   function update(dt) {
     fx.update(dt);
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
-    glove.x = A.clamp(glove.x + kx * 700 * dt, GX0 + 20, GX1 - 20); glove.y = A.clamp(glove.y + ky * 700 * dt, GY0 + 20, GY1 - 10);
+    glove.x = A.clamp(glove.x + kx * 900 * dt, GX0 + 20, GX1 - 20); glove.y = A.clamp(glove.y + ky * 900 * dt, GY0 + 20, GY1 - 10);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['선방', String(saves)], ['최다 연속', String(bestStreak)]]); return; }
     if (!ball) { waitT -= dt; if (waitT <= 0) kick(); return; }
     ball.t += dt / ball.dur;
     if (ball.t >= 1) {
       var p = pos(ball, 1);
-      if (Math.hypot(p.x - glove.x, p.y - glove.y) < 70) {
-        saves++; streak++; bestStreak = Math.max(bestStreak, streak); var m = Math.min(5, 1 + Math.floor(streak / 3)); score += 10 * m;
-        fx.burst(p.x, p.y, '#7dff9b', 24, 320, 0.5, 3.5); fx.ring(p.x, p.y, '#7dff9b', 100, 0.4); fx.text(p.x, p.y - 50, '선방! +' + 10 * m, '#7dff9b', 24); A.sfx('bounce', 1.3); A.vibrate(25); fx.shake(4, 0.15);
+      var gd = Math.hypot(p.x - glove.x, p.y - glove.y);
+      if (gd < 70) {
+        saves++; streak++; bestStreak = Math.max(bestStreak, streak); var m = Math.min(5, 1 + Math.floor(streak / 3)), pts = 10 * m, perf = gd < 28;
+        if (perf) pts += 10;   // 장갑 정중앙으로 막으면 +10
+        score += pts;
+        fx.burst(p.x, p.y, '#7dff9b', 24, 320, 0.5, 3.5); fx.ring(p.x, p.y, '#7dff9b', 100, 0.4); fx.text(p.x, p.y - 50, (perf ? '완벽 선방! +' : '선방! +') + pts, perf ? '#ffd166' : '#7dff9b', perf ? 26 : 24); A.sfx('bounce', 1.3); A.vibrate(25); fx.shake(4, 0.15);
+        // 10연속 선방마다 실점 1 회복
+        if (streak % 10 === 0 && goals > 0) { goals--; fx.text(W / 2, 200, '실점 -1 회복!', '#ffd166', 26); A.sfx('power'); }
+        if (saves % 10 === 0) { S.banner(saves + ' 선방', '슛이 더 빨라져요'); A.sfx('level'); }
       } else {
         goals++; streak = 0; fx.flashIt('#ff2244', 0.4); fx.shake(9, 0.3); A.sfx('hurt'); A.vibrate(140);
         fx.text(W / 2, 200, 'GOAL...', '#ff4d6d', 34); fx.burst(p.x, p.y, '#ffffff', 20, 260, 0.5, 3);
@@ -165,12 +173,16 @@
     c.save(); c.shadowColor = '#fff'; c.shadowBlur = 14; c.strokeStyle = '#f4f5fb'; c.lineWidth = 10; c.beginPath(); c.moveTo(GX0, GY1 + 20); c.lineTo(GX0, GY0); c.lineTo(GX1, GY0); c.lineTo(GX1, GY1 + 20); c.stroke(); c.restore();
     c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 3; c.beginPath(); c.moveTo(0, GY1 + 20); c.lineTo(W, GY1 + 20); c.stroke();
     // 공 그림자(도착 지점)
-    if (ball) { var tp = pos(ball, 1), sh = ball.t; c.fillStyle = 'rgba(0,0,0,' + (0.15 + sh * 0.3) + ')'; c.beginPath(); c.ellipse(ball.fake && ball.t < 0.5 ? ball.fx : tp.x, tp.y, 40 * (0.4 + sh), 14 * (0.4 + sh), 0, 0, 7); c.fill(); }
+    if (ball) { var tp = pos(ball, 1), sh = ball.t; c.fillStyle = 'rgba(0,0,0,' + (0.15 + sh * 0.3) + ')'; c.beginPath(); c.ellipse(ball.fake && ball.t < 0.35 ? ball.fx : tp.x, tp.y, 40 * (0.4 + sh), 14 * (0.4 + sh), 0, 0, 7); c.fill(); }
     // 장갑
     var gl = glove || { x: W / 2 + Math.sin(t * 2) * 120, y: 440 };
     c.save(); c.shadowColor = '#7dff9b'; c.shadowBlur = 20; c.fillStyle = '#7dff9b';
     [-1, 1].forEach(function (s) { A.rr(c, gl.x + s * 26 - 22, gl.y - 34, 44, 64, 18); c.fill(); }); c.restore();
     c.strokeStyle = 'rgba(125,255,155,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(gl.x, gl.y, 70, 0, 7); c.stroke();
+    if (S.state === 'playing' && saves === 0 && goals === 0 && kicks <= 2) {
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillStyle = 'rgba(255,255,255,' + (0.7 + Math.sin(t * 5) * 0.25) + ')';
+      c.fillText(document.body.classList.contains('touch') ? '장갑을 끌어 그림자 위로!' : '마우스·방향키로 장갑을 그림자 위로!', W / 2, 680);
+    }
     if (ball) { var p = pos(ball, Math.min(1, ball.t)); c.save(); c.translate(p.x, p.y); c.rotate(t * 10); c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 26 * p.s, 0, 7); c.fill(); c.fillStyle = '#111'; for (var k = 0; k < 5; k++) { var a = k / 5 * Math.PI * 2; c.beginPath(); c.arc(Math.cos(a) * 14 * p.s, Math.sin(a) * 14 * p.s, 5 * p.s, 0, 7); c.fill(); } c.restore(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
@@ -180,7 +192,8 @@
   stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e);
     if (e.pointerType === 'mouse') { glove.x = A.clamp(p.x, GX0 + 20, GX1 - 20); glove.y = A.clamp(p.y, GY0 + 20, GY1 - 10); return; }
     if (!drag || drag.id !== e.pointerId) return; glove.x = A.clamp(drag.gx + (p.x - drag.sx) * 1.4, GX0 + 20, GX1 - 20); glove.y = A.clamp(drag.gy + (p.y - drag.sy) * 1.4, GY0 + 20, GY1 - 10); });
-  stage.addEventListener('pointerup', function () { drag = null; });
+  stage.addEventListener('pointerup', function () { drag = null; }); stage.addEventListener('pointercancel', function () { drag = null; });
+  window.addEventListener('blur', function () { keys = {}; drag = null; });
   // score 계산은 점수(선방 × 배율)
   var S = new A.Shell({ id: 'keeper', W: W, H: H, reset: function () { bestStreak = 0; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });

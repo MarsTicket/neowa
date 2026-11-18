@@ -3,40 +3,74 @@
   var A = Arcade, W = 540, H = 960, CW = 78, CH = 110;
   var SUITS = ['♠', '♥', '♦', '♣'], RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   var fx = new A.FX();
-  var shoe, chips, bet, round, MAXR = 20, phase, me, dl, msg, msgC, doubled, endT, btns = [];
+  // hands: 내 손패 목록 (분할하면 2개). 각 {c: 카드들, bet: 건 칩, dbl: 더블 여부, split: 분할된 손인지}
+  var shoe, chips, bet, round, MAXR = 20, phase, hands, hi, dl, msg, msgC, endT, btns = [], streak = 0, dealerT = 0;
   function newShoe() { shoe = []; for (var d = 0; d < 4; d++) for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) shoe.push({ s: s, r: r }); for (var i = shoe.length - 1; i > 0; i--) { var j = A.irand(0, i), t = shoe[i]; shoe[i] = shoe[j]; shoe[j] = t; } }
   function drawC(up) { if (shoe.length < 30) newShoe(); var c = shoe.pop(); c.up = up !== false; c.t = 0; return c; }
-  function val(h) { var v = 0, aces = 0; h.forEach(function (c) { if (!c.up) return; if (c.r === 0) { aces++; v += 11; } else v += Math.min(10, c.r + 1); }); while (v > 21 && aces) { v -= 10; aces--; } return v; }
+  function cv(c) { return Math.min(10, c.r + 1); }
+  function val(h) { var v = 0, aces = 0; h.forEach(function (c) { if (!c.up) return; if (c.r === 0) { aces++; v += 11; } else v += cv(c); }); while (v > 21 && aces) { v -= 10; aces--; } return v; }
   function bj(h) { return h.length === 2 && val(h) === 21; }
-  function reset() { newShoe(); chips = 1000; bet = 100; round = 1; phase = 'bet'; me = []; dl = []; msg = '베팅액을 정하고 시작하세요'; msgC = '#fff'; endT = 0; fx.clear(); hud(); }
+  function cur() { return hands && hands[hi]; }
+  function reset() { newShoe(); chips = 1000; bet = 100; round = 1; phase = 'bet'; hands = []; hi = 0; dl = []; streak = 0; msg = '베팅액을 정하고 시작하세요'; msgC = '#fff'; endT = 0; fx.clear(); hud(); }
+  function canDbl() { var h = cur(); return phase === 'play' && h && h.c.length === 2 && chips >= h.bet; }
+  function canSplit() { var h = cur(); return phase === 'play' && hands.length === 1 && h.c.length === 2 && cv(h.c[0]) === cv(h.c[1]) && chips >= h.bet; }
   function deal() {
     if (phase !== 'bet' || S.state !== 'playing') return; bet = Math.min(bet, chips); if (bet <= 0) return;
-    chips -= bet; doubled = false; me = [drawC(), drawC()]; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('click');
-    if (bj(me)) { stand(); } hud();
+    chips -= bet; hands = [{ c: [drawC(), drawC()], bet: bet }]; hi = 0; dl = [drawC(), drawC(false)]; phase = 'play'; msg = ''; A.sfx('click');
+    // 딜러가 A·10을 보이면 블랙잭인지 먼저 확인(피크). 나나 딜러가 블랙잭이면 바로 결과
+    var dlBJ = (dl[0].r === 0 || cv(dl[0]) === 10) && val([dl[0], { r: dl[1].r, up: true }]) === 21;
+    if (dlBJ || bj(hands[0].c)) { if (dlBJ) msg = '딜러 블랙잭!'; finish(); }
+    hud();
   }
-  function hit() { if (phase !== 'play') return; me.push(drawC()); A.sfx('click', 1.2); if (val(me) > 21) finish(); else if (val(me) === 21) stand(); hud(); }
-  function stand() { if (phase !== 'play') return; phase = 'dealer'; dl[1].up = true; dealerT = 0.6; hud(); }
-  function dbl() { if (phase !== 'play' || me.length !== 2 || chips < bet) { A.sfx('wall'); return; } chips -= bet; bet *= 2; doubled = true; me.push(drawC()); A.sfx('coin'); if (val(me) > 21) finish(); else stand(); hud(); }
-  var dealerT = 0;
+  function nextHand() {
+    hi++;
+    if (hi < hands.length) { var h = cur(); if (h.c.length < 2) h.c.push(drawC()); A.sfx('click', 1.1); if (h.ace || val(h.c) === 21) nextHand(); return; }
+    hi = hands.length - 1;
+    dl[1].up = true;
+    if (hands.every(function (h) { return val(h.c) > 21; })) { finish(); return; } // 모두 버스트면 딜러는 더 받지 않음
+    phase = 'dealer'; dealerT = 0.6;
+  }
+  function hit() { if (phase !== 'play') return; var h = cur(); h.c.push(drawC()); A.sfx('click', 1.2); if (val(h.c) >= 21) nextHand(); hud(); }
+  function stand() { if (phase !== 'play') return; nextHand(); hud(); }
+  function dbl() { if (!canDbl()) { A.sfx('wall'); return; } var h = cur(); chips -= h.bet; h.bet *= 2; h.dbl = true; h.c.push(drawC()); A.sfx('coin'); nextHand(); hud(); }
+  function split() {
+    if (!canSplit()) { A.sfx('wall'); return; }
+    var h = hands[0], ace = h.c[0].r === 0; chips -= h.bet;
+    hands = [{ c: [h.c[0], drawC()], bet: h.bet, split: true, ace: ace }, { c: [h.c[1]], bet: h.bet, split: true, ace: ace }]; hi = 0; A.sfx('coin', 1.2);
+    if (ace || val(hands[0].c) === 21) nextHand(); // A를 나누면 한 장씩만 받음
+    hud();
+  }
   function finish() {
-    dl.forEach(function (c) { c.up = true; }); var mv = val(me), dv = val(dl), win = 0;
-    if (mv > 21) { msg = '버스트! 패배'; msgC = '#ff4d6d'; }
-    else if (bj(me) && !bj(dl)) { win = Math.floor(bet * 2.5); msg = '블랙잭! +' + Math.floor(bet * 1.5); msgC = '#ffd166'; }
-    else if (dv > 21 || mv > dv) { win = bet * 2; msg = '승리! +' + bet; msgC = '#4dffd2'; }
-    else if (mv === dv) { win = bet; msg = '무승부 (푸시)'; msgC = '#fff'; }
-    else { msg = '딜러 승'; msgC = '#ff4d6d'; }
-    chips += win; phase = 'result'; endT = 1.4;
-    if (win > bet) { A.sfx(win >= bet * 2.5 ? 'gold' : 'coin'); fx.burst(W / 2, 640, '#4dffd2', 24, 300, 0.6, 3.5); } else if (!win) { A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
-    if (doubled) bet = Math.floor(bet / 2);
+    dl.forEach(function (c) { c.up = true; }); var dv = val(dl), dBJ = bj(dl), total = 0, staked = 0, parts = [];
+    hands.forEach(function (h) {
+      var mv = val(h.c), win = 0, pbj = bj(h.c) && !h.split; staked += h.bet;
+      if (mv > 21) parts.push('버스트');
+      else if (pbj && !dBJ) { win = Math.floor(h.bet * 2.5); parts.push('블랙잭'); }
+      else if (dBJ && !pbj) parts.push('패');
+      else if (dv > 21 || mv > dv) { win = h.bet * 2; parts.push('승'); }
+      else if (mv === dv) { win = h.bet; parts.push('푸시'); }
+      else parts.push('패');
+      total += win;
+    });
+    chips += total; phase = 'result'; endT = 1.6;
+    var net = total - staked;
+    if (hands.length > 1) { msg = parts.join(' · ') + (net ? (net > 0 ? '  +' : '  ') + net : ''); msgC = net > 0 ? '#4dffd2' : net < 0 ? '#ff4d6d' : '#fff'; }
+    else if (parts[0] === '버스트') { msg = '버스트! 패배'; msgC = '#ff4d6d'; }
+    else if (parts[0] === '블랙잭') { msg = '블랙잭! +' + net; msgC = '#ffd166'; }
+    else if (parts[0] === '승') { msg = (dv > 21 ? '딜러 버스트! +' : '승리! +') + net; msgC = '#4dffd2'; }
+    else if (parts[0] === '푸시') { msg = '무승부 (푸시)'; msgC = '#fff'; }
+    else { msg = dBJ ? '딜러 블랙잭' : '딜러 승'; msgC = '#ff4d6d'; }
+    if (net > 0) { streak++; A.sfx(parts.indexOf('블랙잭') >= 0 ? 'gold' : 'coin'); fx.burst(W / 2, 640, '#4dffd2', 24, 300, 0.6, 3.5); if (streak >= 3) fx.text(W / 2, 600, streak + '연승!', '#ffd166', 24); }
+    else if (net < 0) { streak = 0; A.sfx('hurt', 1.3); fx.shake(4, 0.2); }
     hud();
   }
   function update(dt) {
-    fx.update(dt); me.concat(dl).forEach(function (c) { c.t = Math.min(1, (c.t || 0) + dt * 5); });
-    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17 && val(me) <= 21) { dl.push(drawC()); A.sfx('click', 0.9); dealerT = 0.55; } else finish(); } }
+    fx.update(dt); var all = dl.slice(); hands.forEach(function (h) { all = all.concat(h.c); }); all.forEach(function (c) { c.t = Math.min(1, (c.t || 0) + dt * 5); });
+    if (phase === 'dealer') { dealerT -= dt; if (dealerT <= 0) { if (val(dl) < 17) { dl.push(drawC()); A.sfx('click', 0.9); dealerT = 0.55; } else finish(); } }
     if (phase === 'result') { endT -= dt; if (endT <= 0) {
       if (chips <= 0) { S.gameOver(0, [['라운드', String(round)]]); return; }
       if (round >= MAXR) { S.gameOver(chips, [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)]], { kick: 'FINISH', win: chips > 1000 }); return; }
-      round++; phase = 'bet'; me = []; dl = []; bet = Math.min(bet, chips); msg = ''; hud(); } }
+      round++; phase = 'bet'; hands = []; hi = 0; dl = []; bet = Math.max(Math.min(bet, chips), Math.min(10, chips)); msg = ''; if (round === MAXR) S.banner('마지막 판', '남은 칩이 점수'); hud(); } }
   }
   function cardDraw(c, cd, x, y) {
     var e = cd.t == null ? 1 : cd.t; y += (1 - e) * -200; c.globalAlpha = e;
@@ -45,10 +79,12 @@
     var col = cd.s === 1 || cd.s === 2 ? '#d6284f' : '#1a1a2a'; c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'top'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText(RANKS[cd.r], x + 7, y + 6); c.font = '700 18px system-ui'; c.fillText(SUITS[cd.s], x + 7, y + 30);
     c.font = '700 44px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(SUITS[cd.s], x + CW / 2, y + CH * 0.6); c.globalAlpha = 1;
   }
-  function hand(c, h, y, label) {
-    var n = h.length, step = Math.min(CW + 8, (W - 80 - CW) / Math.max(1, n - 1)), x0 = W / 2 - ((n - 1) * step + CW) / 2;
-    h.forEach(function (cd, i) { cardDraw(c, cd, x0 + i * step, y); });
-    if (n) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label + ' ' + val(h), W / 2, y - 22); }
+  function hand(c, h, y, label, cx, wid, active) {
+    cx = cx == null ? W / 2 : cx; wid = wid || W - 80;
+    var k = wid < 300 ? 0.8 : 1, room = wid / k, n = h.length, step = Math.min(CW + 8, (room - CW) / Math.max(1, n - 1)), x0 = cx - ((n - 1) * step + CW) / 2;
+    c.save(); c.translate(cx, y); c.scale(k, k); c.translate(-cx, -y); // 분할하면 카드를 조금 작게
+    h.forEach(function (cd, i) { cardDraw(c, cd, x0 + i * step, y); }); c.restore();
+    if (n) { c.fillStyle = active ? '#ffd166' : 'rgba(255,255,255,.75)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label + ' ' + val(h), cx, y - 22); }
   }
   function render(c) {
     var o = fx.offset();
@@ -57,22 +93,25 @@
     c.strokeStyle = 'rgba(255,209,102,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(W / 2, -200, 640, 0.4, Math.PI - 0.4); c.stroke();
     c.fillStyle = 'rgba(255,209,102,.5)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('딜러는 16 이하에서 받고 17 이상에서 멈춥니다 · 블랙잭 1.5배', W / 2, 415);
     if (dl) hand(c, dl, 170, '딜러');
-    if (me) hand(c, me, 470, '나');
+    if (hands && hands.length === 1) hand(c, hands[0].c, 470, '나');
+    else if (hands && hands.length === 2) hands.forEach(function (h, i) { var act = phase === 'play' && i === hi; if (act) { c.fillStyle = 'rgba(255,209,102,.12)'; A.rr(c, 20 + i * 255, 432, 245, 150, 14); c.fill(); } hand(c, h.c, 470, (i ? '오른쪽' : '왼쪽') + (h.dbl ? ' ×2' : ''), 142 + i * 255, 230, act); });
     if (msg) { c.fillStyle = msgC; c.font = '400 34px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, W / 2, 640); }
     btns = [];
     if (S.state === 'playing') {
       if (phase === 'bet') {
         c.fillStyle = '#fff'; c.font = '700 22px "Chakra Petch",system-ui'; c.fillText('베팅 ' + A.fmt(Math.min(bet, chips)), W / 2, 720);
-        btns.push(['−', 60, 760, 90, 'minus'], ['+', 390, 760, 90, 'plus'], ['딜 (Space)', 170, 760, 200, 'deal']);
-      } else if (phase === 'play') btns.push(['히트 H', 30, 760, 150, 'hit'], ['스탠드 S', 195, 760, 150, 'stand'], ['더블 D', 360, 760, 150, 'dbl']);
-      btns.forEach(function (b) { var on = !(b[4] === 'dbl' && (me.length !== 2 || chips < bet)); c.fillStyle = b[4] === 'deal' ? '#4dffd2' : on ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; A.rr(c, b[1], b[2], b[3], 66, 16); c.fill(); c.fillStyle = b[4] === 'deal' ? '#00241b' : on ? '#fff' : 'rgba(255,255,255,.3)'; c.font = '700 20px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + b[3] / 2, b[2] + 34); });
+        btns.push(['−', 60, 760, 90, 'minus'], ['+', 390, 760, 90, 'plus'], ['딜 (Space)', 170, 760, 200, 'deal'], ['절반', 60, 838, 90, 'half'], ['올인', 390, 838, 90, 'all']);
+      } else if (phase === 'play') btns.push(['히트 H', 24, 760, 112, 'hit'], ['스탠드 S', 152, 760, 112, 'stand'], ['더블 D', 280, 760, 112, 'dbl'], ['분할 X', 408, 760, 112, 'split']);
+      btns.forEach(function (b) { var on = !(b[4] === 'dbl' && !canDbl()) && !(b[4] === 'split' && !canSplit()); c.fillStyle = b[4] === 'deal' ? '#4dffd2' : on ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'; A.rr(c, b[1], b[2], b[3], 66, 16); c.fill(); c.fillStyle = b[4] === 'deal' ? '#00241b' : on ? '#fff' : 'rgba(255,255,255,.3)'; c.font = '700 20px "Pretendard Variable",system-ui'; c.fillText(b[0], b[1] + b[3] / 2, b[2] + 34); });
     }
-    c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 12px "Pretendard Variable",system-ui'; c.fillText('가상 칩만 사용합니다. 실제 돈은 쓰이지 않습니다.', W / 2, 920);
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.font = '500 12px "Pretendard Variable",system-ui'; c.fillText('가상 칩만 사용합니다. 실제 돈은 쓰이지 않습니다.', W / 2, 935);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  function hud() { document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(bet); }
-  function act(a) { if (a === 'minus') { bet = Math.max(10, bet - 50); A.sfx('tick'); hud(); } if (a === 'plus') { bet = Math.min(chips, bet + 50); A.sfx('tick'); hud(); } if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); }
+  function hud() { var b = hands && hands.length ? hands.reduce(function (a, h) { return a + h.bet; }, 0) : bet; document.getElementById('hA').textContent = A.fmt(chips); document.getElementById('hB').textContent = round + '/' + MAXR; document.getElementById('hC').textContent = A.fmt(b); }
+  function step(b) { return b < 100 ? 10 : b < 500 ? 50 : b < 2000 ? 100 : 500; }
+  function act(a) { if (phase === 'bet') { if (a === 'minus') bet = Math.max(Math.min(10, chips), bet - step(bet - 1)); if (a === 'plus') bet = Math.min(chips, bet + step(bet)); if (a === 'half') bet = Math.max(Math.min(10, chips), Math.floor(chips / 2)); if (a === 'all') bet = chips; if (a !== 'deal') { A.sfx('tick'); hud(); } }
+    if (a === 'deal') deal(); if (a === 'hit') hit(); if (a === 'stand') stand(); if (a === 'dbl') dbl(); if (a === 'split') split(); }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); btns.forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + 66) act(b[4]); }); });
   var S = new A.Shell({ id: 'blackjack', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
-    keydown: function (e) { var k = e.key.toLowerCase(); if (e.repeat) return; if (k === 'h') hit(); if (k === 's') stand(); if (k === 'd') dbl(); if (k === ' ' || k === 'enter') deal(); if (k === 'arrowleft') act('minus'); if (k === 'arrowright') act('plus'); } });
+    keydown: function (e) { var k = e.key.toLowerCase(); if (e.repeat) return; if (k === 'h') hit(); if (k === 's') stand(); if (k === 'd') dbl(); if (k === 'x') split(); if (k === ' ' || k === 'enter') deal(); if (k === 'arrowleft') act('minus'); if (k === 'arrowright') act('plus'); } });
 })();

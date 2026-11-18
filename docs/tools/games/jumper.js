@@ -2,7 +2,25 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
-  var P, plats, coins, cam, maxH, score, coinN, dyingT, keys = {}, drag = null, topY, mileM, bonus = 0;
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_jumper_tut)
+  var tutOn = A.get('neowa_jumper_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_jumper_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
+  var P, plats, coins, cam, maxH, score, coinN, dyingT, keys = {}, drag = null, topY, mileM, bonus = 0, tutT = 0;
   function addPlat(y) {
     var lv = Math.min(1, maxH / 30000), r = Math.random(), t = 'n';
     var rm = 0.075 + 0.15 + lv * 0.15; /* 예전 순서로는 높이 올라가면 스프링·로켓이 아예 안 나왔음 */
@@ -17,7 +35,7 @@
   function reset() { P = { x: W / 2, y: 800, vx: 0, vy: -900, face: 1 }; plats = []; coins = []; cam = 0; maxH = 0; score = 0; coinN = 0; dyingT = 0; keys = {}; drag = null; topY = 880; mileM = 1; bonus = 0; plats.push({ x: W / 2, y: 880, w: 140, t: 'n', vx: 0 }); while (topY > -200) addPlat(topY - A.rand(70, 120)); fx.clear(); hud(); }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; P.vy += 1800 * dt; P.y += P.vy * dt; if (dyingT <= 0) S.gameOver(score, [['높이', Math.floor(maxH / 10) + 'm'], ['코인', String(coinN)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; P.vy += 1800 * dt; P.y += P.vy * dt; if (dyingT <= 0) S.gameOver(score, [['높이', Math.floor(maxH / 10) + 'm'], ['코인', String(coinN)], ['최고 대비', vsBest(score)]]); return; }
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), target = kx * 420;
     if (drag) target = A.clamp((drag.x - drag.sx) * 4, -460, 460);
     P.vx = A.lerp(P.vx, target, Math.min(1, dt * 10)); if (Math.abs(P.vx) > 20) P.face = P.vx > 0 ? 1 : -1;
@@ -41,6 +59,7 @@
     for (var i = coins.length - 1; i >= 0; i--) if (Math.hypot(coins[i].x - P.x, coins[i].y - P.y) < 34) { var cn = coins.splice(i, 1)[0]; coinN++; fx.burst(cn.x, cn.y, '#ffd166', 10, 180, 0.35, 2.5); A.sfx('coin', 1 + Math.min(coinN, 20) * 0.02, A.clamp(cn.x / W * 2 - 1, -1, 1)); }
     if (P.y > cam + H + 40) { dyingT = 1; A.sfx('hurt'); }
     if (maxH / 10 >= mileM * 250) { S.banner(mileM * 250 + 'm', '보너스 +' + mileM * 50); bonus += mileM * 50; A.sfx('level'); mileM++; }
+    if (tutOn && (kx || (drag && Math.abs(drag.x - drag.sx) > 15))) { tutT += dt; if (tutT > 0.5 || maxH > 1500) tutDone(); }
     score = Math.floor(maxH / 10) + coinN * 20 + bonus; hud();
   }
   /* 그림: 높이에 따라 낮→노을→우주로 바뀌는 하늘, 구름, 떠 있는 섬 발판 5종, 동그란 점프 친구 */
@@ -116,6 +135,7 @@
     c.save(); c.translate(px, py); c.scale((P ? P.face : 1) / Math.sqrt(st), st); c.drawImage(HERO, -25, -28, 50, 54); c.restore();
     c.restore();
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+    if (P && tutOn) tutDraw(c, 200, '좌우로 끌어 발판 위에 착지하세요', '←→ 로 움직여 발판 위에 착지하세요');
   }
   var last = '';
   function hud() { var k = score + '|' + coinN; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.floor(maxH / 10) + 'm'; document.getElementById('hC').textContent = coinN; }

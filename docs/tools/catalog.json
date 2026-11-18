@@ -1098,5 +1098,45 @@
   "new": true,
   "art": "capture",
   "maxScore": 100000
+ },
+ {
+  "id": "merge",
+  "name": "숫자 합치기",
+  "genre": "NUMBER MERGE",
+  "kgenre": "합치기 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ffb547",
+  "rgb": "255,181,71",
+  "ink": "#241400",
+  "desc": "숫자 블록을 원하는 열로 쏘아 올려 같은 숫자끼리 합치세요. 연쇄가 이어질수록 점수 배율이 커져요.",
+  "tags": [
+   "열 탭",
+   "연쇄 배율",
+   "무한 모드"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 5000000
+ },
+ {
+  "id": "paint",
+  "name": "한붓 그리기",
+  "genre": "ONE STROKE",
+  "kgenre": "한붓 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "시작 칸에서 손을 떼지 않고 끌어 모든 빈칸을 한 번씩 칠하세요. 매번 새 판, 항상 풀 수 있어요.",
+  "tags": [
+   "끌어서 칠하기",
+   "10분 도전",
+   "항상 풀림"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 500000
  }
 ]

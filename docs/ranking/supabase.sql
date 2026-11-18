@@ -79,7 +79,9 @@ insert into public.score_limits (game, max_score) values
   ('fall', 10000000),
   ('bridge', 2000),
   ('knight', 50000),
-  ('four', 100000)
+  ('four', 100000),
+  ('merge', 5000000),
+  ('paint', 500000)
 on conflict (game) do update set max_score = excluded.max_score;
 
 -- 점수 등록: 이름 정리, 상한 검사, 같은 이름 20초 안 재등록 금지

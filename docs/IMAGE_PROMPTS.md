@@ -93,6 +93,8 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 53 | 다리 잇기 | `assets/bridge-card.jpg` | ⬜ 임시 캡처 | 빛 다리를 쓰러뜨려 다음 기둥으로 건너는 장면 |
 | 54 | 나이트 투어 | `assets/knight-card.jpg` | ⬜ 임시 캡처 | 나이트가 L자로 뛰며 판을 밟아 가는 장면 |
 | 55 | 사목 | `assets/four-card.jpg` | ⬜ 임시 캡처 | 돌을 떨어뜨려 4개를 잇는 판 |
+| 56 | 숫자 합치기 | `assets/merge-card.jpg` | ⬜ 임시 캡처 | 숫자 블록을 쏘아 올려 합치는 장면 |
+| 57 | 한붓 그리기 | `assets/paint-card.jpg` | ⬜ 임시 캡처 | 한붓으로 격자를 칠해 가는 장면 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -614,4 +616,24 @@ a glowing white chess knight piece leaping in an L-shaped arc over a dark violet
 
 ```
 a glossy deep-blue upright game board with round holes, shiny yellow and magenta discs stacked inside, one yellow disc falling into a column, four yellow discs in a diagonal row glowing with a bright light line, dominant glow color #ffe066. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 56. 숫자 합치기 (`merge`)
+
+- 파일: `assets/merge-card.jpg`
+- 대표색: `#ffb547` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 숫자 블록을 쏘아 올려 합치는 장면
+
+```
+glossy rounded number tiles in warm amber, teal and magenta stacked in five columns, one tile shooting upward with a light trail and merging into a matching tile in a burst of golden sparks, dominant glow color #ffb547. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 57. 한붓 그리기 (`paint`)
+
+- 파일: `assets/paint-card.jpg`
+- 대표색: `#ff7aa8` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 한붓으로 격자를 칠해 가는 장면
+
+```
+a glowing pink-to-orange brush stroke snaking through a grid of rounded tiles, filling each square exactly once around a few dark blocked squares, a bright white brush tip glowing, dominant glow color #ff7aa8. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

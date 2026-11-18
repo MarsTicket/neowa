@@ -68,6 +68,8 @@ SCENE = {
  'bridge': ('a tiny glowing round light-robot with a pink scarf standing on the edge of a tall dark pillar at night, a shining beam of ice-blue light falling forward like a bridge toward the next pillar with a red glowing center mark, aurora sky and full moon', '빛 다리를 쓰러뜨려 다음 기둥으로 건너는 장면'),
  'knight': ('a glowing white chess knight piece leaping in an L-shaped arc over a dark violet checkerboard, a trail of light lines connecting numbered visited squares, candidate squares softly glowing ice-blue', '나이트가 L자로 뛰며 판을 밟아 가는 장면'),
  'four': ('a glossy deep-blue upright game board with round holes, shiny yellow and magenta discs stacked inside, one yellow disc falling into a column, four yellow discs in a diagonal row glowing with a bright light line', '돌을 떨어뜨려 4개를 잇는 판'),
+ 'merge': ('glossy rounded number tiles in warm amber, teal and magenta stacked in five columns, one tile shooting upward with a light trail and merging into a matching tile in a burst of golden sparks', '숫자 블록을 쏘아 올려 합치는 장면'),
+ 'paint': ('a glowing pink-to-orange brush stroke snaking through a grid of rounded tiles, filling each square exactly once around a few dark blocked squares, a bright white brush tip glowing', '한붓으로 격자를 칠해 가는 장면'),
 }
 
 def build():

@@ -120,7 +120,13 @@
   var DIFFS = [{ n: 6, base: 1200, name: '쉬움', black: 0.2 }, { n: 8, base: 3000, name: '보통', black: 0.24 }, { n: 9, base: 6000, name: '어려움', black: 0.26 }];
   var diff = +A.get('neowa_sum_diff', '0') || 0;
   var fx = new A.FX();
-  var N, CS, GX = 18, GY = 120, PAD_Y = 700, PAD_H = 78, TOOL_Y = 792, TOOL_H = 66;
+  var N, CS, GX = 18, GY = 120, PAD_Y = 700, PAD_H = 78, TOOL_Y = 792, TOOL_H = 66, land = false, pEl = {};
+  // 가로 화면: 960x720 (왼쪽 680 판 + 오른쪽 숫자 3x3·도구 버튼)
+  function geo(sh) { land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960; lay(); }
+  function lay() { if (!N) return; var bs = land ? 680 : 504; CS = Math.floor(bs / N); GX = land ? 20 + (bs - CS * N) / 2 : (W - CS * N) / 2; GY = land ? 20 : 120; }
+  function padRect(d) { if (land) return { x: 722 + ((d - 1) % 3) * 78, y: 172 + Math.floor((d - 1) / 3) * 78, w: 72, h: 72 }; var pw = 504 / 9; return { x: 18 + (d - 1) * pw + 3, y: PAD_Y, w: pw - 6, h: PAD_H }; }
+  function toolRect(i) { if (land) return { x: 722, y: 418 + i * 66, w: 228, h: 58 }; var tw = 504 / 3; return { x: 18 + i * tw + 4, y: TOOL_Y, w: tw - 8, h: TOOL_H }; }
+  function inR(p, r) { return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h; }
   var D, white, given = {}, sol, val, notes, wrong, runs, runOf, sel = 0, noteMode = false, mistakes = 0, hints = 0, time = 0, winT = 0, dyingT = 0, flash = [];
 
   // ---------- 판 만들기 ----------
@@ -215,36 +221,55 @@
     return budget.n < 0 ? null : found;
   }
   // 답이 여러 개면, 두 답이 다른 칸 하나를 미리 채워 둔 칸(고정)으로 바꿔 답을 하나로 만듦
+  function makeRound(n, p) {
+    var w = pattern(n, p); if (!w) return null;
+    var R = buildRuns(n, w), cells = [], i; for (i = 0; i < n * n; i++) if (w[i]) cells.push(i);
+    var g = []; for (i = 0; i < n * n; i++) g.push(0);
+    if (!fillDigits(cells, R.runOf, g)) return null;
+    R.runs.forEach(function (r) { r.sum = r.cells.reduce(function (s, c) { return s + g[c]; }, 0); });
+    var giv = {}, cnt = 0;
+    while (cnt <= Math.ceil(cells.length * 0.14)) {
+      var gg = cells.reduce(function (arr, c) { arr[c] = giv[c] ? g[c] : 0; return arr; }, g.map(function () { return 0; }));
+      var sols = solveAll(cells, R.runOf, R.runs, gg, 2, { n: 30000 });
+      if (sols && sols.length === 1) return { n: n, w: w, sol: g, runs: R.runs, runOf: R.runOf, given: giv };
+      var diffC = [];
+      if (sols && sols.length === 2) cells.forEach(function (c) { if (!giv[c] && sols[0][c] !== sols[1][c]) diffC.push(c); });
+      else cells.forEach(function (c) { if (!giv[c]) diffC.push(c); });
+      if (!diffC.length) return null;
+      giv[A.pick(diffC)] = 1; cnt++;
+    }
+    return null;
+  }
   function makePuzzle(dIdx) {
     var t0 = performance.now(), n = DIFFS[dIdx].n, p = DIFFS[dIdx].black;
     for (var round = 0; round < 200; round++) {
       if (performance.now() - t0 > 2000 && n > 6) { n--; t0 = performance.now(); }
-      var w = pattern(n, p); if (!w) continue;
-      var R = buildRuns(n, w), cells = [], i; for (i = 0; i < n * n; i++) if (w[i]) cells.push(i);
-      var g = []; for (i = 0; i < n * n; i++) g.push(0);
-      if (!fillDigits(cells, R.runOf, g)) continue;
-      R.runs.forEach(function (r) { r.sum = r.cells.reduce(function (s, c) { return s + g[c]; }, 0); });
-      var giv = {}, cnt = 0, ok = false;
-      while (cnt <= Math.ceil(cells.length * 0.14)) {
-        var gg = cells.reduce(function (arr, c) { arr[c] = giv[c] ? g[c] : 0; return arr; }, g.map(function () { return 0; }));
-        var sols = solveAll(cells, R.runOf, R.runs, gg, 2, { n: 30000 });
-        if (sols && sols.length === 1) { ok = true; break; }
-        var diffC = [];
-        if (sols && sols.length === 2) cells.forEach(function (c) { if (!giv[c] && sols[0][c] !== sols[1][c]) diffC.push(c); });
-        else cells.forEach(function (c) { if (!giv[c]) diffC.push(c); });
-        if (!diffC.length) break;
-        giv[A.pick(diffC)] = 1; cnt++;
-      }
-      if (ok) return { n: n, w: w, sol: g, runs: R.runs, runOf: R.runOf, given: giv };
+      var P = makeRound(n, p); if (P) return P;
     }
     return null;
+  }
+  // 어려움(9×9)은 만드는 데 1~3초 걸려 시작 버튼을 누르면 화면이 멈췄음 →
+  // 시작 화면·결과 화면에 있는 동안 조금씩(한 번에 한 판 시도) 미리 만들어 둠
+  var cache = null, genJob = 0;
+  function pregen() {
+    var job = ++genJob, d = diff, n = DIFFS[d].n, t0 = performance.now();
+    if (cache && cache.d === d) return;
+    (function step() {
+      if (job !== genJob) return;
+      if (S && S.state === 'playing') { setTimeout(step, 400); return; }
+      var P = makeRound(n, DIFFS[d].black);
+      if (P) { cache = { d: d, P: P }; return; }
+      if (performance.now() - t0 > 6000 && n > 6) { n--; t0 = performance.now(); }
+      setTimeout(step, 16);
+    })();
   }
 
   // ---------- 진행 ----------
   function reset() {
-    D = DIFFS[diff]; var P = null; while (!P) P = makePuzzle(diff);
+    D = DIFFS[diff]; var P = cache && cache.d === diff ? cache.P : null; cache = null; while (!P) P = makePuzzle(diff);
+    setTimeout(pregen, 50);
     N = P.n; white = P.w; sol = P.sol; runs = P.runs; runOf = P.runOf; given = P.given;
-    CS = Math.floor(504 / N); GX = (W - CS * N) / 2;
+    lay();
     val = []; notes = []; wrong = []; for (var i = 0; i < N * N; i++) { val.push(0); notes.push(0); wrong.push(false); }
     mistakes = 0; hints = 0; time = 0; winT = 0; dyingT = 0; noteMode = false; flash = [];
     for (i = 0; i < N * N; i++) if (given[i]) val[i] = sol[i];
@@ -344,19 +369,26 @@
     // 고른 칸의 줄 조합 안내
     var info = [];
     [0, 1].forEach(function (d) { var r = sr[d]; if (!r) return; var cb = combos(r.cells.length, r.sum); info.push((d ? '세로 ' : '가로 ') + r.sum + ' (' + r.cells.length + '칸): ' + (cb.length > 3 ? cb.slice(0, 3).join('  ') + ' …' : cb.join('  '))); });
-    c.font = '600 17px "Pretendard Variable",system-ui'; c.fillStyle = 'rgba(233,255,201,.75)';
-    var iy = GY + CS * N + 22; info.forEach(function (s, k) { c.fillText(s, W / 2, iy + k * 24); });
-    // 숫자 버튼
-    var pw = 504 / 9;
-    for (d = 1; d <= 9; d++) {
-      var bx = 18 + (d - 1) * pw;
-      c.fillStyle = 'rgba(195,255,94,.1)'; A.rr(c, bx + 3, PAD_Y, pw - 6, PAD_H, 12); c.fill();
-      c.font = '700 30px "Chakra Petch",system-ui'; c.fillStyle = '#e9ffc9'; c.fillText(String(d), bx + pw / 2, PAD_Y + PAD_H / 2 + 1);
+    if (land) {
+      c.textAlign = 'left'; var ly = 34;
+      [0, 1].forEach(function (d) { var r = sr[d]; if (!r) return; var cb = combos(r.cells.length, r.sum);
+        c.font = '700 18px "Pretendard Variable",system-ui'; c.fillStyle = '#c3ff5e'; c.fillText((d ? '세로 ' : '가로 ') + r.sum + ' · ' + r.cells.length + '칸', 724, ly);
+        c.font = '600 15px "Chakra Petch",system-ui'; c.fillStyle = 'rgba(233,255,201,.75)'; c.fillText(cb.length > 2 ? cb.slice(0, 2).join('  ') + ' …' : cb.join('  '), 724, ly + 24); ly += 62; });
+      c.textAlign = 'center';
+    } else {
+      c.font = '600 17px "Pretendard Variable",system-ui'; c.fillStyle = 'rgba(233,255,201,.75)';
+      var iy = GY + CS * N + 22; info.forEach(function (s, k) { c.fillText(s, W / 2, iy + k * 24); });
     }
-    var tools = [['지우기', false], [noteMode ? '메모 켜짐' : '메모', noteMode], ['힌트 ' + (3 - hints), false]], tw = 504 / 3;
+    // 숫자 버튼
+    for (d = 1; d <= 9; d++) {
+      var pr = padRect(d);
+      c.fillStyle = 'rgba(195,255,94,.1)'; A.rr(c, pr.x, pr.y, pr.w, pr.h, 12); c.fill();
+      c.font = '700 30px "Chakra Petch",system-ui'; c.fillStyle = '#e9ffc9'; c.fillText(String(d), pr.x + pr.w / 2, pr.y + pr.h / 2 + 1);
+    }
+    var tools = [['지우기', false], [noteMode ? '메모 켜짐' : '메모', noteMode], ['힌트 ' + (3 - hints), false]];
     for (i = 0; i < 3; i++) {
-      var tx = 18 + i * tw; c.fillStyle = tools[i][1] ? '#c3ff5e' : 'rgba(255,255,255,.06)'; A.rr(c, tx + 4, TOOL_Y, tw - 8, TOOL_H, 14); c.fill();
-      c.font = '700 18px "Pretendard Variable",system-ui'; c.fillStyle = tools[i][1] ? '#172400' : '#e9ffc9'; c.fillText(tools[i][0], tx + tw / 2, TOOL_Y + TOOL_H / 2 + 1);
+      var tr = toolRect(i); c.fillStyle = tools[i][1] ? '#c3ff5e' : 'rgba(255,255,255,.06)'; A.rr(c, tr.x, tr.y, tr.w, tr.h, 14); c.fill();
+      c.font = '700 18px "Pretendard Variable",system-ui'; c.fillStyle = tools[i][1] ? '#172400' : '#e9ffc9'; c.fillText(tools[i][0], tr.x + tr.w / 2, tr.y + tr.h / 2 + 1);
     }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
@@ -366,6 +398,7 @@
     var k = Math.floor(time) + '|' + mistakes + '|' + hints; if (k === lastHud) return; lastHud = k;
     document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = fmtT(time);
     document.getElementById('hC').textContent = mistakes + '/3'; document.getElementById('hMult').textContent = D.name + ' ' + N + '×' + N;
+    if (pEl.score) { pEl.score.textContent = A.fmt(score()); pEl.time.textContent = fmtT(time); pEl.mis.textContent = mistakes + '/3'; }
   }
 
   // ---------- 입력 ----------
@@ -374,15 +407,15 @@
     if (S.state !== 'playing' || !white) return;
     var p = S.toLocal(e);
     if (p.x >= GX && p.x < GX + N * CS && p.y >= GY && p.y < GY + N * CS) { var i = Math.floor((p.y - GY) / CS) * N + Math.floor((p.x - GX) / CS); if (white[i]) { sel = i; A.sfx('tick'); } return; }
-    if (p.y >= PAD_Y && p.y <= PAD_Y + PAD_H) { var d = Math.floor((p.x - 18) / (504 / 9)) + 1; if (d >= 1 && d <= 9) put(d); return; }
-    if (p.y >= TOOL_Y && p.y <= TOOL_Y + TOOL_H) { var t = Math.floor((p.x - 18) / (504 / 3)); if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else if (t === 2) hint(); }
+    for (var d = 1; d <= 9; d++) if (inR(p, padRect(d))) { put(d); return; }
+    for (var t = 0; t < 3; t++) if (inR(p, toolRect(t))) { if (t === 0) erase(); else if (t === 1) { noteMode = !noteMode; A.sfx('click'); } else hint(); return; }
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
-  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_sum_diff', diff); A.sfx('click'); paintDiff(); }); });
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_sum_diff', diff); A.sfx('click'); paintDiff(); cache = null; setTimeout(pregen, 30); }); });
   paintDiff();
   var S = new A.Shell({
-    id: 'sum', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    id: 'sum', W: W, H: H, land: [960, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) {
       var k = e.key;
       if (k === 'ArrowLeft' || k === 'a') move(-1, 0); else if (k === 'ArrowRight' || k === 'd') move(1, 0);
@@ -393,6 +426,10 @@
       else if (k === 'h' || k === 'H') hint();
     }
   });
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>TIME</span><b id="pkTime">0:00</b></div><div><span>실수</span><b id="pkMis">0/3</b></div></div>';
+  pEl = { score: document.getElementById('pkScore'), time: document.getElementById('pkTime'), mis: document.getElementById('pkMis') };
+  setTimeout(pregen, 300);
 })();
 
 </script>

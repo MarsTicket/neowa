@@ -48,6 +48,7 @@
           <div>1초 안에 맞히면 +5</div>
           <div>25개부터 버튼 자리가 섞임</div>
           <div>틀리면 -2초</div>
+          <div>오늘의 도전: 오늘은 모두 같은 문제 순서</div>
         </div>
       </div>
     </aside>
@@ -69,7 +70,7 @@
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>색 버튼 탭</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>45초</span>
         </div>
-        
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">기본</button><button type="button" data-diff="1">오늘의 도전</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -119,22 +120,30 @@
   var A = Arcade, W = 540, H = 960, land = false;
   var C = [['빨강', '#ff4d6d'], ['파랑', '#4d8bff'], ['초록', '#3ddc84'], ['노랑', '#ffd166']];
   var fx = new A.FX();
-  var word, ink, askMeaning, time, score, combo, n, endT, flash = 0, flashC, qT = 0, order = [0, 1, 2, 3];
-  function next() { var pw = word, pi = ink; do { word = A.irand(0, 3); do { ink = A.irand(0, 3); } while (ink === word && Math.random() < 0.8); } while (word === pw && ink === pi);
-    askMeaning = n > 8 && Math.random() < Math.min(0.35, 0.12 + n * 0.005); qT = 0; // 갈수록 '뜻' 함정이 잦아짐
-    order = [0, 1, 2, 3]; if (n >= 25) for (var i = 3; i > 0; i--) { var j = A.irand(0, i), t = order[i]; order[i] = order[j]; order[j] = t; } } // 25개부터 버튼 자리가 섞임
+  var word, ink, askMeaning, time, score, combo, n, endT, flash = 0, flashC, qT = 0, order = [0, 1, 2, 3], qn = 0, maxCombo = 0, miss = 0, fastN = 0, diff = A.get('neowa_stroop_diff', '0') === '1' ? 1 : 0;
+  // 오늘의 도전: 로컬 날짜(YYYYMMDD)로 시드를 고정해 오늘은 누구나 같은 문제. rnd()는 평소엔 Math.random
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  var rnd = Math.random;
+  function seedRnd(on) { if (!on) { rnd = Math.random; return; } var a = (Math.imul(today(), 0x9E3779B1) ^ 0x5bd1e995) >>> 0;
+    rnd = function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // mulberry32
+  function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
+  function dailyBest(sc) { var k = 'neowa_stroop_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); b = sc; } return b; } // 오늘 최고 점수
+
+  function next() { var pw = word, pi = ink; qn++; do { word = ri(0, 3); do { ink = ri(0, 3); } while (ink === word && rnd() < 0.8); } while (word === pw && ink === pi);
+    askMeaning = qn > 9 && rnd() < Math.min(0.35, 0.12 + qn * 0.005); qT = 0; // 갈수록 '뜻' 함정이 잦아짐
+    order = [0, 1, 2, 3]; if (n >= 25) for (var i = 3; i > 0; i--) { var j = ri(0, i), t = order[i]; order[i] = order[j]; order[j] = t; } } // 25개부터 버튼 자리가 섞임
   // 버튼 자리: 세로 540x960(아래 2x2) / 가로 900x600(오른쪽 큰 2x2). [x, y, 너비, 높이]
   function btnXY(slot) { return land ? [470 + (slot % 2) * 212, 40 + Math.floor(slot / 2) * 270, 198, 250] : [40 + (slot % 2) * 240, 560 + Math.floor(slot / 2) * 140, 220, 120]; }
   function QX() { return land ? 230 : W / 2; }
-  function reset() { time = 45; score = 0; combo = 0; n = 0; endT = 0; next(); fx.clear(); hud(); }
+  function reset() { time = 45; score = 0; combo = 0; n = 0; endT = 0; qn = 0; maxCombo = 0; miss = 0; fastN = 0; word = ink = null; seedRnd(diff === 1); next(); document.getElementById('hMult').textContent = diff === 1 ? '오늘의 도전' : ''; fx.clear(); hud(); }
   function choose(k) {
     if (S.state !== 'playing' || endT > 0) return;
     var ok = askMeaning ? k === word : k === ink;
-    if (ok) { n++; combo++; var fast = qT < 1, pts = 10 + combo * 2 + (fast ? 5 : 0); score += pts; if (n === 25) S.banner('25개 돌파!', '이제 버튼 자리가 섞여요'); flash = 0.2; flashC = '#7dff9b'; A.sfx('coin', 1 + Math.min(combo, 15) * 0.04); fx.text(QX(), land ? 200 : 300, (fast ? '빠름! ' : '') + '+' + pts, fast ? '#ffd166' : '#fff', 22); }
-    else { combo = 0; time -= 2; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.4); fx.shake(5, 0.15); }
+    if (ok) { n++; combo++; maxCombo = Math.max(maxCombo, combo); var fast = qT < 1; if (fast) fastN++; var pts = 10 + combo * 2 + (fast ? 5 : 0); score += pts; if (n === 25) S.banner('25개 돌파!', '이제 버튼 자리가 섞여요'); flash = 0.2; flashC = '#7dff9b'; A.sfx('coin', 1 + Math.min(combo, 15) * 0.04); fx.text(QX(), land ? 200 : 300, (fast ? '빠름! ' : '') + '+' + pts, fast ? '#ffd166' : '#fff', 22); }
+    else { combo = 0; miss++; time -= 2; flash = 0.3; flashC = '#ff4d6d'; A.sfx('hurt', 1.4); fx.shake(5, 0.15); }
     next(); hud();
   }
-  function update(dt) { fx.update(dt); qT += dt; if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['정답', String(n)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); } hud(); }
+  function update(dt) { fx.update(dt); qT += dt; if (flash > 0) flash -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['정답', n + ' (' + (n + miss ? Math.round(n / (n + miss) * 100) : 0) + '%)'], ['최대 콤보', String(maxCombo)], diff === 1 ? ['오늘 최고', A.fmt(dailyBest(score))] : ['빠른 정답', fastN + '개']], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 0.6; A.sfx('over'); } hud(); }
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
@@ -151,6 +160,10 @@
   var last = '';
   function hud() { var k = score + '|' + Math.ceil(time) + '|' + combo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); var t = document.getElementById('hB'); t.textContent = Math.ceil(time); t.style.color = time < 10 ? '#ff4d6d' : ''; document.getElementById('hC').textContent = combo; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); order.forEach(function (ci, slot) { var b = btnXY(slot); if (p.x > b[0] && p.x < b[0] + b[2] && p.y > b[1] && p.y < b[1] + b[3]) choose(ci); }); });
+  // 모드 버튼: 0 = 기본, 1 = 오늘의 도전
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_stroop_diff', diff); A.sfx('click'); pd(); }); }); pd();
   var S = new A.Shell({ id: 'stroop', W: W, H: H, land: [900, 600], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { if (/^[1-4]$/.test(e.key) && !e.repeat) choose(order[+e.key - 1]); } });
   // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)

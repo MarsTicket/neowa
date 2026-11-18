@@ -44,8 +44,8 @@
       <div class="g-card"><h3>RULES</h3>
         <div class="g-keys">
           <div>5번 쏠 때마다 천장이 내려옴</div>
-          <div>벽에 튕겨 쏠 수 있음</div>
-          <div>바닥선에 닿으면 끝</div>
+          <div>연달아 터뜨리면 콤보 (최대 ×3)</div>
+          <div>'다음' 버블을 탭하면 교체</div>
         </div>
       </div>
     </aside>
@@ -117,7 +117,7 @@
   var A = Arcade, W = 540, H = 960, COLSN = 11, R = 23, RH = R * 1.732, TOP = 110, LOSE = 780, SX = W / 2, SY = 870;
   var COLS = ['#ff4d6d', '#ffd166', '#7dff9b', '#5ee7ff', '#b48cff', '#ff7aa8'];
   var fx = new A.FX();
-  var grid, offset, shot, cur, next, aim, shots, score, bestChain, dyingT, drops, keyAim = -Math.PI / 2, ncol;
+  var grid, offset, shot, cur, next, aim, shots, score, bestChain, dyingT, drops, keyAim = -Math.PI / 2, ncol, combo = 0;
   // 육각 격자: 행 r, 열 c. (r + offset) 홀수 행은 오른쪽으로 반 칸
   function pos(r, c) { return { x: R + c * R * 2 + ((r + offset) % 2 ? R : 0) + (W - COLSN * R * 2 - R) / 2, y: TOP + R + r * RH }; }
   function cols(r) { return (r + offset) % 2 ? COLSN - 1 : COLSN; }
@@ -125,7 +125,7 @@
   function get(r, c) { return grid[r] && grid[r][c]; }
   function present() { var s = {}; grid.forEach(function (row) { row.forEach(function (b) { if (b != null) s[b] = 1; }); }); return Object.keys(s).map(Number); }
   function pickColor() { var p = present(); return p.length ? A.pick(p) : A.irand(0, ncol - 1); }
-  function reset() { offset = 0; ncol = 4; grid = []; for (var r = 0; r < 6; r++) { grid.push([]); for (var c = 0; c < cols(r); c++) grid[r].push(A.irand(0, ncol - 1)); } shot = null; cur = pickColor(); next = pickColor(); shots = 0; score = 0; bestChain = 0; dyingT = 0; drops = []; aim = null; fx.clear(); hud(); }
+  function reset() { offset = 0; ncol = 4; grid = []; for (var r = 0; r < 6; r++) { grid.push([]); for (var c = 0; c < cols(r); c++) grid[r].push(A.irand(0, ncol - 1)); } shot = null; cur = pickColor(); next = pickColor(); shots = 0; score = 0; bestChain = 0; dyingT = 0; combo = 0; drops = []; aim = null; fx.clear(); hud(); }
   function fire(a) {
     if (shot || dyingT > 0 || S.state !== 'playing') return; a = A.clamp(a, -Math.PI + 0.12, -0.12);
     shot = { x: SX, y: SY, vx: Math.cos(a) * 1300, vy: Math.sin(a) * 1300, c: cur }; cur = next; next = pickColor(); A.sfx('shoot', 0.6);
@@ -139,15 +139,18 @@
   function land(r, c) {
     var col = grid[r][c], seen = {}, q = [[r, c]], group = []; seen[r + ',' + c] = 1;
     while (q.length) { var p = q.shift(); group.push(p); neighbors(p[0], p[1]).forEach(function (n) { var k = n[0] + ',' + n[1]; if (!seen[k] && get(n[0], n[1]) === col) { seen[k] = 1; q.push(n); } }); }
-    if (group.length >= 3) {
-      group.forEach(function (p) { var pp = pos(p[0], p[1]); fx.burst(pp.x, pp.y, COLS[grid[p[0]][p[1]]], 8, 220, 0.4, 3); grid[p[0]][p[1]] = null; });
-      // 천장과 연결 안 된 버블 떨어뜨리기
-      var keep = {}; q = []; (grid[0] || []).forEach(function (b, cc) { if (b != null) { keep['0,' + cc] = 1; q.push([0, cc]); } });
-      while (q.length) { p = q.shift(); neighbors(p[0], p[1]).forEach(function (n) { var k = n[0] + ',' + n[1]; if (!keep[k] && get(n[0], n[1]) != null) { keep[k] = 1; q.push(n); } }); }
-      var fell = 0; grid.forEach(function (row, rr) { row.forEach(function (b, cc) { if (b != null && !keep[rr + ',' + cc]) { var pp = pos(rr, cc); drops.push({ x: pp.x, y: pp.y, vy: A.rand(-100, 50), c: b }); row[cc] = null; fell++; } }); });
-      var pts = group.length * 10 + fell * 20 * 2; score += pts; bestChain = Math.max(bestChain, group.length + fell);
-      fx.text(pos(r, c).x, pos(r, c).y, (fell ? '떨어뜨리기 ' : '') + '+' + pts, fell ? '#ffd166' : '#fff', fell ? 24 : 20); A.sfx(fell ? 'gold' : 'coin', 1 + Math.min(1, group.length / 10)); fx.shake(2 + fell * 0.5, 0.15);
-    } else A.sfx('bounce', 1.4);
+    var popped = group.length >= 3;
+    if (popped) group.forEach(function (p) { var pp = pos(p[0], p[1]); fx.burst(pp.x, pp.y, COLS[grid[p[0]][p[1]]], 8, 220, 0.4, 3); grid[p[0]][p[1]] = null; });
+    // 천장과 연결 안 된 버블 떨어뜨리기 (터지지 않았어도 검사: 허공에 붙은 버블 방지)
+    var keep = {}; q = []; (grid[0] || []).forEach(function (b, cc) { if (b != null) { keep['0,' + cc] = 1; q.push([0, cc]); } });
+    while (q.length) { var p0 = q.shift(); neighbors(p0[0], p0[1]).forEach(function (n) { var k = n[0] + ',' + n[1]; if (!keep[k] && get(n[0], n[1]) != null) { keep[k] = 1; q.push(n); } }); }
+    var fell = 0; grid.forEach(function (row, rr) { row.forEach(function (b, cc) { if (b != null && !keep[rr + ',' + cc]) { var pp = pos(rr, cc); drops.push({ x: pp.x, y: pp.y, vy: A.rand(-100, 50), c: b }); row[cc] = null; fell++; } }); });
+    if (popped) {
+      // 연속으로 터뜨리면 콤보 배율 (최대 ×3)
+      combo++; var mul = Math.min(3, 1 + (combo - 1) * 0.5);
+      var pts = Math.round((group.length * 10 + fell * 20 * 2) * mul); score += pts; bestChain = Math.max(bestChain, group.length + fell);
+      fx.text(pos(r, c).x, pos(r, c).y, (fell ? '떨어뜨리기 ' : '') + '+' + pts + (combo > 1 ? ' (콤보×' + mul + ')' : ''), fell || combo > 1 ? '#ffd166' : '#fff', fell ? 24 : 20); A.sfx(fell ? 'gold' : 'coin', 1 + Math.min(1, group.length / 10) + Math.min(5, combo) * 0.04); fx.shake(2 + fell * 0.5, 0.15);
+    } else { combo = 0; A.sfx('bounce', 1.4); }
     while (grid.length && grid[grid.length - 1].every(function (b) { return b == null; })) grid.pop();
     shots++;
     if (!grid.length) { score += 1000; S.banner('판 비우기!', '+1000'); A.sfx('level'); ncol = Math.min(6, ncol + 1); for (var rr = 0; rr < 5; rr++) addRowTop(); }
@@ -175,7 +178,10 @@
     }
   }
   var keyL = false, keyR = false;
-  function ball(c, x, y, col, s) { c.save(); c.shadowColor = COLS[col]; c.shadowBlur = 8; var g = c.createRadialGradient(x - R * 0.35, y - R * 0.35, 2, x, y, R * (s || 1)); g.addColorStop(0, '#fff'); g.addColorStop(0.3, COLS[col]); g.addColorStop(1, A.hexA(COLS[col], 0.7)); c.fillStyle = g; c.beginPath(); c.arc(x, y, R * (s || 1) - 1, 0, 7); c.fill(); c.restore(); }
+  // 버블 그림은 색마다 한 번만 그려 둠 (매 프레임 shadowBlur·그라데이션 금지)
+  function ball(c, x, y, col, s) { var spr = A.sprite('bub' + col, R * 2 + 20, R * 2 + 20, function (k, w) { var m = w / 2; k.shadowColor = COLS[col]; k.shadowBlur = 8; var g = k.createRadialGradient(m - R * 0.35, m - R * 0.35, 2, m, m, R); g.addColorStop(0, '#fff'); g.addColorStop(0.3, COLS[col]); g.addColorStop(1, A.hexA(COLS[col], 0.7)); k.fillStyle = g; k.beginPath(); k.arc(m, m, R - 1, 0, 7); k.fill(); }); A.draw(c, spr, x, y, s || 1); }
+  // 조준선이 버블에 닿는 곳에서 멈추도록 (실제 발사 판정과 같은 거리)
+  function aimHits(x, y) { for (var r = grid.length - 1; r >= 0; r--) { var row = grid[r]; for (var c = 0; c < row.length; c++) if (row[c] != null) { var p = pos(r, c); if (Math.abs(p.y - y) < R * 1.75 && Math.hypot(p.x - x, p.y - y) < R * 1.75) return true; } } return false; }
   function curAim() { return aim != null ? aim : keyAim; }
   function render(c) {
     var o = fx.offset(), t = S.time;
@@ -183,17 +189,19 @@
     var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#060c24'); g.addColorStop(1, '#0a0418'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
     if (!grid) { ncol = 4; offset = 0; grid = []; for (var r0 = 0; r0 < 6; r0++) { grid.push([]); for (var c0 = 0; c0 < cols(r0); c0++) grid[r0].push((r0 * 3 + c0) % 4); } cur = 0; next = 1; drops = []; }
     c.fillStyle = 'rgba(122,162,255,.08)'; c.fillRect(0, TOP - 4, W, 4);
-    c.strokeStyle = 'rgba(255,77,109,.5)'; c.setLineDash([8, 8]); c.beginPath(); c.moveTo(0, LOSE); c.lineTo(W, LOSE); c.stroke(); c.setLineDash([]);
+    var low = grid.length ? pos(grid.length - 1, 0).y + R : 0, danger = S.state === 'playing' && low + RH * 2 > LOSE;
+    c.strokeStyle = danger ? 'rgba(255,77,109,' + (0.6 + 0.4 * Math.sin(t * 10)) + ')' : 'rgba(255,77,109,.5)'; c.lineWidth = danger ? 3 : 1; c.setLineDash([8, 8]); c.beginPath(); c.moveTo(0, LOSE); c.lineTo(W, LOSE); c.stroke(); c.setLineDash([]); c.lineWidth = 1;
+    if (danger) { c.fillStyle = '#ff4d6d'; c.font = '700 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('위험! 바닥선에 닿으면 끝', W / 2, LOSE + 22); }
     grid.forEach(function (row, r) { row.forEach(function (b, cc) { if (b != null) { var p = pos(r, cc); ball(c, p.x, p.y, b); } }); });
     drops.forEach(function (d) { ball(c, d.x, d.y, d.c); });
     // 조준선 (벽 반사 1번)
     if (S.state === 'playing' && !shot) {
       var a = curAim(), x = SX, y = SY, vx = Math.cos(a), vy = Math.sin(a), L = (W - COLSN * R * 2 - R) / 2 + R; c.fillStyle = 'rgba(255,255,255,.5)';
-      for (var k = 0; k < 40; k++) { x += vx * 18; y += vy * 18; if (x < L || x > W - L) { vx *= -1; x += vx * 18; } if (y < TOP) break; if (k % 2 === 0) { c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); } }
+      for (var k = 0; k < 40; k++) { x += vx * 18; y += vy * 18; if (x < L || x > W - L) { vx *= -1; x += vx * 18; } if (y < TOP) break; if (aimHits(x, y)) { c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill(); break; } if (k % 2 === 0) { c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); } }
     }
     if (shot) ball(c, shot.x, shot.y, shot.c);
     else if (cur != null) ball(c, SX, SY, cur);
-    if (next != null) { ball(c, SX + 90, SY + 20, next, 0.7); c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '600 12px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('다음', SX + 90, SY + 52); }
+    if (next != null) { ball(c, SX + 90, SY + 20, next, 0.7); c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '600 12px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('다음 (탭=교체)', SX + 90, SY + 52); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = shots; document.getElementById('hC').textContent = bestChain; document.getElementById('hMult').textContent = '천장까지 ' + (5 - shots % 5); }

@@ -2,8 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
-  var diff = +A.get('neowa_slide_diff', '0') || 0, N, CS, GX, GY, tiles, empty, moves, time, done, anim, cur;
-  function layout() { N = 3 + diff; CS = Math.floor(480 / N); GX = (W - N * CS) / 2; GY = 200 + (560 - N * CS) / 2; }
+  var diff = +A.get('neowa_slide_diff', '0') || 0, land = false, N, CS, GX, GY, tiles, empty, moves, time, done, anim, cur;
+  // 세로: 540×960 / 가로 화면: 720×720 정사각형 판 (점수판은 오른쪽 패널로)
+  function layout() { N = 3 + diff; if (land) { CS = Math.floor(660 / N); GX = (W - N * CS) / 2; GY = (H - N * CS) / 2; } else { CS = Math.floor(480 / N); GX = (W - N * CS) / 2; GY = 200 + (560 - N * CS) / 2; } }
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; layout(); }
   function solved() { for (var i = 0; i < N * N - 1; i++) if (tiles[i] !== i + 1) return false; return true; }
   function swap(i) { var t = tiles[i]; tiles[i] = 0; tiles[empty] = t; anim[t] = { from: i, t: 0 }; empty = i; }
   function reset() {
@@ -11,7 +13,7 @@
     // 빈칸을 무작위로 많이 움직여 섞음 → 항상 풀 수 있음
     var last = -1; for (var k = 0; k < 220 * N; k++) { var opts = nb(empty).filter(function (j) { return j !== last; }); var j = A.pick(opts); last = empty; var t = tiles[j]; tiles[j] = 0; tiles[empty] = t; empty = j; }
     if (solved()) return reset();
-    moves = 0; time = 0; done = 0; anim = {}; cur = empty; fx.clear(); hud();
+    moves = 0; time = 0; done = 0; anim = {}; cur = empty; btCache = bestTime(); fx.clear(); hud();
   }
   function nb(i) { var x = i % N, y = Math.floor(i / N), r = []; if (x > 0) r.push(i - 1); if (x < N - 1) r.push(i + 1); if (y > 0) r.push(i - N); if (y < N - 1) r.push(i + N); return r; }
   function tap(i) {
@@ -25,10 +27,13 @@
     A.sfx('tick', 1.3); hud();
     if (solved()) { done = 1.2; A.sfx('level'); for (var k = 0; k < 5; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), A.pick(['#5ee7ff', '#ffd166', '#7dff9b']), 24, 360, 0.8, 4); }
   }
-  function score() { var base = [300, 1200, 3000][diff]; return Math.max(50, Math.round(base * 2 - time * base / 120 - moves * base / 400)); }
+  // 기준 시간·이동 수(보통 실력)에서 기본 점수, 더 빠르고 적게 움직일수록 최대 4배까지
+  // (예전 식은 4×4·5×5에서 몇 분만 지나도 최저점 50으로 떨어졌음)
+  function score() { var base = [300, 1200, 3000][diff], T = [25, 90, 240][diff], M = [40, 140, 320][diff]; return Math.max(50, Math.round(base * 4 * T / (T + time) * M / (M + moves))); }
+  function bestTime() { return parseFloat(A.get('neowa_slide_time_' + diff, '0')) || 0; }
   function update(dt) {
     fx.update(dt); for (var k in anim) { anim[k].t += dt * 9; if (anim[k].t >= 1) delete anim[k]; }
-    if (done > 0) { done -= dt; if (done <= 0) { var key = 'neowa_slide_time_' + diff, b = parseFloat(A.get(key, '0')); if (!b || time < b) A.set(key, time.toFixed(1)); S.gameOver(score(), [['크기', N + '×' + N], ['이동', String(moves)], ['시간', fmt(time)]], { kick: 'SOLVED!', win: true }); } return; }
+    if (done > 0) { done -= dt; if (done <= 0) { var key = 'neowa_slide_time_' + diff, b = bestTime(), nb = !b || time < b; if (nb) A.set(key, time.toFixed(1)); S.gameOver(score(), [['이동', String(moves)], ['시간', fmt(time)], [nb ? '최단 시간 (신기록!)' : '최단 시간', fmt(nb ? time : b)]], { kick: N + '×' + N + ' SOLVED!', win: true }); } return; }
     time += dt; hud();
   }
   function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
@@ -50,15 +55,27 @@
     if (cur != null && kbd && S.state === 'playing') { c.strokeStyle = '#ffd166'; c.lineWidth = 3; A.rr(c, GX + (empty % N) * CS + 4, GY + Math.floor(empty / N) * CS + 4, CS - 8, CS - 8, 14); c.stroke(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  var kbd = false;
-  function hud() { document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = moves; document.getElementById('hC').textContent = fmt(time); document.getElementById('hMult').textContent = N + '×' + N; }
+  var kbd = false, btCache = 0;
+  function hud() { document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = moves; document.getElementById('hC').textContent = fmt(time); var bt = btCache; document.getElementById('hMult').textContent = N + '×' + N + (bt ? ' · 최단 ' + fmt(bt) : ''); }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); if (x >= 0 && y >= 0 && x < N && y < N) tap(y * N + x); });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_slide_diff', diff); A.sfx('click'); paint(); tiles = null; }); }); paint();
-  var S = new A.Shell({ id: 'slide', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    // 가로 화면 패널: 점수판 복사본 + 큰 버튼 (게임판 위 점수판은 가로에서 숨김)
+  function landPanel(btns) {
+    var hudEl = document.querySelector('.g-hud'), ids = ['hA', 'hB', 'hC'], h = '<div class="g-card gp-stats">';
+    hudEl.setAttribute('data-land-hide', '');
+    ids.forEach(function (id) { var v = document.getElementById(id), lb = v.parentNode.querySelector('.h-lb'); h += '<div><span>' + (lb ? lb.textContent : '') + '</span><b id="pk' + id + '" style="font-size:22px"></b></div>'; });
+    h += '</div><div id="pkMult" style="min-height:18px;padding:0 6px;font-size:14px;font-weight:700;color:var(--accent)"></div>' + (btns || '');
+    S.panelSlot.innerHTML = h;
+    function sync() { ids.forEach(function (id) { var v = document.getElementById(id), d = document.getElementById('pk' + id); d.textContent = v.textContent; d.style.color = v.style.color; }); var m = document.getElementById('hMult'); document.getElementById('pkMult').textContent = m ? m.textContent : ''; }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style'] });
+    sync();
+  }
+  var S = new A.Shell({ id: 'slide', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { kbd = true; var k = e.key, ex = empty % N, ey = Math.floor(empty / N);
       // 방향키: 그 방향의 조각이 빈칸으로 들어옴
       if ((k === 'ArrowLeft' || k === 'a') && ex < N - 1) tap(empty + 1); if ((k === 'ArrowRight' || k === 'd') && ex > 0) tap(empty - 1);
       if ((k === 'ArrowUp' || k === 'w') && ey < N - 1) tap(empty + N); if ((k === 'ArrowDown' || k === 's') && ey > 0) tap(empty - N); } });
+  landPanel('');
 })();

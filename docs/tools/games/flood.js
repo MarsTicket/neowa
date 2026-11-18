@@ -5,8 +5,32 @@
   var CFG = [{ n: 10, m: 18, b: 100 }, { n: 14, m: 25, b: 250 }, { n: 18, m: 32, b: 500 }];
   var diff = +A.get('neowa_flood_diff', '0') || 0;
   var fx = new A.FX();
-  var N, CS, GX, GY, grid, moves, maxM, wins, score, region, ripple, dyingT, nextT;
-  function setup() { var cf = CFG[diff]; N = cf.n; maxM = cf.m; CS = Math.floor(500 / N); GX = (W - N * CS) / 2; GY = 130 + (560 - N * CS) / 2; grid = []; for (var i = 0; i < N * N; i++) grid.push(A.irand(0, NC - 1)); moves = 0; ripple = {}; calc(); }
+  var land = false, N, CS, GX, GY, grid, moves, maxM, wins = 0, score, region, ripple, dyingT, nextT, cpu = 0;
+  // 컴퓨터 풀이(2수 앞을 보는 욕심쟁이)로 몇 번에 풀리는지 계산 → 제한 횟수 안에 풀 수 있는 판만 냄
+  function cpuSolve(g) {
+    var R = new Uint8Array(N * N), m = 0, cur = g[0], i; R[0] = 1;
+    function grow(Rr, col) { var st = [], add = 0, j; for (j = 0; j < N * N; j++) if (Rr[j]) st.push(j); while (st.length) { j = st.pop(); var x = j % N, y = (j / N) | 0; for (var d = 0; d < 4; d++) { var nx = x + (d === 0 ? 1 : d === 1 ? -1 : 0), ny = y + (d === 2 ? 1 : d === 3 ? -1 : 0); if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue; var ni = ny * N + nx; if (Rr[ni] || g[ni] !== col) continue; Rr[ni] = 1; add++; st.push(ni); } } return add; }
+    function left(Rr) { var o = {}, n = 0; for (var j = 0; j < N * N; j++) if (!Rr[j] && !o[g[j]]) { o[g[j]] = 1; n++; } return n; }
+    grow(R, cur);
+    while (m < 99) {
+      var t = 0; for (i = 0; i < N * N; i++) t += R[i]; if (t === N * N) return m;
+      var best = -1, bc = 0, cl = left(R);
+      for (var c = 0; c < NC; c++) { if (c === cur) continue; var R1 = R.slice(), a = grow(R1, c); if (!a) continue; var v = a + (left(R1) < cl ? 1000 : 0), b2 = 0;
+        for (var c2 = 0; c2 < NC; c2++) { if (c2 === c) continue; var a2 = grow(R1.slice(), c2); if (a2 > b2) b2 = a2; } v += b2 * 0.9; if (v > best) { best = v; bc = c; } }
+      grow(R, bc); cur = bc; m++;
+    }
+    return m;
+  }
+// 세로: 540×960 / 가로 화면: 720×720 정사각형 판 (색 버튼·점수판은 오른쪽 패널)
+  function layout() { if (!N) return; if (land) { CS = Math.floor(680 / N); GX = (W - N * CS) / 2; GY = (H - N * CS) / 2; } else { CS = Math.floor(500 / N); GX = (W - N * CS) / 2; GY = 130 + (560 - N * CS) / 2; } }
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; layout(); if (S && score != null) hud(); }
+  function setup() {
+    var cf = CFG[diff], i, tries = 0; N = cf.n; layout();
+    do { grid = []; for (i = 0; i < N * N; i++) grid.push(A.irand(0, NC - 1)); cpu = cpuSolve(grid); } while (cpu > cf.m - 2 && ++tries < 60);
+    // 처음엔 컴퓨터보다 4번 넉넉하게, 판을 풀 때마다 1번씩 줄어듦 (컴퓨터 풀이 +1 아래로는 안 내려감)
+    maxM = cpu + Math.max(1, 4 - (wins || 0));
+    moves = 0; ripple = {}; calc();
+  }
   function calc() { region = {}; var c = grid[0], q = [0]; region[0] = 0; while (q.length) { var i = q.shift(), x = i % N, y = Math.floor(i / N); [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { var nx = x + d[0], ny = y + d[1], ni = ny * N + nx; if (nx < 0 || ny < 0 || nx >= N || ny >= N || region[ni] != null || grid[ni] !== c) return; region[ni] = region[i] + 1; q.push(ni); }); } }
   function reset() { wins = 0; score = 0; dyingT = 0; nextT = 0; setup(); fx.clear(); hud(); }
   function pick(col) {
@@ -15,13 +39,13 @@
     Object.keys(region).forEach(function (k) { grid[k] = col; ripple[k] = region[k] * 0.012; });
     moves++; calc(); var gained = Object.keys(region).length - before; A.sfx('eat', 0.8 + Math.min(1, gained / 20));
     Object.keys(region).forEach(function (k) { if (ripple[k] == null) ripple[k] = region[k] * 0.012; });
-    if (Object.keys(region).length === N * N) { var pts = CFG[diff].b + (maxM - moves) * 30; score += pts; wins++; nextT = 1.2; A.sfx('level'); fx.text(W / 2, GY - 30, '완성! +' + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), COLS[col], 20, 300, 0.7, 4); }
+    if (Object.keys(region).length === N * N) { var beat = moves <= cpu, pts = CFG[diff].b + (maxM - moves) * 30 + (beat ? CFG[diff].b : 0); score += pts; wins++; nextT = 1.2; A.sfx(beat ? 'gold' : 'level'); fx.text(W / 2, land ? H / 2 : GY - 30, (moves < cpu ? '컴퓨터 이김! +' : beat ? '컴퓨터와 동점! +' : '완성! +') + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(H * 0.25, H * 0.7), COLS[col], 20, 300, 0.7, 4); }
     else if (moves >= maxM) { dyingT = 1.2; A.sfx('hurt'); fx.flashIt('#ff2244', 0.4); }
     hud();
   }
   function update(dt) {
     fx.update(dt); for (var k in ripple) { ripple[k] -= dt; if (ripple[k] < -0.3) delete ripple[k]; }
-    if (nextT > 0) { nextT -= dt; if (nextT <= 0) { setup(); S.banner(wins + 1 + '번째 판', '연속 도전'); hud(); } }
+    if (nextT > 0) { nextT -= dt; if (nextT <= 0) { setup(); S.banner(wins + 1 + '번째 판', '제한 ' + maxM + '번'); hud(); } }
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['완성한 판', String(wins)], ['크기', N + '×' + N]]); }
   }
   function render(c) {
@@ -35,20 +59,34 @@
     }
     c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3; c.strokeRect(GX - 2, GY - 2, N * CS + 4, N * CS + 4);
     // 색 버튼
-    for (var k = 0; k < NC; k++) { var bx = 30 + k * 82, by = 760, cur = grid[0] === k; c.save(); if (!cur) { c.shadowColor = COLS[k]; c.shadowBlur = 14; } c.fillStyle = COLS[k]; c.globalAlpha = cur ? 0.25 : 1; A.rr(c, bx, by, 70, 70, 18); c.fill(); c.restore();
+    if (!land) for (var k = 0; k < NC; k++) { var bx = 30 + k * 82, by = 760, cur = grid[0] === k; c.save(); if (!cur) { c.fillStyle = A.hexA(COLS[k], 0.22); A.rr(c, bx - 5, by - 5, 80, 80, 22); c.fill(); } c.fillStyle = COLS[k]; c.globalAlpha = cur ? 0.25 : 1; A.rr(c, bx, by, 70, 70, 18); c.fill(); c.restore();
       c.fillStyle = 'rgba(0,0,0,.45)'; c.font = '700 16px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(k + 1), bx + 35, by + 35); }
-    c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('왼쪽 위부터 같은 색이 퍼져 나갑니다', W / 2, 870);
+    if (!land) { c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('왼쪽 위부터 같은 색이 퍼져 나갑니다', W / 2, 870);
+    if (cpu) { c.fillStyle = 'rgba(255,209,102,.8)'; c.font = '600 15px "Pretendard Variable",system-ui'; c.fillText('컴퓨터는 ' + cpu + '번에 풀었어요 · 같거나 적으면 보너스', W / 2, 900); } }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  function hud() { document.getElementById('hA').textContent = A.fmt(score); var m = document.getElementById('hB'); m.textContent = moves + '/' + maxM; m.style.color = maxM - moves <= 3 ? '#ff4d6d' : ''; document.getElementById('hC').textContent = wins; }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); var m = document.getElementById('hB'); m.textContent = moves + '/' + maxM; m.style.color = maxM - moves <= 3 ? '#ff4d6d' : ''; document.getElementById('hC').textContent = wins;  document.getElementById('hMult').textContent = land && cpu ? '컴퓨터 ' + cpu + '번 · 같거나 적으면 보너스' : ''; for (var q = 0; q < NC; q++) { var bq = document.getElementById('pkC' + q); if (bq) bq.style.opacity = grid && grid[0] === q ? 0.25 : 1; } }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; var p = S.toLocal(e);
-    if (p.y > 760 && p.y < 830) { var k = Math.floor((p.x - 30) / 82); if (k >= 0 && k < NC && (p.x - 30) % 82 < 72) pick(k); return; }
+    if (!land && p.y > 760 && p.y < 830) { var k = Math.floor((p.x - 30) / 82); if (k >= 0 && k < NC && (p.x - 30) % 82 < 72) pick(k); return; }
     var x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); if (x >= 0 && y >= 0 && x < N && y < N) pick(grid[y * N + x]);
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flood_diff', diff); A.sfx('click'); paint(); grid = null; }); }); paint();
-  var S = new A.Shell({ id: 'flood', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    // 가로 화면 패널: 점수판 복사본 + 큰 버튼 (게임판 위 점수판은 가로에서 숨김)
+  function landPanel(btns) {
+    var hudEl = document.querySelector('.g-hud'), ids = ['hA', 'hB', 'hC'], h = '<div class="g-card gp-stats">';
+    hudEl.setAttribute('data-land-hide', '');
+    ids.forEach(function (id) { var v = document.getElementById(id), lb = v.parentNode.querySelector('.h-lb'); h += '<div><span>' + (lb ? lb.textContent : '') + '</span><b id="pk' + id + '" style="font-size:22px"></b></div>'; });
+    h += '</div><div id="pkMult" style="min-height:18px;padding:0 6px;font-size:14px;font-weight:700;color:var(--accent)"></div>' + (btns || '');
+    S.panelSlot.innerHTML = h;
+    function sync() { ids.forEach(function (id) { var v = document.getElementById(id), d = document.getElementById('pk' + id); d.textContent = v.textContent; d.style.color = v.style.color; }); var m = document.getElementById('hMult'); document.getElementById('pkMult').textContent = m ? m.textContent : ''; }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style'] });
+    sync();
+  }
+  var S = new A.Shell({ id: 'flood', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { if (/^[1-6]$/.test(e.key) && !e.repeat) pick(+e.key - 1); } });
+  landPanel((function () { var h = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'; for (var k = 0; k < NC; k++) h += '<button class="gp-btn" id="pkC' + k + '" style="min-height:46px;background:' + COLS[k] + ';color:rgba(0,0,0,.55);border-color:transparent">' + (k + 1) + '</button>'; return h + '</div>'; })());
+  for (var q = 0; q < NC; q++) (function (k) { document.getElementById('pkC' + k).addEventListener('click', function () { pick(k); }); })(q);
 })();

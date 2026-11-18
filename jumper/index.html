@@ -45,7 +45,8 @@
         <div class="g-keys">
           <div>떨어지면 끝</div>
           <div><kbd style="color:#ff4d6d">━</kbd> 빨간 발판은 부서짐</div>
-          <div>양옆 화면은 이어짐</div>
+          <div><kbd style="color:#ffd166">━</kbd> 스프링 · <kbd style="color:#ff9ecf">▲</kbd> 로켓</div>
+          <div>양옆 화면은 이어짐 · 250m마다 보너스</div>
         </div>
       </div>
     </aside>
@@ -116,15 +117,19 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
-  var P, plats, coins, cam, maxH, score, coinN, dyingT, keys = {}, drag = null, topY;
+  var P, plats, coins, cam, maxH, score, coinN, dyingT, keys = {}, drag = null, topY, mileM, bonus = 0;
   function addPlat(y) {
     var lv = Math.min(1, maxH / 30000), r = Math.random(), t = 'n';
-    if (r < 0.15 + lv * 0.15) t = 'm'; else if (r < 0.25 + lv * 0.2) t = 'b'; else if (r < 0.31) t = 's'; else if (r < 0.325) t = 'r';
-    var p = { x: A.rand(50, W - 50), y: y, w: 92, t: t, vx: t === 'm' ? A.rand(60, 140) * A.pick([-1, 1]) : 0, broken: false };
-    plats.push(p); if (Math.random() < 0.18) coins.push({ x: A.clamp(p.x + A.rand(-60, 60), 30, W - 30), y: y - A.rand(60, 140) });
+    var rm = 0.075 + 0.15 + lv * 0.15; /* 예전 순서로는 높이 올라가면 스프링·로켓이 아예 안 나왔음 */
+    if (r < 0.06) t = 's'; else if (r < 0.075) t = 'r'; else if (r < rm) t = 'm'; else if (r < rm + 0.1 + lv * 0.08) t = 'b';
+    var p = { x: A.rand(50, W - 50), y: y, w: Math.round(92 - lv * 20), t: t, vx: t === 'm' ? A.rand(60, 140) * A.pick([-1, 1]) : 0, broken: false };
+    plats.push(p);
+    // 부서지는 발판은 '덤'으로만 놓음: 밟을 수 있는 발판 사이 간격(최대 180)은 그대로 유지 → 못 올라가는 구간이 생기지 않음
+    if (t === 'b') { p.x = A.rand(50, W - 50); p.y = y + A.rand(20, 50); addPlat(y); return; }
+    if (Math.random() < 0.18) coins.push({ x: A.clamp(p.x + A.rand(-60, 60), 30, W - 30), y: y - A.rand(60, 140) });
     topY = y;
   }
-  function reset() { P = { x: W / 2, y: 800, vx: 0, vy: -900, face: 1 }; plats = []; coins = []; cam = 0; maxH = 0; score = 0; coinN = 0; dyingT = 0; keys = {}; drag = null; topY = 880; plats.push({ x: W / 2, y: 880, w: 140, t: 'n', vx: 0 }); while (topY > -200) addPlat(topY - A.rand(70, 120)); fx.clear(); hud(); }
+  function reset() { P = { x: W / 2, y: 800, vx: 0, vy: -900, face: 1 }; plats = []; coins = []; cam = 0; maxH = 0; score = 0; coinN = 0; dyingT = 0; keys = {}; drag = null; topY = 880; mileM = 1; bonus = 0; plats.push({ x: W / 2, y: 880, w: 140, t: 'n', vx: 0 }); while (topY > -200) addPlat(topY - A.rand(70, 120)); fx.clear(); hud(); }
   function update(dt) {
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; P.vy += 1800 * dt; P.y += P.vy * dt; if (dyingT <= 0) S.gameOver(score, [['높이', Math.floor(maxH / 10) + 'm'], ['코인', String(coinN)]]); return; }
@@ -150,7 +155,8 @@
     plats = plats.filter(function (p) { return p.y < cam + H + 60; }); coins = coins.filter(function (c) { return c.y < cam + H + 60; });
     for (var i = coins.length - 1; i >= 0; i--) if (Math.hypot(coins[i].x - P.x, coins[i].y - P.y) < 34) { var cn = coins.splice(i, 1)[0]; coinN++; fx.burst(cn.x, cn.y, '#ffd166', 10, 180, 0.35, 2.5); A.sfx('coin'); }
     if (P.y > cam + H + 40) { dyingT = 1; A.sfx('over'); }
-    score = Math.floor(maxH / 10) + coinN * 20; hud();
+    if (maxH / 10 >= mileM * 250) { S.banner(mileM * 250 + 'm', '보너스 +' + mileM * 50); bonus += mileM * 50; A.sfx('level'); mileM++; }
+    score = Math.floor(maxH / 10) + coinN * 20 + bonus; hud();
   }
   function render(c) {
     var o = fx.offset(), t = S.time, cm = cam || 0;

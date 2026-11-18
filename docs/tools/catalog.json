@@ -1358,5 +1358,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 1000000
+ },
+ {
+  "id": "idle",
+  "name": "네온 공장",
+  "genre": "IDLE",
+  "kgenre": "방치형",
+  "cat": "두뇌",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "탭해서 에너지를 모으고 기계 8종으로 자동 생산! 자리를 비워도 쌓이고, 프레스티지로 영구 배율까지.",
+  "tags": [
+   "방치형",
+   "자동 저장",
+   "프레스티지"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
  }
 ]

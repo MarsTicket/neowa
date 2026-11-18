@@ -322,6 +322,9 @@ body.land .g-panel::-webkit-scrollbar{display:none}
 body.land .g-panel>*{flex-shrink:0}
 body.land .g-panel>.gp-cards{flex-shrink:1}
 @media (max-height:480px){
+  /* 키 낮은 가로 화면: 큰 일시정지 버튼 대신 위 메뉴줄의 작은 일시정지 아이콘 (방향 패드가 들어갈 자리 확보) */
+  .g-panel .g-ic[data-act="pause"]{display:grid}
+  .g-panel>.gp-btn[data-act="pause"]{display:none}
   body.land .g-wrap{padding:8px 12px;gap:14px}
   .g-panel{gap:8px}
   .g-panel .g-name{font-size:20px}

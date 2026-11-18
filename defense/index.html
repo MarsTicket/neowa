@@ -130,6 +130,24 @@
     W = nW; H = nH; GY = nGY; MY = nMY; KV = Math.max(0.7, (GY - MY) / 810); BASE.x = W / 2; BASE.y = GY - 10;
   }
   var fx = new A.FX();
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_defense_tut)
+  var tutOn = A.get('neowa_defense_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_defense_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
   var cities, missiles, blasts, shots, wave, score, toSpawn, spawnT, dyingT, cur = { x: W / 2, y: 500 }, kbd = false, waveT, ammo, lostThisWave, noAmmoT = 0;
   var BASE = { x: W / 2, y: GY - 10 };
   function reset() { cities = []; for (var i = 0; i < 6; i++) cities.push({ x: cityX(i), alive: true }); missiles = []; blasts = []; shots = []; wave = 0; score = 0; dyingT = 0; waveT = 0; nextWave(); fx.clear(); hud(); }
@@ -150,7 +168,7 @@
   function explode(x, y, chain, root) { blasts.push({ x: x, y: y, r: 0, max: 62, t: 0, chain: chain, root: root || { n: 0 } }); A.sfx(chain ? 'boom' : 'hit', chain ? 1.3 : 1); }
   function update(dt) {
     fx.update(dt); if (noAmmoT > 0) noAmmoT -= dt;
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['최대 연쇄', String(bestChain)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['최대 연쇄', String(bestChain)], ['최고 대비', vsBest(score)]]); return; }
     if (toSpawn > 0) { spawnT -= dt; if (spawnT <= 0) spawn(); }
     var i, j;
     for (i = shots.length - 1; i >= 0; i--) { var s = shots[i], dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), st = s.sp * dt; if (d <= st) { shots.splice(i, 1); explode(s.tx, s.ty, false); } else { s.x += dx / d * st; s.y += dy / d * st; } }
@@ -158,7 +176,7 @@
     for (i = missiles.length - 1; i >= 0; i--) {
       var m = missiles[i]; m.x += m.vx * dt; m.y += m.vy * dt;
       var hit = null; for (j = 0; j < blasts.length; j++) if (Math.hypot(m.x - blasts[j].x, m.y - blasts[j].y) < blasts[j].r) { hit = blasts[j]; break; }
-      if (hit) { missiles.splice(i, 1); var chainCount = ++hit.root.n; if (chainCount > bestChain) bestChain = chainCount; var pts = 25 * chainCount * (m.fast ? 2 : 1); score += pts; fx.text(m.x, m.y - 20, (chainCount > 1 ? chainCount + '연쇄 ' : '') + '+' + pts, chainCount > 1 ? '#ffd166' : '#fff', 18); fx.burst(m.x, m.y, '#ff7a45', 14, 240, 0.5, 3); explode(m.x, m.y, true, hit.root); continue; }
+      if (hit) { tutDone(); missiles.splice(i, 1); var chainCount = ++hit.root.n; if (chainCount > bestChain) bestChain = chainCount; var pts = 25 * chainCount * (m.fast ? 2 : 1); score += pts; fx.text(m.x, m.y - 20, (chainCount > 1 ? chainCount + '연쇄 ' : '') + '+' + pts, chainCount > 1 ? '#ffd166' : '#fff', 18); fx.burst(m.x, m.y, '#ff7a45', 14, 240, 0.5, 3); explode(m.x, m.y, true, hit.root); continue; }
       if (m.split && m.y > MY + (GY - MY) * 0.28 && !m.didSplit) { m.didSplit = true; for (var k = 0; k < 2; k++) { var alive = cities.filter(function (c) { return c.alive; }); if (!alive.length) break; var tg = A.pick(alive), a = Math.atan2(GY - m.y, tg.x - m.x), sp = Math.hypot(m.vx, m.vy); missiles.push({ x: m.x, y: m.y, sx: m.x, sy: m.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, tg: tg }); } }
       if (m.y >= GY - 20) {
         missiles.splice(i, 1); fx.burst(m.x, GY - 20, '#ff4d6d', 30, 320, 0.7, 4); fx.shake(8, 0.3); A.sfx('bigboom'); A.vibrate(120);
@@ -190,9 +208,10 @@
     c.restore();
     if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(cur.x, cur.y, 16, 0, 7); c.moveTo(cur.x - 24, cur.y); c.lineTo(cur.x + 24, cur.y); c.moveTo(cur.x, cur.y - 24); c.lineTo(cur.x, cur.y + 24); c.stroke(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+    if (missiles && tutOn) { var tm = missiles[0]; tutDraw(c, H * 0.62, '미사일이 지나갈 곳을 탭하면 폭발해요', '클릭하거나 ↑↓←→ 조준 + Space', tm ? tm.x + tm.vx * 0.6 : null, tm ? tm.y + tm.vy * 0.6 : null); }
   }
   var last = '';
-  function hud() { var alive = cities ? cities.filter(function (c) { return c.alive; }).length : 6; var k = score + '|' + wave + '|' + alive + '|' + ammo; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = alive; document.getElementById('hMult').textContent = '요격탄 ' + ammo; }
+  function hud() { var alive = cities ? cities.filter(function (c) { return c.alive; }).length : 6; var rem = (toSpawn || 0) + (missiles ? missiles.length : 0), k = score + '|' + wave + '|' + alive + '|' + ammo + '|' + rem; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = alive; document.getElementById('hMult').textContent = '요격탄 ' + ammo + ' · 남은 적 ' + rem; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e); fire(p.x, p.y); });
   var keys = {}, bestChain = 0;
   var S = new A.Shell({ id: 'defense', W: W, H: H, land: [900, 600], onResize: geo, reset: function () { bestChain = 0; noAmmoT = 0; reset(); }, render: render, idle: function (dt) { fx.update(dt); },

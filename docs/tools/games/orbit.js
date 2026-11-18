@@ -2,6 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/orbit.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('orbit', function () { return { planets: planets, ship: ship, stars: stars, cam: cam, dying: dyingT, playing: S.state === 'playing' }; }, function (h) { G3 = h; });
   var planets = [], ship, cam = 0, camT = 0, score = 0, hops = 0, starN = 0, dyingT = 0, flyT = 0, nextY, stars = [], trail = [], bgStars = [];
   var PAL = ['#ff7a45', '#5ee7ff', '#b48cff', '#7dff9b', '#ffd166', '#ff7aa8'];
   for (var i = 0; i < 140; i++) bgStars.push({ x: Math.random() * W, y: Math.random() * H, z: Math.random() });
@@ -102,6 +106,7 @@
     hud();
   }
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#04030c'); g.addColorStop(1, '#12081f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);

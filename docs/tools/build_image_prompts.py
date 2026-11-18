@@ -79,6 +79,9 @@ SCENE = {
  'tank': ('a top-down neon maze with glowing golden walls, a small yellow tank firing a glowing shell that ricochets off a wall corner toward a red enemy tank, dotted bounce trail, sparks', '벽에 튕기는 포탄 탱크 전투'),
  'yacht': ('five glossy white dice with red and black pips tumbling on a dark pink felt table, two dice glowing pink as held, a neat score sheet with rows of numbers in the background', '주사위 다섯 개와 족보 점수표'),
  'td': ('a top-down winding orange path through a dark grid, rows of small neon towers (yellow machine gun, orange cannon, icy blue, pink laser beam) shooting at a line of colorful creeping enemies, a big red boss', '길 옆 네온 타워들이 적을 막는 장면'),
+ 'hangul': ('a grid of rounded square tiles each showing a single Korean jamo letter, rows colored glowing green, golden yellow and dark gray, a neat on-screen Korean keyboard below, dark green neon background', '자모 칸 낱말 맞히기 판'),
+ 'typing': ('glowing blue Korean word bubbles falling down a dark night screen toward a red line, one golden word bursting into sparks, a glowing text input box at the bottom', '떨어지는 한글 낱말 타자 게임'),
+ 'idle': ('a giant glowing lime-green energy core in the center of a neon factory, little machines (pinwheel, water wheel, lightning rod, telescope) feeding glowing particles into it, huge floating numbers', '숫자가 불어나는 네온 공장'),
 }
 
 def build():

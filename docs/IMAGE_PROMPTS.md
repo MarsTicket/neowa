@@ -104,6 +104,9 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 64 | 미로 탱크 | `assets/tank-card.jpg` | ⬜ 임시 캡처 | 벽에 튕기는 포탄 탱크 전투 |
 | 65 | 주사위 족보 | `assets/yacht-card.jpg` | ⬜ 임시 캡처 | 주사위 다섯 개와 족보 점수표 |
 | 66 | 타워 디펜스 | `assets/td-card.jpg` | ⬜ 임시 캡처 | 길 옆 네온 타워들이 적을 막는 장면 |
+| 67 | 한글 단어 맞히기 | `assets/hangul-card.jpg` | ⬜ 임시 캡처 | 자모 칸 낱말 맞히기 판 |
+| 68 | 한글 타자 레이스 | `assets/typing-card.jpg` | ⬜ 임시 캡처 | 떨어지는 한글 낱말 타자 게임 |
+| 69 | 네온 공장 | `assets/idle-card.jpg` | ⬜ 임시 캡처 | 숫자가 불어나는 네온 공장 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -735,4 +738,34 @@ five glossy white dice with red and black pips tumbling on a dark pink felt tabl
 
 ```
 a top-down winding orange path through a dark grid, rows of small neon towers (yellow machine gun, orange cannon, icy blue, pink laser beam) shooting at a line of colorful creeping enemies, a big red boss, dominant glow color #ff7a45. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 67. 한글 단어 맞히기 (`hangul`)
+
+- 파일: `assets/hangul-card.jpg`
+- 대표색: `#7dff9b` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 자모 칸 낱말 맞히기 판
+
+```
+a grid of rounded square tiles each showing a single Korean jamo letter, rows colored glowing green, golden yellow and dark gray, a neat on-screen Korean keyboard below, dark green neon background, dominant glow color #7dff9b. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 68. 한글 타자 레이스 (`typing`)
+
+- 파일: `assets/typing-card.jpg`
+- 대표색: `#7aa2ff` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 떨어지는 한글 낱말 타자 게임
+
+```
+glowing blue Korean word bubbles falling down a dark night screen toward a red line, one golden word bursting into sparks, a glowing text input box at the bottom, dominant glow color #7aa2ff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 69. 네온 공장 (`idle`)
+
+- 파일: `assets/idle-card.jpg`
+- 대표색: `#c3ff5e` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 숫자가 불어나는 네온 공장
+
+```
+a giant glowing lime-green energy core in the center of a neon factory, little machines (pinwheel, water wheel, lightning rod, telescope) feeding glowing particles into it, huge floating numbers, dominant glow color #c3ff5e. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

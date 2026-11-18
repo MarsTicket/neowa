@@ -148,6 +148,8 @@
   inp.addEventListener('compositionend', function () { if (pending) { pending = false; setTimeout(doSubmit, 0); } });
   inp.addEventListener('input', function () { if (/\s$/.test(inp.value)) doSubmit(); });
   document.getElementById('stage').addEventListener('click', function () { if (S.state === 'playing') try { inp.focus(); } catch (e) {} });
+  // 입력창에서는 P·M·F가 글자로 들어가므로 안내 문구를 바꿈
+  Array.prototype.forEach.call(document.querySelectorAll('.k-only'), function (el) { var k = el.querySelector('kbd'); if (k && k.textContent === 'P' && /일시정지/.test(el.textContent)) el.innerHTML = '소리·전체 화면은 위 단추'; });
   var S = new A.Shell({ id: 'typing', W: W, H: H, reset: reset, update: update, idle: function (dt) { tim += dt; fx.update(dt); }, render: render });
   // 일시정지·끝나면 입력창 숨김, 다시 시작하면 보임
   setInterval(function () {

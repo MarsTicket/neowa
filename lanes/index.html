@@ -46,7 +46,8 @@
         <div class="g-keys">
           <div>차에 부딪히면 끝</div>
           <div><kbd style="color:#ffd166">●</kbd> 코인 50점</div>
-          <div>옆 차선 차를 스치면 +30</div>
+          <div>차 바로 앞에서 피하면 아슬아슬 +30</div>
+          <div>아슬아슬을 이어가면 배율 UP (최대 ×5)</div>
         </div>
       </div>
     </aside>
@@ -63,7 +64,7 @@
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 14</p>
         <h1 class="ov-title">네온 하이웨이</h1>
-        <p class="ov-desc">화면 왼쪽을 탭하면 왼쪽 차선, 오른쪽을 탭하면 오른쪽 차선. 차에 부딪히면 끝, 아슬아슬하게 피하면 보너스.</p>
+        <p class="ov-desc">화면 왼쪽을 탭하면 왼쪽 차선, 오른쪽을 탭하면 오른쪽 차선. 차 바로 앞에서 아슬아슬하게 피하면 보너스!</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>좌우 탭</span>
           <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>니어미스 보너스</span>
@@ -121,7 +122,8 @@
   var G3 = { draw: function () { return false; } };
   A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
   A.load3D('lanes', function () { return { lane: lane, px: px, cars: cars, coins: coins, speed: speed, dying: dyingT }; }, function (h) { G3 = h; });
-  var lane, px, cars, coins, speed, dist, score, coinN, nearN, spawnT, dyingT, road;
+  var lane, px, cars, coins, speed, dist, score, coinN, nearN, spawnT, dyingT, road, prevFree, leftAt, clock, chain, lastNear, nextKm;
+  var TRAFFIC = 0.6;   // 차들은 모두 내 속도의 60%로 다가옴 → 줄끼리 겹쳐 벽이 되는 일이 없음
   var CARC = ['#5ee7ff', '#b48cff', '#7dff9b', '#ffe066', '#ff9ecf'];
   function carSprite(col, me) {
     return A.sprite('car' + col + (me ? 'm' : ''), 72, 120, function (x) {
@@ -132,13 +134,19 @@
       x.fillStyle = me ? '#ff4d6d' : '#fff'; x.fillRect(-22, me ? 44 : -48, 12, 4); x.fillRect(10, me ? 44 : -48, 12, 4);
     });
   }
-  function reset() { lane = 1; px = LX[1]; cars = []; coins = []; speed = 420; dist = 0; score = 0; coinN = 0; nearN = 0; spawnT = 0.6; dyingT = 0; road = 0; fx.clear(); hud(); }
-  function move(d) { if (S.state !== 'playing' || dyingT > 0) return; var n = A.clamp(lane + d, 0, 2); if (n !== lane) { lane = n; A.sfx('turn', 1.4); } }
+  function reset() { lane = 1; px = LX[1]; cars = []; coins = []; speed = 420; dist = 0; score = 0; coinN = 0; nearN = 0; spawnT = 160; dyingT = 0; road = 0; prevFree = [0, 1, 2]; leftAt = [-9, -9, -9]; clock = 0; chain = 0; lastNear = -9; nextKm = 10; fx.clear(); hud(); }
+  function move(d) { if (S.state !== 'playing' || dyingT > 0) return; var n = A.clamp(lane + d, 0, 2); if (n !== lane) { leftAt[lane] = clock; lane = n; A.sfx('turn', 1.4); } }
   function spawn() {
-    var lv = Math.min(1, dist / 30000), free = [0, 1, 2], block = Math.random() < 0.25 + lv * 0.35 ? 2 : 1;
-    for (var i = 0; i < block; i++) { var k = free.splice(A.irand(0, free.length - 1), 1)[0]; cars.push({ l: k, y: -80, v: A.rand(0.25, 0.55) * speed, c: A.pick(CARC), near: false }); }
-    if (Math.random() < 0.6) { var cl = A.pick(free); for (var j = 0; j < 4; j++) coins.push({ l: cl, y: -60 - j * 70 }); }
-    spawnT = Math.max(0.42, 1.0 - lv * 0.5) * A.rand(0.85, 1.2);
+    var lv = Math.min(1, dist / 30000), free = [0, 1, 2], i;
+    if (Math.random() < 0.25 + lv * 0.35) {
+      // 두 차선 막기: 남는 한 칸은 바로 앞 줄의 빈 차선 어디서든 한 칸 안에 있어야 함 (항상 피할 길 보장)
+      var ok = free.filter(function (f) { return prevFree.every(function (p) { return Math.abs(p - f) <= 1; }); });
+      free = [A.pick(ok.length ? ok : [1])];
+    } else free.splice(A.irand(0, 2), 1);
+    for (i = 0; i < 3; i++) if (free.indexOf(i) < 0) cars.push({ l: i, y: -80, c: A.pick(CARC), near: false });
+    prevFree = free;
+    if (Math.random() < 0.6) { var cl = A.pick(free); for (var j = 0; j < 4; j++) coins.push({ l: cl, y: -150 - j * 60 }); }
+    spawnT = A.lerp(430, 300, lv) * A.rand(0.95, 1.25);   // 다음 줄까지 거리(px)
   }
   function crash() {
     if (dyingT > 0) return; dyingT = 1.2; fx.burst(px, PY, '#ff7a45', 50, 460, 0.9, 4); fx.burst(px, PY, '#fff', 14, 300, 0.5, 2.4);
@@ -147,17 +155,24 @@
   function update(dt) {
     fx.update(dt);
     px = A.lerp(px, LX[lane], Math.min(1, dt * 16));
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', (dist / 1000).toFixed(1) + 'km'], ['코인', String(coinN)], ['니어미스', String(nearN)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(Math.floor(score), [['거리', (dist / 1000).toFixed(1) + 'km'], ['코인', String(coinN)], ['니어미스', String(nearN)]]); return; }
+    clock += dt;
     speed = Math.min(1100, 420 + dist / 70); dist += speed * dt; road = (road + speed * dt) % 80;
-    spawnT -= dt; if (spawnT <= 0) spawn();
+    var rel = speed * TRAFFIC * dt;
+    spawnT -= rel; if (spawnT <= 0) spawn();
+    if (dist / 1000 >= nextKm) { S.banner(nextKm + ' km', 'SPEED UP'); A.sfx('level'); nextKm += 10; }
     for (var i = cars.length - 1; i >= 0; i--) {
-      var c = cars[i]; c.y += (speed - c.v) * dt;
+      var c = cars[i], py0 = c.y; c.y += rel;
       if (Math.abs(c.y - PY) < 100 && Math.abs(LX[c.l] - px) < 52) crash();
-      if (!c.near && c.y > PY + 60 && Math.abs(c.l - lane) === 1) { c.near = true; nearN++; score += 30; fx.text(LX[lane], PY - 80, '아슬아슬 +30', '#ff9ecf', 18); A.sfx('tick'); }
+      // 아슬아슬: 그 차 차선에 있다가 0.6초 안에 옆으로 피했을 때만 (가만히 있어도 받던 점수 막음). 4초 안에 이어지면 배율 ↑
+      if (!c.near && py0 < PY && c.y >= PY && dyingT <= 0 && c.l !== lane && Math.abs(c.l - lane) === 1 && clock - leftAt[c.l] < 0.6) {
+        c.near = true; nearN++; chain = clock - lastNear < 4 ? Math.min(5, chain + 1) : 1; lastNear = clock;
+        var pts = 30 * chain; score += pts; fx.text(LX[lane], PY - 80, (chain > 1 ? '아슬아슬 ×' + chain + ' +' : '아슬아슬 +') + pts, '#ff9ecf', 18 + chain * 2); A.sfx('tick', 1 + chain * 0.1);
+      }
       if (c.y > H + 100) cars.splice(i, 1);
     }
     for (i = coins.length - 1; i >= 0; i--) {
-      var o = coins[i]; o.y += speed * dt;
+      var o = coins[i]; o.y += rel;
       if (o.l === lane && Math.abs(o.y - PY) < 60) { coins.splice(i, 1); coinN++; score += 50; fx.burst(LX[o.l], o.y, '#ffd166', 10, 180, 0.35, 2.5); A.sfx('coin'); }
       else if (o.y > H + 40) coins.splice(i, 1);
     }
@@ -185,7 +200,7 @@
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
-  function hud() { var k = Math.floor(score) + '|' + Math.floor(speed / 10) + '|' + coinN; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.round(speed / 5); document.getElementById('hC').textContent = coinN; }
+  function hud() { var k = Math.floor(score) + '|' + Math.floor(speed / 10) + '|' + coinN + '|' + chain + (clock - lastNear < 4); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.round(speed / 5); document.getElementById('hC').textContent = coinN; document.getElementById('hMult').textContent = chain > 1 && clock - lastNear < 4 ? '아슬아슬 ×' + chain : ''; }
   var stage = document.getElementById('stage'), sw = null;
   stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e); sw = { x: e.clientX, done: false, lx: p.x }; });
   stage.addEventListener('pointermove', function (e) { if (!sw || sw.done) return; var dx = e.clientX - sw.x; if (Math.abs(dx) > 30) { move(dx > 0 ? 1 : -1); sw.done = true; } });

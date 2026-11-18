@@ -2,42 +2,59 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOPY = 260, BOTY = 760, T = 30;   // 천장·바닥 위치, 판 두께
   var fx = new A.FX();
-  var P, segs, stars, speed, dist, score, starN, dyingT, nextX;
+  var P, segs, stars, speed, dist, score, starN, dyingT, nextX, bufT, coyT, bonus, nearN, nextMile;
   // 길: 위/아래 판 조각(있음/없음) + 가시
   function gen() {
     var lv = Math.min(1, dist / 15000), len = A.rand(200, 380), x = nextX;
     var r = Math.random(), top = true, bot = true, spikes = [];
     if (dist > 400) {
       if (r < 0.3) bot = false; else if (r < 0.55) top = false;
-      else if (r < 0.85) { var n = A.irand(1, 2 + Math.floor(lv * 2)); for (var i = 0; i < n; i++) spikes.push({ side: Math.random() < 0.5 ? 'top' : 'bot', x: x + A.rand(40, len - 50) }); }
+      else if (r < 0.85) {
+        var n = A.irand(1, 2 + Math.floor(lv * 2)), cand = [], i;
+        for (i = 0; i < n; i++) cand.push({ side: Math.random() < 0.5 ? 'top' : 'bot', x: x + A.rand(40, len - 50) });
+        cand.sort(function (a, b) { return a.x - b.x; });
+        // 가시 간격 보장: 같은 쪽 60px, 반대쪽 150px 이상 (위아래 동시에 막혀 못 지나가는 배치 방지)
+        cand.forEach(function (k) { var p = spikes[spikes.length - 1]; if (!p || k.x - p.x >= (p.side === k.side ? 60 : 150)) spikes.push(k); });
+      }
     }
     segs.push({ x: x, len: len, top: top, bot: bot, spikes: spikes });
     if (Math.random() < 0.5) stars.push({ x: x + len / 2, y: A.pick([TOPY + 60, BOTY - 60, (TOPY + BOTY) / 2]) });
     nextX = x + len + (top && bot ? 0 : 0);
   }
-  function reset() { P = { x: 130, y: BOTY - 22, vy: 0, g: 1, ground: true, rot: 0 }; segs = []; stars = []; speed = 340; dist = 0; score = 0; starN = 0; dyingT = 0; nextX = -100; while (nextX < W + 400) gen(); fx.clear(); hud(); }
+  function reset() { P = { x: 130, y: BOTY - 22, vy: 0, g: 1, ground: true, rot: 0 }; segs = []; stars = []; speed = 340; dist = 0; score = 0; starN = 0; dyingT = 0; nextX = -100;
+    bufT = 0; coyT = 0; bonus = 0; nearN = 0; nextMile = 500; while (nextX < W + 400) gen(); fx.clear(); hud(); }
   function floorHere(side) { for (var i = 0; i < segs.length; i++) { var s = segs[i]; if (P.x >= s.x && P.x < s.x + s.len) return s[side]; } return true; }
-  function flip() { if (S.state !== 'playing' || dyingT > 0 || !P.ground) return; P.g *= -1; P.ground = false; P.vy = 0; A.sfx('turn', P.g > 0 ? 0.8 : 1.6); fx.burst(P.x, P.y, '#7aa2ff', 8, 160, 0.3, 2.4); }
+  // 착지 직전(0.15초)에 누른 탭은 기억했다가 착지하자마자 반전, 발판 끝에서 떨어진 직후(0.08초)에도 반전 허용
+  function flip() { if (S.state !== 'playing' || dyingT > 0) return; if (!P.ground && coyT <= 0) { bufT = 0.15; return; } bufT = 0; coyT = 0; P.g *= -1; P.ground = false; P.vy = 0; A.sfx('turn', P.g > 0 ? 0.8 : 1.6); fx.burst(P.x, P.y, '#7aa2ff', 8, 160, 0.3, 2.4); }
   function die() { if (dyingT > 0) return; dyingT = 1.1; fx.burst(P.x, P.y, '#7aa2ff', 40, 420, 0.8, 4); fx.shake(12, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(160); }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['별', String(starN)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['거리', Math.floor(dist / 10) + 'm'], ['별', String(starN)], ['아슬아슬', String(nearN)]]); return; }
     speed = Math.min(760, 340 + dist / 50); var dx = speed * dt; dist += dx; nextX -= dx;
     segs.forEach(function (s) { s.x -= dx; s.spikes.forEach(function (k) { k.x -= dx; }); }); stars.forEach(function (s) { s.x -= dx; });
     segs = segs.filter(function (s) { return s.x + s.len > -50; }); stars = stars.filter(function (s) { return s.x > -30; });
     while (nextX < W + 400) gen();
+    var wasGround = P.ground;
     P.vy += 3200 * P.g * dt; P.y += P.vy * dt; P.ground = false;
     var side = P.g > 0 ? 'bot' : 'top';
     if (floorHere(side)) {
       if (P.g > 0 && P.y >= BOTY - 22) { P.y = BOTY - 22; P.vy = 0; P.ground = true; }
       if (P.g < 0 && P.y <= TOPY + 22) { P.y = TOPY + 22; P.vy = 0; P.ground = true; }
     }
+    if (wasGround && !P.ground) coyT = 0.08; else if (coyT > 0) coyT -= dt;
+    if (bufT > 0) { bufT -= dt; if (P.ground) flip(); }
     if (P.y > H + 60 || P.y < -60) die();
     P.rot += (P.ground ? 0 : 8) * dt;
-    segs.forEach(function (s) { s.spikes.forEach(function (k) { var ky = k.side === 'bot' ? BOTY - 18 : TOPY + 18; if (Math.abs(k.x - P.x) < 26 && Math.abs(ky - P.y) < 30) die(); }); });
-    for (var i = stars.length - 1; i >= 0; i--) if (Math.hypot(stars[i].x - P.x, stars[i].y - P.y) < 34) { var st = stars.splice(i, 1)[0]; starN++; fx.burst(st.x, st.y, '#ffd166', 12, 200, 0.4, 3); A.sfx('coin'); }
+    segs.forEach(function (s) { s.spikes.forEach(function (k) {
+      var ky = k.side === 'bot' ? BOTY - 18 : TOPY + 18, vd = Math.abs(ky - P.y);
+      if (Math.abs(k.x - P.x) < 26 && vd < 30) die();
+      // 가시 바로 위를 공중에서 스치면 보너스
+      if (!k.done && k.x < P.x - 26) { k.done = true; if (vd < 90 && !P.ground && dyingT <= 0) { nearN++; bonus += 15; fx.text(P.x, P.y + (k.side === 'bot' ? -40 : 40), '아슬아슬 +15', '#ff9ecf', 18); A.sfx('tick', 1.3); } }
+    }); });
+    for (var i = stars.length - 1; i >= 0; i--) if (Math.hypot(stars[i].x - P.x, stars[i].y - P.y) < 42) { var st = stars.splice(i, 1)[0]; starN++; fx.burst(st.x, st.y, '#ffd166', 12, 200, 0.4, 3); A.sfx('coin'); }
     if (P.ground && Math.random() < 0.5) fx.spark(P.x - 16, P.y + 18 * P.g, '#7aa2ff', -speed * 0.3, -P.g * 40, 0.25, 2);
-    score = Math.floor(dist / 10) + starN * 20; hud();
+    score = Math.floor(dist / 10) + starN * 20 + bonus; hud();
+    if (dist / 10 >= nextMile) { S.banner(nextMile + 'm', '속도 UP'); A.sfx('level'); nextMile += 500; }
   }
   function render(c) {
     var o = fx.offset(), t = S.time;

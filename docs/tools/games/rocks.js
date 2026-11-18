@@ -9,10 +9,19 @@
   var P, rocks, shots, ores, wave, score, lives, power, oreN, dyingT, drag = null, keys = {}, nextWaveT;
   function wrap(o) { if (o.x < -40) o.x += W + 80; if (o.x > W + 40) o.x -= W + 80; if (o.y < TOP - 40) o.y += H - TOP + 80; if (o.y > H + 40) o.y -= H - TOP + 80; }
   function rockShape(r) { var pts = [], n = 11; for (var i = 0; i < n; i++) pts.push(r * A.rand(0.72, 1.08)); return pts; }
-  function addRock(x, y, size) { var r = [0, 18, 32, 52][size], a = Math.random() * Math.PI * 2, sp = A.rand(40, 90) * (4 - size) * 0.5 + wave * 6; rocks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: r, size: size, hp: size, rot: 0, vr: A.rand(-1, 1), shape: rockShape(r), hit: 0 }); }
+  function addRock(x, y, size) { var r = [0, 18, 32, 52][size], a = Math.random() * Math.PI * 2, sp = A.rand(40, 90) * (4 - size) * 0.5 + Math.min(wave, 10) * 6; rocks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: r, size: size, hp: size, rot: 0, vr: A.rand(-1, 1), shape: rockShape(r), hit: 0 }); }
   function startWave() {
-    wave++; var n = 2 + wave;
-    for (var i = 0; i < n; i++) { var side = Math.random() < 0.5; addRock(side ? (Math.random() < 0.5 ? -30 : W + 30) : A.rand(0, W), side ? A.rand(TOP, H) : (Math.random() < 0.5 ? TOP - 30 : H + 30), 3); }
+    wave++; var n = Math.min(10, 2 + wave);
+    for (var i = 0; i < n; i++) {
+      // 화면 가장자리에서 나오되, 화면이 이어져 있으니 우주선과 220px 이상 떨어진 곳에서만
+      for (var tries = 0, x, y; tries < 12; tries++) {
+        var side = Math.random() < 0.5; x = side ? (Math.random() < 0.5 ? -30 : W + 30) : A.rand(0, W); y = side ? A.rand(TOP, H) : (Math.random() < 0.5 ? TOP - 30 : H + 30);
+        var dx = Math.abs(x - P.x), dy = Math.abs(y - P.y); dx = Math.min(dx, W + 80 - dx); dy = Math.min(dy, H - TOP + 80 - dy);
+        if (Math.hypot(dx, dy) > 220) break;
+      }
+      addRock(x, y, 3);
+    }
+    if (wave > 1 && (wave - 1) % 3 === 0 && lives < 5) { lives++; fx.text(P.x, P.y - 50, '목숨 +1', '#ff9ecf', 22); A.sfx('power'); }
     S.banner('WAVE ' + wave, '운석 접근'); if (wave > 1) A.sfx('level');
   }
   function reset() { P = { x: W / 2, y: H * 0.6, vx: 0, vy: 0, a: -Math.PI / 2, inv: 2, fire: 0 }; rocks = []; shots = []; ores = []; wave = 0; score = 0; lives = 3; power = 1; oreN = 0; dyingT = 0; nextWaveT = 0; drag = null; keys = {}; startWave(); fx.clear(); hud(); }
@@ -32,7 +41,8 @@
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['광석', String(oreN)], ['화력', 'LV ' + power]]); return; }
     var tx = 0, ty = 0;
-    if (drag) { tx = drag.x - P.x; ty = drag.y - P.y; var d = Math.hypot(tx, ty); if (d > 20) { tx /= d; ty /= d; } else { tx = 0; ty = 0; } }
+    // 가상 조이스틱: 누른 곳에서 끈 방향·거리만큼 추진 (손가락이 우주선을 가리지 않음)
+    if (drag) { tx = drag.x - drag.sx; ty = drag.y - drag.sy; var d = Math.hypot(tx, ty); if (d > 10) { var pw = Math.min(1, d / 60); tx = tx / d * pw; ty = ty / d * pw; } else { tx = 0; ty = 0; } }
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
     if (kx || ky) { var l = Math.hypot(kx, ky); tx = kx / l; ty = ky / l; }
     P.vx += tx * 900 * dt; P.vy += ty * 900 * dt; P.vx *= 1 - 1.6 * dt; P.vy *= 1 - 1.6 * dt;
@@ -86,14 +96,20 @@
       c.save(); c.translate(P.x, P.y); c.rotate(P.a); c.shadowColor = '#9be7ff'; c.shadowBlur = 16; c.fillStyle = '#e8fbff';
       c.beginPath(); c.moveTo(20, 0); c.lineTo(-14, -13); c.lineTo(-8, 0); c.lineTo(-14, 13); c.closePath(); c.fill(); c.restore();
     } else if (!P) { c.fillStyle = '#e8fbff'; c.beginPath(); c.arc(W / 2, H * 0.6, 10, 0, 7); c.fill(); }
+    if (drag && S.state === 'playing') {
+      var jx = drag.x - drag.sx, jy = drag.y - drag.sy, jl = Math.hypot(jx, jy), jk = jl > 60 ? 60 / jl : 1;
+      c.strokeStyle = 'rgba(155,231,255,.35)'; c.lineWidth = 3; c.beginPath(); c.arc(drag.sx, drag.sy, 60, 0, 7); c.stroke();
+      c.fillStyle = 'rgba(155,231,255,.45)'; c.beginPath(); c.arc(drag.sx + jx * jk, drag.sy + jy * jk, 22, 0, 7); c.fill();
+    }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
   function hud() { var k = score + '|' + wave + '|' + lives + power; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = lives; document.getElementById('hMult').textContent = '화력 LV ' + power; }
   var stage = document.getElementById('stage');
-  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; drag.sx = drag.x; drag.sy = drag.y; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (drag && drag.id === e.pointerId) { var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; } });
-  function end() { drag = null; } stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  function end(e) { if (drag && e.pointerId !== drag.id) return; drag = null; } stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  window.addEventListener('blur', function () { keys = {}; drag = null; });
   var S = new A.Shell({ id: 'rocks', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
 })();

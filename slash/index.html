@@ -47,6 +47,7 @@
           <div><kbd style="color:#ff4d6d">●</kbd> 폭탄을 베면 즉시 끝</div>
           <div>빠르게 이어 베면 콤보 (3개부터 보너스)</div>
           <div><kbd style="color:#ffd166">★</kbd> 황금 도형 +50, 놓침 1 회복</div>
+          <div>45초부터 30초마다 폭탄 없는 RUSH</div>
         </div>
       </div>
     </aside>
@@ -115,23 +116,30 @@
 <script>
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, G = 900;
+  var A = Arcade, W = 540, H = 960, G = 900, rushT = 0, nextRush = 45;
+  // 세로↔가로 전환: 날고 있는 도형·칼날 위치를 새 판 크기에 맞춤
+  function geo(sh) {
+    landStats(sh); if (sh.W === W && sh.H === H) return;
+    var sx = sh.W / W, sy = sh.H / H;
+    if (items) items.forEach(function (it) { it.x *= sx; it.y *= sy; it.vy *= Math.sqrt(sy); if (it.halves) it.halves.forEach(function (h) { h.x *= sx; h.y *= sy; }); });
+    if (kb) { kb.x *= sx; kb.y *= sy; } trail = []; lastPt = null; W = sh.W; H = sh.H;
+  }
   var fx = new A.FX();
   var items, trail, score, miss, combo, bestCombo, sliced, spawnT, dyingT, time, lastPt = null, comboT = 0, keys = {}, kb = null, golds;
   var COLS = ['#ff5ec4', '#5ee7ff', '#7dff9b', '#ffe066', '#b48cff', '#ff7a45'];
-  function reset() { items = []; trail = []; score = 0; miss = 0; combo = 0; bestCombo = 0; sliced = 0; spawnT = 0.8; dyingT = 0; time = 0; comboT = 0; golds = 0; kb = null; lastPt = null; fx.clear(); hud(); }
+  function reset() { rushT = 0; nextRush = 45; items = []; trail = []; score = 0; miss = 0; combo = 0; bestCombo = 0; sliced = 0; spawnT = 0.8; dyingT = 0; time = 0; comboT = 0; golds = 0; kb = null; lastPt = null; fx.clear(); hud(); }
   function spawn() {
     var lv = Math.min(1, time / 90), n = A.irand(1, 2 + Math.floor(lv * 3));
     for (var i = 0; i < n; i++) {
-      var bomb = time > 6 && Math.random() < 0.12 + lv * 0.1, x = A.rand(80, W - 80), gold = !bomb && time > 10 && Math.random() < 0.05;
-      items.push({ x: x, y: H + 40, vx: (W / 2 - x) * A.rand(0.3, 0.9) + A.rand(-60, 60), vy: -A.rand(900, 1150), r: bomb ? 30 : gold ? 28 : A.rand(30, 40), rot: 0, vr: A.rand(-4, 4), sides: gold ? 5 : A.irand(3, 6), c: gold ? '#ffd166' : A.pick(COLS), bomb: bomb, gold: gold, cut: false });
+      var bomb = rushT <= 0 && time > 6 && Math.random() < 0.12 + lv * 0.1, x = A.rand(80, W - 80), gold = !bomb && time > 10 && Math.random() < 0.05;
+      items.push({ x: x, y: H + 40, vx: (W / 2 - x) * A.rand(0.3, 0.9) + A.rand(-60, 60), vy: -A.rand(900, 1150) * Math.sqrt(H / 960), r: bomb ? 30 : gold ? 28 : A.rand(30, 40), rot: 0, vr: A.rand(-4, 4), sides: gold ? 5 : A.irand(3, 6), c: gold ? '#ffd166' : A.pick(COLS), bomb: bomb, gold: gold, cut: false });
     }
-    A.sfx('bounce', 0.6); spawnT = Math.max(0.55, 1.4 - lv * 0.8) * A.rand(0.8, 1.2);
+    A.sfx('bounce', 0.6); spawnT = rushT > 0 ? 0.28 : Math.max(0.55, 1.4 - lv * 0.8) * A.rand(0.8, 1.2);
   }
   function cut(it, ax, ay, bx, by) {
     it.cut = true;
     if (it.bomb) { dyingT = 1.2; fx.burst(it.x, it.y, '#ff4d6d', 60, 500, 1, 5); fx.flashIt('#ffffff', 1); fx.shake(16, 0.6); A.sfx('bigboom'); A.vibrate([80, 40, 160]); return; }
-    sliced++; combo++; comboT = 0.45;
+    sliced++; combo++; comboT = 0.45; tutDone();
     // 황금 도형: +50, 놓친 수 1 회복
     if (it.gold) { golds++; score += 50; fx.text(it.x, it.y - 46, miss > 0 ? '황금! +50 · 놓침 -1' : '황금! +50', '#ffd166', 22); fx.ring(it.x, it.y, '#ffd166', 90, 0.4); A.sfx('power'); if (miss > 0) miss--; }
     var ang = Math.atan2(by - ay, bx - ax);
@@ -157,6 +165,9 @@
   }
   function update(dt) {
     fx.update(dt); time += dt;
+    // 러시: 45초부터 30초마다 4초 동안 폭탄 없이 도형이 쏟아짐
+    if (time >= nextRush && dyingT <= 0) { nextRush += 30; rushT = 4; spawnT = 0.3; S.banner('RUSH!', '폭탄 없음 · 마구 베세요'); A.sfx('level'); }
+    if (rushT > 0) rushT -= dt;
     if (comboT > 0) { comboT -= dt; if (comboT <= 0 && combo) endCombo(); }
     // 키보드 칼날: 방향키/WASD로 움직이는 동안 지나간 자리를 벰
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
@@ -170,7 +181,7 @@
       if (it.halves) it.halves.forEach(function (h) { h.vy += G * dt; h.x += h.vx * dt; h.y += h.vy * dt; h.a += h.s * 3 * dt; });
       else { it.vy += G * dt; it.x += it.vx * dt; it.y += it.vy * dt; it.rot += it.vr * dt; }
     });
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['벤 도형', String(sliced)], ['최대 콤보', String(Math.max(bestCombo, combo))], ['황금', String(golds)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['벤 도형', String(sliced)], ['최대 콤보', String(Math.max(bestCombo, combo))], vsBest(score)]); return; }
     for (i = items.length - 1; i >= 0; i--) {
       var it = items[i];
       if (it.y > H + 80 && it.vy > 0 && !it.cut) { items.splice(i, 1); if (!it.bomb) { miss++; A.sfx('wall'); fx.text(A.clamp(it.x, 40, W - 40), H - 60, '놓침', '#ff4d6d', 20); if (miss >= 3) { dyingT = 1; A.sfx('hurt'); } } }
@@ -200,6 +211,7 @@
       for (var i = 1; i < trail.length; i++) { c.strokeStyle = 'rgba(255,255,255,' + trail[i].t * 5 + ')'; c.lineWidth = 2 + trail[i].t * 50; c.beginPath(); c.moveTo(trail[i - 1].x, trail[i - 1].y); c.lineTo(trail[i].x, trail[i].y); c.stroke(); }
       c.restore();
     }
+    if (tut && items && S.state === 'playing' && !sliced) tutText(c, isTouch() ? '화면을 그어서 도형을 베세요' : '마우스로 긋거나 방향키로 칼날 이동', '빨간 ✕ 폭탄은 베지 마세요!', H * 0.3);
     if (kb && S.state === 'playing') { c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ffffff', 8), kb.x, kb.y, kb.on ? 1.3 : 0.9); c.restore(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
@@ -211,7 +223,30 @@
   function up() { if (down) { down = false; endSwipe(); } } stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
   window.addEventListener('blur', function () { keys = {}; up(); });
   function kn(e) { return e.key.length === 1 ? e.key.toLowerCase() : e.key; }
-  var S = new A.Shell({ id: 'slash', W: W, H: H, reset: function () { keys = {}; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  // 가로 화면: 판 위 점수판이 판을 가리지 않게, 오른쪽 패널에 같은 점수판을 만들어 글자를 따라 씀
+  function landStats(S) {
+    var hd = document.querySelector('.g-hud'); if (!hd || !S.panelSlot || S.panelSlot.firstChild) return; hd.setAttribute('data-land-hide', '');
+    var src = ['hA', 'hB', 'hC'].map(function (id) { return document.getElementById(id); }), mult = document.getElementById('hMult');
+    var card = document.createElement('div'); card.className = 'g-card gp-stats';
+    var outs = src.map(function (el) { var d = document.createElement('div'), sp = document.createElement('span'), b = document.createElement('b'), lb = el.parentNode.querySelector('.h-lb'); sp.textContent = lb ? lb.textContent : ''; d.appendChild(sp); d.appendChild(b); card.appendChild(d); return b; });
+    var om = document.createElement('div'); om.className = 'g-card'; om.style.cssText = 'text-align:center;font-weight:800;color:var(--gold)';
+    S.panelSlot.appendChild(card); S.panelSlot.appendChild(om);
+    function sync() { src.forEach(function (el, i) { outs[i].textContent = el.textContent; }); om.textContent = mult ? mult.textContent : ''; om.style.display = om.textContent ? '' : 'none'; }
+    var mo = new MutationObserver(sync); src.concat(mult ? [mult] : []).forEach(function (el) { mo.observe(el, { childList: true, characterData: true, subtree: true }); }); sync();
+  }
+  // 첫 판 안내(한 번 제대로 하면 다시 안 나옴)와 종료 화면 '최고 대비'
+  var tut = A.get('neowa_slash_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_slash_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function vsBest(sc) { var b = S.best || 0; return ['최고 대비', !b ? '첫 기록' : sc > b ? '+' + A.fmt(sc - b) + ' 신기록' : '-' + A.fmt(b - sc)]; }
+  function tutText(c, a, b, y) {
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle'; var w = Math.max(a.length * 23, b ? b.length * 15 : 0) + 40;
+    c.fillStyle = 'rgba(0,0,0,.55)'; A.rr(c, W / 2 - w / 2, y - 30, w, b ? 82 : 60, 16); c.fill();
+    c.fillStyle = 'rgba(255,255,255,' + (0.8 + Math.sin(S.time * 5) * 0.2) + ')'; c.font = '800 24px "Pretendard Variable",system-ui'; c.fillText(a, W / 2, y);
+    if (b) { c.font = '600 16px "Pretendard Variable",system-ui'; c.fillStyle = 'rgba(255,255,255,.7)'; c.fillText(b, W / 2, y + 30); }
+    c.restore();
+  }
+  var S = new A.Shell({ id: 'slash', W: W, H: H, land: [840, 720], onResize: geo, reset: function () { keys = {}; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { keys[kn(e)] = true; }, keyup: function (e) { keys[kn(e)] = false; } });
 })();
 

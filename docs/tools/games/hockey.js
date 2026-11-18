@@ -2,6 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 90, BOT = 930, GW = 180, MR = 38, PR = 24;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/hockey.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('hockey', function () { return { me: me, cpu: cpu, puck: puck, sMe: sMe, sCpu: sCpu, duo: duo() }; }, function (h) { G3 = h; });
   // 둘이서 모드: 아래 파랑 = P1, 위 빨강 = P2 (화면 절반씩 손가락으로, 키보드는 P1 방향키 / P2 WASD)
   var duo = A.duo('hockey', { solo: ['SCORE', 'ME : CPU', 'ROUND'], duo: ['P1 : P2 승', 'P1 : P2', '판'] }, function () { if (S) hud(); }), tally = [0, 0], duoWin = 0, tTop = null;
   var me, cpu, puck, sMe, sCpu, round, score, pauseT, dyingT, target = null, keys = {}, lvl, stuckT = 0;
@@ -100,6 +104,7 @@
     hud();
   }
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#060a16'; c.fillRect(-10, -10, W + 20, H + 20);

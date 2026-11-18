@@ -2,6 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, PY = 760, RW = 250;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/racer.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('racer', function () { return { car: car, obs: obs, cans: cans, boosts: boosts, dist: dist, boostT: boostT, cx: cx }; }, function (h) { G3 = h; });
   var car, road, obs, cans, boosts, dist, speed, fuel, score, boostT, dyingT, keys = {}, drag = null, phase, curv;
   // 도로 중심선: 거리(px) → x 좌표 (부드러운 곡선)
   function cx(d) { return W / 2 + Math.sin(d * 0.0021) * 110 + Math.sin(d * 0.0007 + 1) * 70 + Math.sin(d * 0.0047) * 30 * Math.min(1, d / 20000); }
@@ -39,6 +43,7 @@
   }
   var maxSp = 0;
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time, d0 = dist || t * 300;
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#0f1a0c'; c.fillRect(-10, -10, W + 20, H + 20);

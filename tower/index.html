@@ -116,6 +116,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, BH = 44, DEPTH = 22;   // 블록 높이, 윗면 깊이(입체감)
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/tower.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('tower', function () { return { stack: stack, cur: cur, cam: cam, chips: chips }; }, function (h) { G3 = h; });
   var stack, cur, cam = 0, camT = 0, chips = [], perfects = 0, combo = 0, floors = 0, dyingT = 0, dir = 1, spd = 0;
 
   var BG = A.sprite('tbg', W, H, function (x) {
@@ -198,6 +202,7 @@
     c.globalAlpha = 1;
   }
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     // 배경은 높이에 따라 천천히 올라감(하늘 → 우주)

@@ -156,6 +156,7 @@
   A.Shell = function (cfg) {
     var S = this;
     A.cur = S; S.cfg = cfg; S.W = cfg.W; S.H = cfg.H; S.id = cfg.id;
+    A.shell = S; // 그래픽 보강(gfx.js)이 지금 게임 틀을 찾을 때 씀
     S.state = 'ready'; S.time = 0;
     S.bestKey = 'neowa_hub_' + cfg.id + '_high';
     S.best = A.getInt(S.bestKey);
@@ -243,7 +244,7 @@
       var w = Math.min(aw, ah * ar), h = w / ar;
       w = Math.floor(w); h = Math.floor(h);
       S.stage.style.setProperty('--sw', w + 'px'); S.stage.style.setProperty('--sh', h + 'px');
-      var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      var dpr = Math.min(window.devicePixelRatio || 1, A.dprCap || 2.5); // 저사양 기기는 gfx.js가 낮춤
       S.canvas.width = Math.round(w * dpr); S.canvas.height = Math.round(h * dpr);
       S.scale = (w * dpr) / S.W; S.cssScale = w / S.W;
       if (cfg.onResize) cfg.onResize(S);
@@ -387,14 +388,19 @@
 
     // 루프
     var last = performance.now();
+    // 짧은 슬로모션(타격감): S.slow(0.3, 0.1) → 0.1초 동안 30% 속도
+    var slowS = 1, slowT = 0;
+    S.slow = function (s, t) { if (S.state === 'playing') { slowS = s; slowT = Math.max(slowT, t); } };
     function frame(now) {
       var dt = Math.min(0.033, (now - last) / 1000); last = now;
+      if (slowT > 0) { slowT -= dt; dt *= slowS; }
       S.time += dt;
       if (S.state === 'playing') cfg.update(dt);
       else if (cfg.idle) cfg.idle(dt);
       var c = S.ctx;
       c.setTransform(S.scale, 0, 0, S.scale, 0, 0);
       cfg.render(c, dt);
+      if (A.post) A.post(c, S, dt); // 화면 후처리(빛 번짐 등, gfx.js)
       requestAnimationFrame(frame);
     }
     if (cfg.init) cfg.init();
@@ -478,6 +484,12 @@
   (function () {
     var s = document.createElement('script');
     s.src = BASE + 'sound.js?v=1';
+    document.head.appendChild(s);
+  })();
+  // 그래픽 보강(파티클·빛 번짐·화면 연출) 따로 불러오기. 없어도 게임은 그대로 돌아감
+  (function () {
+    var s = document.createElement('script');
+    s.src = BASE + 'gfx.js?v=1';
     document.head.appendChild(s);
   })();
   // 설정 파일 읽기

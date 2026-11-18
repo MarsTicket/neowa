@@ -2,6 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, G = 720;           // G = 바닥 높이
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/runner.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('runner', function () { return { P: P, obs: obs, coins: coins, dist: dist, dying: dyingT }; }, function (h) { G3 = h; });
   var P, obs, coins, speed, dist, coinN, score, nextX, holding, dyingT, groundOff, keyHeld, runT;
 
   var BG = A.sprite('rbg', W, H, function (x) {
@@ -109,6 +113,7 @@
   }
 
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.drawImage(BG, -10, -10, W + 20, H + 20);

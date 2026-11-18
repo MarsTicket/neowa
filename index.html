@@ -124,10 +124,12 @@ h2{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4vw,44px);l
 .play svg{width:14px;height:14px}
 .gc .cover{position:absolute;top:0;right:0;bottom:0;left:0;z-index:2}
 .gc .play{position:relative;z-index:3}
+.gc:focus-within{border-color:rgba(var(--cr),.8);box-shadow:0 0 0 2px rgba(var(--cr),.5)}
+.gc .play:focus-visible{outline:3px solid #fff;outline-offset:3px}
 
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 22px}
 .filters button{font:inherit;color:var(--sub);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;min-height:44px;padding:0 18px;font-weight:700;font-size:14px;cursor:pointer}
-.filters button b{font-family:var(--f-num);color:var(--mute);margin-left:4px}
+.filters button b{font-family:var(--f-num);color:#9aa1c8;margin-left:4px}
 .filters button.on{background:var(--ink);color:#05060c;border-color:var(--ink)}
 .filters button.on b{color:#05060c}
 .gc[hidden]{display:none}
@@ -1278,6 +1280,20 @@ footer nav a:hover{color:var(--ink)}
     window.scrollTo(0, Math.max(0, y));
     card.classList.add('flash');
   })();
+  // 키보드: 카드마다 Tab 이 두 번 서지 않게 (카드 전체 링크는 마우스·터치용), 방향키로 카드 사이 이동
+  document.querySelectorAll('.gc .cover').forEach(function (a) { a.setAttribute('tabindex', '-1'); a.setAttribute('aria-hidden', 'true'); });
+  document.querySelectorAll('.gc .play').forEach(function (a) {
+    var h = a.closest('.gc').querySelector('h3'); if (h) a.setAttribute('aria-label', h.textContent + ' 플레이');
+  });
+  gamesBox.addEventListener('keydown', function (e) {
+    if (!/^Arrow/.test(e.key) || !e.target.classList || !e.target.classList.contains('play')) return;
+    var list = [].slice.call(document.querySelectorAll('.gc:not([hidden]) .play')), i = list.indexOf(e.target);
+    if (i < 0) return;
+    var cols = 1, top0 = list[0].getBoundingClientRect().top;
+    while (cols < list.length && Math.abs(list[cols].getBoundingClientRect().top - top0) < 4) cols++;
+    var j = i + ({ ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols })[e.key];
+    if (j >= 0 && j < list.length) { e.preventDefault(); list[j].focus(); list[j].scrollIntoView({ block: 'nearest' }); }
+  });
   // 5) 키보드: / 로 검색
   window.addEventListener('keydown', function (e) {
     if (e.key === '/' && searchIn && !(e.target.closest && e.target.closest('input,textarea'))) { e.preventDefault(); searchIn.focus(); toList(); }

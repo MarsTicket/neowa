@@ -66,7 +66,8 @@
   function tStats(tw) { var b = TT[tw.t], m = Math.pow(1.6, tw.lv - 1); return { rng: (b.rng + 0.3 * (tw.lv - 1)) * CS, rate: b.rate * (1 + 0.15 * (tw.lv - 1)), dmg: b.dmg * m }; }
   function upCost(tw) { return Math.round(TT[tw.t].cost * 0.8 * tw.lv); }
   function build(r, c, t) {
-    if (onPath[r + ',' + c] || towerAt(r, c) || gold < TT[t].cost) { if (gold < TT[t].cost) { A.sfx('hurt'); fx.text(W / 2, 770, '골드가 모자라요', '#ff7a8a', 20); } return; }
+    if (onPath[r + ',' + c]) { A.sfx('tick'); fx.text(W / 2, PY - 14, '길 위에는 지을 수 없어요', '#ffd9c4', 18); return; }
+    if (towerAt(r, c) || gold < TT[t].cost) { if (gold < TT[t].cost) { A.sfx('hurt'); fx.text(W / 2, 770, '골드가 모자라요', '#ff7a8a', 20); } return; }
     gold -= TT[t].cost; var p = cpos(r, c);
     var tw = { r: r, c: c, x: p.x, y: p.y, t: t, lv: 1, cd: 0, a: -Math.PI / 2, spent: TT[t].cost }; towers.push(tw); sel = { tw: tw };
     fx.burst(p.x, p.y, TT[t].col, 14, 180, 0.4, 2.5); A.sfx('power'); A.vibrate(10); hud();

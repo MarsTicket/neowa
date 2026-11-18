@@ -101,6 +101,9 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 61 | 대포 블록 부수기 | `assets/cannon-card.jpg` | ⬜ 임시 캡처 | 공 수십 개로 숫자 블록 부수기 |
 | 62 | 미니 골프 | `assets/golf-card.jpg` | ⬜ 임시 캡처 | 네온 미니 골프 코스 |
 | 63 | 볼링 | `assets/bowling-card.jpg` | ⬜ 임시 캡처 | 핀이 와르르 쓰러지는 볼링 |
+| 64 | 미로 탱크 | `assets/tank-card.jpg` | ⬜ 임시 캡처 | 벽에 튕기는 포탄 탱크 전투 |
+| 65 | 주사위 족보 | `assets/yacht-card.jpg` | ⬜ 임시 캡처 | 주사위 다섯 개와 족보 점수표 |
+| 66 | 타워 디펜스 | `assets/td-card.jpg` | ⬜ 임시 캡처 | 길 옆 네온 타워들이 적을 막는 장면 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -702,4 +705,34 @@ a top-down neon mini golf course on dark green turf with glowing mint borders, a
 
 ```
 a glossy orange bowling ball crashing into ten white bowling pins with red stripes on a polished wooden lane, pins flying apart, warm neon orange glow, low dramatic perspective, dominant glow color #ff9e4d. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 64. 미로 탱크 (`tank`)
+
+- 파일: `assets/tank-card.jpg`
+- 대표색: `#ffd166` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 벽에 튕기는 포탄 탱크 전투
+
+```
+a top-down neon maze with glowing golden walls, a small yellow tank firing a glowing shell that ricochets off a wall corner toward a red enemy tank, dotted bounce trail, sparks, dominant glow color #ffd166. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 65. 주사위 족보 (`yacht`)
+
+- 파일: `assets/yacht-card.jpg`
+- 대표색: `#ff7aa8` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 주사위 다섯 개와 족보 점수표
+
+```
+five glossy white dice with red and black pips tumbling on a dark pink felt table, two dice glowing pink as held, a neat score sheet with rows of numbers in the background, dominant glow color #ff7aa8. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 66. 타워 디펜스 (`td`)
+
+- 파일: `assets/td-card.jpg`
+- 대표색: `#ff7a45` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 길 옆 네온 타워들이 적을 막는 장면
+
+```
+a top-down winding orange path through a dark grid, rows of small neon towers (yellow machine gun, orange cannon, icy blue, pink laser beam) shooting at a line of colorful creeping enemies, a big red boss, dominant glow color #ff7a45. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

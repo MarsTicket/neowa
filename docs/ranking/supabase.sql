@@ -87,7 +87,10 @@ insert into public.score_limits (game, max_score) values
   ('hexa', 2000000),
   ('cannon', 2000000),
   ('golf', 20000),
-  ('bowling', 300)
+  ('bowling', 300),
+  ('tank', 500000),
+  ('yacht', 400),
+  ('td', 5000000)
 on conflict (game) do update set max_score = excluded.max_score;
 
 -- 점수 등록: 이름 정리, 상한 검사, 같은 이름 20초 안 재등록 금지

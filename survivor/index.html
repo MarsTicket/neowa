@@ -130,7 +130,7 @@
   ];
   function reset() {
     P = { x: 0, y: 0, hp: 5, max: 5, inv: 0, rate: 0.45, dmg: 1, multi: 1, spd: 230, orbs: 0, magnet: 90, pierce: 0, fire: 0 };
-    foes = []; bullets = []; gems = []; orbs = []; time = 0; score = 0; kills = 0; lvl = 1; xp = 0; need = 5; choosing = false; spawnT = 0; dyingT = 0; drag = null; keys = {}; bossOut = false; fx.clear(); hud();
+    foes = []; bullets = []; gems = []; orbs = []; time = 0; score = 0; kills = 0; lvl = 1; xp = 0; need = 5; choosing = false; spawnT = 0; dyingT = 0; drag = null; keys = {}; bossOut = false; A.music.tempo(1); A.music.intensity(null); fx.clear(); hud();
   }
   function spawnFoe(boss) {
     var a = Math.random() * Math.PI * 2, d = 560, lv = time / 60;
@@ -161,7 +161,7 @@
     cam.x = A.lerp(cam.x, P.x - W / 2, Math.min(1, dt * 8)); cam.y = A.lerp(cam.y, P.y - H / 2, Math.min(1, dt * 8));
     // 적 생성
     spawnT -= dt; if (spawnT <= 0) { var n = 1 + Math.floor(time / 40); for (var i = 0; i < n; i++) spawnFoe(false); spawnT = Math.max(0.25, 1.1 - time / 200); }
-    if (time > 300 && !bossOut) { bossOut = true; spawnFoe(true); S.banner('보스 출현', 'WARNING'); A.sfx('bigboom'); }
+    if (time > 300 && !bossOut) { bossOut = true; spawnFoe(true); S.banner('보스 출현', 'WARNING'); A.sfx('bigboom'); A.music.intensity(2); A.music.tempo(1.08); }
     // 사격
     P.fire -= dt;
     if (P.fire <= 0 && foes.length) {
@@ -182,11 +182,11 @@
       orbs.forEach(function (o) { if (Math.hypot(o.x - f.x, o.y - f.y) < f.r + 12 && f.hit <= 0) { f.hp -= P.dmg; f.hit = 0.2; } });
       if (f.hp <= 0) {
         foes.splice(i, 1); kills++; score += f.tp === 'boss' ? 5000 : f.tp === 'tank' ? 40 : 10;
-        fx.burst(f.x - cam.x, f.y - cam.y, f.c, f.tp === 'boss' ? 60 : 10, 240, 0.5, 3); A.sfx(f.tp === 'boss' ? 'bigboom' : 'boom', A.rand(1, 1.5));
+        fx.burst(f.x - cam.x, f.y - cam.y, f.c, f.tp === 'boss' ? 60 : 10, 240, 0.5, 3); A.sfx(f.tp === 'boss' ? 'bigboom' : 'boom', A.rand(1, 1.5), A.clamp((f.x - cam.x) / W * 2 - 1, -1, 1));
         gems.push({ x: f.x, y: f.y, v: f.tp === 'boss' ? 30 : f.tp === 'tank' ? 4 : 1 }); continue;
       }
       if (Math.hypot(f.x - P.x, f.y - P.y) < f.r + 12 && P.inv <= 0) {
-        P.hp--; P.inv = 1; fx.shake(8, 0.25); fx.flashIt('#ff2244', 0.4); A.sfx('hurt'); A.vibrate(100);
+        P.hp--; P.inv = 1; fx.shake(8, 0.25); fx.flashIt('#ff2244', 0.4); A.sfx('hurt'); A.vibrate(100); if (P.hp === 1) A.sfx('warn', 1.2);
         if (P.hp <= 0) { dyingT = 1.4; fx.burst(W / 2, H / 2, '#c3ff5e', 50, 420, 0.9, 4); A.sfx('bigboom'); }
       }
       if (Math.hypot(f.x - P.x, f.y - P.y) > 900) foes.splice(i, 1);

@@ -11,15 +11,15 @@
       var bomb = time > 6 && Math.random() < 0.12 + lv * 0.1, x = A.rand(80, W - 80);
       items.push({ x: x, y: H + 40, vx: (W / 2 - x) * A.rand(0.3, 0.9) + A.rand(-60, 60), vy: -A.rand(900, 1150), r: bomb ? 30 : A.rand(30, 40), rot: 0, vr: A.rand(-4, 4), sides: A.irand(3, 6), c: A.pick(COLS), bomb: bomb, cut: false });
     }
-    A.sfx('bounce', 0.6); spawnT = Math.max(0.55, 1.4 - lv * 0.8) * A.rand(0.8, 1.2);
+    A.sfx('whoosh', A.rand(0.8, 1.1), A.clamp(items[items.length - 1].x / W * 2 - 1, -1, 1)); spawnT = Math.max(0.55, 1.4 - lv * 0.8) * A.rand(0.8, 1.2);
   }
   function cut(it, ax, ay, bx, by) {
     it.cut = true;
-    if (it.bomb) { dyingT = 1.2; fx.burst(it.x, it.y, '#ff4d6d', 60, 500, 1, 5); fx.flashIt('#ffffff', 1); fx.shake(16, 0.6); A.sfx('bigboom'); A.vibrate([80, 40, 160]); return; }
+    if (it.bomb) { dyingT = 1.2; fx.burst(it.x, it.y, '#ff4d6d', 60, 500, 1, 5); fx.flashIt('#ffffff', 1); fx.shake(16, 0.6); A.sfx('bigboom', 1, A.clamp(it.x / W * 2 - 1, -1, 1)); A.vibrate([80, 40, 160]); return; }
     sliced++; combo++;
     var ang = Math.atan2(by - ay, bx - ax);
     it.halves = [{ x: it.x, y: it.y, vx: it.vx - Math.sin(ang) * 120, vy: it.vy - 60, a: ang, s: 1 }, { x: it.x, y: it.y, vx: it.vx + Math.sin(ang) * 120, vy: it.vy - 60, a: ang, s: -1 }];
-    fx.burst(it.x, it.y, it.c, 18, 280, 0.5, 3); A.sfx('brick', 1 + combo * 0.08); score += 10 * Math.min(combo, 5);
+    fx.burst(it.x, it.y, it.c, 18, 280, 0.5, 3); A.sfx(combo >= 3 ? 'combo' : 'pop', 1 + Math.min(combo, 12) * 0.05, A.clamp(it.x / W * 2 - 1, -1, 1)); score += 10 * Math.min(combo, 5);
   }
   function segHit(it, ax, ay, bx, by) { var dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy || 1, t = A.clamp(((it.x - ax) * dx + (it.y - ay) * dy) / l, 0, 1); return Math.hypot(ax + dx * t - it.x, ay + dy * t - it.y) < it.r; }
   function swipe(x, y) {
@@ -44,7 +44,7 @@
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['벤 도형', String(sliced)], ['최대 콤보', String(bestCombo)]]); return; }
     for (i = items.length - 1; i >= 0; i--) {
       var it = items[i];
-      if (it.y > H + 80 && it.vy > 0 && !it.cut) { items.splice(i, 1); if (!it.bomb) { miss++; A.sfx('wall'); fx.text(A.clamp(it.x, 40, W - 40), H - 60, '놓침', '#ff4d6d', 20); if (miss >= 3) { dyingT = 1; A.sfx('hurt'); } } }
+      if (it.y > H + 80 && it.vy > 0 && !it.cut) { items.splice(i, 1); if (!it.bomb) { miss++; A.sfx('wrong', 1, A.clamp(it.x / W * 2 - 1, -1, 1)); fx.text(A.clamp(it.x, 40, W - 40), H - 60, '놓침', '#ff4d6d', 20); if (miss >= 3) { dyingT = 1; A.sfx('hurt'); } else if (miss === 2) A.sfx('warn'); } }
       else if (it.cut && it.halves && it.halves[0].y > H + 80) items.splice(i, 1);
     }
     spawnT -= dt; if (spawnT <= 0) spawn();

@@ -128,13 +128,13 @@
   function reset() { P = { x: W / 2, y: H * 0.6, vx: 0, vy: 0, a: -Math.PI / 2, inv: 2, fire: 0 }; rocks = []; shots = []; ores = []; wave = 0; score = 0; lives = 3; power = 1; oreN = 0; dyingT = 0; nextWaveT = 0; drag = null; keys = {}; startWave(); fx.clear(); hud(); }
   function hurt() {
     if (P.inv > 0 || dyingT > 0) return; lives--; P.inv = 2.2; power = Math.max(1, power - 1);
-    fx.burst(P.x, P.y, '#9be7ff', 30, 380, 0.7, 3.5); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(150);
-    if (lives <= 0) { dyingT = 1.3; A.sfx('bigboom'); } hud();
+    fx.burst(P.x, P.y, '#9be7ff', 30, 380, 0.7, 3.5); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt', 1, A.clamp(P.x / W * 2 - 1, -1, 1)); A.vibrate(150);
+    if (lives <= 0) { dyingT = 1.3; A.sfx('bigboom'); } else if (lives === 1) A.sfx('warn', 1.2); hud();
   }
   function breakRock(r, i) {
     rocks.splice(i, 1); score += [0, 100, 50, 20][r.size];
     fx.burst(r.x, r.y, '#b8a48c', 10 + r.size * 6, 200 + r.size * 40, 0.6, 3); fx.ring(r.x, r.y, '#9be7ff', r.r * 2, 0.3);
-    A.sfx(r.size > 1 ? 'boom' : 'hit', 1 + (3 - r.size) * 0.2); fx.shake(r.size * 1.5, 0.12);
+    A.sfx(r.size > 1 ? 'boom' : 'hit', 1 + (3 - r.size) * 0.2, A.clamp(r.x / W * 2 - 1, -1, 1)); fx.shake(r.size * 1.5, 0.12);
     if (r.size > 1) { addRock(r.x, r.y, r.size - 1); addRock(r.x, r.y, r.size - 1); }
     if (Math.random() < 0.18 + (r.size === 3 ? 0.3 : 0)) ores.push({ x: r.x, y: r.y, t: 0 });
   }
@@ -159,22 +159,22 @@
       P.fire = Math.max(0.09, 0.2 - power * 0.02);
       var spread = power >= 3 ? [-0.12, 0, 0.12] : power >= 2 ? [-0.06, 0.06] : [0];
       spread.forEach(function (s) { shots.push({ x: P.x + Math.cos(P.a) * 18, y: P.y + Math.sin(P.a) * 18, vx: Math.cos(P.a + s) * 760, vy: Math.sin(P.a + s) * 760, life: 0.75 }); });
-      A.sfx('shoot');
+      A.sfx('shoot', 1, A.clamp(P.x / W * 2 - 1, -1, 1));
     }
     var i, j;
     for (i = shots.length - 1; i >= 0; i--) { var s = shots[i]; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; wrap(s); if (s.life <= 0) shots.splice(i, 1); }
     for (i = rocks.length - 1; i >= 0; i--) {
       var r = rocks[i]; r.x += r.vx * dt; r.y += r.vy * dt; r.rot += r.vr * dt; wrap(r); if (r.hit > 0) r.hit -= dt;
-      for (j = shots.length - 1; j >= 0; j--) { if (Math.hypot(shots[j].x - r.x, shots[j].y - r.y) < r.r) { shots.splice(j, 1); r.hp--; r.hit = 0.08; if (r.hp <= 0) { breakRock(r, i); break; } else A.sfx('hit'); } }
+      for (j = shots.length - 1; j >= 0; j--) { if (Math.hypot(shots[j].x - r.x, shots[j].y - r.y) < r.r) { shots.splice(j, 1); r.hp--; r.hit = 0.08; if (r.hp <= 0) { breakRock(r, i); break; } else A.sfx('steel', 1 + (3 - r.size) * 0.15, A.clamp(r.x / W * 2 - 1, -1, 1)); } }
       if (rocks[i] === r && Math.hypot(r.x - P.x, r.y - P.y) < r.r * 0.85 + 12) hurt();
     }
     for (i = ores.length - 1; i >= 0; i--) {
       var o = ores[i]; o.t += dt; var od = Math.hypot(P.x - o.x, P.y - o.y);
       if (od < 140) { o.x += (P.x - o.x) * 5 * dt; o.y += (P.y - o.y) * 5 * dt; }
-      if (od < 26) { ores.splice(i, 1); oreN++; score += 30; A.sfx('coin'); if (oreN % 5 === 0 && power < 4) { power++; fx.text(P.x, P.y - 40, '화력 UP', '#ffd166', 20); A.sfx('power'); } }
+      if (od < 26) { ores.splice(i, 1); oreN++; score += 30; A.sfx('coin', 1 + (oreN % 5) * 0.08, A.clamp(o.x / W * 2 - 1, -1, 1)); if (oreN % 5 === 0 && power < 4) { power++; fx.text(P.x, P.y - 40, '화력 UP', '#ffd166', 20); A.sfx('power'); } }
       else if (o.t > 9) ores.splice(i, 1);
     }
-    if (!rocks.length) { nextWaveT += dt; if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2, 'CLEAR +' + wave * 200, '#ffd166', 24); startWave(); } }
+    if (!rocks.length) { nextWaveT += dt; if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2, 'CLEAR +' + wave * 200, '#ffd166', 24); A.sfx('gold'); startWave(); } }
     hud();
   }
   function render(c) {

@@ -9,7 +9,7 @@
   var fakeAt = 0;
   function tap() {
     if (S.state !== 'playing' || endT > 0) return;
-    if (phase === 'wait') { times.push(500); msg = fakeT > 0 ? '속임수에 걸렸어요! +500ms' : '너무 빨라요! +500ms'; fakeT = 0; A.sfx('hurt', 1.4); fx.shake(6, 0.2); phase = 'show'; showT = 1.2; }
+    if (phase === 'wait') { times.push(500); msg = fakeT > 0 ? '속임수에 걸렸어요! +500ms' : '너무 빨라요! +500ms'; fakeT = 0; A.sfx('wrong'); fx.shake(6, 0.2); phase = 'show'; showT = 1.2; }
     else if (phase === 'go') { if (!goAt) goAt = performance.now(); var ms = Math.max(1, Math.round(performance.now() - goAt)); times.push(ms); msg = ms + ' ms'; A.sfx(ms < 250 ? 'gold' : 'coin'); fx.burst(W / 2, 480, ms < 250 ? '#ffd166' : '#7dff9b', 30, 340, 0.6, 4); phase = 'show'; showT = 1.1; A.vibrate(15); }
     hud();
   }
@@ -23,7 +23,7 @@
     if (phase === 'go' && gap > 400) { ready(); msg = '잠깐 멈춰서 다시 측정해요'; return; }
     if (phase === 'wait') { waitT -= dt; if (fakeT > 0) fakeT -= dt;
       if (!fakeDone && waitT <= fakeAt) { fakeDone = true; fakeT = 0.45; A.sfx('tick', 1.3); }
-      if (waitT <= 0) { phase = 'go'; goAt = 0; fakeT = 0; A.sfx('tick', 2); } }
+      if (waitT <= 0) { phase = 'go'; goAt = 0; fakeT = 0; A.sfx('go'); } }
     if (phase === 'show') { showT -= dt; if (showT <= 0) { if (round >= ROUNDS) { endT = 0.6; } else { round++; ready(); } hud(); } }
   }
   function render(c) {

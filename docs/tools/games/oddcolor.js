@@ -15,11 +15,11 @@
   function tap(i) {
     if (S.state !== 'playing' || endT > 0) return;
     if (i === odd) { var fast = qT < 2, pts = 10 * level + (fast ? 5 * level : 0); score += pts; streak = fast ? streak + 1 : 0; // 2초 안에 찾으면 1.5배
-      if (fast) fx.text(W / 2, 180, '빠름! +' + pts, '#ffd166', 22); var g = geo(); fx.burst(g.x0 + (i % n + 0.5) * (g.cs + g.gap), g.y0 + (Math.floor(i / n) + 0.5) * (g.cs + g.gap), '#fff', 16, 260, 0.4, 3); A.sfx('coin', 1 + Math.min(level, 20) * 0.03); level++; time = Math.min(99, time + 1); next(); }
-    else { time -= 3; streak = 0; shakeI = i; shakeT = 0.3; A.sfx('hurt', 1.4); fx.flashIt('#ff2244', 0.2); }
+      if (fast) fx.text(W / 2, 180, '빠름! +' + pts, '#ffd166', 22); var g = geo(); fx.burst(g.x0 + (i % n + 0.5) * (g.cs + g.gap), g.y0 + (Math.floor(i / n) + 0.5) * (g.cs + g.gap), '#fff', 16, 260, 0.4, 3); A.sfx('right', 1 + Math.min(level, 20) * 0.03); level++; time = Math.min(99, time + 1); next(); }
+    else { time -= 3; streak = 0; shakeI = i; shakeT = 0.3; A.sfx('wrong'); fx.flashIt('#ff2244', 0.2); }
     hud();
   }
-  function update(dt) { fx.update(dt); qT += dt; if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 1; A.sfx('over'); } hud(); }
+  function update(dt) { fx.update(dt); qT += dt; if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time > 0 && time <= 5 && Math.ceil(time) < Math.ceil(time + dt)) A.sfx('warn'); if (time <= 0) { time = 0; endT = 1; } hud(); }
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);

@@ -135,7 +135,7 @@
         // 연속 퍼펙트: 2연속부터 +10씩 (최대 +50)
         chain++; bestChain = Math.max(bestChain, chain); pts += 20 + Math.min(50, (chain - 1) * 10); perfect++;
         fx.text(CX, CY - 40, (chain > 1 ? 'PERFECT ×' + chain + ' +' : 'PERFECT +') + pts, '#ffd166', 26); A.sfx('gold', 1 + Math.min(chain, 6) * 0.05);
-      } else { chain = 0; fx.text(CX, CY - 40, '+' + pts, '#fff', 22); A.sfx('coin', 1 + Math.min(hits, 20) * 0.03); }
+      } else { chain = 0; fx.text(CX, CY - 40, '+' + pts, '#fff', 22); A.sfx('right', 1 + Math.min(hits, 20) * 0.03); }
       score += pts; dir *= -1; spd = Math.min(5.4, 2.2 + hits * 0.1);
       var nx = CX + Math.cos(ang) * R, ny = CY + Math.sin(ang) * R;
       fx.burst(nx, ny, '#ff9ecf', 18, 260, 0.5, 3); fx.ring(CX, CY, '#ff9ecf', R * 1.3, 0.4); fx.shake(3, 0.1); A.vibrate(15); pulse = 1;

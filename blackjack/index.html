@@ -143,7 +143,7 @@
   }
   function nextHand() {
     hi++;
-    if (hi < hands.length) { var h = cur(); if (h.c.length < 2) h.c.push(drawC()); A.sfx('click', 1.1); if (h.ace || val(h.c) === 21) nextHand(); return; }
+    if (hi < hands.length) { var h = cur(); if (h.c.length < 2) h.c.push(drawC()); A.sfx('flip', 1.1); if (h.ace || val(h.c) === 21) nextHand(); return; }
     hi = hands.length - 1;
     dl[1].up = true;
     if (hands.every(function (h) { return val(h.c) > 21; })) { finish(); return; } // 모두 버스트면 딜러는 더 받지 않음

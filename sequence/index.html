@@ -136,16 +136,16 @@
       step++; if (step >= seq.length) {
         // 빠르게 따라 누르면 보너스 (한 개당 평균 0.55초 이내)
         var pts = level * 10, quick = level >= 3 && inT / seq.length < 0.55; if (quick) pts += level * 5;
-        score += pts; fx.text(CX, CY - 120, (quick ? '빠른 손! ' : '') + '+' + pts, quick ? '#ffd166' : '#4dffd2', 26); mode = 'wait';
+        score += pts; fx.text(CX, CY - 120, (quick ? '빠른 손! ' : '') + '+' + pts, quick ? '#ffd166' : '#4dffd2', 26); mode = 'wait'; A.sfx('right', 1.5);
         if (level % 5 === 0) fx.burst(CX, CY, '#4dffd2', 30, 360, 0.8, 4);
         later(0.7, function () { if (level % 5 === 0) { S.banner('LEVEL ' + (level + 1), level + 1 === 10 ? '6색 모드' : '더 빠르게'); A.sfx('level'); } nextLevel(); });
       }
     } else if (chances > 0) {
       // 한 번은 봐줌: 같은 순서를 다시 보여 줌
-      chances--; mode = 'wait'; fx.shake(6, 0.3); fx.flashIt('#ffd166', 0.3); A.sfx('hurt'); A.vibrate(80); lit[seq[step]] = 0.9;
+      chances--; mode = 'wait'; fx.shake(6, 0.3); fx.flashIt('#ffd166', 0.3); A.sfx('wrong'); A.vibrate(80); lit[seq[step]] = 0.9;
       fx.text(CX, CY - 120, '한 번 더! 다시 보여 줄게요', '#ffd166', 22);
       later(1.1, function () { mode = 'show'; showI = -1; showT = 0.5; step = 0; inT = 0; hud(); });
-    } else { mode = 'over'; dyingT = 1.2; fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(160); lit[seq[step]] = 1.2; }
+    } else { mode = 'over'; dyingT = 1.2; fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('wrong'); A.sfx('hurt'); A.vibrate(160); lit[seq[step]] = 1.2; }
     hud();
   }
   function update(dt) {

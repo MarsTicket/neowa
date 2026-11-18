@@ -92,31 +92,60 @@
     } }
     hud();
   }
-  function gem(c, it, px, py, s) {
-    var col = COLS[it.c] || '#ffffff', r = CS * 0.38 * s;
-    c.save(); c.translate(px, py);
-    if (it.sp === 'bomb') { var gr = c.createRadialGradient(0, 0, 2, 0, 0, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.5, '#b48cff'); gr.addColorStop(1, '#ff4d6d'); c.fillStyle = gr; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill(); c.restore(); return; }
-    // 빛 번짐이 있는 보석 모양은 색마다 한 번만 그려 둠 (매 프레임 shadowBlur 금지)
-    var r0 = CS * 0.38, spr = A.sprite('gem' + it.c + '_' + CS, r0 * 2 + 24, r0 * 2 + 24, function (x, w) {
-      x.translate(w / 2, w / 2); x.shadowColor = col; x.shadowBlur = 10; x.fillStyle = col; x.beginPath();
-      var sides = [6, 4, 5, 8, 3, 0][it.c % 6];
-      if (!sides) x.arc(0, 0, r0, 0, 7); else for (var k = 0; k < sides; k++) { var a = k / sides * Math.PI * 2 - Math.PI / 2; x[k ? 'lineTo' : 'moveTo'](Math.cos(a) * r0, Math.sin(a) * r0); }
-      x.closePath(); x.fill(); x.shadowBlur = 0;
-      x.fillStyle = 'rgba(255,255,255,.45)'; x.beginPath(); x.ellipse(-r0 * 0.25, -r0 * 0.3, r0 * 0.35, r0 * 0.18, -0.5, 0, 7); x.fill();
+  /* 그림: 면이 깎인 보석(색·모양별 캐시, 매 장면 shadowBlur 없음), 폭탄 보석, 벨벳 보석함 배경 */
+  function gemSpr(ci) {
+    return A.sprite('gem' + ci, 60, 60, function (x) {
+      x.translate(30, 30); var col = COLS[ci], r = 23.5, sides = [6, 4, 5, 8, 3, 0][ci % 6];
+      var gl = x.createRadialGradient(0, 0, r * 0.7, 0, 0, r + 6); gl.addColorStop(0, A.hexA(col, 0.4)); gl.addColorStop(1, A.hexA(col, 0)); x.fillStyle = gl; x.fillRect(-30, -30, 60, 60);
+      var pts = [];
+      if (!sides) { for (var k = 0; k < 16; k++) { var a = k / 16 * Math.PI * 2; pts.push([Math.cos(a) * r, Math.sin(a) * r]); } }
+      else for (k = 0; k < sides; k++) { a = k / sides * Math.PI * 2 - Math.PI / 2; pts.push([Math.cos(a) * r, Math.sin(a) * r]); }
+      var n = pts.length;
+      for (k = 0; k < n; k++) {
+        var p1 = pts[k], p2 = pts[(k + 1) % n], mid = Math.atan2(p1[1] + p2[1], p1[0] + p2[0]), lit = Math.cos(mid + 2.2);
+        x.fillStyle = col; x.beginPath(); x.moveTo(p1[0] * 0.5, p1[1] * 0.5); x.lineTo(p1[0], p1[1]); x.lineTo(p2[0], p2[1]); x.lineTo(p2[0] * 0.5, p2[1] * 0.5); x.closePath(); x.fill();
+        x.fillStyle = lit > 0 ? 'rgba(255,255,255,' + lit * 0.45 + ')' : 'rgba(0,0,40,' + (-lit) * 0.4 + ')'; x.fill();
+      }
+      var tg = x.createLinearGradient(-r * 0.5, -r * 0.5, r * 0.5, r * 0.5); tg.addColorStop(0, '#ffffff'); tg.addColorStop(0.45, col); tg.addColorStop(1, col);
+      x.fillStyle = tg; x.beginPath(); for (k = 0; k < n; k++) x.lineTo(pts[k][0] * 0.5, pts[k][1] * 0.5); x.closePath(); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.5)'; x.lineWidth = 1; x.stroke();
+      x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1.2; x.beginPath(); for (k = 0; k < n; k++) x.lineTo(pts[k][0], pts[k][1]); x.closePath(); x.stroke();
+      x.fillStyle = '#fff'; x.beginPath(); x.ellipse(-r * 0.3, -r * 0.35, r * 0.16, r * 0.07, -0.6, 0, 7); x.fill();
     });
-    A.draw(c, spr, 0, 0, s);
-    if (it.sp === 'h' || it.sp === 'v') { c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); if (it.sp === 'h') { c.moveTo(-r, 0); c.lineTo(r, 0); } else { c.moveTo(0, -r); c.lineTo(0, r); } c.stroke(); }
-    c.restore();
+  }
+  var BOMBG = A.sprite('gembomb', 60, 60, function (x) {
+    x.translate(30, 30); var r = 23;
+    var gl = x.createRadialGradient(0, 0, 4, 0, 0, 30); gl.addColorStop(0, 'rgba(255,255,255,.6)'); gl.addColorStop(1, 'rgba(180,140,255,0)'); x.fillStyle = gl; x.fillRect(-30, -30, 60, 60);
+    var g = x.createRadialGradient(-6, -8, 2, 0, 0, r); g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, '#d0b8ff'); g.addColorStop(0.7, '#b48cff'); g.addColorStop(1, '#ff4d6d');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, r, 0, 7); x.fill();
+    x.strokeStyle = 'rgba(255,255,255,.8)'; x.lineWidth = 2; for (var k = 0; k < 8; k++) { var a = k / 8 * Math.PI * 2; x.beginPath(); x.moveTo(Math.cos(a) * 6, Math.sin(a) * 6); x.lineTo(Math.cos(a) * 14, Math.sin(a) * 14); x.stroke(); }
+  });
+  // 화면 크기(세로/가로)별로 따로 그림
+  function boxSpr() { return A.sprite('gembox' + W + 'x' + H + '_' + GX + '_' + GY + '_' + CS, W, H, function (x) {
+    var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2a0820'); g.addColorStop(1, '#0a020a'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 40; i++) { x.strokeStyle = 'rgba(255,122,168,.04)'; x.lineWidth = 1; x.beginPath(); x.moveTo(-100 + i * 30, 0); x.lineTo(i * 30 + 200, H); x.stroke(); }
+    // 금 테두리 보석함
+    var bx = GX - 14, by = GY - 14, bw = N * CS + 28;
+    x.fillStyle = 'rgba(0,0,0,.5)'; A.rr(x, bx + 4, by + 8, bw, bw, 22); x.fill();
+    var fg = x.createLinearGradient(bx, by, bx + bw, by + bw); fg.addColorStop(0, '#ffe2a0'); fg.addColorStop(0.5, '#a0701a'); fg.addColorStop(1, '#ffd166');
+    x.fillStyle = fg; A.rr(x, bx, by, bw, bw, 22); x.fill();
+    x.fillStyle = '#3a0a28'; A.rr(x, bx + 6, by + 6, bw - 12, bw - 12, 17); x.fill();
+    for (var yy = 0; yy < N; yy++) for (var xx = 0; xx < N; xx++) { var cg = x.createRadialGradient(GX + (xx + 0.5) * CS, GY + (yy + 0.5) * CS, 4, GX + (xx + 0.5) * CS, GY + (yy + 0.5) * CS, CS * 0.6); cg.addColorStop(0, (xx + yy) % 2 ? '#4a1236' : '#561640'); cg.addColorStop(1, (xx + yy) % 2 ? '#2a0820' : '#320a26'); x.fillStyle = cg; A.rr(x, GX + xx * CS + 2, GY + yy * CS + 2, CS - 4, CS - 4, 10); x.fill(); }
+    [[bx + 4, by + 4], [bx + bw - 4, by + 4], [bx + 4, by + bw - 4], [bx + bw - 4, by + bw - 4]].forEach(function (p) { x.fillStyle = '#fff3c8'; x.beginPath(); x.arc(p[0], p[1], 5, 0, 7); x.fill(); x.fillStyle = '#c08a20'; x.beginPath(); x.arc(p[0], p[1], 3, 0, 7); x.fill(); });
+  }); }
+  function gem(c, it, px, py, s) {
+    var r = CS * 0.38 * s, k = r / 23.5;
+    if (it.sp === 'bomb') { A.draw(c, BOMBG, px, py, k * (1 + Math.sin(S.time * 6) * 0.05), S.time * 2); return; }
+    A.draw(c, gemSpr(it.c % 6), px, py, k);
+    if (it.sp === 'h' || it.sp === 'v') { c.save(); c.translate(px, py); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 3; c.beginPath(); var w = r * (0.8 + Math.sin(S.time * 8) * 0.2); if (it.sp === 'h') { c.moveTo(-w, 0); c.lineTo(w, 0); } else { c.moveTo(0, -w); c.lineTo(0, w); } c.stroke(); c.restore(); }
   }
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    var bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1c0614'); bg.addColorStop(1, '#08020a'); c.fillStyle = bg; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(boxSpr(), -10, -10, W + 20, H + 20);
     if (!g) { fill(); for (var yy = 0; yy < N; yy++) for (var xx = 0; xx < N; xx++) g[yy][xx].yy = yy; }
-    c.fillStyle = 'rgba(255,122,168,.07)'; A.rr(c, GX - 8, GY - 8, N * CS + 16, N * CS + 16, 18); c.fill();
     c.save(); c.beginPath(); c.rect(GX - 8, GY - 8, N * CS + 16, N * CS + 16); c.clip();
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
-      c.fillStyle = (x + y) % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)'; c.fillRect(GX + x * CS, GY + y * CS, CS, CS);
       var it = g[y][x], px = GX + (x + 0.5) * CS, py = GY + (y + 0.5) * CS + (it.dy || 0);
       if (swapAnim && (it === swapAnim.a || it === swapAnim.b)) { var e = swapAnim.back ? Math.sin(swapAnim.t * Math.PI) : swapAnim.t; var fromX = it === swapAnim.a ? swapAnim.ax : swapAnim.bx, fromY = it === swapAnim.a ? swapAnim.ay : swapAnim.by, toX = it === swapAnim.a ? swapAnim.bx : swapAnim.ax, toY = it === swapAnim.a ? swapAnim.by : swapAnim.ay; if (swapAnim.back) { px = GX + (A.lerp(fromX, toX, e) + 0.5) * CS; py = GY + (A.lerp(fromY, toY, e) + 0.5) * CS; } else { px = GX + (A.lerp(fromX, toX, e) + 0.5) * CS; py = GY + (A.lerp(fromY, toY, e) + 0.5) * CS; } }
       var hs = hintMv && ((hintMv[0] === x && hintMv[1] === y) || (hintMv[2] === x && hintMv[3] === y)) ? 1 + 0.1 * Math.abs(Math.sin(S.time * 6)) : 1;

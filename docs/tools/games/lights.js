@@ -48,17 +48,36 @@
     if (failT > 0) { failT -= dt; if (failT <= 0) { setup(); S.banner('STAGE ' + stage, '다시 도전 · ♥' + lives); hud(); } }
     if (done > 0) { done -= dt; if (done <= 0) { stage++; setup(); S.banner('STAGE ' + stage, N + '×' + N + ' · 목표 ' + par + '번'); hud(); } }
   }
-  // 켜진 칸의 빛 번짐은 미리 한 번만 그려 둠 (매 프레임 shadowBlur 금지)
-  function litSprite() { var m = 30; return A.sprite('lights' + CS, CS + m, CS + m, function (x) { x.shadowColor = '#ffe066'; x.shadowBlur = 26; x.fillStyle = '#ffe066'; A.rr(x, m / 2 + 6, m / 2 + 6, CS - 12, CS - 12, 14); x.fill(); }); }
+  /* 그림: 켜진 등(유리 판 + 빛 번짐), 꺼진 등, 따뜻한 벽 배경 (매 장면 shadowBlur 없앰) */
+  function lampSpr(cs, lit) {
+    return A.sprite('lt' + (lit ? 1 : 0) + cs, cs + 40, cs + 40, function (x) {
+      x.translate(20, 20); var p = 6, w = cs - 12;
+      if (lit) { var gl = x.createRadialGradient(cs / 2, cs / 2, w * 0.3, cs / 2, cs / 2, cs * 0.5 + 20); gl.addColorStop(0, 'rgba(255,224,102,.55)'); gl.addColorStop(1, 'rgba(255,224,102,0)'); x.fillStyle = gl; x.fillRect(-20, -20, cs + 40, cs + 40); }
+      x.fillStyle = 'rgba(0,0,0,.45)'; A.rr(x, p + 2, p + 4, w, w, 14); x.fill();
+      x.fillStyle = lit ? '#c89a2a' : '#3a3218'; A.rr(x, p, p, w, w, 14); x.fill();
+      var g = x.createRadialGradient(cs / 2 - w * 0.15, cs / 2 - w * 0.2, 2, cs / 2, cs / 2, w * 0.7);
+      if (lit) { g.addColorStop(0, '#fffbe0'); g.addColorStop(0.45, '#ffe066'); g.addColorStop(1, '#ffb020'); } else { g.addColorStop(0, '#2e2a16'); g.addColorStop(1, '#16130a'); }
+      x.fillStyle = g; A.rr(x, p + 4, p + 4, w - 8, w - 8, 11); x.fill();
+      x.strokeStyle = lit ? 'rgba(255,255,255,.35)' : 'rgba(255,224,102,.08)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(cs / 2, p + 8); x.lineTo(cs / 2, cs - p - 8); x.moveTo(p + 8, cs / 2); x.lineTo(cs - p - 8, cs / 2); x.stroke();
+      x.fillStyle = lit ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.06)'; A.rr(x, p + 10, p + 8, w - 20, 5, 2.5); x.fill();
+    });
+  }
+  // 화면 크기(세로/가로)별로 따로 그림
+  function wallSpr() { return A.sprite('ltwall' + W + 'x' + H, W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, H * 0.45, 40, W / 2, H * 0.45, 640); g.addColorStop(0, '#2a2208'); g.addColorStop(1, '#070500'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(255,224,102,.04)'; x.lineWidth = 1; for (var yy = 0; yy < H; yy += 24) { x.beginPath(); x.moveTo(0, yy); x.lineTo(W, yy); x.stroke(); }
+  }); }
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#0d0b02'; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(wallSpr(), -10, -10, W + 20, H + 20);
     if (!on) { stage = 1; setup(); }
-    for (var i = 0; i < N * N; i++) {
-      var x = i % N, y = Math.floor(i / N), px = GX + x * CS, py = GY + y * CS, lit = on[i];
-      if (lit) { A.draw(c, litSprite(), px + CS / 2, py + CS / 2); c.fillStyle = 'rgba(255,255,255,.5)'; A.rr(c, px + 14, py + 12, CS - 28, 6, 3); c.fill(); }
-      else { c.fillStyle = '#1e1b0c'; A.rr(c, px + 6, py + 6, CS - 12, CS - 12, 14); c.fill(); }
+    var cs = Math.round(CS), L1 = lampSpr(cs, true), L0 = lampSpr(cs, false);
+    c.fillStyle = 'rgba(0,0,0,.35)'; A.rr(c, GX - 8, GY - 8, N * CS + 16, N * CS + 16, 20); c.fill();
+    for (var i = 0; i < N * N; i++) { var x = i % N, y = Math.floor(i / N); if (!on[i]) c.drawImage(L0, GX + x * CS - 20, GY + y * CS - 20, CS + 40, CS + 40); }
+    for (i = 0; i < N * N; i++) {
+      var x2 = i % N, y2 = Math.floor(i / N), px = GX + x2 * CS, py = GY + y2 * CS;
+      if (on[i]) c.drawImage(L1, px - 20, py - 20, CS + 40, CS + 40);
       if (pulse[i] > 0) { c.strokeStyle = 'rgba(94,231,255,' + Math.min(1, pulse[i] * 2) + ')'; c.lineWidth = 4; A.rr(c, px + 4, py + 4, CS - 8, CS - 8, 16); c.stroke(); }
     }
     if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 3; A.rr(c, GX + cur.x * CS + 2, GY + cur.y * CS + 2, CS - 4, CS - 4, 16); c.stroke(); }

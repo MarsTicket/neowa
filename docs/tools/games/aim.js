@@ -9,6 +9,16 @@
   var holdT = 0, tg, time, score, hits, shots, combo, spawnT, endT, cx = 270, cy = 520, keys = {}, kbd = false, best = 0;
   function reset() { tg = []; keys = {}; best = 0; time = 30; score = 0; hits = 0; shots = 0; combo = 0; spawnT = 0; endT = 0; fx.clear(); hud(); }
   // 과녁끼리 겹치지 않게 자리를 고름. 가끔 작은 황금 과녁(3배), 후반엔 움직이는 과녁
+  // 첫 플레이 안내: 처음 한 번만 판 위에 짧은 안내를 띄우고, 첫 올바른 행동을 하면 사라짐 (neowa_aim_tut = 1)
+  var tut = A.get('neowa_aim_tut', '0') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_aim_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function tutBox(c, x, y, txt, size, tx, ty) { // 글 상자 + (tx, ty)에 깜빡이는 손가락 원
+    c.save(); c.font = '700 ' + size + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(txt).width + size * 1.6; c.fillStyle = 'rgba(0,0,0,.78)'; A.rr(c, x - w / 2, y - size, w, size * 2, size * 0.7); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5; c.stroke(); c.fillStyle = '#fff'; c.fillText(txt, x, y + 1);
+    if (tx != null) { var k = (S.time * 1.6) % 1; c.strokeStyle = 'rgba(255,255,255,' + (1 - k) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(tx, ty, 10 + k * 26, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(tx, ty, 8, 0, 7); c.fill(); }
+    c.restore(); }
   function spawn() { var lv = Math.min(1, (30 - time) / 30), x, y, ok, tries = 0, gold = Math.random() < 0.12, life = (1.6 - lv * 0.6) * (gold ? 0.75 : 1), r = (52 - lv * 14) * (gold ? 0.7 : 1);
     do { x = A.rand(60, W - 60); y = A.rand(TOP + 60, H - 70); ok = tg.every(function (t) { return Math.hypot(t.x - x, t.y - y) > t.r + r + 20; }); } while (!ok && ++tries < 12);
     var mv = lv > 0.4 && Math.random() < 0.35 ? A.rand(60, 140) * (Math.random() < 0.5 ? -1 : 1) : 0;
@@ -16,7 +26,7 @@
   function shoot(p) {
     if (S.state !== 'playing' || endT > 0) return; shots++;
     for (var i = tg.length - 1; i >= 0; i--) { var t = tg[i], k = t.life / t.max, r = t.r * (0.4 + 0.6 * k), d = Math.hypot(p.x - t.x, p.y - t.y);
-      if (d < r) { tg.splice(i, 1); hits++; combo++; var acc = 1 - d / r, pts = (Math.round(20 + acc * 80) + combo * 2) * (t.gold ? 3 : 1); score += pts; best = Math.max(best, combo); if (combo > 0 && combo % 10 === 0) { fx.text(W / 2, 170, combo + ' 연속 명중!', '#ffd166', 28); A.sfx('level'); } fx.burst(t.x, t.y, acc > 0.7 ? '#ffd166' : '#5ee7ff', 16, 260, 0.4, 3); fx.text(t.x, t.y - 30, (t.gold ? '황금 ' : acc > 0.8 ? '정중앙 ' : '') + '+' + pts, acc > 0.8 ? '#ffd166' : '#fff', 20); A.sfx(acc > 0.8 ? 'gold' : 'hit', 1.2 + acc * 0.4); hud(); return; } }
+      if (d < r) { tutDone(); tg.splice(i, 1); hits++; combo++; var acc = 1 - d / r, pts = (Math.round(20 + acc * 80) + combo * 2) * (t.gold ? 3 : 1); score += pts; best = Math.max(best, combo); if (combo > 0 && combo % 10 === 0) { fx.text(W / 2, 170, combo + ' 연속 명중!', '#ffd166', 28); A.sfx('level'); } fx.burst(t.x, t.y, acc > 0.7 ? '#ffd166' : '#5ee7ff', 16, 260, 0.4, 3); fx.text(t.x, t.y - 30, (t.gold ? '황금 ' : acc > 0.8 ? '정중앙 ' : '') + '+' + pts, acc > 0.8 ? '#ffd166' : '#fff', 20); A.sfx(acc > 0.8 ? 'gold' : 'hit', 1.2 + acc * 0.4); hud(); return; } }
     combo = 0; A.sfx('wall', 1.5); fx.burst(p.x, p.y, '#ff4d6d', 4, 100, 0.2, 2); hud();
   }
   function update(dt) {
@@ -37,6 +47,7 @@
     c.strokeStyle = 'rgba(94,231,255,.06)'; for (var x = 0; x < W; x += 45) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); } for (var y = 0; y < H; y += 45) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
     var list = tg || [{ x: 270, y: 480, r: 52, life: 1, max: 1 }];
     list.forEach(function (t) { var k = t.life / t.max, r = t.r * (0.4 + 0.6 * k); (t.gold ? ['#ffd166', '#fff6d6', '#ffb020', '#fff6d6', '#ff7a00'] : ['#ff4d6d', '#fff', '#ff4d6d', '#fff', '#ffd166']).forEach(function (col, i) { c.fillStyle = col; c.beginPath(); c.arc(t.x, t.y, r * (1 - i * 0.2), 0, 7); c.fill(); }); c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 3; c.beginPath(); c.arc(t.x, t.y, t.r + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); c.stroke(); });
+    if (tut && tg && S.state === 'playing') { var t0 = tg[0]; tutBox(c, W / 2, H - 50, isTouch() ? '과녁이 작아지기 전에 탭!' : '과녁 클릭 · 또는 방향키로 조준하고 Space', land ? 22 : 20, t0 ? t0.x : null, t0 ? t0.y : null); }
     if (land && tg) { c.fillStyle = 'rgba(94,231,255,.15)'; c.fillRect(0, 0, W, 6); c.fillStyle = time < 10 ? '#ff4d6d' : '#5ee7ff'; c.fillRect(0, 0, W * Math.max(0, time / 30), 6); } // 가로: 남은 시간 막대
     if (kbd && tg) { c.strokeStyle = '#5ee7ff'; c.lineWidth = 2.5; c.beginPath(); c.arc(cx, cy, 16, 0, 7); c.moveTo(cx - 26, cy); c.lineTo(cx - 8, cy); c.moveTo(cx + 8, cy); c.lineTo(cx + 26, cy); c.moveTo(cx, cy - 26); c.lineTo(cx, cy - 8); c.moveTo(cx, cy + 8); c.lineTo(cx, cy + 26); c.stroke(); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);

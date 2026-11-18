@@ -116,6 +116,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, R = 13, G = 900;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/pinball.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('pinball', function () { return { ball: ball, balls: balls, lit: lit, FL: FL, B: BUMPERS, saveT: saveT }; }, function (h) { G3 = h; });
   var ball, balls, score, mult, lit, flip, dyingT, launchT, keysL = false, keysR = false, touchL = false, touchR = false, saveT;
   // 벽 선분 [x1,y1,x2,y2]
   var WALLS = [[30, 960, 30, 230], [30, 230, 120, 110], [120, 110, 420, 110], [420, 110, 510, 230], [510, 230, 510, 960],
@@ -170,6 +174,7 @@
   }
   var bestMult = 1;
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1a0526'); g.addColorStop(1, '#07020c'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);

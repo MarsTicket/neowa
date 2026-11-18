@@ -2,6 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 70;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/rocks.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('rocks', function () { return { P: P, rocks: rocks, shots: shots, ores: ores, dying: dyingT }; }, function (h) { G3 = h; });
   var P, rocks, shots, ores, wave, score, lives, power, oreN, dyingT, drag = null, keys = {}, nextWaveT;
   function wrap(o) { if (o.x < -40) o.x += W + 80; if (o.x > W + 40) o.x -= W + 80; if (o.y < TOP - 40) o.y += H - TOP + 80; if (o.y > H + 40) o.y -= H - TOP + 80; }
   function rockShape(r) { var pts = [], n = 11; for (var i = 0; i < n; i++) pts.push(r * A.rand(0.72, 1.08)); return pts; }
@@ -64,6 +68,7 @@
     hud();
   }
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#03060f'; c.fillRect(-10, -10, W + 20, H + 20);

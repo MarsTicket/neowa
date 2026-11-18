@@ -349,7 +349,7 @@ var fx = new A.FX();
 - `fx.shake(12 이상)` 같은 큰 충격에는 0.09초 슬로모션이 자동으로 들어감. 직접 쓰려면 `S.slow(0.3, 0.1)`
 - 파티클 개수를 품질에 맞추려면 `A.gfx ? A.gfx.n(20) : 20`
 
-**3D 그래픽 (`g3d.js` + `assets/arcade/3d/<id>.js`)**: 지금 3D 게임은 tower, lanes, orbit, hockey, runner 5개입니다.
+**3D 그래픽 (`g3d.js` + `assets/arcade/3d/<id>.js`)**: 지금 3D 게임은 tower, lanes, orbit, hockey, runner, pinball, racer, rocks 8개입니다.
 - 게임 규칙·조작·점수는 원래 2D 코드 그대로. 그림만 3D 장면 파일이 그립니다. 그래서 **3D를 못 쓰는 기기(웹GL 없음, 품질 '낮음', 불러오기 실패, 계속 느림)에서는 원래 2D 그림이 그대로 나옵니다.** 직접 끄려면 localStorage `neowa_3d` = `0`
 - 게임 코드에 넣는 것 (`tower.js` 참고): `A.load3D('<id>', 그릴 때 필요한 상태를 돌려주는 함수, function (h) { G3 = h; })` 와 render 맨 앞의 `if (G3.draw(c, fx)) return;`
 - 3D 장면 파일은 `Arcade.G3D.define('<id>', function (X) { ...; return { camera, update(state, dt, shake, time), map? }; })`

@@ -130,10 +130,16 @@
     ['.11....11.', '1221..1221', '1222112221', '.12222221.', '..122*21..', '...1221...', '....11....'],
     ['#1#1#1#1#1', '1*1111*111', '2222222222', '#3#3##3#3#', '1111111111', '*22222222*'],
     ['3333333333', '3#######.3', '3.2222222.', '3.2*11*2.3', '.2222222.3', '3.#######3', '3333333333'],
-    ['*1*1*1*1*1', '2323232323', '3232323232', '#2#2#2#2#2', '1111111111', '2*2*2*2*2*', '3333333333']
+    ['*1*1*1*1*1', '2323232323', '3232323232', '#2#2#2#2#2', '1111111111', '2*2*2*2*2*', '3333333333'],
+    ['....11....', '...1221...', '..12##21..', '.123**321.', '..12##21..', '...1221...', '....11....'],
+    ['1111111111', '##.####.##', '2222222222', '.##.##.##.', '3*33333*33'],
+    ['..1....1..', '...1..1...', '..222222..', '.22.22.22.', '3333333333', '3.333333.3', '3.3....3.3'],
+    ['*.*.*.*.*.', '.3.3.3.3.3', '2.2.2.2.2.', '.#.#.#.#.#', '1.1.1.1.1.', '.2*2.2*2.2']
   ];
   var ROWC = ['#ff4d6d', '#ff7a45', '#ffb547', '#ffe066', '#7dff9b', '#5ee7ff', '#7aa2ff', '#b48cff'];
   var ITEMS = { W: '#5ee7ff', M: '#7dff9b', F: '#ff7a45', S: '#b48cff', L: '#ff4d6d' };
+  // 첫 판 안내: 처음 패들을 움직일 때까지 (neowa_breakout_tut = 1 이면 안 보임)
+  var tut = A.get('neowa_breakout_tut', '') !== '1', tutMove = 0;
   var bricks, balls, paddle, drops, score, lives, level, loop, combo, best, keys = {}, ptr = null, launchT, slowT, fireT, wideT, clearT, total, broken, dyingT, idleT = 0, noBreakT = 0;
 
   function brickSprite(col, hp) {
@@ -279,6 +285,7 @@
     paddle.w = A.lerp(paddle.w, paddle.tw, Math.min(1, dt * 10));
     paddle.x = A.clamp(paddle.x, paddle.w / 2 + 6, W - paddle.w / 2 - 6);
     paddle.vx = (paddle.x - ox) / dt;
+    if (tut) { tutMove += Math.abs(paddle.x - ox); if (tutMove > 70) { tut = false; A.set('neowa_breakout_tut', '1'); } }
     if (slowT > 0) slowT -= dt;
     if (fireT > 0) fireT -= dt;
     // 자동 발사
@@ -416,6 +423,17 @@
       c.save(); c.globalAlpha = 0.5 + Math.sin(t * 5) * 0.3; c.fillStyle = '#fff'; c.font = '700 15px "Pretendard Variable",system-ui';
       c.textAlign = 'center'; c.fillText(document.body.classList.contains('touch') ? '화면을 탭하면 발사' : '탭 또는 스페이스로 발사', W / 2, PY - 60); c.restore();
       c.setLineDash([4, 6]); c.strokeStyle = 'rgba(255,255,255,.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(paddle.x, PY - 24); c.lineTo(paddle.x, PY - 44); c.stroke(); c.setLineDash([]);
+    }
+    if (tut && S.state === 'playing' && clearT <= 0 && dyingT <= 0) {
+      var tm = document.body.classList.contains('touch') ? '화면을 좌우로 끌어 패들 이동' : '←→·A D 또는 마우스로 패들 이동';
+      c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      var tw = c.measureText(tm).width + 40, ty = PY - 130; c.fillStyle = 'rgba(20,10,4,.9)'; A.rr(c, W / 2 - tw / 2, ty - 23, tw, 46, 23); c.fill();
+      c.strokeStyle = '#ffb547'; c.lineWidth = 2; c.globalAlpha = 0.6 + Math.sin(t * 5) * 0.4; c.stroke(); c.globalAlpha = 1;
+      c.fillStyle = '#fff'; c.fillText(tm, W / 2, ty + 1);
+      var ax = Math.sin(t * 3) * 50; c.fillStyle = '#ffb547';
+      c.beginPath(); c.moveTo(W / 2 + ax - 34, ty + 44); c.lineTo(W / 2 + ax - 18, ty + 36); c.lineTo(W / 2 + ax - 18, ty + 52); c.fill();
+      c.beginPath(); c.moveTo(W / 2 + ax + 34, ty + 44); c.lineTo(W / 2 + ax + 18, ty + 36); c.lineTo(W / 2 + ax + 18, ty + 52); c.fill();
+      c.restore();
     }
     // 패들
     if (paddle && dyingT <= 0) {

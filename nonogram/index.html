@@ -152,6 +152,21 @@
     return g;
   }
   function uniqueByLines(rc, cc) { var g = solveLines(rc, cc); return !!g && g.every(function (v) { return v !== 0; }); }
+  // 판 위치·칸 크기 (세로 540x960 / 가로 720x720 정사각형: 단서 포함 판이 화면을 꽉 채움)
+  function place() {
+    if (!rowC) return;
+    var maxR = Math.max.apply(null, rowC.map(function (a) { return a.length; })), maxC = Math.max.apply(null, colC.map(function (a) { return a.length; }));
+    var tw = N + maxR * 0.55, th = N + maxC * 0.75;
+    if (land) {
+      CS = Math.floor(Math.min((W - 40) / tw, (H - 40) / th));
+      GX = Math.round((W - tw * CS) / 2 + maxR * CS * 0.55); GY = Math.round((H - th * CS) / 2 + maxC * CS * 0.75);
+    } else {
+      CS = Math.floor(Math.min(500 / tw, 640 / th));
+      GX = Math.round((W - N * CS - maxR * CS * 0.55) / 2 + maxR * CS * 0.55); GY = Math.round(110 + maxC * CS * 0.75 + 10);
+    }
+  }
+  var land = false;
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; place(); }
   function setup() {
     N = SIZES[diff];
     for (var tries = 0; tries < 80; tries++) {
@@ -169,9 +184,7 @@
       var gi = open[Math.floor(Math.random() * open.length)]; givens.push(gi);
       known[gi] = sol[gi] ? 1 : -1; known = solveLines(rowC, colC, known);
     }
-    var maxR = Math.max.apply(null, rowC.map(function (a) { return a.length; })), maxC = Math.max.apply(null, colC.map(function (a) { return a.length; }));
-    CS = Math.floor(Math.min(500 / (N + maxR * 0.55), 640 / (N + maxC * 0.75)));
-    GX = Math.round((W - N * CS - maxR * CS * 0.55) / 2 + maxR * CS * 0.55); GY = Math.round(110 + maxC * CS * 0.75 + 10);
+    place();
     st = []; for (i = 0; i < N * N; i++) st.push(0);
     givens.forEach(function (k) { st[k] = sol[k] ? 1 : -1; });
   }
@@ -232,18 +245,30 @@
     for (i = 0; i <= N; i++) { c.lineWidth = i % 5 === 0 ? 2.5 : 1; c.beginPath(); c.moveTo(GX + i * CS, GY); c.lineTo(GX + i * CS, GY + N * CS); c.stroke(); c.beginPath(); c.moveTo(GX, GY + i * CS); c.lineTo(GX + N * CS, GY + i * CS); c.stroke(); }
     if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 3; c.strokeRect(GX + cur.x * CS + 1, GY + cur.y * CS + 1, CS - 2, CS - 2); }
     var by = Math.max(GY + N * CS + 30, 800);
-    [['칠하기', !xMode], ['✕ 빈칸', xMode], ['힌트 ' + hints, false]].forEach(function (b, k) { var bx = btnX(k), off = k === 2 && (!hints || S.state !== 'playing'); c.fillStyle = b[1] ? '#ff9e4d' : k === 2 ? 'rgba(94,231,255,' + (off ? 0.04 : 0.12) + ')' : 'rgba(255,255,255,.06)'; A.rr(c, bx, by, BW, 60, 16); c.fill(); c.fillStyle = b[1] ? '#2a1200' : k === 2 ? (off ? 'rgba(255,255,255,.3)' : '#5ee7ff') : '#ffd6b0'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(b[0], bx + BW / 2, by + 31); });
+    if (!land) [['칠하기', !xMode], ['✕ 빈칸', xMode], ['힌트 ' + hints, false]].forEach(function (b, k) { var bx = btnX(k), off = k === 2 && (!hints || S.state !== 'playing'); c.fillStyle = b[1] ? '#ff9e4d' : k === 2 ? 'rgba(94,231,255,' + (off ? 0.04 : 0.12) + ')' : 'rgba(255,255,255,.06)'; A.rr(c, bx, by, BW, 60, 16); c.fill(); c.fillStyle = b[1] ? '#2a1200' : k === 2 ? (off ? 'rgba(255,255,255,.3)' : '#5ee7ff') : '#ffd6b0'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(b[0], bx + BW / 2, by + 31); });
     btnY = by;
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var btnY = 800, BW = 160;
   function btnX(k) { return W / 2 - 250 + k * 170; }
-  function hud() { document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = mistakes + '/3'; document.getElementById('hC').textContent = fmt(time); document.getElementById('hMult').textContent = N + '×' + N; }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = mistakes + '/3'; document.getElementById('hC').textContent = fmt(time); document.getElementById('hMult').textContent = N + '×' + N; paintPanel(); }
+  var pEl = {};
+  function paintPanel() {
+    if (!pEl.score) return;
+    var play = S && S.state === 'playing';
+    // 매 프레임 불리므로 바뀐 것만 다시 씀
+    var key = (mistakes != null ? score() + '|' + mistakes + '|' + Math.floor(time) : '-') + '|' + xMode + '|' + hints + '|' + play;
+    if (key === pEl.last) return; pEl.last = key;
+    if (mistakes != null) { pEl.score.textContent = A.fmt(score()); pEl.mis.textContent = mistakes + '/3'; pEl.time.textContent = fmt(time); }
+    pEl.mode.innerHTML = xMode ? '✕ 빈칸 표시 중 <span class="cnt">눌러서 칠하기로</span>' : '■ 칠하는 중 <span class="cnt">눌러서 ✕로</span>';
+    pEl.mode.disabled = !play; pEl.hintN.textContent = hints; pEl.hint.disabled = !play || hints <= 0;
+  }
+  function toggleMode() { if (S.state !== 'playing') return; xMode = !xMode; A.sfx('click'); paintPanel(); }
   var stage = document.getElementById('stage');
   function cellAt(p) { var x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); return x >= 0 && y >= 0 && x < N && y < N ? y * N + x : -1; }
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e);
-    if (p.y > btnY && p.y < btnY + 60) { var bk = Math.floor((p.x - btnX(0) + 5) / 170); if (bk === 0 || bk === 1) { xMode = bk === 1; A.sfx('click'); } else if (bk === 2) useHint(); return; }
+    if (!land && p.y > btnY && p.y < btnY + 60) { var bk = Math.floor((p.x - btnX(0) + 5) / 170); if (bk === 0 || bk === 1) { xMode = bk === 1; A.sfx('click'); } else if (bk === 2) useHint(); return; }
     var i = cellAt(p); if (i < 0) return; paint = { id: e.pointerId, x: e.button === 2 || xMode, i0: i, axis: 0 }; if (act(i, paint.x) === 'miss') paint.dead = true; try { stage.setPointerCapture(e.pointerId); } catch (er) {}
   });
   // 끌어서 칠하기: 처음 움직인 방향(가로/세로) 한 줄로만, 실수가 나면 그 손짓은 멈춤 (한 번에 실수 여러 개 방지)
@@ -259,11 +284,20 @@
   var dbtns = document.querySelectorAll('[data-diff]');
   function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_nonogram_diff', diff); A.sfx('click'); pd(); sol = null; st = null; }); }); pd();
-  var S = new A.Shell({ id: 'nonogram', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'nonogram', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { kbd = true; var k = e.key;
       if (k === 'ArrowLeft' || k === 'a') cur.x = Math.max(0, cur.x - 1); if (k === 'ArrowRight' || k === 'd') cur.x = Math.min(N - 1, cur.x + 1);
       if (k === 'ArrowUp' || k === 'w') cur.y = Math.max(0, cur.y - 1); if (k === 'ArrowDown' || k === 's') cur.y = Math.min(N - 1, cur.y + 1);
       if ((k === ' ' || k === 'Enter') && !e.repeat) act(cur.y * N + cur.x, false); if ((k === 'x' || k === 'X') && !e.repeat) act(cur.y * N + cur.x, true); if ((k === 'h' || k === 'H') && !e.repeat) useHint(); } });
+  // 가로 화면 오른쪽 패널: 점수판 + 칠하기/빈칸 전환 큰 버튼 + 힌트
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>MISTAKE</span><b id="pkMis">0/3</b></div><div><span>TIME</span><b id="pkTime">0:00</b></div></div>' +
+    '<button class="gp-btn main" id="pkMode"></button>' +
+    '<button class="gp-btn" id="pkHint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>힌트 <span class="cnt" id="pkHintN">3</span></button>';
+  pEl = { score: document.getElementById('pkScore'), mis: document.getElementById('pkMis'), time: document.getElementById('pkTime'), mode: document.getElementById('pkMode'), hint: document.getElementById('pkHint'), hintN: document.getElementById('pkHintN') };
+  pEl.mode.addEventListener('click', toggleMode); pEl.hint.addEventListener('click', function () { useHint(); paintPanel(); });
+  new MutationObserver(function () { paintPanel(); }).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
+  paintPanel();
 })();
 
 </script>

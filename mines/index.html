@@ -40,7 +40,7 @@
           <div class="k-only"><kbd>Space</kbd> 열기 <kbd>X</kbd> 깃발</div>
           <div class="k-only"><kbd>클릭</kbd> 열기 <kbd>우클릭</kbd> 깃발</div>
           <div class="t-only"><kbd>탭</kbd> 열기 <kbd>길게</kbd> 깃발</div>
-          <div class="t-only"><kbd>🚩</kbd> 아래 버튼으로 깃발 모드</div>
+          <div class="t-only"><kbd>🚩</kbd> 깃발 모드 버튼으로 전환</div>
           <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
         </div>
       </div>
@@ -121,20 +121,30 @@
   var DIFFS = [{ c: 8, r: 10, m: 12, base: 800, name: '쉬움' }, { c: 10, r: 14, m: 24, base: 2500, name: '보통' }, { c: 12, r: 17, m: 42, base: 6000, name: '어려움' }];
   var diff = +A.get('neowa_mines_diff', '0') || 0;
   var fx = new A.FX();
-  var D, cols, rows, CS, GX, GY, cells, started, time, flags, opened, dyingT, winT, flagMode, cur = { x: 0, y: 0 }, kbd = false, boomAt = null, press = null, reveals = [], revT = 0;
+  var land = false, D, cols, rows, CS, GX, GY, cells, started, time, flags, opened, dyingT, winT, flagMode, cur = { x: 0, y: 0 }, kbd = false, boomAt = null, press = null, reveals = [], revT = 0;
   var NUMC = ['', '#5ee7ff', '#7dff9b', '#ff7aa8', '#b48cff', '#ffb547', '#4dffd2', '#ffe066', '#ffffff'];
   var BTN = { x: W / 2 - 130, y: 880, w: 260, h: 58 };
 
   function layout() {
     D = DIFFS[diff]; cols = D.c; rows = D.r;
-    CS = Math.floor(Math.min((W - 30) / cols, (860 - 112) / rows));
-    GX = (W - cols * CS) / 2; GY = 112 + (860 - 112 - rows * CS) / 2;
+    if (land) {
+      // 가로 화면: 판을 눕혀서(가로 = 세로줄 수) 그림 → 칸이 훨씬 커짐. 게임 데이터는 그대로
+      CS = Math.floor(Math.min((W - 30) / rows, (H - 30) / cols));
+      GX = (W - rows * CS) / 2; GY = (H - cols * CS) / 2;
+    } else {
+      CS = Math.floor(Math.min((W - 30) / cols, (860 - 112) / rows));
+      GX = (W - cols * CS) / 2; GY = 112 + (860 - 112 - rows * CS) / 2;
+    }
   }
+  // 칸 → 화면 좌표 (가로 화면에서는 x·y를 바꿔 그림)
+  function sx(q) { return GX + (land ? q.y : q.x) * CS; }
+  function sy(q) { return GY + (land ? q.x : q.y) * CS; }
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; layout(); }
   function reset() {
     layout();
     cells = []; for (var y = 0; y < rows; y++) for (var x = 0; x < cols; x++) cells.push({ x: x, y: y, mine: false, n: 0, open: false, flag: false, t: 0 });
     started = false; time = 0; flags = 0; opened = 0; dyingT = 0; winT = 0; flagMode = false; boomAt = null; reveals = []; revT = 0; press = null; cur = { x: Math.floor(cols / 2), y: Math.floor(rows / 2) };
-    fx.clear(); hud();
+    fx.clear(); lastHud = ''; hud();
   }
   function at(x, y) { return x < 0 || y < 0 || x >= cols || y >= rows ? null : cells[y * cols + x]; }
   function around(c, f) { for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; var n = at(c.x + dx, c.y + dy); if (n) f(n); } }
@@ -215,7 +225,7 @@
     hud();
   }
   function lose(c) {
-    boomAt = c; dyingT = 1.8; fx.burst(GX + c.x * CS + CS / 2, GY + c.y * CS + CS / 2, '#ff4d6d', 50, 420, 0.9, 4);
+    boomAt = c; dyingT = 1.8; fx.burst(sx(c) + CS / 2, sy(c) + CS / 2, '#ff4d6d', 50, 420, 0.9, 4);
     fx.shake(12, 0.5); fx.flashIt('#ff2244', 0.6); A.sfx('bigboom'); A.vibrate(220);
     // 남은 지뢰를 차례로 보여 줌 (setTimeout 대신 시간표로 → 일시정지·다시 하기 때 꼬이지 않음)
     var list = cells.filter(function (q) { return q.mine && q !== c && !q.flag; }), gap = Math.min(0.04, 1.3 / Math.max(1, list.length));
@@ -225,7 +235,7 @@
     revT += dt;
     for (var i = reveals.length - 1; i >= 0; i--) {
       var r = reveals[i]; if (revT < r.t) continue;
-      r.q.open = true; r.q.t = 0; fx.burst(GX + r.q.x * CS + CS / 2, GY + r.q.y * CS + CS / 2, '#ff4d6d', 8, 200, 0.4, 3); if (r.k % 4 === 0) A.sfx('boom');
+      r.q.open = true; r.q.t = 0; fx.burst(sx(r.q) + CS / 2, sy(r.q) + CS / 2, '#ff4d6d', 8, 200, 0.4, 3); if (r.k % 4 === 0) A.sfx('boom');
       reveals.splice(i, 1);
     }
   }
@@ -246,7 +256,7 @@
     if (winT > 0) { winT -= dt; if (winT <= 0) { saveTime(); S.gameOver(finalScore(true), [['난이도', D.name], ['기록', time.toFixed(1) + '초'], ['최단', bestTimeTxt()]], { kick: 'CLEAR!', win: true }); } return; }
     if (started) time += dt;
     // 길게 누르기 → 깃발
-    if (press && !press.done && performance.now() - press.t > 380) { press.done = true; act(press.c, !flagMode); fx.ring(GX + press.c.x * CS + CS / 2, GY + press.c.y * CS + CS / 2, '#4dffd2', CS, 0.3); }
+    if (press && !press.done && performance.now() - press.t > 380) { press.done = true; act(press.c, !flagMode); fx.ring(sx(press.c) + CS / 2, sy(press.c) + CS / 2, '#4dffd2', CS, 0.3); }
     hud();
   }
   function saveTime() { var k = 'neowa_mines_time_' + diff, b = parseFloat(A.get(k, '0')) || 0; if (!b || time < b) A.set(k, time.toFixed(1)); }
@@ -262,7 +272,7 @@
     if (!cells) { for (var yy = 0; yy < rows; yy++) for (var xx = 0; xx < cols; xx++) cs.push({ x: xx, y: yy, open: (xx * 7 + yy * 3) % 5 === 0, n: (xx + yy) % 4, flag: (xx * yy) % 11 === 3 }); }
     c.font = '700 ' + Math.round(CS * 0.52) + 'px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (var i = 0; i < cs.length; i++) {
-      var q = cs[i], px = GX + q.x * CS, py = GY + q.y * CS, pad = Math.max(1.5, CS * 0.05);
+      var q = cs[i], px = sx(q), py = sy(q), pad = Math.max(1.5, CS * 0.05);
       var shown = q.open && (!q.t || t >= q.t);
       if (shown) {
         c.fillStyle = q.mine ? (q === boomAt ? '#ff4d6d' : 'rgba(255,77,109,.25)') : 'rgba(77,255,210,.06)';
@@ -278,12 +288,14 @@
         if (q.flag && boomAt && !q.mine) { c.strokeStyle = '#ffd166'; c.lineWidth = Math.max(2, CS * 0.08); c.beginPath(); c.moveTo(px + CS * 0.24, py + CS * 0.24); c.lineTo(px + CS * 0.76, py + CS * 0.76); c.moveTo(px + CS * 0.76, py + CS * 0.24); c.lineTo(px + CS * 0.24, py + CS * 0.76); c.stroke(); }
       }
     }
-    if (kbd && cells && S.state === 'playing') { c.strokeStyle = '#4dffd2'; c.lineWidth = 3; A.rr(c, GX + cur.x * CS + 1, GY + cur.y * CS + 1, CS - 2, CS - 2, CS * 0.18); c.stroke(); }
-    // 깃발 모드 버튼
+    if (kbd && cells && S.state === 'playing') { c.strokeStyle = '#4dffd2'; c.lineWidth = 3; A.rr(c, sx(cur) + 1, sy(cur) + 1, CS - 2, CS - 2, CS * 0.18); c.stroke(); }
+    // 깃발 모드 버튼 (가로 화면에서는 오른쪽 패널의 큰 버튼)
+    if (!land) {
     c.fillStyle = flagMode ? '#ff4d6d' : 'rgba(255,255,255,.07)'; A.rr(c, BTN.x, BTN.y, BTN.w, BTN.h, 16); c.fill();
     c.strokeStyle = flagMode ? '#ff4d6d' : 'rgba(255,255,255,.2)'; c.lineWidth = 1.5; c.stroke();
     c.fillStyle = flagMode ? '#2a0410' : '#e8fffa'; c.font = '700 18px "Pretendard Variable",system-ui';
     c.fillText(flagMode ? '🚩 깃발 꽂기 모드' : '⛏ 열기 모드 (탭해서 전환)', W / 2, BTN.y + BTN.h / 2 + 1);
+    }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }
@@ -295,14 +307,23 @@
     document.getElementById('hB').textContent = Math.floor(time);
     document.getElementById('hC').textContent = (D.m - flags);
     document.getElementById('hMult').textContent = D.name;
+    paintPanel();
   }
-  function cellAt(p) { var x = Math.floor((p.x - GX) / CS), y = Math.floor((p.y - GY) / CS); return at(x, y); }
+  var pEl = {};
+  function paintPanel() {
+    if (!pEl.score || !D) return;
+    pEl.score.textContent = document.getElementById('hA').textContent; pEl.time.textContent = Math.floor(time || 0); pEl.mines.textContent = D.m - (flags || 0);
+    pEl.flag.innerHTML = flagMode ? '🚩 깃발 꽂기 모드 <span class="cnt">켜짐</span>' : '⛏ 열기 모드 <span class="cnt">탭해서 깃발로</span>';
+    pEl.flag.disabled = !S || S.state !== 'playing';
+  }
+  function toggleFlagMode() { if (S.state !== 'playing') return; flagMode = !flagMode; A.sfx('click'); paintPanel(); }
+  function cellAt(p) { var a = Math.floor((p.x - GX) / CS), b = Math.floor((p.y - GY) / CS); return land ? at(b, a) : at(a, b); }
   var stage = document.getElementById('stage');
   stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return;
     var p = S.toLocal(e); kbd = false;
-    if (p.x > BTN.x && p.x < BTN.x + BTN.w && p.y > BTN.y && p.y < BTN.y + BTN.h) { flagMode = !flagMode; A.sfx('click'); return; }
+    if (!land && p.x > BTN.x && p.x < BTN.x + BTN.w && p.y > BTN.y && p.y < BTN.y + BTN.h) { toggleFlagMode(); return; }
     var c = cellAt(p); if (!c) return;
     if (e.button === 2) { act(c, true); return; }
     press = { c: c, t: performance.now(), id: e.pointerId, done: false };
@@ -316,22 +337,30 @@
   stage.addEventListener('pointercancel', function () { press = null; });
   // 난이도 선택
   var dbtns = document.querySelectorAll('[data-diff]');
-  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); layout(); }
+  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); if (!cells || !S || S.state === 'ready') layout(); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_mines_diff', diff); A.sfx('click'); paintDiff(); }); });
   paintDiff();
 
   var S = new A.Shell({
-    id: 'mines', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); if (reveals.length) stepReveals(dt); }, render: render,
+    id: 'mines', W: W, H: H, land: [900, 640], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); if (reveals.length) stepReveals(dt); }, render: render,
     keydown: function (e) {
-      var k = e.key; kbd = true;
-      if (k === 'ArrowLeft' || k === 'a') cur.x = Math.max(0, cur.x - 1);
-      else if (k === 'ArrowRight' || k === 'd') cur.x = Math.min(cols - 1, cur.x + 1);
-      else if (k === 'ArrowUp' || k === 'w') cur.y = Math.max(0, cur.y - 1);
-      else if (k === 'ArrowDown' || k === 's') cur.y = Math.min(rows - 1, cur.y + 1);
-      else if (k === ' ' || k === 'Enter') act(at(cur.x, cur.y), false);
+      var k = e.key, dx = 0, dy = 0; kbd = true;
+      if (k === 'ArrowLeft' || k === 'a') dx = -1; else if (k === 'ArrowRight' || k === 'd') dx = 1;
+      else if (k === 'ArrowUp' || k === 'w') dy = -1; else if (k === 'ArrowDown' || k === 's') dy = 1;
+      if (land) { var t = dx; dx = dy; dy = t; } // 눕힌 판: 화면 방향 그대로 움직이게
+      if (dx || dy) { cur.x = A.clamp(cur.x + dx, 0, cols - 1); cur.y = A.clamp(cur.y + dy, 0, rows - 1); }
+      if (k === ' ' || k === 'Enter') act(at(cur.x, cur.y), false);
       else if (k === 'x' || k === 'X') act(at(cur.x, cur.y), true);
     }
   });
+  // 가로 화면 오른쪽 패널: 점수판 + 큰 깃발 모드 버튼 (게임판 위 점수판은 가로에서 숨김)
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>TIME</span><b id="pkTime">0</b></div><div><span>MINES</span><b id="pkMines">0</b></div></div>' +
+    '<button class="gp-btn main" id="pkFlag"></button>';
+  pEl = { score: document.getElementById('pkScore'), time: document.getElementById('pkTime'), mines: document.getElementById('pkMines'), flag: document.getElementById('pkFlag') };
+  pEl.flag.addEventListener('click', toggleFlagMode);
+  new MutationObserver(function () { paintPanel(); }).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
+  layout(); paintPanel();
 })();
 
 </script>

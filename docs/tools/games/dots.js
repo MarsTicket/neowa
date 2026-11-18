@@ -1,15 +1,17 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960;
+  var A = Arcade, W = 540, H = 960, land = false;
   var fx = new A.FX();
   // 둘이서 모드: 파랑(P1)·빨강(P2)이 번갈아 선을 그음. tally = [P1 승, P2 승]
   var duo = A.duo('dots', { solo: ['SCORE', 'ME : CPU', 'WIN'], duo: ['P1 : P2 승', '상자', '판'] }, function () { if (S) hud(); }), tally = [0, 0];
   var diff = +A.get('neowa_dots_diff', '1') || 0, B, SP, GX, GY, hL, vL, owner, turn, me, cpu, wins, score, thinking, endT, curL = { t: 'h', i: 0 }, kbd = false, lastLine = null;
   function setup() {
-    B = [4, 5, 6][diff]; SP = Math.floor(440 / B); GX = (W - B * SP) / 2; GY = 200 + (560 - B * SP) / 2;
+    B = [4, 5, 6][diff]; geo();
     hL = []; vL = []; owner = []; for (var i = 0; i < (B + 1) * B; i++) { hL.push(0); vL.push(0); } for (i = 0; i < B * B; i++) owner.push(0);
     turn = 1; me = 0; cpu = 0; thinking = 0; endT = 0; lastLine = null; curL = { t: 'h', i: 0 };
   }
+  // 판 위치: 세로 540x960, 가로 화면은 720x720 정사각형(판이 훨씬 커짐)
+  function geo() { if (!B) return; SP = Math.floor((land ? 600 : 440) / B); GX = (W - B * SP) / 2; GY = land ? 84 + (612 - B * SP) / 2 : 200 + (560 - B * SP) / 2; }
   // 선 목록: {t:'h'|'v', i}
   function allLines() { var r = []; for (var i = 0; i < hL.length; i++) if (!hL[i]) r.push({ t: 'h', i: i }); for (i = 0; i < vL.length; i++) if (!vL[i]) r.push({ t: 'v', i: i }); return r; }
   function sides(bx, by, H_, V_) { return (H_[by * B + bx] ? 1 : 0) + (H_[(by + 1) * B + bx] ? 1 : 0) + (V_[by * (B + 1) + bx] ? 1 : 0) + (V_[by * (B + 1) + bx + 1] ? 1 : 0); }
@@ -108,7 +110,7 @@
     if (kbd && S.state === 'playing' && curL) { var L = curL, used = (L.t === 'h' ? hL : vL)[L.i]; c.save(); c.globalAlpha = 0.5 + Math.sin(t * 8) * 0.3; c.strokeStyle = used ? 'rgba(255,255,255,.5)' : duo() && turn === 2 ? '#ff4d6d' : '#5ee7ff'; c.lineWidth = used ? 3 : 9; c.beginPath();
       if (L.t === 'h') { c.moveTo(GX + (L.i % B) * SP + 8, GY + Math.floor(L.i / B) * SP); c.lineTo(GX + (L.i % B + 1) * SP - 8, GY + Math.floor(L.i / B) * SP); } else { c.moveTo(GX + (L.i % (B + 1)) * SP, GY + Math.floor(L.i / (B + 1)) * SP + 8); c.lineTo(GX + (L.i % (B + 1)) * SP, GY + (Math.floor(L.i / (B + 1)) + 1) * SP - 8); }
       c.stroke(); var cc = lc(L); c.globalAlpha = 0.9; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(GX + cc[0] * SP, GY + cc[1] * SP, 13, 0, 7); c.stroke(); c.restore(); }
-    c.fillStyle = turn === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(S.state === 'playing' ? (duo() ? (turn === 1 ? 'P1 (파랑) 차례' : 'P2 (빨강) 차례') : turn === 1 ? '내 차례' : '컴퓨터 생각 중…') : '', W / 2, GY - 40);
+    c.fillStyle = turn === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 ' + (land ? 30 : 20) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(S.state === 'playing' ? (duo() ? (turn === 1 ? 'P1 (파랑) 차례' : 'P2 (빨강) 차례') : turn === 1 ? '내 차례' : '컴퓨터 생각 중…') : '', W / 2, GY - 40);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = me + ' : ' + cpu; document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff];
@@ -117,8 +119,20 @@
   var dbtns = document.querySelectorAll('[data-diff]');
   function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_dots_diff', diff); A.sfx('click'); pd(); hL = null; }); }); pd();
-  var S = null; S = new A.Shell({ id: 'dots', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = null; S = new A.Shell({ id: 'dots', W: W, H: H, land: [720, 720], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; geo(); }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { kbd = true; var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (k === 'ArrowRight' || k === 'd') moveCur(1, 0); if (k === 'ArrowLeft' || k === 'a') moveCur(-1, 0); if (k === 'ArrowDown' || k === 's') moveCur(0, 1); if (k === 'ArrowUp' || k === 'w') moveCur(0, -1);
       if ((k === ' ' || k === 'Enter') && !e.repeat) humanPlace(curL); } });
+  // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)
+  function landStats(sh, extra) {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !sh.panelSlot) return;
+    hudEl.setAttribute('data-land-hide', '');
+    var ids = ['hA', 'hB', 'hC'];
+    sh.panelSlot.innerHTML = '<div class="g-card gp-stats">' + ids.map(function (id) { return '<div><span id="p' + id + 'L"></span><b id="p' + id + '"></b>' + (id === 'hA' ? '<em id="phM" style="font-style:normal;font-size:12px;font-weight:700;color:#ffd166"></em>' : '') + '</div>'; }).join('') + '</div>' + (extra || '');
+    function sync() { var m = document.getElementById('hMult'); document.getElementById('phM').textContent = m ? m.textContent : '';
+      ids.forEach(function (id) { var v = document.getElementById(id), lb = v && v.parentNode.querySelector('.h-lb');
+        document.getElementById('p' + id).textContent = v ? v.textContent : ''; document.getElementById('p' + id + 'L').textContent = lb ? lb.textContent : ''; }); }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true }); sync();
+  }
+  landStats(S);
 })();

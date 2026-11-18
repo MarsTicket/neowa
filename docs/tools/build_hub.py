@@ -13,13 +13,22 @@ ORDER = ['액션', '원탭', '퍼즐', '보드·카드', '두뇌']
 e = html.escape
 
 
+def art(g, alt):
+    """메인 카드 그림: 작은 webp 썸네일(make_thumbs.py)이 있으면 그것을, 없으면 원래 jpg"""
+    gid = g['id']
+    jpg = f'<img src="assets/{gid}-card.jpg" alt="{alt}" loading="lazy" decoding="async" width="1200" height="750">'
+    if os.path.exists(os.path.join(ROOT, 'assets', 'thumbs', gid + '.webp')):
+        return f'<picture><source type="image/webp" srcset="assets/thumbs/{gid}.webp">{jpg}</picture>'
+    return jpg
+
+
 def card(i, g):
     tags = ''.join(f'<li>{e(t)}</li>' for t in g['tags'])
     new = '<span class="gc-new">NEW</span>' if g.get('new') else ''
     alt = e(g['name'] + ' 게임 화면')
     return f'''        <article class="gc" data-cat="{g['cat']}" data-q="{e(g['name'] + ' ' + g['kgenre'] + ' ' + ' '.join(g['tags']))}" style="--c:{g['accent']};--cr:{g['rgb']}">
           <a class="cover" href="{g['id']}/" aria-label="{e(g['name'])} 플레이"></a>
-          <div class="gc-art"><span class="gc-no">{i + 1:02d}</span>{new}<img src="assets/{g['id']}-card.jpg" alt="{alt}" loading="lazy" width="1200" height="750"></div>
+          <div class="gc-art"><span class="gc-no">{i + 1:02d}</span>{new}{art(g, alt)}</div>
           <div class="gc-body">
             <p class="gc-genre">{e(g['genre'])}</p>
             <h3>{e(g['name'])}</h3>

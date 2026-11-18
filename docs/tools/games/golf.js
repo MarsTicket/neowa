@@ -71,11 +71,11 @@
     pow = A.clamp(pow, 0.04, 1);
     var v = 140 + pow * (VMAX - 140); ball.vx = Math.cos(ang) * v; ball.vy = Math.sin(ang) * v;
     last = { x: ball.x, y: ball.y }; strokes++; phase = 'roll'; shotT = 0; kAng = ang; kPow = pow;
-    A.sfx('shoot', 0.6 + pow * 0.5); A.vibrate(12); hud();
+    A.sfx('puck', 0.7 + pow * 0.5); A.sfx('whoosh', 1.2); A.vibrate(12); hud();
   }
   function penalty(msg) {
     strokes++; ball.x = last.x; ball.y = last.y; ball.vx = ball.vy = 0; phase = 'aim'; hud();
-    fx.text(ball.x, ball.y - 30, msg, '#9fd8ff', 22); A.sfx('hurt'); A.vibrate(30);
+    fx.text(ball.x, ball.y - 30, msg, '#9fd8ff', 22); A.sfx(msg.indexOf('풍덩') === 0 ? 'splash' : 'hurt'); A.vibrate(30);
     if (strokes >= 10) giveUp();
   }
   function giveUp() { phase = 'sunk'; phaseT = 0; finishHole(C.par * 2, true); }
@@ -87,7 +87,7 @@
     var title = gave ? '다음 홀로' : st === 1 ? '홀인원!' : (NAMES[String(d)] || (d > 0 ? '+' + d : String(d)));
     S.banner(title, (gave ? '10타 초과 · ' : '') + st + '타 · +' + pts + '점');
     if (st === 1) { A.sfx('record'); fx.flashIt('#7dff9b', 0.35); fx.burst(C.h[0], C.h[1], '#7dff9b', 40, 420, 0.9, 4); fx.burst(C.h[0], C.h[1], '#ffd166', 30, 360, 0.9, 3); A.vibrate([30, 40, 30, 40, 60]); }
-    else if (d < 0) { A.sfx('level'); fx.burst(C.h[0], C.h[1], '#ffd166', 26, 300, 0.7, 3); A.vibrate([20, 30, 20]); }
+    else if (d < 0) { A.sfx('win'); fx.burst(C.h[0], C.h[1], '#ffd166', 26, 300, 0.7, 3); A.vibrate([20, 30, 20]); }
     else if (!gave) { A.sfx('coin'); fx.burst(C.h[0], C.h[1], '#7dff9b', 14, 200, 0.5, 2.5); }
     hud();
   }
@@ -163,7 +163,7 @@
         physStep(h);
         if (inWater(ball.x, ball.y)) { fx.burst(ball.x, ball.y, '#5ec8ff', 22, 240, 0.6, 3); fx.ring(ball.x, ball.y, '#9fd8ff', 30, 0.5); penalty('풍덩! +1타'); return; }
         var hd = Math.hypot(C.h[0] - ball.x, C.h[1] - ball.y), sp = Math.hypot(ball.vx, ball.vy);
-        if (hd < HR * 0.6 && sp < 720) { phase = 'sink'; sinkT = 0; ball.vx = ball.vy = 0; A.sfx('eat'); finishHole(strokes); return; }
+        if (hd < HR * 0.6 && sp < 720) { phase = 'sink'; sinkT = 0; ball.vx = ball.vy = 0; A.sfx('chip'); A.sfx('ding', 0.8); finishHole(strokes); return; }
       }
       if (phase === 'aim' && Math.hypot(ball.vx, ball.vy) > 30) phase = 'roll'; // 풍차가 멈춘 공을 친 경우
       if (phase === 'roll') {

@@ -198,7 +198,7 @@
     }
     phase = 'play'; phaseT = 0; hud();
   }
-  function reset() { stage = 1; score = 0; lives = 3; kills = 0; me = null; keys = {}; joy = null; fx.clear(); newStage(); }
+  function reset() { if (A.music && A.music.mood) A.music.mood(null); stage = 1; score = 0; lives = 3; kills = 0; me = null; keys = {}; joy = null; fx.clear(); newStage(); }
 
   // ---------- 포탄 ----------
   function fire(o, ang, spd, owner) {
@@ -227,9 +227,9 @@
   function hitTank(t, bl) {
     if (t === me) {
       if (me.inv > 0 || phase !== 'play') return false;
-      lives--; boom(me, true); me.inv = 1.8; fx.flashIt('#ff5d73', 0.35);
+      lives--; if (lives === 1) { if (A.music && A.music.mood) A.music.mood('danger'); A.sfx('warn'); } boom(me, true); me.inv = 1.8; fx.flashIt('#ff5d73', 0.35);
       fx.text(me.x, me.y - 30, bl.owner === me ? '내 포탄!' : '-1', '#ff8a9a', 22); hud();
-      if (lives <= 0) { phase = 'dead'; phaseT = 0; }
+      if (lives <= 0) { phase = 'dead'; phaseT = 0; if (A.music && A.music.mood) A.music.mood(null); }
       return true;
     }
     var i = enemies.indexOf(t); if (i < 0) return false;
@@ -237,7 +237,7 @@
     var pts = 100 * stage; score += pts; fx.text(t.x, t.y - 26, '+' + pts, '#ffd166', 20); hud();
     if (!enemies.length && phase === 'play') {
       phase = 'clear'; phaseT = 0; var bonus = 300 * stage + lives * 100; score += bonus;
-      S.banner('STAGE ' + stage + ' 클리어', '+' + A.fmt(bonus) + ' 보너스'); A.sfx('level'); hud();
+      S.banner('STAGE ' + stage + ' 클리어', '+' + A.fmt(bonus) + ' 보너스'); A.sfx('win'); hud();
     }
     return true;
   }
@@ -278,7 +278,7 @@
           var maxB = stage >= 5 ? 2 : 1, off = Math.random() * Math.PI * 2;
           for (var i = 0; i < 40; i++) { var t = off + i * Math.PI * 2 / 40; if (simShot(e, t, 1, maxB, me.x, me.y)) { ang = t; break; } }
         }
-        if (ang != null) { e.ta = ang; fire(e, ang, 330 + stage * 8, e); A.sfx('shoot', 0.7); e.cd = Math.max(0.9, 2.4 - stage * 0.12) + Math.random() * 0.8; }
+        if (ang != null) { e.ta = ang; fire(e, ang, 330 + stage * 8, e); A.sfx('shoot', 0.7, A.clamp(e.x / W * 2 - 1, -1, 1)); e.cd = Math.max(0.9, 2.4 - stage * 0.12) + Math.random() * 0.8; }
         else e.cd = 0.45;
       }
     });

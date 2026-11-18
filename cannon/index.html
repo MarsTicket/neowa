@@ -144,7 +144,7 @@
   function fire() {
     if (phase !== 'aim' || S.state !== 'playing' || dyingT > 0) return;
     if (aim == null) aim = kbdAng;
-    phase = 'fire'; fireQ = nBalls; fireT = 0; turnT = 0; nextX = null; aimOn = false; gained = 0; A.sfx('shoot', 0.8);
+    phase = 'fire'; fireQ = nBalls; fireT = 0; turnT = 0; nextX = null; aimOn = false; gained = 0; A.sfx('charge', 1.2); A.sfx('shoot', 0.8);
   }
   // 예상선: 첫 충돌까지 + 반사 1번
   function trace(x, y, dx, dy, len) {
@@ -167,15 +167,15 @@
   // ---------- 공 물리 ----------
   function hitBlock(b, c, r) {
     if (b.item) {
-      if (b.item === 'ball') { gained++; fx.text(GX + (c + 0.5) * CS, GY + (r + 0.5) * CS, '+1', '#7dff9b', 22); A.sfx('power'); }
-      else { score += 50; fx.text(GX + (c + 0.5) * CS, GY + (r + 0.5) * CS, '+50', '#ffd166', 20); A.sfx('gold'); }
+      if (b.item === 'ball') { gained++; fx.text(GX + (c + 0.5) * CS, GY + (r + 0.5) * CS, '+1', '#7dff9b', 22); A.sfx('power', 1 + Math.min(gained, 8) * 0.06); }
+      else { score += 50; fx.text(GX + (c + 0.5) * CS, GY + (r + 0.5) * CS, '+50', '#ffd166', 20); A.sfx('coin', 1.2); }
       fx.burst(GX + (c + 0.5) * CS, GY + (r + 0.5) * CS, b.item === 'ball' ? '#7dff9b' : '#ffd166', 12, 200, 0.4, 2.5);
       grid[r * COLS + c] = null; hud(); return false;
     }
-    b.hp--; b.hit = 1; A.sfx('brick', 0.8 + Math.min(1, (b.max - b.hp) / Math.max(1, b.max)) * 0.6);
+    b.hp--; b.hit = 1; A.sfx('brick', 0.8 + Math.min(1, (b.max - b.hp) / Math.max(1, b.max)) * 0.6, A.clamp((GX + (c + 0.5) * CS) / W * 2 - 1, -1, 1));
     if (b.hp <= 0) {
       grid[r * COLS + c] = null; broken++; score += 10;
-      var x = GX + (c + 0.5) * CS, y = GY + (r + 0.5) * CS; fx.burst(x, y, colorOf(b), 16, 260, 0.5, 3); fx.shake(2, 0.06); A.sfx('boom', 1.3);
+      var x = GX + (c + 0.5) * CS, y = GY + (r + 0.5) * CS; fx.burst(x, y, colorOf(b), 16, 260, 0.5, 3); fx.shake(2, 0.06); A.sfx('boom', 1.3, A.clamp(x / W * 2 - 1, -1, 1)); A.vibrate(15);
     }
     hud(); return true;
   }
@@ -228,9 +228,10 @@
     nBalls += gained; if (gained) S.banner('공 +' + gained, '이제 ' + nBalls + '개');
     score += 5; turn++; fast = 1; phase = 'aim';
     newRow();
-    for (var c = 0; c < COLS; c++) { var b = grid[(ROWS - 1) * COLS + c]; if (b && !b.item) { dyingT = 1.2; A.sfx('bigboom'); fx.shake(12, 0.5); fx.flashIt('#ff2244', 0.5); A.vibrate(200); break; } }
+    for (var c = 0; c < COLS; c++) { var b = grid[(ROWS - 1) * COLS + c]; if (b && !b.item) { dyingT = 1.2; A.sfx('bigboom'); if (A.music && A.music.mood) A.music.mood(null); fx.shake(12, 0.5); fx.flashIt('#ff2244', 0.5); A.vibrate(200); break; } }
     for (c = 0; c < COLS; c++) { var it = grid[(ROWS - 1) * COLS + c]; if (it && it.item) grid[(ROWS - 1) * COLS + c] = null; }
     if (turn % 10 === 0) { S.banner('TURN ' + turn, '블록이 더 단단해져요'); A.sfx('level'); }
+    for (c = 0; c < COLS; c++) { var nb = grid[(ROWS - 2) * COLS + c]; if (nb && !nb.item) { A.sfx('warn'); if (A.music && A.music.mood) A.music.mood('danger'); break; } }
     hud();
   }
 

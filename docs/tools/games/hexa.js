@@ -52,7 +52,7 @@
   function place(t, q, r) {
     var p = tray[t]; if (!p || p.used || !fits(p, q, r)) { A.sfx('wall'); return false; }
     p.cells.forEach(function (c) { var k = idx[(q + c[0]) + ',' + (r + c[1])]; board[k] = p.col; pops.push({ k: k, t: 0 }); });
-    p.used = true; score += p.cells.length; A.sfx('brick', 0.9 + p.cells.length * 0.05); A.vibrate(8);
+    p.used = true; score += p.cells.length; A.sfx('place', 0.9 + p.cells.length * 0.05); A.vibrate(8);
     var full = []; LINES.forEach(function (L) { if (L.every(function (k) { return board[k]; })) full.push(L); });
     if (full.length) {
       streak++; maxStreak = Math.max(maxStreak, streak);
@@ -62,11 +62,11 @@
       var c0 = cells[full[0][Math.floor(full[0].length / 2)]], p0 = px(c0[0], c0[1]);
       fx.text(p0[0], p0[1] - 30, '+' + A.fmt(pts) + (full.length > 1 ? ' · ' + full.length + '줄!' : ''), '#ffd166', full.length > 1 ? 28 : 22);
       if (streak >= 2) fx.text(W / 2, OY - 250, '콤보 ×' + Math.min(streak, 8), '#4dffd2', 26);
-      fx.shake(3 + full.length * 2, 0.18); A.sfx(full.length > 1 ? 'gold' : 'coin', 1 + Math.min(streak, 8) * 0.06); A.vibrate([15, 30, 15]);
+      fx.shake(3 + full.length * 2, 0.18); A.sfx(full.length > 1 ? 'combo' : 'line', 1 + Math.min(streak, 8) * 0.06); A.vibrate([15, 30, 15]);
       if (full.length >= 3) fx.flashIt('#4dffd2', 0.25);
     } else streak = 0;
     if (tray.every(function (x) { return x.used; })) refill();
-    if (!canPlaceAny()) { dyingT = 1.2; A.sfx('hurt'); fx.shake(8, 0.35); fx.flashIt('#ff2244', 0.35); A.vibrate(150); }
+    if (!canPlaceAny()) { dyingT = 1.2; A.sfx('wrong'); A.sfx('hurt'); fx.shake(8, 0.35); fx.flashIt('#ff2244', 0.35); A.vibrate(150); }
     hud(); return true;
   }
   function update(dt) {
@@ -153,13 +153,13 @@
     var p = S.toLocal(e); if (p.y < TRAY_Y - 100) return;
     var t = p.x < 182 ? 0 : p.x < 358 ? 1 : 2; if (tray[t].used) return;
     var lift = e.pointerType === 'mouse' ? 0 : 110;
-    drag = { t: t, x: p.x, y: p.y - lift, lift: lift, id: e.pointerId }; A.sfx('click', 1.2);
+    drag = { t: t, x: p.x, y: p.y - lift, lift: lift, id: e.pointerId }; A.sfx('select');
   });
   window.addEventListener('pointermove', function (e) { if (!drag || e.pointerId !== drag.id) return; var p = S.toLocal(e); drag.x = p.x; drag.y = p.y - drag.lift; });
   function end(e) {
     if (!drag || (e && e.pointerId !== drag.id)) return;
     var tg = dropTarget(), t = drag.t; drag = null;
-    if (tg && S.state === 'playing') place(t, tg[0], tg[1]); else A.sfx('wall', 0.8);
+    if (tg && S.state === 'playing') place(t, tg[0], tg[1]); else A.sfx('wrong', 0.9);
   }
   window.addEventListener('pointerup', end); window.addEventListener('pointercancel', function () { drag = null; });
   function moveCur(dq, dr) { var nq = cur.q + dq, nr = cur.r + dr; if (idx[nq + ',' + nr] !== undefined) { cur.q = nq; cur.r = nr; A.sfx('tick'); } }
@@ -168,7 +168,7 @@
     keydown: function (e) {
       if (dyingT > 0) return; kbd = true;
       var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      if (k === '1' || k === '2' || k === '3') { var t = +k - 1; if (!tray[t].used) { cur.sel = t; A.sfx('click'); } return; }
+      if (k === '1' || k === '2' || k === '3') { var t = +k - 1; if (!tray[t].used) { cur.sel = t; A.sfx('select'); } return; }
       if (k === 'ArrowLeft' || k === 'a') moveCur(-1, 0); else if (k === 'ArrowRight' || k === 'd') moveCur(1, 0);
       else if (k === 'ArrowUp' || k === 'w') moveCur(0, -1); else if (k === 'ArrowDown' || k === 's') moveCur(0, 1);
       else if ((k === ' ' || k === 'Enter') && !e.repeat) {

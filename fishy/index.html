@@ -116,6 +116,13 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 70;
+  // 가로 화면은 960x600 넓은 바다 (물고기가 옆으로 헤엄치는 게임이라 가로가 자연스러움). 돌리면 위치를 비율대로 옮김
+  function geo(sh) {
+    var nW = sh ? sh.W : 540, nH = sh ? sh.H : 960, nT = sh && sh.land ? 16 : 70, kx = nW / W, ky = (nH - nT) / (H - TOP);
+    function mv(o) { o.x *= kx; o.y = nT + (o.y - TOP) * ky; }
+    if (P) { mv(P); fish.forEach(mv); bubbles.forEach(mv); if (drag) mv(drag); }
+    W = nW; H = nH; TOP = nT;
+  }
   var fx = new A.FX();
   var P, fish, bubbles = [], score, eaten, size, xp, dyingT, drag = null, keys = {}, spawnT, inv, combo, comboT, bestCombo, MAXS = 10;
   var COLS = ['#ffb547', '#ff7aa8', '#7dff9b', '#b48cff', '#ffe066', '#5ee7ff', '#ff7a45'];
@@ -179,7 +186,7 @@
     c.fillStyle = '#123a2a'; for (var x = 0; x < W; x += 40) { c.beginPath(); c.moveTo(x, H); c.quadraticCurveTo(x + 10 + Math.sin(t + x) * 10, H - 80, x + 20, H); c.fill(); }
     var pr = P ? rFor(size) : 20;
     (fish || []).forEach(function (f) { drawFish(c, f.x, f.y, f.r, f.c, f.vx > 0 ? 1 : -1, P ? (f.r < pr * 0.95 ? 'rgba(125,255,155,.7)' : 'rgba(255,77,109,.8)') : null); });
-    if (!fish) { drawFish(c, 150, 400, 30, '#ffb547', 1); drawFish(c, 380, 600, 60, '#ff7aa8', -1); drawFish(c, 260, 760, 20, '#7dff9b', 1); }
+    if (!fish) { drawFish(c, W * 0.28, H * 0.42, 30, '#ffb547', 1); drawFish(c, W * 0.7, H * 0.62, 60, '#ff7aa8', -1); drawFish(c, W * 0.48, H * 0.79, 20, '#7dff9b', 1); }
     if (P && dyingT <= 0 && !(inv > 0 && Math.floor(inv * 10) % 2)) { c.save(); c.shadowColor = '#4dd8ff'; c.shadowBlur = 20; drawFish(c, P.x, P.y, pr, '#4dd8ff', P.face); c.restore(); }
     // 화면 밖에서 다가오는 위험한 물고기 경고
     if (P && S.state === 'playing') (fish || []).forEach(function (f) { if (f.r >= pr * 0.95 && (f.x < 0 || f.x > W) && f.x * f.vx < W * f.vx / 2 + 1) { var ex = f.x < 0 ? 18 : W - 18; c.globalAlpha = 0.6 + Math.sin(t * 12) * 0.3; c.fillStyle = '#ff4d6d'; c.beginPath(); c.moveTo(ex + (f.x < 0 ? -12 : 12), f.y); c.lineTo(ex + (f.x < 0 ? 8 : -8), f.y - 14); c.lineTo(ex + (f.x < 0 ? 8 : -8), f.y + 14); c.fill(); c.globalAlpha = 1; } });
@@ -191,8 +198,20 @@
   stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (drag && drag.id === e.pointerId) { var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; } });
   stage.addEventListener('pointerup', function () { drag = null; });
-  var S = new A.Shell({ id: 'fishy', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'fishy', W: W, H: H, land: [960, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();
 
 </script>

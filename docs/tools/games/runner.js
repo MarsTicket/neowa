@@ -52,8 +52,8 @@
     if (!tryJump()) buffer = 0.13; // 착지 직전에 누른 점프는 잠깐 기억했다가 착지하면 바로 뜀
   }
   function tryJump() {
-    if (P.ground || coyote > 0) { P.vy = -980; P.ground = false; coyote = 0; P.jumps = 1; A.sfx('bounce', 1.4); fx.burst(P.x, P.y, '#b48cff', 8, 160, 0.3, 2.5); return true; }
-    if (P.jumps < 2) { P.vy = -860; P.jumps = 2; A.sfx('bounce', 1.8); fx.ring(P.x, P.y - 20, '#b48cff', 50, 0.3); return true; }
+    if (P.ground || coyote > 0) { P.vy = -980; P.ground = false; coyote = 0; P.jumps = 1; A.sfx('jump'); fx.burst(P.x, P.y, '#b48cff', 8, 160, 0.3, 2.5); return true; }
+    if (P.jumps < 2) { P.vy = -860; P.jumps = 2; A.sfx('jump', 1.5); fx.ring(P.x, P.y - 20, '#b48cff', 50, 0.3); return true; }
     return false;
   }
   function release() { holding = false; if (P && P.vy < -380) P.vy = -380; }
@@ -106,7 +106,7 @@
         else if (P.y > top + 6) die(); // 옆면 충돌
       }
     }
-    if (P.y >= floor) { if (!P.ground && P.vy > 400) { P.squash = 0.12; fx.burst(P.x, floor, '#b48cff', 6, 120, 0.25, 2); } P.y = floor; P.vy = 0; P.ground = true; P.jumps = 0; }
+    if (P.y >= floor) { if (!P.ground && P.vy > 400) { P.squash = 0.12; A.sfx('land'); fx.burst(P.x, floor, '#b48cff', 6, 120, 0.25, 2); } P.y = floor; P.vy = 0; P.ground = true; P.jumps = 0; }
     // 발판 끝에서 살짝 늦게 눌러도 점프되게(코요테 타임), 착지 직전 입력은 기억(점프 버퍼)
     if (P.ground) coyote = 0.09; else if (wasGround && P.vy >= 0) coyote = Math.max(coyote, 0.09); else coyote -= dt;
     if (buffer > 0) { buffer -= dt; if (P.ground && tryJump()) buffer = 0; }

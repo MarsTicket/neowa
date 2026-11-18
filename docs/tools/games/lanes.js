@@ -19,7 +19,7 @@
     });
   }
   function reset() { lane = 1; px = LX[1]; cars = []; coins = []; speed = 420; dist = 0; score = 0; coinN = 0; nearN = 0; spawnT = 160; dyingT = 0; road = 0; prevFree = [0, 1, 2]; leftAt = [-9, -9, -9]; clock = 0; chain = 0; lastNear = -9; nextKm = 10; fx.clear(); hud(); }
-  function move(d) { if (S.state !== 'playing' || dyingT > 0) return; var n = A.clamp(lane + d, 0, 2); if (n !== lane) { leftAt[lane] = clock; lane = n; A.sfx('turn', 1.4); } }
+  function move(d) { if (S.state !== 'playing' || dyingT > 0) return; var n = A.clamp(lane + d, 0, 2); if (n !== lane) { leftAt[lane] = clock; lane = n; A.sfx('whoosh', 1.3, A.clamp(LX[lane] / W * 2 - 1, -1, 1)); } }
   function spawn() {
     var lv = Math.min(1, dist / 30000), free = [0, 1, 2], i;
     if (Math.random() < 0.25 + lv * 0.35) {
@@ -51,13 +51,13 @@
       // 아슬아슬: 그 차 차선에 있다가 0.6초 안에 옆으로 피했을 때만 (가만히 있어도 받던 점수 막음). 4초 안에 이어지면 배율 ↑
       if (!c.near && py0 < PY && c.y >= PY && dyingT <= 0 && c.l !== lane && Math.abs(c.l - lane) === 1 && clock - leftAt[c.l] < 0.6) {
         c.near = true; nearN++; chain = clock - lastNear < 4 ? Math.min(5, chain + 1) : 1; lastNear = clock;
-        var pts = 30 * chain; score += pts; fx.text(LX[lane], PY - 80, (chain > 1 ? '아슬아슬 ×' + chain + ' +' : '아슬아슬 +') + pts, '#ff9ecf', 18 + chain * 2); A.sfx('tick', 1 + chain * 0.1);
+        var pts = 30 * chain; score += pts; fx.text(LX[lane], PY - 80, (chain > 1 ? '아슬아슬 ×' + chain + ' +' : '아슬아슬 +') + pts, '#ff9ecf', 18 + chain * 2); A.sfx('whoosh', 1.6, A.clamp(LX[c.l] / W * 2 - 1, -1, 1)); A.sfx('tick', 1 + chain * 0.1);
       }
       if (c.y > H + 100) cars.splice(i, 1);
     }
     for (i = coins.length - 1; i >= 0; i--) {
       var o = coins[i]; o.y += rel;
-      if (o.l === lane && Math.abs(o.y - PY) < 60) { coins.splice(i, 1); coinN++; score += 50; fx.burst(LX[o.l], o.y, '#ffd166', 10, 180, 0.35, 2.5); A.sfx('coin'); }
+      if (o.l === lane && Math.abs(o.y - PY) < 60) { coins.splice(i, 1); coinN++; score += 50; fx.burst(LX[o.l], o.y, '#ffd166', 10, 180, 0.35, 2.5); A.sfx('coin', 1 + (coinN % 8) * 0.04, A.clamp(LX[o.l] / W * 2 - 1, -1, 1)); }
       else if (o.y > H + 40) coins.splice(i, 1);
     }
     score += speed * dt / 40;

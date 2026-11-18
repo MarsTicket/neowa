@@ -69,12 +69,12 @@
     var p = ship.p, dir = Math.sign(p.spin), spd = 620 + Math.min(260, hops * 6);
     // 접선 방향
     ship.vx = -Math.sin(ship.a) * dir * spd; ship.vy = Math.cos(ship.a) * dir * spd;
-    ship.fly = true; ship.from = p; flyT = 0; A.sfx('shoot', 0.6); fx.burst(ship.x, ship.y, p.c, 10, 200, 0.3, 2.5);
+    ship.fly = true; ship.from = p; flyT = 0; A.sfx('whoosh', 1.1, A.clamp(ship.x / W * 2 - 1, -1, 1)); fx.burst(ship.x, ship.y, p.c, 10, 200, 0.3, 2.5);
   }
   function die() {
     if (dyingT > 0) return;
     dyingT = 1.2; fx.burst(ship.x, ship.y, '#ff7a45', 40, 420, 0.8, 4); fx.burst(ship.x, ship.y, '#fff', 14, 300, 0.4, 2.4);
-    fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.4); A.sfx('bigboom'); A.vibrate(160);
+    fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.4); A.sfx('bigboom', 1, A.clamp(ship.x / W * 2 - 1, -1, 1)); A.vibrate(160);
   }
   function update(dt) {
     fx.update(dt);
@@ -108,7 +108,7 @@
             if (skipped) { fx.text(p.x, p.y - p.r - 66, skipped > 1 ? skipped + '개 건너뛰기!' : '건너뛰기!', '#ffd166', 20); A.sfx('gold'); }
             if (Math.floor(hops / 10) > Math.floor(oldHops / 10)) { S.banner(Math.floor(hops / 10) * 10 + ' 행성', '더 깊은 우주로'); A.sfx('level'); }
           }
-          A.sfx('power'); fx.ring(p.x, p.y, p.c, p.r * 2.4, 0.5); A.vibrate(15);
+          A.sfx('combo', 1 + Math.min(hops, 12) * 0.05, A.clamp(p.x / W * 2 - 1, -1, 1)); A.sfx('land', 1.3, A.clamp(p.x / W * 2 - 1, -1, 1)); fx.ring(p.x, p.y, p.c, p.r * 2.4, 0.5); A.vibrate(15);
           // 행성 보충
           while (nextY > p.y - 1400) { nextY -= A.rand(230, 300 + Math.min(80, hops * 2)); addPlanet(nextY); }
           planets = planets.filter(function (q) { return q.y < p.y + 900; });
@@ -126,7 +126,7 @@
       });
     });
     stars.forEach(function (s) {
-      if (!s.got && Math.hypot(s.x - ship.x, s.y - ship.y) < 34) { s.got = true; starN++; score += 50; fx.burst(s.x, s.y, '#ffd166', 14, 220, 0.5, 3); fx.text(s.x, s.y - 20, '+50', '#ffd166', 18); A.sfx('coin'); }
+      if (!s.got && Math.hypot(s.x - ship.x, s.y - ship.y) < 34) { s.got = true; starN++; score += 50; fx.burst(s.x, s.y, '#ffd166', 14, 220, 0.5, 3); fx.text(s.x, s.y - 20, '+50', '#ffd166', 18); A.sfx('coin', 1 + (starN % 8) * 0.04, A.clamp(s.x / W * 2 - 1, -1, 1)); }
     });
     hud();
   }

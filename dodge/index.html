@@ -124,7 +124,7 @@
 
   function reset() {
     P = { x: W / 2, y: H * 0.65, r: 10, inv: 1 };
-    foes = []; shots = []; lasers = []; orbs = []; time = 0; score = 0; orbN = 0; bombs = 0; dirT = 1.2; dyingT = 0; orbT = 2; keys = {}; drag = null; pend = []; grazeN = 0;
+    foes = []; shots = []; lasers = []; orbs = []; time = 0; score = 0; orbN = 0; bombs = 0; dirT = 1.2; dyingT = 0; orbT = 2; keys = {}; drag = null; pend = []; grazeN = 0; A.music.tempo(1);
     fx.clear(); hud();
   }
   // 공격 패턴 감독: 시간이 갈수록 강하고 자주
@@ -137,9 +137,9 @@
     if (time > 40) opts.push('spiral');
     var k = A.pick(opts);
     if (k === 'rain') { var n = 6 + Math.floor(lv * 8), side = A.irand(0, 3); for (var i = 0; i < n; i++) edgeShot(side, i / n); }
-    if (k === 'seeker') { for (var j = 0; j < 1 + Math.floor(lv * 2); j++) foes.push({ x: A.rand(40, W - 40), y: TOP - 20, vx: 0, vy: 0, life: 6 + lv * 3, sp: 150 + lv * 90 }); }
-    if (k === 'laser') { var cnt = 1 + Math.floor(lv * 2.5); for (var q = 0; q < cnt; q++) { var hor = Math.random() < 0.5; lasers.push({ hor: hor, pos: hor ? A.rand(TOP + 40, H - 40) : A.rand(30, W - 30), warn: 1.1 - lv * 0.35, on: 0.45, w: 26 }); } A.sfx('tick', 0.8); }
-    if (k === 'ring') { var cx = A.rand(80, W - 80), cy = A.rand(TOP + 80, H * 0.45), m = 12 + Math.floor(lv * 10); for (var z = 0; z < m; z++) { var a = z / m * Math.PI * 2; shots.push({ x: cx, y: cy, vx: Math.cos(a) * 190, vy: Math.sin(a) * 190, r: 8, delay: 0.5 }); } fx.ring(cx, cy, '#ff4d6d', 90, 0.5); }
+    if (k === 'seeker') { A.sfx('whoosh', 0.8); for (var j = 0; j < 1 + Math.floor(lv * 2); j++) foes.push({ x: A.rand(40, W - 40), y: TOP - 20, vx: 0, vy: 0, life: 6 + lv * 3, sp: 150 + lv * 90 }); }
+    if (k === 'laser') { A.sfx('warn'); var cnt = 1 + Math.floor(lv * 2.5); for (var q = 0; q < cnt; q++) { var hor = Math.random() < 0.5; lasers.push({ hor: hor, pos: hor ? A.rand(TOP + 40, H - 40) : A.rand(30, W - 30), warn: 1.1 - lv * 0.35, on: 0.45, w: 26 }); } }
+    if (k === 'ring') { A.sfx('charge', 1.2); var cx = A.rand(80, W - 80), cy = A.rand(TOP + 80, H * 0.45), m = 12 + Math.floor(lv * 10); for (var z = 0; z < m; z++) { var a = z / m * Math.PI * 2; shots.push({ x: cx, y: cy, vx: Math.cos(a) * 190, vy: Math.sin(a) * 190, r: 8, delay: 0.5 }); } fx.ring(cx, cy, '#ff4d6d', 90, 0.5); }
     if (k === 'cross') { [[0, TOP], [W, TOP], [0, H], [W, H]].forEach(function (c) { var a = Math.atan2(P.y - c[1], P.x - c[0]); for (var s = -1; s <= 1; s++) shots.push({ x: c[0], y: c[1], vx: Math.cos(a + s * 0.15) * 260, vy: Math.sin(a + s * 0.15) * 260, r: 8 }); }); }
     if (k === 'spiral') { var sx = W / 2, sy = TOP + 120; for (var u = 0; u < 36; u++) pend.push({ t: u * 0.07, x: sx, y: sy, a: u * 0.5 }); }
     dirT = Math.max(0.55, 2.0 - lv * 1.4) * A.rand(0.8, 1.2);
@@ -196,11 +196,11 @@
     for (i = orbs.length - 1; i >= 0; i--) {
       var o = orbs[i]; o.t += dt;
       if (Math.hypot(o.x - P.x, o.y - P.y) < 30) {
-        orbs.splice(i, 1); orbN++; score += 100; fx.burst(o.x, o.y, '#ffd166', 14, 220, 0.5, 3); fx.text(o.x, o.y - 20, '+100', '#ffd166', 18); A.sfx('coin');
-        if (orbN % 5 === 0) { bombs++; fx.text(P.x, P.y - 40, '폭탄 +1 (두 번 탭)', '#ffd166', 18); A.sfx('power'); }
+        orbs.splice(i, 1); orbN++; score += 100; fx.burst(o.x, o.y, '#ffd166', 14, 220, 0.5, 3); fx.text(o.x, o.y - 20, '+100', '#ffd166', 18); A.sfx('coin', 1 + (orbN % 5) * 0.06, A.clamp(o.x / W * 2 - 1, -1, 1));
+        if (orbN % 5 === 0) { bombs++; fx.text(P.x, P.y - 40, '폭탄 +1 (두 번 탭)', '#ffd166', 18); A.sfx('gold'); }
       } else if (o.t > 6) orbs.splice(i, 1);
     }
-    if (Math.floor(time) % 30 === 0 && Math.floor(time - dt) % 30 !== 0 && time > 1) { S.banner(Math.floor(time) + '초', '더 거세집니다'); A.sfx('level'); }
+    if (Math.floor(time) % 30 === 0 && Math.floor(time - dt) % 30 !== 0 && time > 1) { S.banner(Math.floor(time) + '초', '더 거세집니다'); A.sfx('level'); A.music.tempo(Math.min(1.15, 1 + Math.floor(time / 30) * 0.03)); }
     hud();
   }
   var usedBombs = 0;
@@ -212,11 +212,11 @@
       f.vx = A.lerp(f.vx, Math.cos(a) * f.sp, dt * 1.6); f.vy = A.lerp(f.vy, Math.sin(a) * f.sp, dt * 1.6);
       f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt;
       if (Math.random() < 0.4) fx.spark(f.x, f.y, '#ff4d6d', -f.vx * 0.2, -f.vy * 0.2, 0.3, 2);
-      if (f.life <= 0) { fx.burst(f.x, f.y, '#ff4d6d', 12, 200, 0.4, 3); A.sfx('boom', 1.4); foes.splice(i, 1); score += 20; }
+      if (f.life <= 0) { fx.burst(f.x, f.y, '#ff4d6d', 12, 200, 0.4, 3); A.sfx('boom', 1.4, A.clamp(f.x / W * 2 - 1, -1, 1)); foes.splice(i, 1); score += 20; }
     }
     for (i = lasers.length - 1; i >= 0; i--) {
       var L = lasers[i];
-      if (L.warn > 0) { L.warn -= dt; if (L.warn <= 0) { A.sfx('hurt', 1.6); fx.shake(4, 0.15); } }
+      if (L.warn > 0) { L.warn -= dt; if (L.warn <= 0) { A.sfx('laser', 1, L.hor ? 0 : A.clamp(L.pos / W * 2 - 1, -1, 1)); fx.shake(4, 0.15); } }
       else { L.on -= dt; if (L.on <= 0) lasers.splice(i, 1); }
     }
   }

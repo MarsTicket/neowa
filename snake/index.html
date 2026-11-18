@@ -228,16 +228,16 @@
       if (fast) fastN++;
       fx.burst(cx(nx), cy(ny), '#ff5d8f', 18, 260, 0.5, 3); fx.ring(cx(nx), cy(ny), '#ff5d8f', 60, 0.35);
       fx.text(cx(nx), cy(ny) - 20, (fast ? '빠르게! ' : '') + '+' + pts, fast ? '#7dff9b' : '#ffd0dc', fast ? 20 : 18);
-      A.sfx('eat', 1 + Math.min(eaten % 6, 5) * 0.06); A.vibrate(12);
+      A.sfx('eat', 1 + Math.min(eaten % 6, 5) * 0.06, A.clamp(nx / COLS * 2 - 1, -1, 1)); A.vibrate(12);
       newFood();
-      if (!gold && goldCount >= 5) { goldCount = 0; gold = freeCell(true); if (gold) { gold.t = 6; A.sfx('coin'); } }
+      if (!gold && goldCount >= 5) { goldCount = 0; gold = freeCell(true); if (gold) { gold.t = 6; A.sfx('ding'); } }
       if (eaten % 6 === 0) levelUp();
     }
     if (gold && nx === gold.x && ny === gold.y) {
       var gp = 50 * level + Math.ceil(gold.t) * 10 * level; score += gp; grow += 2;
       fx.burst(cx(nx), cy(ny), '#ffd166', 36, 380, 0.7, 4); fx.ring(cx(nx), cy(ny), '#ffd166', 110, 0.5);
       fx.text(cx(nx), cy(ny) - 24, '+' + gp, '#ffd166', 24); fx.shake(4, 0.2);
-      A.sfx('gold'); A.vibrate([15, 30, 15]);
+      A.sfx('gold', 1, A.clamp(nx / COLS * 2 - 1, -1, 1)); A.vibrate([15, 30, 15]);
       gold = null;
     }
     maxLen = Math.max(maxLen, snake.length + grow);
@@ -247,7 +247,7 @@
     level++; interval = speedFor(level);
     S.banner('LEVEL ' + level, level >= 3 ? '바위 조심' : 'SPEED UP'); A.sfx('level');
     if (level >= 3 && rocks.length < 16) {
-      for (var i = 0; i < 2; i++) { var c = freeCell(true, true); if (c) { rocks.push(c); fx.burst(cx(c.x), cy(c.y), '#8a90b8', 14, 200, 0.5, 3); } }
+      for (var i = 0; i < 2; i++) { var c = freeCell(true, true); if (c) { rocks.push(c); A.sfx('steel', 0.8); fx.burst(cx(c.x), cy(c.y), '#8a90b8', 14, 200, 0.5, 3); } }
     }
   }
   function die() {
@@ -269,7 +269,7 @@
       if (dieT > snake.length * 0.035 + 0.7) S.gameOver(score, [['레벨', String(level)], ['최대 길이', String(maxLen)], ['빠르게 먹기', fastN + '/' + eaten]]);
       return;
     }
-    if (gold) { gold.t -= dt; if (gold.t <= 0) { fx.burst(cx(gold.x), cy(gold.y), '#ffd166', 10, 120, 0.4, 2); gold = null; } }
+    if (gold) { var gt0 = gold.t; gold.t -= dt; if (gold.t <= 3 && gold.t > 0 && Math.floor(gold.t) !== Math.floor(gt0)) A.sfx('tick'); if (gold.t <= 0) { A.sfx('pop', 0.7); fx.burst(cx(gold.x), cy(gold.y), '#ffd166', 10, 120, 0.4, 2); gold = null; } }
     acc += dt;
     while (acc >= interval) { acc -= interval; step(); if (dying) break; }
   }

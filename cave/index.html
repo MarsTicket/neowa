@@ -181,7 +181,7 @@
         else { bonus += 10; fx.text(P.x + 10, P.y - 30, '+10', '#9fffe0', 14); }
       }
     });
-    for (var i = gems.length - 1; i >= 0; i--) if (Math.hypot(gems[i].x - P.x, gems[i].y - P.y) < 30) { var g = gems.splice(i, 1)[0]; gemN++; fx.burst(g.x, g.y, '#ffd166', 12, 200, 0.4, 3); fx.text(g.x, g.y - 20, '+25', '#ffd166', 18); A.sfx('coin'); }
+    for (var i = gems.length - 1; i >= 0; i--) if (Math.hypot(gems[i].x - P.x, gems[i].y - P.y) < 30) { var g = gems.splice(i, 1)[0]; gemN++; fx.burst(g.x, g.y, '#ffd166', 12, 200, 0.4, 3); fx.text(g.x, g.y - 20, '+25', '#ffd166', 18); A.sfx('coin', 1 + (gemN % 8) * 0.04); }
     score = Math.floor(dist / 10) + gemN * 25 + bonus;
     if (dist / 10 >= nextMile) { S.banner(nextMile + 'm', nextMile % 1500 ? '동굴이 좁아집니다' : '속도 UP!'); A.sfx('level'); nextMile += 500; }
     hud();

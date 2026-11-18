@@ -154,15 +154,16 @@
       if (!o.hit && !o.near && y > PY + 50) { o.near = true; if (Math.abs(x - car.x) < 80) { nearN++; var nb = 30 + Math.min(5, nearN) * 10; score += nb; fx.text(car.x, PY - 60, '아슬아슬 +' + nb, '#ffe066', 18); A.sfx('coin', 1.3); } }
       if (!o.hit && Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { nearN = 0; o.hit = true; fuel -= 15; speed *= 0.45; fx.burst(x, y, '#ff4d6d', 24, 300, 0.5, 3.5); fx.shake(9, 0.3); A.sfx('hurt'); A.vibrate(120); fx.text(car.x, PY - 70, '연료 -15', '#ff4d6d', 20); } });
     cans = cans.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { fuel = Math.min(100, fuel + 22); score += 100; fx.burst(x, y, '#7dff9b', 14, 220, 0.4, 3); fx.text(x, y - 40, '연료 +22', '#7dff9b', 18); A.sfx('power'); return false; } return y < H + 60; });
-    boosts = boosts.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { boostT = 2.5; score += 50; fx.ring(car.x, PY, '#ffe066', 120, 0.5); A.sfx('level'); return false; } return y < H + 60; });
+    boosts = boosts.filter(function (o) { var y = sy(o.d), x = cx(o.d) + o.off; if (Math.abs(y - PY) < 50 && Math.abs(x - car.x) < 44) { boostT = 2.5; score += 50; fx.ring(car.x, PY, '#ffe066', 120, 0.5); A.sfx('charge', 1.2); A.sfx('whoosh'); return false; } return y < H + 60; });
     obs = obs.filter(function (o) { return sy(o.d) < H + 60; });
     score += speed * dt / 30;
     if (dist >= mile * 10000) { S.banner(mile * 10 + ' KM', '보너스 +' + mile * 100); score += mile * 100; A.sfx('level'); mile++; }
-    if (fuel < 25 && Math.floor(fuel / 5) !== lowF) { lowF = Math.floor(fuel / 5); if (fuel > 0) { A.sfx('tick', 0.8); fx.text(car.x, PY - 90, '연료 부족!', '#ff4d6d', 18); } }
-    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.sfx('over'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
+    if (fuel < 25 && Math.floor(fuel / 5) !== lowF) { lowF = Math.floor(fuel / 5); if (fuel > 0) { A.sfx('warn'); fx.text(car.x, PY - 90, '연료 부족!', '#ff4d6d', 18); } }
+    var lowNow = fuel < 25; if (lowNow !== lowMood) { lowMood = lowNow; A.music.mood(lowMood ? 'danger' : null); }
+    if (fuel <= 0) { fuel = 0; dyingT = 1.2; A.music.mood(null); lowMood = false; A.sfx('drop'); fx.text(car.x, PY - 80, '연료 바닥', '#ff4d6d', 26); }
     hud();
   }
-  var maxSp = 0;
+  var maxSp = 0, lowMood = false; // lowMood: 연료 부족 때 배경음악 위기 분위기 (lowF는 경고 글자용)
   function render(c) {
     if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time, d0 = dist || t * 300;

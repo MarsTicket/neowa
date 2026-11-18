@@ -40,7 +40,8 @@
  "rules": [
   "한 번 맞으면 끝",
   "<kbd style=\"color:#ff4d6d\">━</kbd> 레이저는 깜빡인 뒤 발사",
-  "<kbd style=\"color:#ffd166\">●</kbd> 에너지 +100, 5개 모으면 폭탄"
+  "<kbd style=\"color:#ffd166\">●</kbd> 에너지 +100, 5개 모으면 폭탄",
+  "<kbd style=\"color:#9ff3ff\">≈</kbd> 탄을 아슬아슬하게 스치면 +10"
  ],
  "hud": [
   [

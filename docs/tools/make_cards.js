@@ -25,6 +25,9 @@ const G={
  four:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of ['4','3','5','4','2']){await p.keyboard.press(k);await p.waitForTimeout(1100);}}, cy:0.5, acc:'#ffe066'},
  merge:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of '3132433251525143'){await p.keyboard.press(k);await p.waitForTimeout(450);}}, cy:0.45, acc:'#ffb547'},
  paint:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(let i=0;i<3;i++){await p.keyboard.press('h');await p.waitForTimeout(120);}await p.waitForTimeout(300);}, cy:0.45, acc:'#ff7aa8'},
+ sort:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);await p.keyboard.press('1');await p.waitForTimeout(200);}, cy:0.45, acc:'#b48cff'},
+ sum:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of ['h','ArrowRight','h','ArrowDown','h'])await p.keyboard.press(k);await p.waitForTimeout(300);}, cy:0.4, acc:'#c3ff5e'},
+ hexa:{acts:async(p,b)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of ['1','ArrowLeft','ArrowLeft',' ','1','ArrowRight','ArrowRight',' ','1','ArrowDown',' ','1','ArrowUp','ArrowUp',' '])await p.keyboard.press(k);await p.waitForTimeout(300);}, cy:0.42, acc:'#4dffd2'},
  sudoku:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of ['h','ArrowDown','ArrowRight','ArrowRight','h','ArrowDown','h'])await p.keyboard.press(k);await p.waitForTimeout(250);}, cy:0.36, acc:'#c3ff5e'},
 };
 (async()=>{const br=await chromium.launch();

@@ -1138,5 +1138,65 @@
   "new": true,
   "art": "capture",
   "maxScore": 500000
+ },
+ {
+  "id": "sort",
+  "name": "색 병 정렬",
+  "genre": "COLOR SORT",
+  "kgenre": "정리 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#b48cff",
+  "rgb": "180,140,255",
+  "ink": "#16062e",
+  "desc": "병을 골라 다른 병에 부어 같은 색끼리 모으세요. 단계마다 색이 늘어나는 10분 도전.",
+  "tags": [
+   "탭 두 번",
+   "항상 풀림",
+   "10분 도전"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "sum",
+  "name": "합 퍼즐",
+  "genre": "SUM LOGIC",
+  "kgenre": "숫자 논리",
+  "cat": "퍼즐",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "가로·세로 줄의 합계 단서에 맞게 1~9를 채우세요. 매번 새로 만들어지는 답이 하나뿐인 퍼즐.",
+  "tags": [
+   "합계 단서",
+   "답은 하나",
+   "조합 안내"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
+ },
+ {
+  "id": "hexa",
+  "name": "육각 블록",
+  "genre": "HEX BLOCKS",
+  "kgenre": "블록 퍼즐",
+  "cat": "퍼즐",
+  "accent": "#4dffd2",
+  "rgb": "77,255,210",
+  "ink": "#00241b",
+  "desc": "육각 조각을 끌어다 놓고 세 방향 중 어느 직선이든 꽉 채워 지우세요. 연속으로 지우면 배율이 올라가요.",
+  "tags": [
+   "끌어다 놓기",
+   "세 방향 줄",
+   "콤보"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000000
  }
 ]

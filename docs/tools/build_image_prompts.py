@@ -70,6 +70,9 @@ SCENE = {
  'four': ('a glossy deep-blue upright game board with round holes, shiny yellow and magenta discs stacked inside, one yellow disc falling into a column, four yellow discs in a diagonal row glowing with a bright light line', '돌을 떨어뜨려 4개를 잇는 판'),
  'merge': ('glossy rounded number tiles in warm amber, teal and magenta stacked in five columns, one tile shooting upward with a light trail and merging into a matching tile in a burst of golden sparks', '숫자 블록을 쏘아 올려 합치는 장면'),
  'paint': ('a glowing pink-to-orange brush stroke snaking through a grid of rounded tiles, filling each square exactly once around a few dark blocked squares, a bright white brush tip glowing', '한붓으로 격자를 칠해 가는 장면'),
+ 'sort': ('a row of tall glass test-tube bottles on a dark shelf filled with stacked layers of glossy liquid in red, yellow, cyan and violet, one bottle tilted pouring a violet stream into another, soft purple glow', '색 병 사이로 액체를 부어 정리하는 장면'),
+ 'sum': ('a glowing lime-green number cross puzzle grid with dark clue squares split diagonally holding small sums, bright digits filling white squares, one row lighting up as it completes', '합계 단서로 숫자를 채우는 퍼즐판'),
+ 'hexa': ('a glowing hexagonal board made of small hexagon cells, glossy mint, cyan and pink hex tiles filling it, one straight diagonal line of hexes bursting into light as it clears, a hex piece hovering above', '육각 판에서 한 줄이 터지는 순간'),
 }
 
 def build():

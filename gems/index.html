@@ -115,7 +115,10 @@
 <script>
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, N = 8, CS = 62, GX = (540 - 8 * 62) / 2, GY = 220, NC = 6;
+  var A = Arcade, W = 540, H = 960, N = 8, CS = 62, GX = (540 - 8 * 62) / 2, GY = 220, NC = 6, land = false;
+  // 세로: 540×960 / 가로 화면: 720×720 정사각형 판 (점수판은 오른쪽 패널)
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; if (land) { CS = 82; GX = GY = (720 - N * CS) / 2; } else { CS = 62; GX = (540 - N * CS) / 2; GY = 220; } }
+  function msgY() { return land ? H / 2 : GY - 30; }
   var COLS = ['#ff4d6d', '#ffd166', '#7dff9b', '#5ee7ff', '#b48cff', '#ff7aa8'];
   var fx = new A.FX();
   var g, moves, score, chain, bestChain, busy, sel, drag = null, cur = { x: 3, y: 3 }, kbd = false, dyingT, falling, idleT = 0, hintMv = null, chainBonus = false;
@@ -150,7 +153,7 @@
   function resolve(swapA, swapB) {
     var runs = findMatches(); if (!runs.length) return false;
     chain++; bestChain = Math.max(bestChain, chain);
-    if (chain === 3 && !chainBonus) { chainBonus = true; moves++; fx.text(W / 2, GY + N * CS + 40, '3연쇄 보너스: 이동 +1', '#7dff9b', 22); A.sfx('power'); }
+    if (chain === 3 && !chainBonus) { chainBonus = true; moves++; fx.text(W / 2, land ? H / 2 + 44 : GY + N * CS + 40, '3연쇄 보너스: 이동 +1', '#7dff9b', 22); A.sfx('power'); }
     var set = {}, make = [];
     runs.forEach(function (r) {
       r.cells.forEach(function (p) { blastCells(set, p[0], p[1]); });
@@ -162,7 +165,7 @@
     var n = 0;
     Object.keys(set).forEach(function (k) { var p = k.split(',').map(Number), it = g[p[1]][p[0]]; fx.burst(GX + (p[0] + 0.5) * CS, GY + (p[1] + 0.5) * CS, COLS[it.c] || '#fff', 6, 200, 0.4, 3); it.c = -1; n++; });
     make.forEach(function (m) { g[m.y][m.x] = { c: m.sp === 'bomb' ? 9 : m.c, sp: m.sp, dy: 0 }; });
-    var pts = n * 10 * chain; score += pts; fx.text(W / 2, GY - 30, (chain > 1 ? chain + '연쇄 ' : '') + '+' + pts, chain > 1 ? '#ffd166' : '#fff', chain > 1 ? 26 : 20);
+    var pts = n * 10 * chain; score += pts; fx.text(W / 2, msgY(), (chain > 1 ? chain + '연쇄 ' : '') + '+' + pts, chain > 1 ? '#ffd166' : '#fff', chain > 1 ? 26 : 20);
     A.sfx(chain > 1 ? 'gold' : 'coin', 1 + chain * 0.08); fx.shake(Math.min(10, 2 + n * 0.3), 0.15);
     collapse(); return true;
   }
@@ -178,7 +181,7 @@
     var set = {}; g[by][bx].c = -1;
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) if (g[y][x].c === color) blastCells(set, x, y);
     var n = 0; Object.keys(set).forEach(function (k) { var p = k.split(',').map(Number); fx.burst(GX + (p[0] + 0.5) * CS, GY + (p[1] + 0.5) * CS, COLS[g[p[1]][p[0]].c] || '#fff', 8, 260, 0.5, 3); g[p[1]][p[0]].c = -1; n++; });
-    score += n * 30; fx.flashIt('#ffffff', 0.4); A.sfx('bigboom'); fx.text(W / 2, GY - 30, '색 폭탄! +' + n * 30, '#ffd166', 28); collapse();
+    score += n * 30; fx.flashIt('#ffffff', 0.4); A.sfx('bigboom'); fx.text(W / 2, msgY(), '색 폭탄! +' + n * 30, '#ffd166', 28); collapse();
   }
   function trySwap(x1, y1, x2, y2) {
     if (busy > 0 || dyingT > 0 || S.state !== 'playing' || !at(x2, y2) || Math.abs(x1 - x2) + Math.abs(y1 - y2) !== 1) return;
@@ -209,7 +212,7 @@
     c.save(); c.translate(px, py);
     if (it.sp === 'bomb') { var gr = c.createRadialGradient(0, 0, 2, 0, 0, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.5, '#b48cff'); gr.addColorStop(1, '#ff4d6d'); c.fillStyle = gr; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill(); c.restore(); return; }
     // 빛 번짐이 있는 보석 모양은 색마다 한 번만 그려 둠 (매 프레임 shadowBlur 금지)
-    var r0 = CS * 0.38, spr = A.sprite('gem' + it.c, r0 * 2 + 24, r0 * 2 + 24, function (x, w) {
+    var r0 = CS * 0.38, spr = A.sprite('gem' + it.c + '_' + CS, r0 * 2 + 24, r0 * 2 + 24, function (x, w) {
       x.translate(w / 2, w / 2); x.shadowColor = col; x.shadowBlur = 10; x.fillStyle = col; x.beginPath();
       var sides = [6, 4, 5, 8, 3, 0][it.c % 6];
       if (!sides) x.arc(0, 0, r0, 0, 7); else for (var k = 0; k < sides; k++) { var a = k / sides * Math.PI * 2 - Math.PI / 2; x[k ? 'lineTo' : 'moveTo'](Math.cos(a) * r0, Math.sin(a) * r0); }
@@ -250,10 +253,22 @@
   });
   stage.addEventListener('pointermove', function (e) { if (!drag || drag.id !== e.pointerId) return; var p = S.toLocal(e), dx = p.x - drag.x, dy = p.y - drag.y; if (Math.max(Math.abs(dx), Math.abs(dy)) > CS * 0.4) { var t = Math.abs(dx) > Math.abs(dy) ? [drag.c[0] + Math.sign(dx), drag.c[1]] : [drag.c[0], drag.c[1] + Math.sign(dy)]; trySwap(drag.c[0], drag.c[1], t[0], t[1]); drag = null; sel = null; } });
   stage.addEventListener('pointerup', function () { drag = null; });
-  var S = new A.Shell({ id: 'gems', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    // 가로 화면 패널: 점수판 복사본 + 큰 버튼 (게임판 위 점수판은 가로에서 숨김)
+  function landPanel(btns) {
+    var hudEl = document.querySelector('.g-hud'), ids = ['hA', 'hB', 'hC'], h = '<div class="g-card gp-stats">';
+    hudEl.setAttribute('data-land-hide', '');
+    ids.forEach(function (id) { var v = document.getElementById(id), lb = v.parentNode.querySelector('.h-lb'); h += '<div><span>' + (lb ? lb.textContent : '') + '</span><b id="pk' + id + '" style="font-size:22px"></b></div>'; });
+    h += '</div><div id="pkMult" style="min-height:18px;padding:0 6px;font-size:14px;font-weight:700;color:var(--accent)"></div>' + (btns || '');
+    S.panelSlot.innerHTML = h;
+    function sync() { ids.forEach(function (id) { var v = document.getElementById(id), d = document.getElementById('pk' + id); d.textContent = v.textContent; d.style.color = v.style.color; }); var m = document.getElementById('hMult'); document.getElementById('pkMult').textContent = m ? m.textContent : ''; }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style'] });
+    sync();
+  }
+  var S = new A.Shell({ id: 'gems', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { kbd = true; var k = e.key, d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] }[k];
       if (d) { if (sel) { trySwap(sel[0], sel[1], sel[0] + d[0], sel[1] + d[1]); sel = null; } else { cur.x = A.clamp(cur.x + d[0], 0, N - 1); cur.y = A.clamp(cur.y + d[1], 0, N - 1); } }
       if ((k === ' ' || k === 'Enter') && !e.repeat) sel = sel ? null : [cur.x, cur.y]; } });
+  landPanel('');
 })();
 
 </script>

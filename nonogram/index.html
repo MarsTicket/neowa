@@ -68,7 +68,7 @@
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭으로 칠하기</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>매번 새 퍼즐</span>
         </div>
-        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">5×5</button><button type="button" data-diff="1">8×8</button><button type="button" data-diff="2">10×10</button></div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">5×5</button><button type="button" data-diff="1">8×8</button><button type="button" data-diff="2">10×10</button><button type="button" data-diff="3">오늘의 퍼즐</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -117,7 +117,13 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
-  var diff = +A.get('neowa_nonogram_diff', '0') || 0, SIZES = [5, 8, 10];
+  var diff = +A.get('neowa_nonogram_diff', '0') || 0, SIZES = [5, 8, 10, 10]; // 4번째 = 오늘의 퍼즐 (10x10)
+  // 오늘의 퍼즐: 날짜(로컬 YYYYMMDD) 시드 난수 → 오늘은 누구나 같은 그림
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function seeded(a) { return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var rnd = Math.random;
+  var tut = A.get('neowa_nonogram_tut', '') !== '1', tutT = 0; // 첫 판 안내
+  function isTouch() { return document.body.classList.contains('touch'); }
   var N, sol, st, rowC, colC, CS, GX, GY, mistakes, time, xMode, done, dyingT, cur = { x: 0, y: 0 }, kbd = false, paint = null, hints = 3, givens = [];
   function clues(line) { var r = [], run = 0; line.forEach(function (v) { if (v) run++; else if (run) { r.push(run); run = 0; } }); if (run) r.push(run); return r.length ? r : [0]; }
   // 줄 풀이: 단서와 현재 알려진 칸(1 칠함, -1 빈칸, 0 모름)으로 가능한 배치를 모두 따져 확정 칸을 찾음
@@ -168,9 +174,9 @@
   var land = false;
   function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; place(); }
   function setup() {
-    N = SIZES[diff];
+    N = SIZES[diff]; rnd = diff === 3 ? seeded(today() * 17 + 5) : Math.random;
     for (var tries = 0; tries < 80; tries++) {
-      sol = []; for (var i = 0; i < N * N; i++) sol.push(Math.random() < 0.58 ? 1 : 0);
+      sol = []; for (var i = 0; i < N * N; i++) sol.push(rnd() < 0.58 ? 1 : 0);
       rowC = []; colC = []; for (var r = 0; r < N; r++) rowC.push(clues(sol.slice(r * N, r * N + N)));
       for (var c = 0; c < N; c++) { var col = []; for (var y = 0; y < N; y++) col.push(sol[y * N + c]); colC.push(clues(col)); }
       if (uniqueByLines(rowC, colC)) break;
@@ -181,14 +187,14 @@
     for (var guard = 0; guard < N * N && known; guard++) {
       var open = []; for (i = 0; i < N * N; i++) if (!known[i]) open.push(i);
       if (!open.length) break;
-      var gi = open[Math.floor(Math.random() * open.length)]; givens.push(gi);
+      var gi = open[Math.floor(rnd() * open.length)]; givens.push(gi);
       known[gi] = sol[gi] ? 1 : -1; known = solveLines(rowC, colC, known);
     }
     place();
     st = []; for (i = 0; i < N * N; i++) st.push(0);
     givens.forEach(function (k) { st[k] = sol[k] ? 1 : -1; });
   }
-  function reset() { mistakes = 0; time = 0; xMode = false; done = 0; dyingT = 0; hints = 3; paint = null; setup(); fx.clear(); hud(); }
+  function reset() { mistakes = 0; time = 0; xMode = false; done = 0; dyingT = 0; hints = 3; paint = null; tutT = 0; setup(); rnd = Math.random; fx.clear(); hud(); }
   function lineDone(i) { // 줄 완성 시 남은 칸 X 자동
     var x = i % N, y = Math.floor(i / N), k;
     var rowOk = true; for (k = 0; k < N; k++) if (sol[y * N + k] && st[y * N + k] !== 1) rowOk = false;
@@ -200,7 +206,7 @@
     if (S.state !== 'playing' || done || dyingT > 0 || st[i] !== 0) return false;
     var miss = false;
     if (asX) { if (sol[i]) { mistake(i, 1); miss = true; } else { st[i] = -1; A.sfx('tick', 0.9); } }
-    else { if (!sol[i]) { mistake(i, -1); miss = true; } else { st[i] = 1; A.sfx('tick', 1.4); lineDone(i); } }
+    else { if (!sol[i]) { mistake(i, -1); miss = true; } else { st[i] = 1; A.sfx('tick', 1.4); lineDone(i); if (tut) { tut = false; A.set('neowa_nonogram_tut', '1'); } } }
     if (sol.every(function (v, k) { return !v || st[k] === 1; })) { done = 1.4; A.sfx('level'); st = st.map(function (v, k) { return sol[k] ? 1 : -1; }); for (var j = 0; j < 4; j++) fx.burst(A.rand(100, W - 100), A.rand(250, 700), '#ff9e4d', 20, 300, 0.7, 4); }
     hud(); return miss ? 'miss' : true;
   }
@@ -218,12 +224,15 @@
     act(k, !sol[k]);
   }
   function mistake(i, val) { mistakes++; st[i] = val; A.sfx('hurt', 1.4); A.vibrate(80); fx.shake(5, 0.2); fx.text(GX + (i % N + 0.5) * CS, GY + Math.floor(i / N) * CS, '✕', '#ff4d6d', 24); if (mistakes >= 3) { dyingT = 1.2; fx.flashIt('#ff2244', 0.4); } }
-  function score() { var b = [300, 1200, 3000][diff]; return Math.max(Math.round(b * 0.5), Math.round(b * 2 - time * b / 300 - mistakes * b * 0.2 - (3 - hints) * b * 0.1)); }
+  function score() { var b = [300, 1200, 3000, 3000][diff]; return Math.max(Math.round(b * 0.5), Math.round(b * 2 - time * b / 300 - mistakes * b * 0.2 - (3 - hints) * b * 0.1)); }
   function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
   function update(dt) {
     fx.update(dt);
-    if (done > 0) { done -= dt; if (done <= 0) S.gameOver(score(), [['크기', N + '×' + N], ['시간', fmt(time)], ['실수', String(mistakes)]], { kick: 'SOLVED!', win: true }); return; }
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) { var got = st.filter(function (v, k) { return v === 1 && sol[k]; }).length, need = sol.filter(Boolean).length; S.gameOver(Math.round(got / need * [100, 300, 600][diff]), [['크기', N + '×' + N], ['칠한 칸', got + '/' + need]]); } return; }
+    if (done > 0) { done -= dt; if (done <= 0) {
+      // 최단 기록: 크기별 neowa_nonogram_time_<난이도>, 오늘의 퍼즐은 neowa_nonogram_daily_<YYYYMMDD>
+      var k = diff === 3 ? 'neowa_nonogram_daily_' + today() : 'neowa_nonogram_time_' + diff, b = parseFloat(A.get(k, '0')) || 0, rec = !b || time < b; if (rec) A.set(k, time.toFixed(0));
+      S.gameOver(score(), [[diff === 3 ? '오늘의 퍼즐' : '크기', N + '×' + N], ['시간', fmt(time) + (b && rec ? ' 🏅' : '')], [diff === 3 ? '오늘 최단' : '최단', fmt(parseFloat(A.get(k, '0')) || time)]], { kick: 'SOLVED!', win: true }); } return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) { var got = st.filter(function (v, k) { return v === 1 && sol[k]; }).length, need = sol.filter(Boolean).length; S.gameOver(Math.round(got / need * [100, 300, 600, 600][diff]), [['크기', N + '×' + N], ['칠한 칸', got + '/' + need]]); } return; }
     time += dt; hud();
   }
   function render(c) {
@@ -247,9 +256,23 @@
     var by = Math.max(GY + N * CS + 30, 800);
     if (!land) [['칠하기', !xMode], ['✕ 빈칸', xMode], ['힌트 ' + hints, false]].forEach(function (b, k) { var bx = btnX(k), off = k === 2 && (!hints || S.state !== 'playing'); c.fillStyle = b[1] ? '#ff9e4d' : k === 2 ? 'rgba(94,231,255,' + (off ? 0.04 : 0.12) + ')' : 'rgba(255,255,255,.06)'; A.rr(c, bx, by, BW, 60, 16); c.fill(); c.fillStyle = b[1] ? '#2a1200' : k === 2 ? (off ? 'rgba(255,255,255,.3)' : '#5ee7ff') : '#ffd6b0'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(b[0], bx + BW / 2, by + 31); });
     btnY = by;
+    if (tut && st && S.state === 'playing' && !done && dyingT <= 0) drawTut(c);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var btnY = 800, BW = 160;
+  // 첫 판 안내: 판 아래쪽 말풍선 + 단서 숫자 쪽 깜빡임
+  function drawTut(c) {
+    tutT += 1 / 60;
+    var l1 = '왼쪽·위 숫자 = 그 줄에 이어서 칠할 칸 수', l2 = isTouch() ? '확실한 칸을 탭해서 칠하세요 · 끌면 한 줄 여러 칸' : '확실한 칸을 클릭(Space)해서 칠하세요';
+    var a = Math.min(1, tutT * 3), bw = Math.min(W - 30, 490), bx = (W - bw) / 2, by = land ? H - 104 : btnY - 104;
+    c.globalAlpha = a * 0.93; c.fillStyle = '#231204'; A.rr(c, bx, by, bw, 92, 18); c.fill(); c.strokeStyle = '#ff9e4d'; c.lineWidth = 2; c.stroke(); c.globalAlpha = a;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#ff9e4d'; c.font = '800 20px "Pretendard Variable",system-ui'; c.fillText(l1, W / 2, by + 32);
+    c.fillStyle = 'rgba(255,214,176,.85)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.fillText(l2, W / 2, by + 64);
+    var pr = 0.5 + 0.5 * Math.sin(S.time * 6); c.strokeStyle = 'rgba(255,209,102,' + (0.4 + pr * 0.6) + ')'; c.lineWidth = 3;
+    c.strokeRect(GX - CS * 0.1 - (GX - 20), GY, GX - 20, CS); c.strokeRect(GX, GY - CS * 0.1 - (GY - (land ? 20 : 110)), CS, GY - (land ? 20 : 110));
+    c.globalAlpha = 1;
+  }
   function btnX(k) { return W / 2 - 250 + k * 170; }
   function hud() { document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = mistakes + '/3'; document.getElementById('hC').textContent = fmt(time); document.getElementById('hMult').textContent = N + '×' + N; paintPanel(); }
   var pEl = {};

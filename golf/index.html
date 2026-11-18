@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/golf.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>미니 골프 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 미니 골프. 당겼다 놓아서 공을 치고 벽에 튕겨 홀에 넣으세요. 풍차, 연못, 모래, 비탈, 순간이동이 있는 코스 20개 중 9홀이 매번 다르게 나옵니다.">
+<meta property="og:title" content="미니 골프 · 너와 아케이드">
+<meta property="og:description" content="벽에 튕겨 한 번에 쏙! 9홀 미니 골프 한 라운드.">
+<meta property="og:image" content="https://neowa.kr/assets/golf-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=5">
+<style>:root{--accent:#7dff9b;--accent-ink:#04170a;--ar:125,255,155}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 62</small>미니 골프</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only"><kbd>←→</kbd> 방향 · <kbd>↑↓</kbd> 세기 · <kbd>Space</kbd> 치기</div>
+          <div class="k-only">마우스로 끌어 당겼다 놓아도 OK</div>
+          <div class="t-only"><kbd>아무 곳이나 끌기</kbd> 당긴 반대쪽으로 날아가요</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>홀마다 기준 타수(PAR)보다 적게 치면 점수가 커요</div>
+          <div>물에 빠지면 1타 추가 · 모래에선 공이 느려져요</div>
+          <div>10타가 넘으면 다음 홀로 넘어가요</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">HOLE</span><span class="h-v sm" id="hB">1/9</span></div>
+        <div class="h-box r"><span class="h-lb">STROKE</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 62</p>
+        <h1 class="ov-title">미니 골프</h1>
+        <p class="ov-desc">끌어 당겼다 놓으면 반대 방향으로 공을 칩니다. 적은 타수로 9홀을 돌아 보세요!</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>당겼다 놓기 = 샷</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>홀인원 +500</span>
+        </div>
+        
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>라운드 시작</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=5"></script>
+<script>
+(function () {
+  'use strict';
+  // 미니 골프: 위에서 내려다본 코스 9홀. 당겨 쏘기. 코스 조각 20개 중 9개를 골라 좌우를 무작위로 뒤집음
+  var A = Arcade, W = 540, H = 960, R = 9, HR = 15, FL = 40, FR = 500, FT = 140, FB = 890, VMAX = 1250;
+  var fx = new A.FX();
+  // 코스 조각: par, 출발 t, 홀 h, 막힌 블록 b[x,y,w,h], 벽 선분 l[x1,y1,x2,y2], 모래 s, 물 w, 경사 sl[x,y,w,h,ax,ay], 범퍼 bp[x,y,r], 회전 막대 sp[x,y,반길이,속도], 미닫이 sd[x1,x2,y,반길이,주기], 순간이동 tp[ax,ay,bx,by]
+  var COURSES = [
+    { n: '곧은 길', par: 2, t: [270, 820], h: [270, 230], b: [[40, 140, 140, 750], [360, 140, 140, 750]] },
+    { n: 'ㄱ자 꺾기', par: 3, t: [420, 820], h: [110, 215], b: [[40, 300, 300, 590]] },
+    { n: '모래 언덕', par: 3, t: [270, 830], h: [270, 205], s: [[40, 430, 300, 90], [240, 610, 260, 90]] },
+    { n: '연못', par: 3, t: [270, 830], h: [270, 210], w: [[140, 380, 260, 180]] },
+    { n: '풍차', par: 3, t: [270, 830], h: [270, 220], b: [[40, 140, 120, 750], [380, 140, 120, 750]], sp: [[270, 500, 92, 1.7]] },
+    { n: '범퍼 숲', par: 3, t: [270, 840], h: [270, 210], bp: [[170, 420, 22], [270, 350, 22], [370, 420, 22], [220, 560, 22], [320, 560, 22], [270, 690, 22]] },
+    { n: '지그재그', par: 4, t: [300, 825], h: [130, 240], b: [[170, 640, 330, 36], [40, 420, 330, 36]] },
+    { n: '순간이동', par: 3, t: [140, 830], h: [400, 220], b: [[40, 490, 460, 40]], tp: [[400, 650, 140, 380]] },
+    { n: '비탈길', par: 3, t: [270, 830], h: [120, 220], sl: [[40, 340, 460, 260, 210, 0]] },
+    { n: '깔때기', par: 2, t: [270, 820], h: [270, 240], l: [[40, 600, 225, 390], [500, 600, 315, 390]] },
+    { n: '섬 그린', par: 3, t: [270, 830], h: [270, 315], w: [[110, 180, 320, 50], [110, 230, 50, 220], [380, 230, 50, 220], [110, 400, 110, 50], [320, 400, 110, 50]] },
+    { n: '갈지자 미로', par: 4, t: [420, 830], h: [120, 225], b: [[40, 700, 300, 30], [200, 540, 300, 30], [40, 380, 300, 30]] },
+    { n: '미닫이 문', par: 3, t: [270, 830], h: [270, 230], b: [[40, 470, 175, 26], [325, 470, 175, 26]], sd: [[175, 365, 456, 52, 2.6]] },
+    { n: '두 갈래', par: 3, t: [270, 840], h: [270, 220], b: [[205, 320, 130, 420]], s: [[40, 450, 165, 120]], bp: [[440, 520, 20]] },
+    { n: 'U턴', par: 4, t: [120, 830], h: [400, 790], b: [[205, 320, 90, 570]], sl: [[295, 330, 205, 300, 0, 170]], s: [[40, 140, 460, 60]] },
+    { n: '범퍼 골목', par: 3, t: [270, 840], h: [270, 210], b: [[40, 140, 110, 750], [390, 140, 110, 750]], bp: [[205, 650, 20], [335, 520, 20], [205, 390, 20]] },
+    { n: '외나무다리', par: 3, t: [270, 830], h: [270, 220], w: [[40, 430, 190, 130], [310, 430, 190, 130]] },
+    { n: '쌍둥이 풍차', par: 4, t: [270, 850], h: [270, 200], sp: [[180, 610, 80, 1.5], [360, 390, 80, -1.9]] },
+    { n: '가림막', par: 3, t: [270, 830], h: [270, 215], b: [[150, 300, 240, 34]], l: [[40, 470, 120, 400], [500, 470, 420, 400]] },
+    { n: '벙커 그린', par: 4, t: [270, 850], h: [270, 240], s: [[185, 170, 170, 150]], w: [[40, 520, 170, 150]], sp: [[380, 570, 70, 1.6]] }
+  ];
+  var holes, hi, C, segs, ball, last, strokes, score, totalStrokes, totalPar, aces, phase, phaseT, drag, kAng, kPow, kbd, keys = {}, shotT, sinkT, portalLock, tim, results;
+
+  function flipX(x) { return W - x; }
+  function build(src, flip) {
+    // 좌우 뒤집기를 적용한 코스 복사본 + 충돌용 선분 목록
+    function X(x) { return flip ? flipX(x) : x; }
+    function rect(r) { return flip ? [W - r[0] - r[2], r[1], r[2], r[3]] : r.slice(); }
+    var c = { n: src.n, par: src.par, t: [X(src.t[0]), src.t[1]], h: [X(src.h[0]), src.h[1]] };
+    c.b = (src.b || []).map(rect); c.s = (src.s || []).map(rect); c.w = (src.w || []).map(rect);
+    c.sl = (src.sl || []).map(function (q) { var r = rect(q); r.push(flip ? -q[4] : q[4], q[5]); return r; });
+    c.l = (src.l || []).map(function (q) { return [X(q[0]), q[1], X(q[2]), q[3]]; });
+    c.bp = (src.bp || []).map(function (q) { return { x: X(q[0]), y: q[1], r: q[2], hit: 0 }; });
+    c.sp = (src.sp || []).map(function (q) { return { x: X(q[0]), y: q[1], L: q[2], w: flip ? -q[3] : q[3], a: Math.random() * Math.PI }; });
+    c.sd = (src.sd || []).map(function (q) { var a = X(q[0]), b = X(q[1]); return { x1: Math.min(a, b), x2: Math.max(a, b), y: q[2], L: q[3], p: q[4], x: (a + b) / 2, vx: 0 }; });
+    c.tp = (src.tp || []).map(function (q) { return { ax: X(q[0]), ay: q[1], bx: X(q[2]), by: q[3] }; });
+    var s = [[FL, FT, FR, FT], [FR, FT, FR, FB], [FR, FB, FL, FB], [FL, FB, FL, FT]];
+    c.b.forEach(function (r) { var x0 = r[0], y0 = r[1], x1 = r[0] + r[2], y1 = r[1] + r[3]; s.push([x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]); });
+    c.l.forEach(function (q) { s.push(q); });
+    segs = s; return c;
+  }
+  function inRect(x, y, r, pad) { pad = pad || 0; return x > r[0] - pad && x < r[0] + r[2] + pad && y > r[1] - pad && y < r[1] + r[3] + pad; }
+  function pickHoles() {
+    var idx = []; for (var i = 0; i < COURSES.length; i++) idx.push(i);
+    for (i = idx.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+    // 쉬운 홀(par 2)이 앞쪽, 어려운 홀(par 4)이 뒤쪽에 오도록 9개를 정렬
+    return idx.slice(0, 9).sort(function (a, b) { return COURSES[a].par - COURSES[b].par || a - b; }).map(function (k) { return { k: k, flip: Math.random() < 0.5 }; });
+  }
+  function startHole() {
+    var hcur = holes[hi]; C = build(COURSES[hcur.k], hcur.flip);
+    ball = { x: C.t[0], y: C.t[1], vx: 0, vy: 0, s: 1, z: 0 }; last = { x: ball.x, y: ball.y };
+    strokes = 0; phase = 'aim'; phaseT = 0; drag = null; shotT = 0; sinkT = 0; portalLock = null;
+    kAng = Math.atan2(C.h[1] - C.t[1], C.h[0] - C.t[0]); kPow = 0.55;
+    hud(); fx.clear();
+  }
+  function reset() {
+    holes = pickHoles(); hi = 0; score = 0; totalStrokes = 0; totalPar = 0; aces = 0; tim = 0; results = []; kbd = false;
+    startHole();
+  }
+
+  // ---------- 샷 ----------
+  function shoot(ang, pow) {
+    if (phase !== 'aim' || S.state !== 'playing') return;
+    pow = A.clamp(pow, 0.04, 1);
+    var v = 140 + pow * (VMAX - 140); ball.vx = Math.cos(ang) * v; ball.vy = Math.sin(ang) * v;
+    last = { x: ball.x, y: ball.y }; strokes++; phase = 'roll'; shotT = 0; kAng = ang; kPow = pow;
+    A.sfx('shoot', 0.6 + pow * 0.5); A.vibrate(12); hud();
+  }
+  function penalty(msg) {
+    strokes++; ball.x = last.x; ball.y = last.y; ball.vx = ball.vy = 0; phase = 'aim'; hud();
+    fx.text(ball.x, ball.y - 30, msg, '#9fd8ff', 22); A.sfx('hurt'); A.vibrate(30);
+    if (strokes >= 10) giveUp();
+  }
+  function giveUp() { phase = 'sunk'; phaseT = 0; finishHole(C.par * 2, true); }
+  var NAMES = { '-3': '앨버트로스!', '-2': '이글!', '-1': '버디!', '0': '파', '1': '보기', '2': '더블 보기' };
+  function finishHole(st, gave) {
+    strokes = st; var d = st - C.par, pts = Math.max(0, (C.par - st + 3) * 100);
+    if (st === 1) { pts += 500; aces++; }
+    score += pts; totalStrokes += st; totalPar += C.par; results.push(d);
+    var title = gave ? '다음 홀로' : st === 1 ? '홀인원!' : (NAMES[String(d)] || (d > 0 ? '+' + d : String(d)));
+    S.banner(title, (gave ? '10타 초과 · ' : '') + st + '타 · +' + pts + '점');
+    if (st === 1) { A.sfx('record'); fx.flashIt('#7dff9b', 0.35); fx.burst(C.h[0], C.h[1], '#7dff9b', 40, 420, 0.9, 4); fx.burst(C.h[0], C.h[1], '#ffd166', 30, 360, 0.9, 3); A.vibrate([30, 40, 30, 40, 60]); }
+    else if (d < 0) { A.sfx('level'); fx.burst(C.h[0], C.h[1], '#ffd166', 26, 300, 0.7, 3); A.vibrate([20, 30, 20]); }
+    else if (!gave) { A.sfx('coin'); fx.burst(C.h[0], C.h[1], '#7dff9b', 14, 200, 0.5, 2.5); }
+    hud();
+  }
+
+  // ---------- 물리 ----------
+  function segQ(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy, t = l2 ? ((px - x1) * dx + (py - y1) * dy) / l2 : 0;
+    t = t < 0 ? 0 : t > 1 ? 1 : t; return { x: x1 + dx * t, y: y1 + dy * t };
+  }
+  function bounce(nx, ny, e, cvx, cvy) {
+    var rx = ball.vx - cvx, ry = ball.vy - cvy, vn = rx * nx + ry * ny;
+    if (vn < 0) { rx -= (1 + e) * vn * nx; ry -= (1 + e) * vn * ny; ball.vx = rx + cvx; ball.vy = ry + cvy; return -vn; }
+    return 0;
+  }
+  function hitSeg(x1, y1, x2, y2, e, cvx, cvy) {
+    var q = segQ(ball.x, ball.y, x1, y1, x2, y2), dx = ball.x - q.x, dy = ball.y - q.y, d = Math.hypot(dx, dy);
+    if (d >= R) return 0;
+    var nx, ny;
+    if (d < 0.001) { nx = -(y2 - y1); ny = x2 - x1; var l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l; } else { nx = dx / d; ny = dy / d; }
+    ball.x = q.x + nx * R; ball.y = q.y + ny * R;
+    return bounce(nx, ny, e, cvx || 0, cvy || 0) || 0.001;
+  }
+  function inSand(x, y) { for (var i = 0; i < C.s.length; i++) if (inRect(x, y, C.s[i])) return true; return false; }
+  function inWater(x, y) { for (var i = 0; i < C.w.length; i++) if (inRect(x, y, C.w[i], -3)) return true; return false; }
+  function inBlock(x, y) { for (var i = 0; i < C.b.length; i++) if (inRect(x, y, C.b[i], 1)) return true; return x < FL || x > FR || y < FT || y > FB; }
+  function moveObstacles(dt) {
+    C.sp.forEach(function (o) { o.a += o.w * dt; });
+    C.sd.forEach(function (o) { var m = (o.x1 + o.x2) / 2, a = (o.x2 - o.x1) / 2, ph = tim * Math.PI * 2 / o.p; o.x = m + a * Math.sin(ph); o.vx = a * Math.cos(ph) * Math.PI * 2 / o.p; });
+    C.bp.forEach(function (o) { if (o.hit > 0) o.hit -= dt; });
+  }
+  function physStep(h) {
+    var sp = Math.hypot(ball.vx, ball.vy), sand = inSand(ball.x, ball.y);
+    // 경사: 굴러가는 공만 휘게 함(멈춘 공은 마찰이 이김)
+    if (sp > 1) C.sl.forEach(function (q) { if (inRect(ball.x, ball.y, q)) { ball.vx += q[4] * h; ball.vy += q[5] * h; } });
+    sp = Math.hypot(ball.vx, ball.vy);
+    var dec = (sand ? 1500 : 230) + (sand ? 2.4 : 0.5) * sp, nv = Math.max(0, sp - dec * h);
+    if (sp > 0) { ball.vx *= nv / sp; ball.vy *= nv / sp; }
+    // 홀 근처: 가장자리로 끌려 들어가거나 빠르면 튀어나감
+    var hx = C.h[0] - ball.x, hy = C.h[1] - ball.y, hd = Math.hypot(hx, hy);
+    if (hd < HR && hd > 0.5) { ball.vx += hx / hd * 2600 * h; ball.vy += hy / hd * 2600 * h; }
+    ball.x += ball.vx * h; ball.y += ball.vy * h;
+    var imp = 0, i;
+    for (i = 0; i < segs.length; i++) { var s = segs[i]; imp = Math.max(imp, hitSeg(s[0], s[1], s[2], s[3], 0.72)); }
+    C.sp.forEach(function (o) {
+      var c = Math.cos(o.a) * o.L, sn = Math.sin(o.a) * o.L, q = segQ(ball.x, ball.y, o.x - c, o.y - sn, o.x + c, o.y + sn);
+      var e = hitSeg(o.x - c, o.y - sn, o.x + c, o.y + sn, 0.6, -o.w * (q.y - o.y), o.w * (q.x - o.x)); if (e) { imp = Math.max(imp, e + 60); }
+    });
+    C.sd.forEach(function (o) { var e = hitSeg(o.x - o.L, o.y, o.x + o.L, o.y, 0.6, o.vx, 0); if (e) imp = Math.max(imp, e + 60); });
+    C.bp.forEach(function (o) {
+      var dx = ball.x - o.x, dy = ball.y - o.y, d = Math.hypot(dx, dy);
+      if (d < o.r + R && d > 0.01) { var nx = dx / d, ny = dy / d; ball.x = o.x + nx * (o.r + R); ball.y = o.y + ny * (o.r + R); if (bounce(nx, ny, 1, 0, 0) > 20) { ball.vx += nx * 160; ball.vy += ny * 160; o.hit = 0.18; A.sfx('bounce', 1.2); fx.ring(o.x, o.y, '#ff7ad9', o.r + 14, 0.25); } }
+    });
+    C.tp.forEach(function (o) {
+      if (portalLock === o) { if (Math.hypot(ball.x - o.bx, ball.y - o.by) > 34) portalLock = null; return; }
+      if (Math.hypot(ball.x - o.ax, ball.y - o.ay) < 17) {
+        fx.burst(o.ax, o.ay, '#b48cff', 16, 220, 0.4, 2.5); ball.x = o.bx; ball.y = o.by; portalLock = o;
+        fx.burst(o.bx, o.by, '#b48cff', 16, 220, 0.4, 2.5); A.sfx('power'); A.vibrate(15);
+      }
+    });
+    if (imp > 90) { A.sfx('wall', Math.min(1.6, 0.7 + imp / 900)); if (imp > 500) A.vibrate(8); }
+    if (inBlock(ball.x, ball.y)) { ball.x = last.x; ball.y = last.y; ball.vx = ball.vy = 0; }
+  }
+  function update(dt) {
+    tim += dt; fx.update(dt); moveObstacles(dt);
+    // 키보드 조준
+    if (phase === 'aim') {
+      if (keys.L) { kAng -= 1.9 * dt; kbd = true; } if (keys.R) { kAng += 1.9 * dt; kbd = true; }
+      if (keys.U) { kPow = Math.min(1, kPow + 0.75 * dt); kbd = true; } if (keys.D) { kPow = Math.max(0.05, kPow - 0.75 * dt); kbd = true; }
+    }
+    if (phase === 'roll' || phase === 'aim') {
+      var n = 8, h = dt / n;
+      for (var i = 0; i < n && (phase === 'roll' || phase === 'aim'); i++) {
+        physStep(h);
+        if (inWater(ball.x, ball.y)) { fx.burst(ball.x, ball.y, '#5ec8ff', 22, 240, 0.6, 3); fx.ring(ball.x, ball.y, '#9fd8ff', 30, 0.5); penalty('풍덩! +1타'); return; }
+        var hd = Math.hypot(C.h[0] - ball.x, C.h[1] - ball.y), sp = Math.hypot(ball.vx, ball.vy);
+        if (hd < HR * 0.6 && sp < 720) { phase = 'sink'; sinkT = 0; ball.vx = ball.vy = 0; A.sfx('eat'); finishHole(strokes); return; }
+      }
+      if (phase === 'aim' && Math.hypot(ball.vx, ball.vy) > 30) phase = 'roll'; // 풍차가 멈춘 공을 친 경우
+      if (phase === 'roll') {
+        shotT += dt;
+        if (Math.hypot(ball.vx, ball.vy) < 9 || shotT > 14) { ball.vx = ball.vy = 0; phase = 'aim'; if (strokes >= 10) giveUp(); }
+      }
+    }
+    if (phase === 'sink' || phase === 'sunk') {
+      sinkT += dt; phaseT += dt;
+      if (phase === 'sink') { ball.x += (C.h[0] - ball.x) * Math.min(1, dt * 12); ball.y += (C.h[1] - ball.y) * Math.min(1, dt * 12); ball.s = Math.max(0, 1 - sinkT * 3); }
+      if (sinkT > 1.6) {
+        hi++;
+        if (hi >= holes.length) { phase = 'done'; endRound(); return; }
+        startHole(); S.banner('HOLE ' + (hi + 1), C.n + ' · PAR ' + C.par);
+      }
+    }
+  }
+  function endRound() {
+    var d = totalStrokes - totalPar, ds = d === 0 ? '이븐' : (d > 0 ? '+' : '') + d;
+    S.gameOver(score, [['총 타수', totalStrokes + '타 (' + ds + ')'], ['홀인원', aces + '번'], ['기준 타수', totalPar + '타']], { win: true, title: '라운드 완료' });
+  }
+
+  // ---------- 그리기 ----------
+  function glow(c, x, y, r, col) { A.draw(c, A.glowDot(col, 10), x, y, r / 10 * 1.3); }
+  function aimInfo() {
+    if (drag && drag.on) { var dx = drag.x0 - drag.x, dy = drag.y0 - drag.y, l = Math.hypot(dx, dy); if (l < 14) return null; return { a: Math.atan2(dy, dx), p: Math.min(1, l / 210) }; }
+    if (kbd && phase === 'aim') return { a: kAng, p: kPow };
+    return null;
+  }
+  function render(c, t) {
+    if (!C) reset(); // 시작 전 첫 화면에도 코스를 보여 줌
+    c.fillStyle = '#04110a'; c.fillRect(0, 0, W, H);
+    var o = fx.offset(); c.save(); c.translate(o[0], o[1]);
+    // 잔디(줄무늬)
+    c.fillStyle = '#0d3a1e'; c.fillRect(FL, FT, FR - FL, FB - FT);
+    c.fillStyle = 'rgba(125,255,155,.05)'; for (var y = FT; y < FB; y += 60) c.fillRect(FL, y, FR - FL, 30);
+    // 경사
+    C.sl.forEach(function (q) {
+      c.fillStyle = 'rgba(255,214,102,.07)'; c.fillRect(q[0], q[1], q[2], q[3]);
+      var ang = Math.atan2(q[5], q[4]), off = (t * 40) % 60; c.strokeStyle = 'rgba(255,214,102,.35)'; c.lineWidth = 3;
+      c.save(); c.beginPath(); c.rect(q[0], q[1], q[2], q[3]); c.clip();
+      for (var gx = q[0] - 60; gx < q[0] + q[2] + 60; gx += 70) for (var gy = q[1] + 30; gy < q[1] + q[3]; gy += 70) {
+        var cx = gx + Math.cos(ang) * off + 35, cy = gy + Math.sin(ang) * off; c.save(); c.translate(cx, cy); c.rotate(ang);
+        c.beginPath(); c.moveTo(-10, -9); c.lineTo(2, 0); c.lineTo(-10, 9); c.moveTo(2, -9); c.lineTo(14, 0); c.lineTo(2, 9); c.stroke(); c.restore();
+      }
+      c.restore();
+    });
+    // 모래
+    C.s.forEach(function (q) {
+      c.fillStyle = '#c9a463'; A.rr(c, q[0], q[1], q[2], q[3], 18); c.fill();
+      c.fillStyle = 'rgba(80,50,10,.25)'; for (var i = 0; i < q[2] * q[3] / 500; i++) { var sx = q[0] + 8 + ((i * 73) % (q[2] - 16)), sy = q[1] + 8 + ((i * 131) % (q[3] - 16)); c.fillRect(sx, sy, 2, 2); }
+    });
+    // 물
+    C.w.forEach(function (q) {
+      c.fillStyle = '#0d4f8c'; A.rr(c, q[0], q[1], q[2], q[3], 10); c.fill();
+      c.strokeStyle = 'rgba(159,216,255,.35)'; c.lineWidth = 2; c.save(); c.beginPath(); c.rect(q[0], q[1], q[2], q[3]); c.clip();
+      for (var wy = q[1] + 12; wy < q[1] + q[3]; wy += 22) { c.beginPath(); for (var wx = q[0]; wx <= q[0] + q[2]; wx += 8) { var yy = wy + Math.sin(wx * 0.06 + t * 2 + wy) * 3; if (wx === q[0]) c.moveTo(wx, yy); else c.lineTo(wx, yy); } c.stroke(); }
+      c.restore();
+    });
+    // 막힌 블록
+    C.b.forEach(function (q) { c.fillStyle = '#04110a'; c.fillRect(q[0], q[1], q[2], q[3]); });
+    // 벽 선분(테두리 + 블록 가장자리 + 대각선 벽)
+    c.lineCap = 'round'; c.beginPath(); segs.forEach(function (s) { c.moveTo(s[0], s[1]); c.lineTo(s[2], s[3]); });
+    c.strokeStyle = 'rgba(125,255,155,.18)'; c.lineWidth = 12; c.stroke(); c.strokeStyle = '#7dff9b'; c.lineWidth = 4; c.stroke();
+    // 범퍼
+    C.bp.forEach(function (o) { var rr = o.r + (o.hit > 0 ? 4 : 0); glow(c, o.x, o.y, rr, '#ff7ad9'); c.fillStyle = '#ff7ad9'; c.beginPath(); c.arc(o.x, o.y, rr, 0, Math.PI * 2); c.fill(); c.fillStyle = '#3a0a2c'; c.beginPath(); c.arc(o.x, o.y, rr * 0.55, 0, Math.PI * 2); c.fill(); });
+    // 순간이동
+    C.tp.forEach(function (o) {
+      [[o.ax, o.ay, 1], [o.bx, o.by, -1]].forEach(function (p) {
+        c.save(); c.translate(p[0], p[1]); c.rotate(t * 3 * p[2]);
+        for (var k = 0; k < 3; k++) { c.strokeStyle = 'rgba(180,140,255,' + (0.8 - k * 0.22) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, 8 + k * 6, k, k + 4.2); c.stroke(); }
+        c.restore();
+      });
+      c.fillStyle = 'rgba(180,140,255,.8)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center';
+      c.fillText('IN', o.ax, o.ay + 40); c.fillText('OUT', o.bx, o.by + 40);
+    });
+    // 홀 + 깃발
+    var hx = C.h[0], hy = C.h[1];
+    c.fillStyle = 'rgba(125,255,155,.12)'; c.beginPath(); c.arc(hx, hy, HR + 16, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#000'; c.beginPath(); c.arc(hx, hy, HR, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 2; c.stroke();
+    if (phase !== 'sink' && phase !== 'sunk') {
+      var flagUp = Math.hypot(ball.x - hx, ball.y - hy) < 70 ? 0.4 : 1;
+      c.globalAlpha = flagUp; c.strokeStyle = '#e8e8e8'; c.lineWidth = 3; c.beginPath(); c.moveTo(hx, hy); c.lineTo(hx, hy - 56); c.stroke();
+      c.fillStyle = '#ff4d6d'; c.beginPath(); c.moveTo(hx, hy - 56); c.lineTo(hx + 28 + Math.sin(t * 5) * 3, hy - 47); c.lineTo(hx, hy - 38); c.fill(); c.globalAlpha = 1;
+    }
+    // 회전 막대·미닫이
+    c.lineCap = 'round';
+    C.sp.forEach(function (o) {
+      var cc = Math.cos(o.a) * o.L, ss = Math.sin(o.a) * o.L;
+      c.strokeStyle = 'rgba(255,214,102,.25)'; c.lineWidth = 16; c.beginPath(); c.moveTo(o.x - cc, o.y - ss); c.lineTo(o.x + cc, o.y + ss); c.stroke();
+      c.strokeStyle = '#ffd166'; c.lineWidth = 7; c.stroke(); c.fillStyle = '#fff3c4'; c.beginPath(); c.arc(o.x, o.y, 7, 0, Math.PI * 2); c.fill();
+    });
+    C.sd.forEach(function (o) {
+      c.strokeStyle = 'rgba(94,231,255,.25)'; c.lineWidth = 16; c.beginPath(); c.moveTo(o.x - o.L, o.y); c.lineTo(o.x + o.L, o.y); c.stroke();
+      c.strokeStyle = '#5ee7ff'; c.lineWidth = 7; c.stroke();
+    });
+    // 조준선
+    var ai = phase === 'aim' && S.state === 'playing' ? aimInfo() : null;
+    if (ai) {
+      var col = ai.p > 0.85 ? '#ff4d6d' : ai.p > 0.5 ? '#ffd166' : '#7dff9b', len = 40 + ai.p * 230;
+      for (var d = 22; d < len; d += 16) { c.fillStyle = col; c.globalAlpha = 1 - d / (len + 40); c.beginPath(); c.arc(ball.x + Math.cos(ai.a) * d, ball.y + Math.sin(ai.a) * d, 4, 0, Math.PI * 2); c.fill(); }
+      c.globalAlpha = 1;
+      c.strokeStyle = col; c.lineWidth = 4; c.beginPath(); c.arc(ball.x, ball.y, R + 8, -Math.PI / 2, -Math.PI / 2 + ai.p * Math.PI * 2); c.stroke();
+      c.fillStyle = col; c.font = '800 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(Math.round(ai.p * 100) + '%', ball.x, ball.y + 42);
+      if (drag && drag.on) { c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = 2; c.setLineDash([6, 6]); c.beginPath(); c.moveTo(drag.x0, drag.y0); c.lineTo(drag.x, drag.y); c.stroke(); c.setLineDash([]); }
+    } else if (phase === 'aim' && S.state === 'playing') {
+      var pr = 0.5 + 0.5 * Math.sin(t * 4); c.strokeStyle = 'rgba(125,255,155,' + (0.25 + pr * 0.4) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(ball.x, ball.y, R + 10 + pr * 6, 0, Math.PI * 2); c.stroke();
+    }
+    // 공
+    if (ball.s > 0.02) {
+      c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(ball.x + 3, ball.y + 4, R * ball.s, R * 0.8 * ball.s, 0, 0, Math.PI * 2); c.fill();
+      glow(c, ball.x, ball.y, R * ball.s, '#c8ffd6'); c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ball.x, ball.y, R * ball.s, 0, Math.PI * 2); c.fill(); c.fillStyle = 'rgba(0,0,0,.12)'; c.beginPath(); c.arc(ball.x + 2 * ball.s, ball.y + 2 * ball.s, R * 0.6 * ball.s, 0, Math.PI * 2); c.fill();
+    }
+    // 위쪽 정보
+    c.textAlign = 'center'; c.fillStyle = 'rgba(232,255,238,.85)'; c.font = '800 20px "Pretendard Variable",system-ui';
+    c.fillText('HOLE ' + Math.min(9, hi + 1) + ' · ' + C.n + ' · PAR ' + C.par, W / 2, FT - 18);
+    // 홀별 결과 점
+    for (var i = 0; i < 9; i++) {
+      var r = results[i], cx2 = W / 2 - 4 * 26 + i * 26, cy2 = FB + 26;
+      c.fillStyle = r == null ? (i === hi ? 'rgba(125,255,155,.5)' : 'rgba(255,255,255,.12)') : r < 0 ? '#ffd166' : r === 0 ? '#7dff9b' : '#ff7a8a';
+      c.beginPath(); c.arc(cx2, cy2, i === hi ? 8 : 6, 0, Math.PI * 2); c.fill();
+    }
+    if (phase === 'aim' && S.state === 'playing' && hi === 0 && strokes === 0 && !aimInfo()) {
+      c.fillStyle = 'rgba(232,255,238,' + (0.5 + 0.3 * Math.sin(t * 4)) + ')'; c.font = '700 19px "Pretendard Variable",system-ui';
+      c.fillText(document.body.classList.contains('touch') ? '아무 곳이나 끌어 당겼다 놓으면 반대로 쳐요' : '끌어 당겼다 놓기 · ←→ 방향 ↑↓ 세기 Space', W / 2, FB + 62);
+    }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var lastHud = '';
+  function hud() {
+    var k = score + '|' + hi + '|' + strokes; if (k === lastHud) return; lastHud = k;
+    document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.min(9, hi + 1) + '/9'; document.getElementById('hC').textContent = strokes;
+    document.getElementById('hMult').textContent = '';
+  }
+
+  // ---------- 입력 ----------
+  var stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing' || phase !== 'aim') return; e.preventDefault(); kbd = false;
+    var p = S.toLocal(e); drag = { x0: p.x, y0: p.y, x: p.x, y: p.y, on: true };
+  });
+  stage.addEventListener('pointermove', function (e) { if (!drag || !drag.on) return; var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; });
+  window.addEventListener('pointerup', function () {
+    if (!drag || !drag.on) return; var ai = aimInfo(); drag = null;
+    if (ai && phase === 'aim' && S.state === 'playing') shoot(ai.a, ai.p);
+  });
+  window.addEventListener('pointercancel', function () { drag = null; });
+  function keyFlag(k, on) {
+    if (k === 'ArrowLeft' || k === 'a') keys.L = on; else if (k === 'ArrowRight' || k === 'd') keys.R = on;
+    else if (k === 'ArrowUp' || k === 'w') keys.U = on; else if (k === 'ArrowDown' || k === 's') keys.D = on; else return false;
+    return true;
+  }
+  var S = new A.Shell({
+    id: 'golf', W: W, H: H, reset: reset, update: update, idle: function (dt) { tim += dt; fx.update(dt); if (C) moveObstacles(dt); }, render: render,
+    keydown: function (e) {
+      var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (keyFlag(k, true)) { e.preventDefault(); return; }
+      if ((k === ' ' || k === 'Enter') && !e.repeat && phase === 'aim') { kbd = true; shoot(kAng, kPow); }
+    },
+    keyup: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keyFlag(k, false); }
+  });
+  window.addEventListener('blur', function () { keys = {}; });
+})();
+
+</script>
+</body>
+</html>

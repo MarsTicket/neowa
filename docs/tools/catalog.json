@@ -1198,5 +1198,65 @@
   "new": true,
   "art": "capture",
   "maxScore": 2000000
+ },
+ {
+  "id": "cannon",
+  "name": "대포 블록 부수기",
+  "genre": "BALL BLAST",
+  "kgenre": "블록 부수기",
+  "cat": "액션",
+  "accent": "#ff4d6d",
+  "rgb": "255,77,109",
+  "ink": "#2a0410",
+  "desc": "조준해서 공 수십 개를 한 번에 쏘아 숫자 블록을 부수세요. 턴마다 블록이 내려오니 서둘러요!",
+  "tags": [
+   "끌어서 조준",
+   "공 늘리기",
+   "빨리 감기"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 2000000
+ },
+ {
+  "id": "golf",
+  "name": "미니 골프",
+  "genre": "MINI GOLF",
+  "kgenre": "미니 골프",
+  "cat": "액션",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "당겼다 놓아서 공을 치고, 벽에 튕겨 홀에 쏙! 풍차·연못·순간이동이 있는 9홀 라운드.",
+  "tags": [
+   "당겨 쏘기",
+   "9홀",
+   "홀인원"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 20000
+ },
+ {
+  "id": "bowling",
+  "name": "볼링",
+  "genre": "BOWLING",
+  "kgenre": "볼링",
+  "cat": "액션",
+  "accent": "#ff9e4d",
+  "rgb": "255,158,77",
+  "ink": "#2a1200",
+  "desc": "위로 쓸어 올려 굴리고, 끝을 휘면 커브! 핀이 와르르 쓰러지는 10프레임 정식 볼링.",
+  "tags": [
+   "쓸어 올리기",
+   "커브",
+   "10프레임"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300
  }
 ]

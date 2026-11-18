@@ -1,0 +1,262 @@
+(function () {
+  'use strict';
+  // 사목: 7열 x 6행. 열을 골라 돌을 떨어뜨려 가로·세로·대각선 4개를 먼저 잇기. 컴퓨터와 연승 도전 + 한 화면 2인
+  var A = Arcade, W = 540, H = 960, COLS = 7, ROWS = 6;
+  var fx = new A.FX();
+  var diff = +A.get('neowa_four_diff', '1') || 0, DEPTH = [2, 4, 7];
+  var land = false, CS = 72, BX = 18, BY = 300, DR = 30;
+  var duo = A.duo('four', { solo: ['SCORE', 'WIN', 'MOVE'], duo: ['노랑 : 분홍', '판', 'MOVE'] }, function () { if (S) { round = 0; newRound(); hud(); } }), tally = [0, 0];
+  var bd, hts, turn, moves, wins, score, endT, winLine, thinking, drops, col = 3, hover = -1, starter = 1, round = 0, result = 0, losses = 0;
+  var COL1 = '#ffe066', COL2 = '#ff5ec4';
+
+  function geo(sh) {
+    land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
+    if (land) { CS = Math.floor(Math.min((W - 40) / COLS, (H - 120) / ROWS)); BX = (W - CS * COLS) / 2; BY = H - 34 - CS * ROWS; }
+    else { CS = 72; BX = (W - CS * COLS) / 2; BY = 300; }
+    DR = CS * 0.4;
+  }
+
+  // ---------- 판 ----------
+  function newRound() {
+    bd = []; hts = []; for (var c = 0; c < COLS; c++) { hts.push(0); for (var r = 0; r < ROWS; r++) bd.push(0); }
+    moves = 0; endT = 0; winLine = null; thinking = 0; drops = []; result = 0;
+    turn = starter; round++;
+    if (turn === 2 && !duo()) thinking = 0.6;
+  }
+  function reset() { wins = 0; score = 0; losses = 0; if (!duo()) starter = 1; round = 0; newRound(); fx.clear(); hud(); }
+  function at(c, r) { return c < 0 || r < 0 || c >= COLS || r >= ROWS ? -1 : bd[c * ROWS + r]; }
+  var DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  function lineAt(c, r, p) {
+    for (var d = 0; d < 4; d++) {
+      var line = [[c, r]];
+      for (var s = -1; s <= 1; s += 2) { var k = 1; while (at(c + DIRS[d][0] * k * s, r + DIRS[d][1] * k * s) === p) { line.push([c + DIRS[d][0] * k * s, r + DIRS[d][1] * k * s]); k++; } }
+      if (line.length >= 4) return line;
+    }
+    return null;
+  }
+
+  // ---------- 컴퓨터 (미니맥스 + 알파베타) ----------
+  var ORDER = [3, 2, 4, 1, 5, 0, 6];
+  function evalWin(cnt, emp) { return cnt === 3 && emp === 1 ? 5 : cnt === 2 && emp === 2 ? 2 : 0; }
+  function evaluate(p) {
+    var o = 3 - p, sc = 0, c, r;
+    for (r = 0; r < ROWS; r++) { if (bd[3 * ROWS + r] === p) sc += 3; else if (bd[3 * ROWS + r] === o) sc -= 3; }
+    for (c = 0; c < COLS; c++) for (r = 0; r < ROWS; r++) for (var d = 0; d < 4; d++) {
+      var ec = c + DIRS[d][0] * 3, er = r + DIRS[d][1] * 3; if (ec < 0 || ec >= COLS || er < 0 || er >= ROWS) continue;
+      var mp = 0, mo = 0, me = 0;
+      for (var k = 0; k < 4; k++) { var v = bd[(c + DIRS[d][0] * k) * ROWS + r + DIRS[d][1] * k]; if (v === p) mp++; else if (v === o) mo++; else me++; }
+      if (!mo) sc += evalWin(mp, me); else if (!mp) sc -= evalWin(mo, me) * 1.2;
+    }
+    return sc;
+  }
+  var nodes = 0;
+  function negamax(depth, alpha, beta, p, mv) {
+    nodes++;
+    if (mv >= COLS * ROWS) return 0;
+    if (depth === 0) return evaluate(p);
+    var best = -1e9;
+    for (var i = 0; i < 7; i++) {
+      var c = ORDER[i]; if (hts[c] >= ROWS) continue;
+      var r = hts[c]; bd[c * ROWS + r] = p; hts[c]++;
+      var v = lineAt(c, r, p) ? 10000 + depth : -negamax(depth - 1, -beta, -alpha, 3 - p, mv + 1);
+      hts[c]--; bd[c * ROWS + r] = 0;
+      if (v > best) best = v; if (v > alpha) alpha = v; if (alpha >= beta) break;
+    }
+    return best;
+  }
+  function winsWith(c, p) { if (hts[c] >= ROWS) return false; var r = hts[c]; bd[c * ROWS + r] = p; var w = !!lineAt(c, r, p); bd[c * ROWS + r] = 0; return w; }
+  function aiPick() {
+    var c, legal = []; for (c = 0; c < COLS; c++) if (hts[c] < ROWS) legal.push(c);
+    for (c = 0; c < legal.length; c++) if (winsWith(legal[c], 2)) return legal[c];   // 바로 이기는 수
+    for (c = 0; c < legal.length; c++) if (winsWith(legal[c], 1)) return legal[c];   // 꼭 막아야 하는 수
+    nodes = 0; var best = -1e9, pick = legal[0], noise = [14, 2, 0][diff];
+    for (var i = 0; i < 7; i++) {
+      c = ORDER[i]; if (hts[c] >= ROWS) continue;
+      var r = hts[c]; bd[c * ROWS + r] = 2; hts[c]++;
+      var v = -negamax(DEPTH[diff] - 1, -1e9, 1e9, 1, moves + 1) + (noise ? A.rand(-noise, noise) : 0);
+      hts[c]--; bd[c * ROWS + r] = 0;
+      if (v > best) { best = v; pick = c; }
+    }
+    return pick;
+  }
+
+  // ---------- 진행 ----------
+  function canPlay() { return S.state === 'playing' && endT <= 0 && !thinking && !drops.length && (duo() || turn === 1); }
+  function drop(c, p) {
+    var r = hts[c]; hts[c]++; bd[c * ROWS + r] = p; moves++;
+    drops.push({ c: c, r: r, p: p, y: BY - CS * 0.7, vy: 0, b: 0 });
+    A.sfx('click', p === 1 ? 1.2 : 0.95); hud();
+  }
+  function human(c) {
+    if (!canPlay()) return;
+    if (c < 0 || c >= COLS || hts[c] >= ROWS) { A.sfx('wall'); return; }
+    col = c; drop(c, duo() ? turn : 1);
+  }
+  function settled(d) {
+    var x = BX + (d.c + 0.5) * CS, y = BY + (ROWS - 1 - d.r + 0.5) * CS;
+    A.sfx('tick', 0.8 + d.r * 0.08); fx.burst(x, y + DR * 0.6, d.p === 1 ? COL1 : COL2, 6, 120, 0.3, 2);
+    var w = lineAt(d.c, d.r, d.p);
+    if (w) {
+      winLine = w; result = d.p; endT = 1.8;
+      var good = d.p === 1 || duo();
+      w.forEach(function (q, i) { setTimeout(function () { fx.burst(BX + (q[0] + 0.5) * CS, BY + (ROWS - 1 - q[1] + 0.5) * CS, good ? '#ffd166' : COL2, 14, 240, 0.6, 3); }, i * 90); });
+      if (good) { A.sfx('level'); A.vibrate([20, 40, 20]); } else { A.sfx('hurt'); fx.shake(9, 0.4); fx.flashIt('#ff2244', 0.35); A.vibrate(160); }
+      hud(); return;
+    }
+    if (moves >= COLS * ROWS) { result = 3; endT = 1.4; S.banner('무승부', duo() ? '판이 가득 찼어요' : '+50'); A.sfx('power'); hud(); return; }
+    turn = d.p === 1 ? 2 : 1;
+    if (turn === 2 && !duo()) thinking = 0.32 + Math.random() * 0.2;
+    hud();
+  }
+  function update(dt) {
+    fx.update(dt);
+    for (var i = drops.length - 1; i >= 0; i--) {
+      var d = drops[i], ty = BY + (ROWS - 1 - d.r + 0.5) * CS;
+      d.vy += 3600 * dt; d.y += d.vy * dt;
+      if (d.y >= ty) { d.y = ty; if (d.b < 1 && d.vy > 500) { d.vy = -d.vy * 0.28; d.b++; } else { drops.splice(i, 1); settled(d); } }
+    }
+    if (thinking > 0) {
+      thinking -= dt;
+      if (thinking <= 0) { thinking = 0; if (turn === 2 && !duo() && endT <= 0) { var c = aiPick(); drop(c, 2); } }
+    }
+    if (endT > 0) {
+      endT -= dt;
+      if (endT <= 0) {
+        if (duo()) {
+          if (result === 1 || result === 2) tally[result - 1]++;
+          starter = starter === 1 ? 2 : 1; hud();
+          S.gameOver(0, [['노랑 승', String(tally[0])], ['분홍 승', String(tally[1])], ['수', String(moves)]], { title: result === 3 ? '무승부' : (result === 1 ? '노랑' : '분홍') + ' 승리!', kick: '2인 대결', win: true, noRecord: true });
+          return;
+        }
+        if (result === 1) {
+          wins++; var pts = (43 - moves) * 10 * (diff + 1); score += pts;
+          S.banner(wins + '연승!', '+' + A.fmt(pts)); starter = starter === 1 ? 2 : 1; newRound(); hud();
+        } else if (result === 3) { score += 50; starter = starter === 1 ? 2 : 1; newRound(); hud(); }
+        else S.gameOver(score, [['연승', String(wins)], ['난이도', ['쉬움', '보통', '어려움'][diff]], ['마지막 판', moves + '수']]);
+      }
+    }
+  }
+
+  // ---------- 그리기 ----------
+  function disc(p) {
+    var key = 'four-d' + p + '-' + Math.round(DR);
+    return A.sprite(key, DR * 2 + 24, DR * 2 + 24, function (x, w, h) {
+      var cx = w / 2, cy = h / 2, base = p === 1 ? COL1 : COL2;
+      x.shadowColor = base; x.shadowBlur = 12;
+      var g = x.createRadialGradient(cx - DR * 0.35, cy - DR * 0.4, DR * 0.1, cx, cy, DR);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, p === 1 ? '#fff3a8' : '#ffb3e6'); g.addColorStop(1, p === 1 ? '#c99a12' : '#b0207a');
+      x.fillStyle = g; x.beginPath(); x.arc(cx, cy, DR, 0, 7); x.fill(); x.shadowBlur = 0;
+      x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = DR * 0.12; x.beginPath(); x.arc(cx, cy, DR * 0.66, 0, 7); x.stroke();
+      x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 1.5; x.beginPath(); x.arc(cx, cy, DR * 0.66 + DR * 0.07, Math.PI * 1.05, Math.PI * 1.6); x.stroke();
+    });
+  }
+  function boardSprite() {
+    var bw = CS * COLS, bh = CS * ROWS;
+    return A.sprite('four-board-' + CS, bw + 24, bh + 24, function (x) {
+      x.translate(12, 12);
+      var g = x.createLinearGradient(0, 0, 0, bh); g.addColorStop(0, '#20307a'); g.addColorStop(1, '#121b4d');
+      x.fillStyle = g; x.beginPath(); A.rr(x, -10, -10, bw + 20, bh + 20, 18);
+      for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) { var cx = (c + 0.5) * CS, cy = (r + 0.5) * CS; x.moveTo(cx + DR + 2, cy); x.arc(cx, cy, DR + 2, 0, Math.PI * 2, true); }
+      x.fill('evenodd');
+      x.strokeStyle = 'rgba(255,224,102,.55)'; x.lineWidth = 2.5; A.rr(x, -10, -10, bw + 20, bh + 20, 18); x.stroke();
+      for (c = 0; c < COLS; c++) for (r = 0; r < ROWS; r++) {
+        x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 3; x.beginPath(); x.arc((c + 0.5) * CS, (r + 0.5) * CS, DR + 2, Math.PI * 0.15, Math.PI * 0.85, true); x.stroke();
+        x.strokeStyle = 'rgba(160,190,255,.25)'; x.lineWidth = 1.5; x.beginPath(); x.arc((c + 0.5) * CS, (r + 0.5) * CS, DR + 2, Math.PI * 0.2, Math.PI * 0.8); x.stroke();
+      }
+    });
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    if (!bd) newRound();
+    c.save(); c.translate(o[0], o[1]);
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0a0a1c'); g.addColorStop(1, '#16102a'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    c.save(); c.globalCompositeOperation = 'lighter';
+    var hl = c.createRadialGradient(W / 2, BY + CS * 3, 20, W / 2, BY + CS * 3, CS * 6); hl.addColorStop(0, 'rgba(255,224,102,.10)'); hl.addColorStop(1, 'rgba(255,224,102,0)'); c.fillStyle = hl; c.fillRect(0, 0, W, H);
+    c.restore();
+    // 구멍 뒤 어두운 칸
+    c.fillStyle = '#070816'; c.fillRect(BX, BY, CS * COLS, CS * ROWS);
+    // 놓인 돌 (떨어지는 중인 돌 제외)
+    var falling = {}; drops.forEach(function (d) { falling[d.c * ROWS + d.r] = 1; });
+    for (var cc = 0; cc < COLS; cc++) for (var r = 0; r < ROWS; r++) { var v = bd[cc * ROWS + r]; if (!v || falling[cc * ROWS + r]) continue; A.draw(c, disc(v), BX + (cc + 0.5) * CS, BY + (ROWS - 1 - r + 0.5) * CS, 1); }
+    drops.forEach(function (d) { A.draw(c, disc(d.p), BX + (d.c + 0.5) * CS, d.y, 1); });
+    c.drawImage(boardSprite(), BX - 12, BY - 12, CS * COLS + 24, CS * ROWS + 24);
+    // 이긴 줄
+    if (winLine) {
+      var s = winLine.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }), a0 = s[0], a1 = s[s.length - 1];
+      c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+      c.strokeStyle = result === 1 || duo() ? 'rgba(255,224,102,.5)' : 'rgba(255,94,196,.5)'; c.lineWidth = CS * 0.3;
+      c.beginPath(); c.moveTo(BX + (a0[0] + 0.5) * CS, BY + (ROWS - 1 - a0[1] + 0.5) * CS); c.lineTo(BX + (a1[0] + 0.5) * CS, BY + (ROWS - 1 - a1[1] + 0.5) * CS); c.stroke();
+      c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke(); c.restore();
+      winLine.forEach(function (q) { c.strokeStyle = 'rgba(255,255,255,' + (0.6 + 0.4 * Math.sin(t * 12)) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(BX + (q[0] + 0.5) * CS, BY + (ROWS - 1 - q[1] + 0.5) * CS, DR + 3, 0, 7); c.stroke(); });
+    }
+    // 고를 열 표시 + 미리보기 돌
+    var my = S.state === 'playing' && canPlay(), pc = hover >= 0 ? hover : col;
+    if (my) {
+      var px = BX + (pc + 0.5) * CS;
+      c.fillStyle = 'rgba(255,224,102,.07)'; c.fillRect(BX + pc * CS, BY, CS, CS * ROWS);
+      var bob = Math.sin(t * 5) * 4;
+      c.globalAlpha = hts[pc] >= ROWS ? 0.25 : 0.95; A.draw(c, disc(duo() ? turn : 1), px, BY - CS * 0.62 + bob, 1); c.globalAlpha = 1;
+      if (hts[pc] < ROWS) { c.strokeStyle = 'rgba(255,255,255,.35)'; c.setLineDash([6, 8]); c.lineWidth = 2; c.beginPath(); c.arc(px, BY + (ROWS - 1 - hts[pc] + 0.5) * CS, DR, 0, 7); c.stroke(); c.setLineDash([]); }
+    } else if (thinking > 0) {
+      var tx = BX + (3 + Math.sin(t * 6) * 2.6 + 0.5) * CS; c.globalAlpha = 0.6; A.draw(c, disc(2), A.clamp(tx, BX + CS / 2, BX + CS * (COLS - 0.5)), BY - CS * 0.62, 1); c.globalAlpha = 1;
+    }
+    // 열 번호 (키보드)
+    if (!document.body.classList.contains('touch')) {
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 ' + Math.round(CS * 0.22) + 'px "Chakra Petch", system-ui'; c.fillStyle = 'rgba(255,224,102,.45)';
+      for (cc = 0; cc < COLS; cc++) c.fillText(String(cc + 1), BX + (cc + 0.5) * CS, BY + CS * ROWS + (land ? 22 : 26));
+    }
+    // 세로 화면 안내 글
+    if (!land) {
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 22px "Pretendard Variable", system-ui';
+      var msg = S.state !== 'playing' ? '' : endT > 0 ? (result === 3 ? '무승부!' : duo() ? (result === 1 ? '노랑 승리!' : '분홍 승리!') : result === 1 ? '이겼어요!' : '컴퓨터가 이겼어요') : duo() ? (turn === 1 ? '노랑 차례' : '분홍 차례') : turn === 1 ? '내 차례 · 열을 눌러 떨어뜨리기' : '컴퓨터가 생각 중…';
+      c.fillStyle = turn === 2 && endT <= 0 ? COL2 : '#ffe066'; c.fillText(msg, W / 2, BY - CS * 1.45);
+      if (S.state === 'playing' && !duo()) { c.font = '600 16px "Pretendard Variable", system-ui'; c.fillStyle = 'rgba(255,255,255,.5)'; c.fillText(['쉬움', '보통', '어려움'][diff] + ' · ' + (starter === 1 ? '내가 먼저' : '컴퓨터가 먼저') + ' · ' + round + '판째', W / 2, BY + CS * ROWS + 70); }
+    }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+
+  // ---------- 점수판 ----------
+  var pEl = {};
+  function hud() {
+    var two = duo();
+    document.getElementById('hA').textContent = two ? tally[0] + ' : ' + tally[1] : A.fmt(score || 0);
+    document.getElementById('hB').textContent = two ? tally[0] + tally[1] + 1 : wins || 0;
+    document.getElementById('hC').textContent = moves || 0;
+    document.getElementById('hMult').textContent = two ? '2인' : ['쉬움', '보통', '어려움'][diff];
+    if (!pEl.turn) return;
+    var play = S && S.state === 'playing', me = turn === 1;
+    pEl.stone.style.background = me ? COL1 : COL2;
+    pEl.turn.textContent = !play ? (two ? '둘이서: 번갈아 두기' : '나는 노랑') : endT > 0 ? (result === 3 ? '무승부' : two ? (result === 1 ? '노랑 승리!' : '분홍 승리!') : result === 1 ? '이겼어요!' : '졌어요') : two ? (me ? '노랑 차례' : '분홍 차례') : me ? '내 차례 (노랑)' : '컴퓨터 차례 (분홍)';
+    pEl.sub.textContent = !play ? '시작하기를 누르세요' : endT > 0 ? '잠시 후 다음' : me || two ? '열을 눌러 돌을 떨어뜨리세요' : '생각하는 중…';
+    pEl.score.textContent = two ? tally[0] + ' : ' + tally[1] : A.fmt(score || 0); pEl.scoreL.textContent = two ? '노랑 : 분홍' : 'SCORE';
+    pEl.win.textContent = two ? tally[0] + tally[1] + 1 : wins || 0; pEl.winL.textContent = two ? '판' : '연승';
+    pEl.move.textContent = moves || 0;
+  }
+
+  // ---------- 입력 ----------
+  var stage = document.getElementById('stage');
+  function colAt(e) { var p = S.toLocal(e); return Math.floor((p.x - BX) / CS); }
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; e.preventDefault(); var c = colAt(e); if (c >= 0 && c < COLS) { hover = c; human(c); } });
+  stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing' || e.pointerType === 'touch') return; var c = colAt(e); hover = c >= 0 && c < COLS ? c : -1; });
+  stage.addEventListener('pointerleave', function () { hover = -1; });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_four_diff', diff); A.sfx('click'); pd(); hud(); }); }); pd();
+  var S = null;
+  S = new A.Shell({
+    id: 'four', W: W, H: H, land: [720, 720], onResize: function (sh) { geo(sh); }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) {
+      var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (/^[1-7]$/.test(k)) { hover = -1; human(+k - 1); return; }
+      if (k === 'ArrowLeft' || k === 'a') { hover = -1; col = Math.max(0, col - 1); A.sfx('turn'); }
+      if (k === 'ArrowRight' || k === 'd') { hover = -1; col = Math.min(COLS - 1, col + 1); A.sfx('turn'); }
+      if ((k === ' ' || k === 'Enter' || k === 'ArrowDown' || k === 's') && !e.repeat) { hover = -1; human(col); }
+    }
+  });
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-turn"><i class="gp-stone" id="pkStone" style="border-radius:50%"></i><div><b id="pkTurn"></b><span id="pkSub"></span></div></div>' +
+    '<div class="g-card gp-stats"><div><span id="pkScoreL">SCORE</span><b id="pkScore">0</b></div><div><span id="pkWinL">연승</span><b id="pkWin">0</b></div><div><span>수</span><b id="pkMove">0</b></div></div>';
+  pEl = { stone: document.getElementById('pkStone'), turn: document.getElementById('pkTurn'), sub: document.getElementById('pkSub'), score: document.getElementById('pkScore'), scoreL: document.getElementById('pkScoreL'), win: document.getElementById('pkWin'), winL: document.getElementById('pkWinL'), move: document.getElementById('pkMove') };
+  new MutationObserver(function () { if (bd) hud(); }).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
+  if (!bd) newRound(); hud();
+})();

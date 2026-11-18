@@ -66,12 +66,12 @@
     var k = path.indexOf(i); if (k < 0) return;
     if (k === path.length - 1) return;
     while (path.length - 1 > k) delete onPath[path.pop()];
-    A.sfx('turn', 0.8);
+    A.sfx('whoosh', 0.8);
   }
   function enter(i) {
     if (clearT > 0 || S.state !== 'playing') return false;
     if (i === head()) return true;
-    if (onPath[i]) { if (path.length > 1 && i === path[path.length - 2]) { delete onPath[path.pop()]; A.sfx('turn', 0.8); return true; } cut(i); return true; }
+    if (onPath[i]) { if (path.length > 1 && i === path[path.length - 2]) { delete onPath[path.pop()]; A.sfx('select', 0.8); return true; } cut(i); return true; }
     if (wall[i] || !adj(head(), i)) return false;
     path.push(i); onPath[i] = 1; A.sfx('tick', 0.8 + path.length / total * 0.9);
     if (path.length === total) clear();
@@ -80,7 +80,7 @@
   function clear() {
     var secs = time - startT, bonus = Math.max(0, Math.round((total * 1.6 - secs) * 4)), pen = hintN * 40, pts = Math.max(10, total * 10 + bonus - pen);
     score += pts; clearT = 1.5; dragging = false;
-    S.banner('STAGE ' + stage + ' CLEAR', '+' + A.fmt(pts) + (bonus ? ' (빠르게 +' + bonus + ')' : '')); A.sfx('level'); A.vibrate([20, 40, 20]);
+    S.banner('STAGE ' + stage + ' CLEAR', '+' + A.fmt(pts) + (bonus ? ' (빠르게 +' + bonus + ')' : '')); A.sfx('win'); A.sfx('level'); A.vibrate([20, 40, 20]);
     path.forEach(function (c, k) { setTimeout(function () { if (clearT > 0) fx.burst(cxi(c), cyi(c), hue(k), 6, 160, 0.45, 2.5); }, k * 12); });
     hud();
   }
@@ -94,7 +94,7 @@
     if (path.length === total) clear();
     hud();
   }
-  function wipe() { if (S.state !== 'playing' || clearT > 0 || path.length < 2) { A.sfx('wall'); return; } cut(path[0]); A.sfx('click'); }
+  function wipe() { if (S.state !== 'playing' || clearT > 0 || path.length < 2) { A.sfx('wall'); return; } cut(path[0]); A.sfx('whoosh', 0.9); }
   function update(dt) {
     fx.update(dt);
     if (clearT > 0) { clearT -= dt; if (clearT <= 0) { stage++; setup(); geo(S); S.banner('STAGE ' + stage, N + '×' + N); } hud(); return; }
@@ -208,7 +208,7 @@
       var k = e.key.length === 1 ? e.key.toLowerCase() : e.key, h = head(), x = h % N, y = (h / N) | 0, t = -1;
       if (k === 'ArrowLeft' || k === 'a') { if (x > 0) t = h - 1; } else if (k === 'ArrowRight' || k === 'd') { if (x < N - 1) t = h + 1; }
       else if (k === 'ArrowUp' || k === 'w') { if (y > 0) t = h - N; } else if (k === 'ArrowDown' || k === 's') { if (y < N - 1) t = h + N; }
-      else if (k === 'Backspace' || k === 'z') { e.preventDefault(); if (path.length > 1 && clearT <= 0) { delete onPath[path.pop()]; A.sfx('turn', 0.8); } return; }
+      else if (k === 'Backspace' || k === 'z') { e.preventDefault(); if (path.length > 1 && clearT <= 0) { delete onPath[path.pop()]; A.sfx('select', 0.8); } return; }
       else if (k === 'h') { hint(); return; } else if (k === 'x') { wipe(); return; } else return;
       if (t >= 0 && !enter(t)) A.sfx('wall');
     }

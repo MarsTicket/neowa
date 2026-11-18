@@ -202,7 +202,7 @@
   function drop(c, p) {
     var r = hts[c]; hts[c]++; bd[c * ROWS + r] = p; moves++;
     drops.push({ c: c, r: r, p: p, y: BY - CS * 0.7, vy: 0, b: 0 });
-    A.sfx('click', p === 1 ? 1.2 : 0.95); hud();
+    A.sfx('place', p === 1 ? 1.2 : 0.95); hud();
   }
   function human(c) {
     if (!canPlay()) return;
@@ -211,16 +211,16 @@
   }
   function settled(d) {
     var x = BX + (d.c + 0.5) * CS, y = BY + (ROWS - 1 - d.r + 0.5) * CS;
-    A.sfx('tick', 0.8 + d.r * 0.08); fx.burst(x, y + DR * 0.6, d.p === 1 ? COL1 : COL2, 6, 120, 0.3, 2);
+    A.sfx('land', 0.9 + d.r * 0.08); fx.burst(x, y + DR * 0.6, d.p === 1 ? COL1 : COL2, 6, 120, 0.3, 2);
     var w = lineAt(d.c, d.r, d.p);
     if (w) {
       winLine = w; result = d.p; endT = 1.8;
       var good = d.p === 1 || duo();
       w.forEach(function (q, i) { setTimeout(function () { fx.burst(BX + (q[0] + 0.5) * CS, BY + (ROWS - 1 - q[1] + 0.5) * CS, good ? '#ffd166' : COL2, 14, 240, 0.6, 3); }, i * 90); });
-      if (good) { A.sfx('level'); A.vibrate([20, 40, 20]); } else { A.sfx('hurt'); fx.shake(9, 0.4); fx.flashIt('#ff2244', 0.35); A.vibrate(160); }
+      if (good) { A.sfx('win'); A.sfx('level'); A.vibrate([20, 40, 20]); } else { A.sfx('hurt'); fx.shake(9, 0.4); fx.flashIt('#ff2244', 0.35); A.vibrate(160); }
       hud(); return;
     }
-    if (moves >= COLS * ROWS) { result = 3; endT = 1.4; S.banner('무승부', duo() ? '판이 가득 찼어요' : '+50'); A.sfx('power'); hud(); return; }
+    if (moves >= COLS * ROWS) { result = 3; endT = 1.4; S.banner('무승부', duo() ? '판이 가득 찼어요' : '+50'); A.sfx('chip'); hud(); return; }
     turn = d.p === 1 ? 2 : 1;
     if (turn === 2 && !duo()) thinking = 0.32 + Math.random() * 0.2;
     hud();
@@ -365,8 +365,8 @@
     keydown: function (e) {
       var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (/^[1-7]$/.test(k)) { hover = -1; human(+k - 1); return; }
-      if (k === 'ArrowLeft' || k === 'a') { hover = -1; col = Math.max(0, col - 1); A.sfx('turn'); }
-      if (k === 'ArrowRight' || k === 'd') { hover = -1; col = Math.min(COLS - 1, col + 1); A.sfx('turn'); }
+      if (k === 'ArrowLeft' || k === 'a') { hover = -1; col = Math.max(0, col - 1); A.sfx('select'); }
+      if (k === 'ArrowRight' || k === 'd') { hover = -1; col = Math.min(COLS - 1, col + 1); A.sfx('select'); }
       if ((k === ' ' || k === 'Enter' || k === 'ArrowDown' || k === 's') && !e.repeat) { hover = -1; human(col); }
     }
   });

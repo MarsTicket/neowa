@@ -167,7 +167,7 @@
     if (!canShoot(c, cur)) { A.sfx('wall'); fx.shake(3, 0.12); return; }
     var h = height(c), r = h < ROWS ? h : ROWS - 1;
     flyer = { c: c, r: r, v: cur, y: LY, merge: h >= ROWS };
-    phase = 'fly'; A.sfx('shoot', 0.7); A.sfx('turn', 1.3);
+    phase = 'fly'; A.sfx('shoot', 0.7); A.sfx('whoosh', 1.2);
     cur = nxt; nxt = spawnVal(); chain = 0; hud();
   }
   function arrive() {
@@ -175,7 +175,7 @@
     if (f.merge) { // 꽉 찬 열의 맨 아래 블록과 같은 숫자 → 바로 합쳐짐
       var b = G[f.c][f.r]; ghosts.push({ v: f.v, x: cx(f.c), y: cy(f.r) + CS * 0.5, tx: cx(f.c), ty: cy(f.r), t: 0 });
       b.v *= 2; b.pop = 1; gain(b.v, f.c, f.r); dirty = [[f.c, f.r]];
-    } else { var nb = mk(f.v, cx(f.c), cy(f.r)); nb.pop = 0.6; G[f.c][f.r] = nb; dirty = [[f.c, f.r]]; A.sfx('brick', 0.9); }
+    } else { var nb = mk(f.v, cx(f.c), cy(f.r)); nb.pop = 0.6; G[f.c][f.r] = nb; dirty = [[f.c, f.r]]; A.sfx('land', 0.9); }
     fx.burst(cx(f.c), cy(f.r) + CS * 0.4, colOf(f.v), 6, 120, 0.3, 2);
     phase = 'resolve'; wait = 0.08;
   }
@@ -198,7 +198,7 @@
       b.v = b.v * Math.pow(2, hit.length); b.pop = 1; used[c + ',' + r] = 1;
       gain(b.v, c, r); nd.push([c, r]);
       fx.burst(cx(c), cy(r), colOf(b.v), 10 + hit.length * 6, 220, 0.45, 3); fx.ring(cx(c), cy(r), colOf(b.v), CS * 0.7, 0.35);
-      A.sfx('coin', 0.8 + Math.min(chain, 8) * 0.12 + Math.log(b.v) / Math.LN2 * 0.02); A.vibrate(12);
+      A.sfx('match', 0.8 + Math.min(chain, 8) * 0.12 + Math.log(b.v) / Math.LN2 * 0.02); A.vibrate(12);
       if (hit.length >= 2) fx.text(cx(c), cy(r) + 20, hit.length + 1 + '개 동시!', '#ffd166', 18);
     }
     // 위로 붙이기 (위에서부터 쌓이는 판)
@@ -237,7 +237,7 @@
       if (wait <= 0) {
         if (dirty.length && resolveStep()) { wait = 0.17; return; }
         if (bonusClear()) { for (var c2 = 0; c2 < COLS; c2++) for (var r2 = 0; r2 < ROWS; r2++) dirty.push([c2, r2]); chain = 0; wait = 0.3; return; }
-        phase = 'idle'; if (chain >= 2) { S.banner(chain + '연쇄!', '점수 ×' + chain); A.sfx('gold'); }
+        phase = 'idle'; if (chain >= 2) { S.banner(chain + '연쇄!', '점수 ×' + chain); A.sfx('gold'); A.sfx('combo', 1 + Math.min(chain, 12) * 0.05); }
         hud();
         if (!anyMove(cur)) { dyingT = 1.0; fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.4); A.sfx('hurt'); A.vibrate(160); }
       }
@@ -311,8 +311,8 @@
     id: 'merge', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) {
       var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; kbd = true;
-      if (k === 'ArrowLeft' || k === 'a') { aim = Math.max(0, aim - 1); A.sfx('turn'); }
-      else if (k === 'ArrowRight' || k === 'd') { aim = Math.min(COLS - 1, aim + 1); A.sfx('turn'); }
+      if (k === 'ArrowLeft' || k === 'a') { aim = Math.max(0, aim - 1); A.sfx('select'); }
+      else if (k === 'ArrowRight' || k === 'd') { aim = Math.min(COLS - 1, aim + 1); A.sfx('select'); }
       else if (/^[1-5]$/.test(k)) shoot(+k - 1);
       else if ((k === ' ' || k === 'ArrowUp' || k === 'w' || k === 'Enter') && !e.repeat) shoot(aim);
     }

@@ -269,6 +269,7 @@
     panel.className = 'g-panel'; panel.id = 'panel';
     panel.innerHTML = '<div class="gp-slot" id="panelSlot"></div><div class="gp-padbox"></div>' +
       '<button class="gp-btn" data-act="pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>일시정지</button>' +
+      '<p class="gp-tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 9a9 9 0 0 1 3-5M21 15a9 9 0 0 1-3 5"/></svg><span>휴대폰을 세로로 돌리면 게임 화면이 더 커져요.</span></p>' +
       '<div class="gp-cards"></div>';
     var cardsBox = panel.querySelector('.gp-cards'), padBox = panel.querySelector('.gp-padbox');
     document.querySelectorAll('.g-side .g-card').forEach(function (c) { cardsBox.appendChild(c.cloneNode(true)); });
@@ -308,6 +309,8 @@
         if (wide) aw -= 2 * (220 + 28);
       }
       S.wrap.classList.toggle('wide', wide);
+      // 휴대폰 가로 + 세로형 게임: 세로로 돌리라는 안내
+      body.classList.toggle('rot-tip', land && body.classList.contains('touch') && window.innerHeight < 500 && ar < 0.8);
       var w = Math.min(aw, ah * ar), h = w / ar;
       w = Math.floor(w); h = Math.floor(h);
       S.stage.style.setProperty('--sw', w + 'px'); S.stage.style.setProperty('--sh', h + 'px');
@@ -319,6 +322,22 @@
     window.addEventListener('resize', S.fit);
     window.addEventListener('orientationchange', function () { setTimeout(S.fit, 200); });
     S.fit();
+    A.current = S;
+    // 길게 누르면 뜨는 메뉴(이미지 저장 등) 막기: 게임판을 오래 누르는 조작이 많음
+    S.stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    // 게임 중 '뒤로'를 실수로 누르면 바로 나가지 않고 일시정지 (일시정지 화면에 '아케이드 홈'이 있음)
+    document.querySelectorAll('.g-back').forEach(function (a) {
+      a.addEventListener('click', function (e) { if (S.state === 'playing') { e.preventDefault(); S.pause(); } });
+    });
+    // 종료 화면에 '다른 게임 고르기' 링크 (없을 때만)
+    (function () {
+      var col = document.querySelector('#ovOver .ov-col'), back = document.querySelector('.g-back');
+      if (!col || col.querySelector('.ov-home') || !back) return;
+      var h = document.createElement('a');
+      h.className = 'ov-home'; h.href = back.getAttribute('href') || '../';
+      h.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>다른 게임 고르기';
+      col.appendChild(h);
+    })();
 
     function setState(st) { S.state = st; body.setAttribute('data-state', st); }
     S.setState = setState;

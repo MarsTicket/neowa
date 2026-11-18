@@ -157,7 +157,23 @@
     return null;
   }
   function reshuffle() { var vals = [], pos = []; b.forEach(function (v, i) { if (v >= 0) { vals.push(v); pos.push(i); } }); for (var t = 0; t < 300; t++) { shuffle(vals); pos.forEach(function (p, k) { b[p] = vals[k]; }); if (findPair()) break; } fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); A.sfx('turn'); }
-  function reset() { stage = 1; time = 120; score = 0; combo = 0; comboT = 0; dyingT = 0; setup(); fx.clear(); hud(); }
+  function reset() { maxCombo = 0; cleared = 0; tutPair = null; stage = 1; time = 120; score = 0; combo = 0; comboT = 0; dyingT = 0; setup(); fx.clear(); hud(); }
+  // 첫 플레이 안내: 처음 한 판에만 판 위에 손가락 안내를 띄우고, 첫 올바른 행동을 하면 사라짐 (neowa_pairs_tut = 1)
+  var tut = A.get('neowa_pairs_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_pairs_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function drawTut(c, x, y, msg, up) {
+    if (!tut || S.state !== 'playing') return;
+    var t = S.time, by = up ? y - 70 : y + 70;
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+    var rr = 26 + 6 * Math.sin(t * 6); c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 8; c.beginPath(); c.arc(x, y, rr, 0, 7); c.stroke(); c.strokeStyle = 'rgba(255,255,255,' + (0.6 + 0.4 * Math.sin(t * 6)) + ')'; c.lineWidth = 4; c.stroke();
+    c.font = '700 18px "Pretendard Variable",system-ui'; var w = Math.min(W - 24, c.measureText(msg).width + 32), bx = A.clamp(x, w / 2 + 12, W - w / 2 - 12);
+    c.fillStyle = 'rgba(0,0,0,.78)'; A.rr(c, bx - w / 2, by - 22, w, 44, 14); c.fill(); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5; c.stroke();
+    c.fillStyle = '#fff'; c.fillText(msg, bx, by + 1);
+    c.fillStyle = 'rgba(255,255,255,.9)'; c.beginPath(); var ay = up ? y - 44 + 4 * Math.sin(t * 6) : y + 44 - 4 * Math.sin(t * 6), d = up ? -1 : 1; c.moveTo(x, ay - d * 10); c.lineTo(x - 9, ay + d * 2); c.lineTo(x + 9, ay + d * 2); c.closePath(); c.fill();
+    c.restore();
+  }
+  var maxCombo = 0, cleared = 0, tutPair = null;
   function choose(i) {
     if (S.state !== 'playing' || dyingT > 0 || b[i] < 0) return;
     if (sel == null) { sel = i; A.sfx('tick', 1.2); return; }
@@ -166,7 +182,7 @@
     var p = connect(sel, i);
     if (!p) { A.sfx('wall'); combo = 0; sel = i; return; }
     // 콤보: 3초 안에 다음 짝을 지워야 이어짐
-    if (comboT <= 0) combo = 0; path = p; pathT = 0.3; combo++; comboT = 3; var pts = 10 * Math.min(5, combo); score += pts;
+    if (comboT <= 0) combo = 0; path = p; pathT = 0.3; combo++; maxCombo = Math.max(maxCombo, combo); cleared++; tutDone(); comboT = 3; var pts = 10 * Math.min(5, combo); score += pts;
     if (combo >= 2) { var mx = sel % (COLS + 2), my = Math.floor(sel / (COLS + 2)); fx.text(GX + (mx + 0.5) * CW, GY + my * CH, combo + ' 콤보 +' + pts, '#c3ff5e', 18); }
     [sel, i].forEach(function (k) { var x = k % (COLS + 2), y = Math.floor(k / (COLS + 2)); fx.burst(GX + (x + 0.5) * CW, GY + (y + 0.5) * CH, COL[b[k]], 10, 200, 0.4, 3); b[k] = -1; });
     A.sfx('coin', 1 + Math.min(combo, 10) * 0.05); sel = null; hintPair = null;
@@ -177,7 +193,7 @@
   function hint() { var p = findPair(); if (p) { hintPair = p; time = Math.max(0, time - 5); fx.text(W / 2, land ? H / 2 : 120, '힌트 -5초', '#c3ff5e', 18); A.sfx('power'); } }
   function update(dt) {
     fx.update(dt); if (comboT > 0) { comboT -= dt; if (comboT <= 0) { combo = 0; hud(); } } if (pathT > 0) { pathT -= dt; if (pathT <= 0) path = null; }
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['단계', String(stage)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) { var bk = 'neowa_pairs_stage', bs = A.getInt(bk); if (stage > bs) A.set(bk, stage); S.gameOver(score, [['단계', stage + (stage > bs ? ' (최고!)' : ' / 최고 ' + bs)], ['지운 짝', cleared + '쌍'], ['최대 콤보', maxCombo + '연속']]); } return; }
     time -= dt; if (time <= 0) { time = 0; dyingT = 1; A.sfx('over'); }
     hud();
   }
@@ -197,6 +213,7 @@
     if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 3; A.rr(c, GX + (cur.x + 1) * CW + 1, GY + (cur.y + 1) * CH, CW - 2, CH - 2, 10); c.stroke(); }
     if (path) { c.save(); c.shadowColor = '#c3ff5e'; c.shadowBlur = 12; c.strokeStyle = '#c3ff5e'; c.lineWidth = 5; c.lineJoin = 'round'; c.beginPath(); path.forEach(function (p, k) { c[k ? 'lineTo' : 'moveTo'](GX + (p[0] + 0.5) * CW, GY + (p[1] + 0.5) * CH); }); c.stroke(); c.restore(); }
     if (!land) { c.fillStyle = 'rgba(195,255,94,.12)'; A.rr(c, W / 2 - 80, 880, 160, 52, 14); c.fill(); c.fillStyle = '#c3ff5e'; c.font = '700 17px "Pretendard Variable",system-ui'; c.fillText('힌트 (-5초)', W / 2, 906); }
+    if (tut && b && S.state === 'playing') { if (!tutPair || b[tutPair[0]] < 0 || b[tutPair[1]] < 0) tutPair = findPair(); if (tutPair) { var tk = sel === tutPair[0] ? tutPair[1] : tutPair[0], tx = GX + (tk % (COLS + 2) + 0.5) * CW, ty = GY + (Math.floor(tk / (COLS + 2)) + 0.5) * CH; drawTut(c, tx, ty, sel === tutPair[0] ? '같은 그림을 하나 더 누르세요' : (isTouch() ? '같은 그림 두 개를 차례로 탭' : '같은 그림 두 개를 차례로 클릭'), ty > H / 2); } }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';

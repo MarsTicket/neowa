@@ -1278,5 +1278,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 500000
+ },
+ {
+  "id": "yacht",
+  "name": "주사위 족보",
+  "genre": "DICE",
+  "kgenre": "주사위 족보",
+  "cat": "보드·카드",
+  "accent": "#ff7aa8",
+  "rgb": "255,122,168",
+  "ink": "#2a0515",
+  "desc": "주사위 5개를 3번까지 굴려 풀하우스·스트레이트·요트! 족보 12칸을 채워 최고 점수에 도전.",
+  "tags": [
+   "주사위",
+   "족보",
+   "12턴"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 400
  }
 ]

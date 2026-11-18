@@ -69,15 +69,15 @@
   function cx(x) { return BX + (x + 0.5) * CS; }
   function cy(y) { return BY + (y + 0.5) * CS; }
   function place(x, y) {
-    if (!okStart[y * N + x]) { A.sfx('wall'); fx.text(cx(x), cy(y) - CS * 0.3, '여기선 완주 불가', '#ff4d6d', 18); return; }
+    if (!okStart[y * N + x]) { A.sfx('wrong'); fx.text(cx(x), cy(y) - CS * 0.3, '여기선 완주 불가', '#ff4d6d', 18); return; }
     path.push([x, y]); seen[y * N + x] = 1; total++; phase = 'move'; cur = { x: x, y: y };
-    fx.ring(cx(x), cy(y), '#e8e8ff', CS * 0.6, 0.4); A.sfx('power'); hud(); afterMove();
+    fx.ring(cx(x), cy(y), '#e8e8ff', CS * 0.6, 0.4); A.sfx('place'); hud(); afterMove();
   }
   function step(x, y) {
     var p = path[path.length - 1];
     anim = { fx: p[0], fy: p[1], tx: x, ty: y, t: 0 };
     path.push([x, y]); seen[y * N + x] = 1; total++; hintCell = null; cur = { x: x, y: y };
-    A.sfx('tick', 0.9 + path.length / (N * N) * 0.8); hud();
+    A.sfx('step', 0.9 + path.length / (N * N) * 0.8); hud();
   }
   function landed() {
     var p = path[path.length - 1];
@@ -88,12 +88,12 @@
     if (path.length === N * N) { // 완주
       var bonus = N * N * 20; banked += N * N * 10 + bonus; boards++;
       phase = 'clear'; endT = 1.8;
-      S.banner(N + '×' + N + ' 완주!', '+' + A.fmt(bonus) + ' 보너스'); A.sfx('level'); A.vibrate([20, 40, 20]);
+      S.banner(N + '×' + N + ' 완주!', '+' + A.fmt(bonus) + ' 보너스'); A.sfx('win'); A.sfx('level'); A.vibrate([20, 40, 20]);
       for (var i = 0; i < path.length; i++) (function (q, d) { setTimeout(function () { if (phase === 'clear') fx.burst(cx(q[0]), cy(q[1]), A.pick(['#ffd166', '#e8e8ff', '#b48cff']), 8, 180, 0.5, 2.6); }, d); })(path[i], i * 14);
       hud(); return;
     }
     if (!cands().length) { // 막힘: 즉시 판정
-      phase = 'stuck'; fx.shake(8, 0.35); fx.flashIt('#ff2244', 0.35); A.sfx('hurt'); A.vibrate(140);
+      phase = 'stuck'; fx.shake(8, 0.35); fx.flashIt('#ff2244', 0.35); A.sfx('wrong'); A.sfx('hurt'); A.vibrate(140);
       stuckMsg = undo > 0 ? '막혔어요! 되돌리거나 여기서 끝내세요' : '막혔어요!';
       if (undo <= 0) endT = 1.1;
       hud();
@@ -103,7 +103,7 @@
     if (S.state !== 'playing' || anim || phase === 'clear' || path.length < 2 || undo <= 0) { A.sfx('wall'); return; }
     var p = path.pop(); seen[p[1] * N + p[0]] = 0; total--; undo--; hintCell = null; endT = 0; phase = 'move';
     var q = path[path.length - 1]; cur = { x: q[0], y: q[1] };
-    fx.ring(cx(p[0]), cy(p[1]), '#ff7aa8', CS * 0.5, 0.35); A.sfx('click'); hud();
+    fx.ring(cx(p[0]), cy(p[1]), '#ff7aa8', CS * 0.5, 0.35); A.sfx('select', 0.8); hud();
   }
   function doHint() {
     if (S.state !== 'playing' || phase !== 'move' || anim || hint <= 0 || hintCell) { A.sfx('wall'); return; }

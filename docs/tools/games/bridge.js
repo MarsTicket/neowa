@@ -75,7 +75,7 @@
   }
   function release() {
     if (phase !== 'grow') return;
-    phase = 'fall'; pt = 0; A.sfx('turn', 1.4);
+    phase = 'fall'; pt = 0; A.sfx('whoosh', 1.2);
   }
 
   // ---------- 진행 ----------
@@ -87,10 +87,10 @@
       br.ok = true; br.perfect = perfect;
       var sx = br.x - camX;
       for (var k = 0; k < 14; k++) fx.spark(sx + br.len * (k / 14), TOP - 2, A.pick(['#9be7ff', '#ffffff']), A.rand(-40, 40), A.rand(-120, -30), 0.5, 2.4);
-      A.sfx('brick', 1.1);
+      A.sfx('land', 1.1);
       hero.target = n.x + n.w - 16;
     } else {
-      br.ok = false; hero.target = Math.max(br.x + 6, tip); A.sfx('wall');
+      br.ok = false; hero.target = Math.max(br.x + 6, tip); A.sfx('drop', 0.8);
     }
     phase = 'walk';
   }
@@ -103,7 +103,7 @@
       var px = n.x + n.w / 2 - camX;
       fx.ring(px, TOP, '#ff4d6d', 46, 0.45); fx.burst(px, TOP - 6, '#ffd166', 18, 260, 0.55, 3);
       fx.text(px, TOP - 70, chain > 1 ? 'PERFECT ×' + chain : 'PERFECT', '#ffd166', 24);
-      A.sfx('gold', 1 + chain * 0.05); A.vibrate([12, 30, 12]);
+      A.sfx('gold', 1 + chain * 0.05); A.sfx('combo', 1 + Math.min(chain, 12) * 0.05); A.vibrate([12, 30, 12]);
     } else { chain = 0; A.sfx('coin'); }
     score += gain;
     fx.text(hero.x - camX, TOP - 46, '+' + gain, '#e6fbff', 20);
@@ -125,7 +125,7 @@
       pt += dt; var k = Math.min(1, pt / FALL_T); br.ang = Math.PI / 2 * k * k;
       if (k >= 1) {
         br.ang = Math.PI / 2; fx.shake(3, 0.1);
-        if (wind) { phase = 'wind'; pt = 0; A.sfx('turn', 0.7); } else land();
+        if (wind) { phase = 'wind'; pt = 0; A.sfx('whoosh', 0.7); } else land();
       }
     } else if (phase === 'wind') {
       pt += dt; var target = wind * 9; br.shift = A.lerp(0, target, Math.min(1, pt / 0.3));

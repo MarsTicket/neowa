@@ -115,10 +115,19 @@
 (function () {
   'use strict';
   // 다리 잇기: 누르고 있으면 빛 다리가 자라고, 떼면 앞으로 쓰러져 다음 기둥까지 이어집니다.
-  var A = Arcade, W = 540, H = 960, TOP = 640, HX = 130; // 기둥 윗면 y, 서 있는 기둥 오른쪽 끝의 화면 x
+  var A = Arcade, W = 540, H = 960, TOP = 640, HX = 130, isLand = false; // 기둥 윗면 y, 서 있는 기둥 오른쪽 끝의 화면 x
+  var REACH = 384; // 서 있는 기둥 끝에서 다음 기둥 오른쪽 끝까지 최대 거리 (세로·가로 화면 모두 같은 난이도)
   var GROW = 460, WALK = 560, FALL_T = 0.34, PERF = 7, SCROLL_T = 0.38;
   var fx = new A.FX();
   var pillars, bridges, br, hero, camX, phase, pt, score, perfects, chain, maxChain, crossed, wind, windShown, dyingT, lastT, lenTick;
+  var tut = !A.get('neowa_bridge_tut', ''), pEl = {};
+  // 가로 화면(정사각형 판): 기둥·하늘 높이만 바꾸고, 진행 중인 판(카메라·주인공 위치)은 그대로 옮김
+  function geo(sh) {
+    var oT = TOP, oX = HX;
+    isLand = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
+    TOP = isLand ? 470 : 640; HX = isLand ? 168 : 130;
+    if (hero) { hero.y += TOP - oT; camX -= HX - oX; if (hero.camFrom != null) { hero.camFrom -= HX - oX; hero.camTo -= HX - oX; } }
+  }
 
   // ---------- 배경 (한 번만 그려 둠) ----------
   var SKY = A.sprite('br-sky', W, H, function (x) {
@@ -158,7 +167,7 @@
   function nextPillar() {
     var last = pillars[pillars.length - 1], l = lv();
     var w = Math.round(A.rand(A.lerp(84, 34, l), A.lerp(140, 72, l)));
-    var maxGap = (W - 26) - HX - w, minGap = Math.min(maxGap, A.lerp(36, 80, l));
+    var maxGap = REACH - w, minGap = Math.min(maxGap, A.lerp(36, 80, l));
     var gap = Math.round(A.rand(minGap, maxGap));
     pillars.push({ x: last.x + last.w + gap, w: w, born: 0 });
   }
@@ -212,6 +221,7 @@
     var n = nxt();
     if (!br.ok) { hero.fall = true; phase = 'drop'; pt = 0; A.sfx('hurt'); fx.shake(8, 0.35); fx.flashIt('#ff2244', 0.35); A.vibrate(150); dyingT = 1.15; return; }
     crossed++; var gain = 1;
+    if (tut) { tut = false; A.set('neowa_bridge_tut', 1); }
     if (br.perfect) {
       chain = Math.min(chain + 1, 5); perfects++; maxChain = Math.max(maxChain, chain); gain += chain;
       var px = n.x + n.w / 2 - camX;
@@ -302,7 +312,7 @@
     var o = fx.offset(), t = S.time;
     if (!pillars) world();
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(SKY, -10, -10, W + 20, H + 20);
+    if (isLand) c.drawImage(SKY, 0, 0, 540, 540, -10, -10, W + 20, H + 20); else c.drawImage(SKY, -10, -10, W + 20, H + 20);
     // 오로라
     c.save(); c.globalCompositeOperation = 'lighter';
     for (var a = 0; a < 3; a++) {
@@ -312,8 +322,8 @@
     }
     c.restore();
     var fo = ((camX * 0.12) % 1080 + 1080) % 1080, no = ((camX * 0.3) % 1080 + 1080) % 1080;
-    c.drawImage(FAR, -fo, 360, 1080, 260); c.drawImage(FAR, 1080 - fo, 360, 1080, 260);
-    c.drawImage(NEAR, -no, 470, 1080, 240); c.drawImage(NEAR, 1080 - no, 470, 1080, 240);
+    c.drawImage(FAR, -fo, TOP - 280, 1080, 260); c.drawImage(FAR, 1080 - fo, TOP - 280, 1080, 260);
+    c.drawImage(NEAR, -no, TOP - 170, 1080, 240); c.drawImage(NEAR, 1080 - no, TOP - 170, 1080, 240);
     // 낭떠러지 안개
     var fg = c.createLinearGradient(0, TOP - 40, 0, H); fg.addColorStop(0, 'rgba(2,8,16,0)'); fg.addColorStop(0.35, 'rgba(2,8,16,.85)'); fg.addColorStop(1, '#01040a');
     c.fillStyle = fg; c.fillRect(-10, TOP - 40, W + 20, H - TOP + 60);
@@ -327,19 +337,33 @@
     if (wind && S.state === 'playing' && (phase === 'idle' || phase === 'grow' || phase === 'fall' || phase === 'wind')) {
       var dir = wind > 0 ? 1 : -1, str = Math.abs(wind);
       c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = 'rgba(5,16,26,.7)'; A.rr(c, W / 2 - 110, 112, 220, 50, 25); c.fill(); c.strokeStyle = 'rgba(155,231,255,.5)'; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = 'rgba(5,16,26,.7)'; A.rr(c, W / 2 - 110, isLand ? 40 : 112, 220, 50, 25); c.fill(); c.strokeStyle = 'rgba(155,231,255,.5)'; c.lineWidth = 1.5; c.stroke();
       c.fillStyle = '#bff3ff'; c.font = '700 18px "Pretendard Variable", system-ui';
       var arrows = ''; for (var s = 0; s < str; s++) arrows += dir > 0 ? '›' : '‹';
-      c.fillText((dir > 0 ? '바람 ' : '') + (dir > 0 ? arrows : '') + (dir < 0 ? arrows + ' 바람' : ''), W / 2, 137);
+      c.fillText((dir > 0 ? '바람 ' : '') + (dir > 0 ? arrows : '') + (dir < 0 ? arrows + ' 바람' : ''), W / 2, isLand ? 65 : 137);
       c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(191,243,255,.18)'; c.lineWidth = 2;
-      for (var wl = 0; wl < 6 + str * 3; wl++) { var wy = 220 + (wl * 67) % 380, wx = ((wl * 131 + dir * t * (240 + str * 90)) % (W + 200) + W + 200) % (W + 200) - 100; c.beginPath(); c.moveTo(wx, wy); c.lineTo(wx + dir * (40 + str * 14), wy); c.stroke(); }
+      for (var wl = 0; wl < 6 + str * 3; wl++) { var wy = TOP - 420 + (wl * 67) % 380, wx = ((wl * 131 + dir * t * (240 + str * 90)) % (W + 200) + W + 200) % (W + 200) - 100; c.beginPath(); c.moveTo(wx, wy); c.lineTo(wx + dir * (40 + str * 14), wy); c.stroke(); }
       c.restore();
     }
     if (!(phase === 'drop' && hero.y > H + 60)) drawHero(c, hero.x - camX, hero.y, phase === 'walk');
-    // 처음 안내
-    if (S.state === 'playing' && phase === 'idle' && crossed === 0) {
-      c.save(); c.textAlign = 'center'; c.fillStyle = 'rgba(230,251,255,' + (0.6 + Math.sin(t * 4) * 0.3) + ')'; c.font = '700 20px "Pretendard Variable", system-ui';
-      c.fillText('꾹 누르고 있다가 손을 떼세요', W / 2, 300); c.restore();
+    // 처음 안내: 첫 판(저장 키 없음)에는 손가락/키 그림과 함께, 그 뒤로는 첫 기둥에서만 짧게
+    if (S.state === 'playing' && (phase === 'idle' || phase === 'grow') && crossed === 0) {
+      var touch = document.body.classList.contains('touch'), ty = TOP - 330;
+      c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+      if (tut) {
+        c.fillStyle = 'rgba(5,16,26,.72)'; A.rr(c, W / 2 - 220, ty - 46, 440, 118, 22); c.fill(); c.strokeStyle = 'rgba(155,231,255,.5)'; c.lineWidth = 1.5; c.stroke();
+        c.fillStyle = '#e6fbff'; c.font = '700 22px "Pretendard Variable", system-ui';
+        c.fillText(phase === 'grow' ? '좋아요! 닿을 만큼 자라면 떼세요' : touch ? '화면을 꾹 누르고 있어 보세요' : 'Space 를 꾹 누르고 있어 보세요', W / 2, ty - 12);
+        c.fillStyle = 'rgba(191,243,255,.75)'; c.font = '600 16px "Pretendard Variable", system-ui';
+        c.fillText('다리가 다음 기둥 위에 떨어지면 성공 · 빨간 점은 보너스', W / 2, ty + 22);
+        // 다음 기둥을 가리키는 화살표
+        var n = nxt(), ax = n.x + n.w / 2 - camX, bob = Math.sin(t * 6) * 6;
+        c.fillStyle = '#ffd166'; c.beginPath(); c.moveTo(ax, TOP - 22 + bob); c.lineTo(ax - 12, TOP - 44 + bob); c.lineTo(ax + 12, TOP - 44 + bob); c.closePath(); c.fill();
+      } else if (phase === 'idle') {
+        c.fillStyle = 'rgba(230,251,255,' + (0.6 + Math.sin(t * 4) * 0.3) + ')'; c.font = '700 20px "Pretendard Variable", system-ui';
+        c.fillText(touch ? '꾹 누르고 있다가 손을 떼세요' : 'Space 꾹 → 떼기', W / 2, ty);
+      }
+      c.restore();
     }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
@@ -351,6 +375,7 @@
     document.getElementById('hB').textContent = perfects;
     document.getElementById('hC').textContent = A.fmt(Math.max(S ? S.best : 0, score));
     document.getElementById('hMult').textContent = chain >= 2 ? 'PERFECT ×' + chain : '';
+    if (pEl.score) { pEl.score.textContent = A.fmt(score); pEl.perf.textContent = perfects; pEl.best.textContent = A.fmt(Math.max(S ? S.best : 0, score)); pEl.chain.textContent = chain >= 2 ? 'PERFECT ×' + chain + ' 연속 중' : '빨간 점 = 보너스'; }
   }
 
   var stage = document.getElementById('stage');
@@ -358,12 +383,17 @@
   window.addEventListener('pointerup', release); window.addEventListener('pointercancel', release);
   function isKey(k) { return k === ' ' || k === 'ArrowUp' || k === 'ArrowDown' || k === 'Enter' || k === 'w' || k === 's'; }
   var S = new A.Shell({
-    id: 'bridge', W: W, H: H, reset: reset, update: update, render: render,
+    id: 'bridge', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, render: render,
     idle: function (dt) { fx.update(dt); lastT = null; },
     keydown: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (isKey(k) && !e.repeat) press(); },
     keyup: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (isKey(k)) release(); }
   });
-  score = 0; perfects = 0; chain = 0; hud();
+  // 가로 화면 오른쪽 패널: 점수판 (게임판 위 점수판은 가로에서 숨김)
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-turn"><div><b>꾹 누르고 → 떼기</b><span id="pkChain"></span></div></div>' +
+    '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>PERFECT</span><b id="pkPerf">0</b></div><div><span>BEST</span><b id="pkBest">0</b></div></div>';
+  pEl = { score: document.getElementById('pkScore'), perf: document.getElementById('pkPerf'), best: document.getElementById('pkBest'), chain: document.getElementById('pkChain') };
+  score = 0; perfects = 0; chain = 0; lastHud = ''; hud();
 })();
 
 </script>

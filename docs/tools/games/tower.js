@@ -2,7 +2,7 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, BH = 44, DEPTH = 22;   // 블록 높이, 윗면 깊이(입체감)
   var fx = new A.FX();
-  var stack, cur, cam = 0, camT = 0, chips = [], perfects = 0, combo = 0, floors = 0, dyingT = 0, dir = 1, spd = 0;
+  var stack, cur, cam = 0, camT = 0, chips = [], perfects = 0, combo = 0, floors = 0, dyingT = 0, dir = 1, spd = 0, score = 0;
 
   var BG = A.sprite('tbg', W, H, function (x) {
     var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0a0f2c'); g.addColorStop(0.55, '#3b2a6b'); g.addColorStop(1, '#ff9e6b');
@@ -14,7 +14,7 @@
 
   function reset() {
     stack = [{ x: W / 2 - 110, w: 220, n: 0 }]; // 맨 아래 받침
-    chips = []; perfects = 0; combo = 0; floors = 0; dyingT = 0; cam = 0; camT = 0;
+    chips = []; perfects = 0; combo = 0; floors = 0; dyingT = 0; cam = 0; camT = 0; score = 0;
     spawn(); fx.clear(); hud();
   }
   function topY(i) { return 760 - i * BH; } // i층 블록의 윗면 y (월드 좌표)
@@ -27,13 +27,16 @@
   function drop() {
     if (S.state !== 'playing' || dyingT > 0 || !cur) return;
     var last = stack[stack.length - 1], off = cur.x - last.x;
-    if (Math.abs(off) < 7) { // 완벽
+    // 완벽 판정 폭: 빨라질수록 조금 넓게 (한 프레임에 움직이는 거리가 커지므로)
+    var tol = 7 + spd / 140;
+    if (Math.abs(off) < tol) { // 완벽
       cur.x = last.x; combo++; perfects++;
+      var pb = 5 * Math.min(combo, 10); score += pb;
       var grow = combo >= 3 ? Math.min(14, 260 - cur.w) : 0;
       if (grow > 0) { cur.x -= grow / 2; cur.w += grow; fx.text(W / 2, sy(topY(cur.n)) - 50, '넓어짐!', '#ffe066', 20); }
       fx.ring(cur.x + cur.w / 2, sy(topY(cur.n)) + BH / 2, '#ffe066', cur.w * 0.7, 0.45);
       A.sfx('coin', 1 + Math.min(combo, 10) * 0.08); A.vibrate(15);
-      fx.text(cur.x + cur.w / 2, sy(topY(cur.n)) - 20, combo > 1 ? 'PERFECT ×' + combo : 'PERFECT', '#fff', 20);
+      fx.text(cur.x + cur.w / 2, sy(topY(cur.n)) - 20, (combo > 1 ? 'PERFECT ×' + combo : 'PERFECT') + ' +' + (10 + pb), '#fff', 20);
     } else {
       combo = 0;
       var nx = Math.max(cur.x, last.x), nr = Math.min(cur.x + cur.w, last.x + last.w), nw = nr - nx;
@@ -44,9 +47,11 @@
       var cx = off > 0 ? nr : cur.x, cw = cur.w - nw; // 잘려 나가는 조각
       chips.push({ x: cx, w: cw, y: topY(cur.n), vy: 0, vx: off > 0 ? 80 : -80, n: cur.n, rot: 0 });
       cur.x = nx; cur.w = nw; A.sfx('brick', 0.8);
+      if (Math.abs(off) < tol * 2.2) { score += 3; fx.text(cur.x + cur.w / 2, sy(topY(cur.n)) - 20, 'GOOD +13', '#9fe8ff', 17); }
+      if (cur.w < 40) fx.text(W / 2, sy(topY(cur.n)) - 56, '조심! 블록이 좁아요', '#ff9e6b', 16);
       fx.burst(off > 0 ? nr : nx, sy(topY(cur.n)) + BH / 2, col(cur.n, 70), 10, 200, 0.4, 2.5);
     }
-    stack.push({ x: cur.x, w: cur.w, n: cur.n }); floors++;
+    stack.push({ x: cur.x, w: cur.w, n: cur.n }); floors++; score += 10;
     fx.shake(2, 0.08);
     if (floors % 10 === 0) { S.banner(floors + '층', '계속 올라가요'); A.sfx('level'); }
     spawn(); hud();
@@ -59,7 +64,7 @@
     camT = Math.max(0, (stack.length - 8) * BH);
     cam = A.lerp(cam, camT, Math.min(1, dt * 5));
     for (var i = chips.length - 1; i >= 0; i--) { var c = chips[i]; c.vy += 1800 * dt; c.y += c.vy * dt; c.x += c.vx * dt; c.rot += c.vx * 0.002 * dt * 10; if (sy(c.y) > H + 200) chips.splice(i, 1); }
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(floors * 10 + perfects * 5, [['층수', String(floors)], ['완벽', String(perfects)], ['최대 콤보', String(maxCombo)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['층수', String(floors)], ['완벽', String(perfects)], ['최대 콤보', String(maxCombo)]]); return; }
     if (cur) {
       cur.x += dir * spd * dt;
       var last = stack[stack.length - 1];
@@ -109,8 +114,8 @@
     c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() {
-    document.getElementById('hA').textContent = floors;
-    document.getElementById('hB').textContent = perfects;
+    document.getElementById('hA').textContent = A.fmt(score);
+    document.getElementById('hB').textContent = floors;
     document.getElementById('hC').textContent = combo;
     document.getElementById('hMult').textContent = combo >= 2 ? 'PERFECT ×' + combo : '';
   }

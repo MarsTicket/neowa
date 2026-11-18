@@ -9,86 +9,15 @@
   A.getInt = function (k) { return parseInt(A.get(k, '0'), 10) || 0; };
   A.fmt = function (n) { return Math.floor(n).toLocaleString('ko-KR'); };
 
-  /* ---------- 사운드 (파일 없이 즉석 합성) ---------- */
-  var ac = null, master = null, noiseBuf = null;
+  /* ---------- 사운드 ----------
+     효과음·배경음악 엔진은 assets/arcade/sound.js 에 있고, 이 파일 맨 아래에서 불러옵니다.
+     불러오기 전(또는 실패했을 때)에도 게임이 멈추지 않도록 빈 함수를 먼저 둡니다. */
   var muted = A.get('neowa_mute', '0') === '1';
-  function audio() {
-    if (!ac) {
-      var C = window.AudioContext || window.webkitAudioContext;
-      if (!C) return null;
-      ac = new C();
-      master = ac.createGain(); master.gain.value = 0.32;
-      var comp = ac.createDynamicsCompressor();
-      master.connect(comp); comp.connect(ac.destination);
-    }
-    if (ac.state === 'suspended') ac.resume();
-    return ac;
-  }
-  function noise(c) {
-    if (noiseBuf) return noiseBuf;
-    noiseBuf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate);
-    var d = noiseBuf.getChannelData(0);
-    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    return noiseBuf;
-  }
-  function tone(o, p) {
-    var c = audio(); if (!c) return;
-    var t = c.currentTime + (o.at || 0), d = o.d || 0.1, v = o.v || 0.2;
-    var g = c.createGain(), src;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(v, t + 0.006);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    if (o.n) {
-      src = c.createBufferSource(); src.buffer = noise(c);
-      var f = c.createBiquadFilter(); f.type = 'lowpass';
-      f.frequency.setValueAtTime(o.f, t);
-      if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + d);
-      src.connect(f); f.connect(g);
-    } else {
-      src = c.createOscillator(); src.type = o.w || 'square';
-      src.frequency.setValueAtTime(o.f * p, t);
-      if (o.f2) src.frequency.exponentialRampToValueAtTime(o.f2 * p, t + d);
-      src.connect(g);
-    }
-    g.connect(master); src.start(t); src.stop(t + d + 0.03);
-  }
-  var SFX = {
-    shoot: [{ w: 'square', f: 1400, f2: 500, d: 0.05, v: 0.035 }],
-    hit: [{ w: 'square', f: 420, f2: 160, d: 0.06, v: 0.08 }],
-    boom: [{ n: 1, f: 2400, f2: 90, d: 0.32, v: 0.32 }, { w: 'sine', f: 150, f2: 40, d: 0.28, v: 0.3 }],
-    bigboom: [{ n: 1, f: 3000, f2: 60, d: 0.9, v: 0.45 }, { w: 'sine', f: 110, f2: 28, d: 0.8, v: 0.45 }, { w: 'sawtooth', f: 220, f2: 40, d: 0.5, v: 0.12, at: 0.05 }],
-    hurt: [{ w: 'sawtooth', f: 300, f2: 60, d: 0.35, v: 0.22 }, { n: 1, f: 1200, f2: 100, d: 0.3, v: 0.25 }],
-    power: [{ w: 'triangle', f: 523, f2: 1046, d: 0.12, v: 0.22 }, { w: 'triangle', f: 784, f2: 1568, d: 0.16, v: 0.2, at: 0.08 }],
-    coin: [{ w: 'square', f: 988, d: 0.06, v: 0.09 }, { w: 'square', f: 1319, d: 0.14, v: 0.09, at: 0.06 }],
-    eat: [{ w: 'triangle', f: 660, f2: 990, d: 0.08, v: 0.25 }],
-    gold: [{ w: 'triangle', f: 784, d: 0.07, v: 0.2 }, { w: 'triangle', f: 988, d: 0.07, v: 0.2, at: 0.07 }, { w: 'triangle', f: 1319, d: 0.16, v: 0.2, at: 0.14 }],
-    bounce: [{ w: 'sine', f: 420, f2: 380, d: 0.07, v: 0.22 }],
-    wall: [{ w: 'sine', f: 260, f2: 240, d: 0.05, v: 0.12 }],
-    brick: [{ w: 'square', f: 660, f2: 640, d: 0.07, v: 0.1 }],
-    steel: [{ w: 'triangle', f: 1800, f2: 1700, d: 0.08, v: 0.12 }],
-    turn: [{ w: 'sine', f: 300, d: 0.03, v: 0.06 }],
-    start: [{ w: 'square', f: 523, d: 0.08, v: 0.12 }, { w: 'square', f: 659, d: 0.08, v: 0.12, at: 0.08 }, { w: 'square', f: 784, d: 0.08, v: 0.12, at: 0.16 }, { w: 'square', f: 1046, d: 0.2, v: 0.12, at: 0.24 }],
-    level: [{ w: 'triangle', f: 523, d: 0.1, v: 0.2 }, { w: 'triangle', f: 659, d: 0.1, v: 0.2, at: 0.1 }, { w: 'triangle', f: 784, d: 0.1, v: 0.2, at: 0.2 }, { w: 'triangle', f: 1046, d: 0.3, v: 0.22, at: 0.3 }],
-    over: [{ w: 'square', f: 392, d: 0.16, v: 0.12 }, { w: 'square', f: 330, d: 0.16, v: 0.12, at: 0.16 }, { w: 'square', f: 262, d: 0.16, v: 0.12, at: 0.32 }, { w: 'sawtooth', f: 196, f2: 98, d: 0.5, v: 0.12, at: 0.48 }],
-    record: [{ w: 'square', f: 784, d: 0.08, v: 0.1 }, { w: 'square', f: 988, d: 0.08, v: 0.1, at: 0.09 }, { w: 'square', f: 1175, d: 0.08, v: 0.1, at: 0.18 }, { w: 'square', f: 1568, d: 0.3, v: 0.1, at: 0.27 }],
-    click: [{ w: 'sine', f: 880, d: 0.04, v: 0.1 }],
-    tick: [{ w: 'square', f: 1200, d: 0.02, v: 0.03 }]
-  };
-  var lastPlay = {};
-  A.sfx = function (name, pitch) {
-    if (muted) return;
-    var now = performance.now();
-    if (lastPlay[name] && now - lastPlay[name] < 30) return; // 같은 소리 겹침 방지
-    lastPlay[name] = now;
-    var list = SFX[name]; if (!list) return;
-    try { for (var i = 0; i < list.length; i++) tone(list[i], pitch || 1); } catch (e) {}
-  };
+  A.sfx = function () {};
+  A.music = { play: function () {}, stop: function () {}, paused: function () {}, intensity: function () {}, tempo: function () {}, style: function () {}, mood: function () {}, isOn: function () { return false; } };
   A.isMuted = function () { return muted; };
-  A.setMuted = function (m) {
-    muted = !!m; A.set('neowa_mute', muted ? '1' : '0');
-    document.body.classList.toggle('muted', muted);
-  };
-  A.unlockAudio = function () { if (!muted) audio(); };
+  A.setMuted = function (m) { muted = !!m; A.set('neowa_mute', muted ? '1' : '0'); document.body.classList.toggle('muted', muted); };
+  A.unlockAudio = function () {};
   A.vibrate = function (p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
 
   /* ---------- 수학 ---------- */
@@ -226,7 +155,7 @@
   /* ---------- 게임 틀: 상태(대기/플레이/일시정지/종료), 무대 크기, 키·버튼 ---------- */
   A.Shell = function (cfg) {
     var S = this;
-    S.cfg = cfg; S.W = cfg.W; S.H = cfg.H; S.id = cfg.id;
+    A.cur = S; S.cfg = cfg; S.W = cfg.W; S.H = cfg.H; S.id = cfg.id;
     S.state = 'ready'; S.time = 0;
     S.bestKey = 'neowa_hub_' + cfg.id + '_high';
     S.best = A.getInt(S.bestKey);
@@ -545,6 +474,12 @@
       load(this.nick());
     }
   };
+  // 사운드 엔진 읽기
+  (function () {
+    var s = document.createElement('script');
+    s.src = BASE + 'sound.js?v=1';
+    document.head.appendChild(s);
+  })();
   // 설정 파일 읽기
   (function () {
     var s = document.createElement('script');

@@ -63,7 +63,7 @@
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 08</p>
         <h1 class="ov-title">네온 블록</h1>
-        <p class="ov-desc">아래 조각을 판 위로 끌어다 놓으세요. 가로·세로 한 줄을 다 채우면 사라집니다. 세 조각 모두 놓을 곳이 없으면 끝.</p>
+        <p class="ov-desc">조각 3개를 판 위로 끌어다 놓으세요. 가로·세로 한 줄을 다 채우면 사라집니다. 세 조각 모두 놓을 곳이 없으면 끝.</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>끌어다 놓기</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>여러 줄 동시 = 큰 점수</span>
@@ -116,7 +116,13 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960, N = 8, CS = 58, GX = (540 - 8 * 58) / 2, GY = 140;
-  var TRAY_Y = 790, SLOT_X = [95, 270, 445], TS = 0.5;
+  var SLOT_X = [95, 270, 445], SLOT_Y = [790, 790, 790], SBW = 80, SBH = 90, TS = 0.5, land = false;
+  // 화면 배치: 세로는 540x960(판 위, 조각 3개 아래), 가로는 820x600(판 왼쪽, 조각 3개 오른쪽 세로 줄)
+  function geo(sh) {
+    land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
+    if (land) { CS = 66; GX = 36; GY = 36; SLOT_X = [712, 712, 712]; SLOT_Y = [112, 300, 488]; SBW = 92; SBH = 86; }
+    else { CS = 58; GX = (540 - 8 * 58) / 2; GY = 140; SLOT_X = [95, 270, 445]; SLOT_Y = [790, 790, 790]; SBW = 80; SBH = 90; }
+  }
   var fx = new A.FX();
   var grid, tray, score, lines, streak, drag = null, cursor = { x: 3, y: 3, sel: 0 }, kbd = false, clearing = [], pops = [], dyingT = 0, maxStreak = 0, streakLife = 0;
   var COLORS = ['#5ee7ff', '#7dff9b', '#ffb547', '#ff7aa8', '#b48cff', '#ffe066', '#ff7a45', '#7aa2ff'];
@@ -189,7 +195,7 @@
       if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) { score += 300; S.banner('판 비우기!', '+300'); A.sfx('level'); }
     } else if (streak > 0) { streakLife--; if (streakLife <= 0) { streak = 0; } } // 콤보는 3번 놓는 동안 유지
     if (tray.every(function (q) { return q.used; })) refill();
-    if (!canPlaceAny()) { dyingT = 1.2; A.sfx('hurt'); fx.text(W / 2, TRAY_Y - 130, '놓을 곳이 없어요', '#ff7aa8', 24); fx.shake(6, 0.3); }
+    if (!canPlaceAny()) { dyingT = 1.2; A.sfx('hurt'); fx.text(GX + N * CS / 2, land ? GY + N * CS / 2 : SLOT_Y[0] - 130, '놓을 곳이 없어요', '#ff7aa8', 24); fx.shake(6, 0.3); }
     // 키보드 선택을 남은 조각으로
     if (tray[cursor.sel].used) for (var s = 0; s < 3; s++) if (!tray[s].used) { cursor.sel = s; break; }
     hud(); return true;
@@ -269,17 +275,17 @@
     }
     // 조각 받침
     if (tray) {
-      for (i = 0; i < 3; i++) { c.fillStyle = 'rgba(255,255,255,.03)'; A.rr(c, SLOT_X[i] - 80, TRAY_Y - 90, 160, 180, 16); c.fill(); }
+      for (i = 0; i < 3; i++) { c.fillStyle = 'rgba(255,255,255,.03)'; A.rr(c, SLOT_X[i] - SBW, SLOT_Y[i] - SBH, SBW * 2, SBH * 2, 16); c.fill(); }
       for (i = 0; i < 3; i++) {
-        var p = tray[i]; if (kbd && i === cursor.sel && S.state === 'playing') { c.strokeStyle = 'rgba(122,162,255,.7)'; c.lineWidth = 2; A.rr(c, SLOT_X[i] - 80, TRAY_Y - 90, 160, 180, 16); c.stroke(); }
+        var p = tray[i]; if (kbd && i === cursor.sel && S.state === 'playing') { c.strokeStyle = 'rgba(122,162,255,.7)'; c.lineWidth = 2; A.rr(c, SLOT_X[i] - SBW, SLOT_Y[i] - SBH, SBW * 2, SBH * 2, 16); c.stroke(); }
         if (p.used || (drag && drag.k === i)) continue;
         var ok = !grid || canFit(p);
-        drawPiece(c, p, SLOT_X[i] - p.w * CS * TS / 2, TRAY_Y - p.h * CS * TS / 2, TS, ok ? 1 : 0.3);
-        if (kbd) { c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 14px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(i + 1), SLOT_X[i], TRAY_Y + 80); }
+        drawPiece(c, p, SLOT_X[i] - p.w * CS * TS / 2, SLOT_Y[i] - p.h * CS * TS / 2, TS, ok ? 1 : 0.3);
+        if (kbd) { c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 14px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(i + 1), land ? SLOT_X[i] - SBW + 14 : SLOT_X[i], land ? SLOT_Y[i] - SBH + 22 : SLOT_Y[i] + 80); }
       }
       if (drag) drawPiece(c, tray[drag.k], drag.x - tray[drag.k].w * CS / 2, drag.y - tray[drag.k].h * CS / 2, 1, 0.95);
     } else {
-      [[0, '#5ee7ff', 2], [4, '#ff7aa8', 9], [6, '#ffe066', 13]].forEach(function (d, j) { drawPiece(c, { cells: SHAPES[d[2]], c: d[1] }, SLOT_X[j] - 30, TRAY_Y - 30, TS); });
+      [[0, '#5ee7ff', 2], [4, '#ff7aa8', 9], [6, '#ffe066', 13]].forEach(function (d, j) { drawPiece(c, { cells: SHAPES[d[2]], c: d[1] }, SLOT_X[j] - 30, SLOT_Y[j] - 30, TS); });
     }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
@@ -290,17 +296,18 @@
     document.getElementById('hB').textContent = lines;
     document.getElementById('hC').textContent = streak;
     document.getElementById('hMult').textContent = streak > 1 ? 'COMBO ×' + streak : '';
+    if (pEl.score) { pEl.score.textContent = A.fmt(score); pEl.lines.textContent = lines; pEl.combo.textContent = streak > 1 ? '×' + streak : '0'; }
   }
   // 입력
   var stage = document.getElementById('stage');
   stage.addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing' || dyingT > 0) return;
     var p = S.toLocal(e);
-    if (p.y < TRAY_Y - 110) return;
     for (var i = 0; i < 3; i++) {
-      if (Math.abs(p.x - SLOT_X[i]) < 88 && !tray[i].used) {
+      var dy = p.y - SLOT_Y[i];
+      if (Math.abs(p.x - SLOT_X[i]) < SBW + 8 && dy > -(SBH + 20) && dy < SBH + 60 && !tray[i].used) {
         kbd = false;
-        var lift = e.pointerType === 'mouse' ? 0 : 120;
+        var lift = e.pointerType === 'mouse' ? 0 : (land ? 90 : 120);
         drag = { k: i, id: e.pointerId, lift: lift, x: p.x, y: p.y - lift };
         A.sfx('click'); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
         return;
@@ -318,8 +325,9 @@
   });
   stage.addEventListener('pointercancel', function () { drag = null; });
 
+  var pEl = {};
   var S = new A.Shell({
-    id: 'blocks', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); update0(dt); }, render: render,
+    id: 'blocks', W: W, H: H, land: [820, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); update0(dt); }, render: render,
     keydown: function (e) {
       if (dyingT > 0) return;
       var k = e.key; kbd = true;
@@ -332,6 +340,11 @@
       else if (k === 'Tab') { e.preventDefault(); for (var j = 1; j <= 3; j++) { var n = (cursor.sel + j) % 3; if (!tray[n].used) { cursor.sel = n; break; } } }
     }
   });
+  // 가로 화면: 점수판을 오른쪽 패널로 (게임판 위 점수판은 가로에서 숨김)
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>LINES</span><b id="pkLines">0</b></div><div><span>COMBO</span><b id="pkCombo">0</b></div></div>';
+  pEl = { score: document.getElementById('pkScore'), lines: document.getElementById('pkLines'), combo: document.getElementById('pkCombo') };
+  if (score != null) hud();
   function update0(dt) { for (var i = clearing.length - 1; i >= 0; i--) { clearing[i].t += dt; if (clearing[i].t > 0.35) clearing.splice(i, 1); } }
 })();
 

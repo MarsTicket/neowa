@@ -203,9 +203,16 @@
   function hint() {
     if (S.state !== 'playing' || clearT > 0 || stageHints <= 0) { A.sfx('wall'); return; }
     // 정답과 같은 부분까지 되돌린 뒤, 다음 3칸을 칠해 줌
-    var k = 0; while (k < path.length && path[k] === sol[k]) k++;
-    if (k < path.length) { cut(sol[k - 1]); fx.text(W / 2, BY - 30, '여기까지 되돌렸어요', '#ff7aa8', 18); }
-    for (var s = 0; s < 3 && path.length < total; s++) { var nx = sol[path.length]; path.push(nx); onPath[nx] = 1; fx.ring(cxi(nx), cyi(nx), '#ffd166', CS * 0.5, 0.4); }
+    // 먼저 지금 칠한 길 그대로 이어서 풀리는지 찾아봄 → 되면 지우지 않고 다음 3칸을 칠해 줌
+    var w2 = {}, i2; for (i2 in wall) w2[i2] = 1; for (i2 = 0; i2 < path.length - 1; i2++) w2[path[i2]] = 1;
+    var rest = findPath(w2, head(), total - path.length + 1), plan = null;
+    if (rest) plan = path.concat(rest.slice(1));
+    else { // 안 되면 정답과 같은 부분까지 되돌림
+      var k = 0; while (k < path.length && path[k] === sol[k]) k++;
+      if (k < path.length) { cut(sol[k - 1]); fx.text(W / 2, land ? BY + 40 : BY - 30, '여기까지 되돌렸어요', '#ff7aa8', 18); }
+      plan = sol;
+    }
+    for (var s = 0; s < 3 && path.length < total; s++) { var nx = plan[path.length]; path.push(nx); onPath[nx] = 1; fx.ring(cxi(nx), cyi(nx), '#ffd166', CS * 0.5, 0.4); }
     stageHints--; hintN++; used++; A.sfx('power');
     if (path.length === total) clear();
     hud();

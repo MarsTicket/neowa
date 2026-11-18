@@ -19,14 +19,14 @@
   function reset() { stage = 1; score = 0; hints = 3; setup(); fx.clear(); hud(); }
   function press(i) {
     if (S.state !== 'playing' || done) return;
-    flipAt(i); sol[i] = !sol[i]; moves++; A.sfx('tick', on[i] ? 1.6 : 1.1); hud();
+    flipAt(i); sol[i] = !sol[i]; moves++; A.sfx('tap', on[i] ? 1.5 : 0.9); hud();
     if (!on.some(Boolean)) {
-      var pts = Math.max(20, 100 * stage - moves * 5); score += pts; done = 1; A.sfx('level');
+      var pts = Math.max(20, 100 * stage - moves * 5); score += pts; done = 1; A.sfx('win');
       fx.text(W / 2, GY - 40, '불 끄기 성공! +' + pts, '#ffe066', 26); for (var k = 0; k < 4; k++) fx.burst(A.rand(120, W - 120), A.rand(300, 700), '#ffe066', 20, 300, 0.7, 4);
     }
   }
   function hint() {
-    if (hints <= 0 || done) { A.sfx('wall'); return; } var idx = []; sol.forEach(function (v, i) { if (v) idx.push(i); });
+    if (hints <= 0 || done) { A.sfx('wrong'); return; } var idx = []; sol.forEach(function (v, i) { if (v) idx.push(i); });
     if (!idx.length) return; hints--; var h = A.pick(idx); pulse[h] = 1.2; fx.ring(GX + (h % N + 0.5) * CS, GY + (Math.floor(h / N) + 0.5) * CS, '#5ee7ff', CS, 0.6); A.sfx('power'); score = Math.max(0, score - 20); hud();
   }
   function update(dt) {

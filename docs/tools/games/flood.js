@@ -13,10 +13,11 @@
     if (S.state !== 'playing' || dyingT > 0 || nextT > 0 || col === grid[0]) return;
     var before = Object.keys(region).length;
     Object.keys(region).forEach(function (k) { grid[k] = col; ripple[k] = region[k] * 0.012; });
-    moves++; calc(); var gained = Object.keys(region).length - before; A.sfx('eat', 0.8 + Math.min(1, gained / 20));
+    moves++; calc(); var gained = Object.keys(region).length - before; A.sfx('splash', 0.8 + Math.min(1, gained / 20));
     Object.keys(region).forEach(function (k) { if (ripple[k] == null) ripple[k] = region[k] * 0.012; });
-    if (Object.keys(region).length === N * N) { var pts = CFG[diff].b + (maxM - moves) * 30; score += pts; wins++; nextT = 1.2; A.sfx('level'); fx.text(W / 2, GY - 30, '완성! +' + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), COLS[col], 20, 300, 0.7, 4); }
+    if (Object.keys(region).length === N * N) { var pts = CFG[diff].b + (maxM - moves) * 30; score += pts; wins++; nextT = 1.2; A.sfx('win'); fx.text(W / 2, GY - 30, '완성! +' + pts, '#ffd166', 26); for (var i = 0; i < 4; i++) fx.burst(A.rand(100, W - 100), A.rand(250, 650), COLS[col], 20, 300, 0.7, 4); }
     else if (moves >= maxM) { dyingT = 1.2; A.sfx('hurt'); fx.flashIt('#ff2244', 0.4); }
+    else if (maxM - moves <= 3) A.sfx('warn');
     hud();
   }
   function update(dt) {
@@ -48,7 +49,7 @@
   });
   var dbtns = document.querySelectorAll('[data-diff]');
   function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
-  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flood_diff', diff); A.sfx('click'); paint(); grid = null; }); }); paint();
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flood_diff', diff); A.sfx('select'); paint(); grid = null; }); }); paint();
   var S = new A.Shell({ id: 'flood', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { if (/^[1-6]$/.test(e.key) && !e.repeat) pick(+e.key - 1); } });
 })();

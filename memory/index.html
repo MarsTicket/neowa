@@ -131,21 +131,21 @@
   function reset() { stage = 1; time = 40; score = 0; combo = 0; setup(); fx.clear(); hud(); }
   function flip(i) {
     var c = cards[i]; if (!c || c.up || c.done || lock > 0 || peekT > 0 || S.state !== 'playing') return;
-    c.up = true; open.push(i); A.sfx('click', 1.2);
+    c.up = true; open.push(i); A.sfx('flip', 1 + (open.length - 1) * 0.1);
     if (open.length === 2) {
       var a = cards[open[0]], b = cards[open[1]];
-      if (a.id === b.id) { a.done = b.done = true; combo++; var pts = 20 * Math.min(5, combo); score += pts; A.sfx('coin', 1 + combo * 0.05); fx.text(GX + (open[1] % cols + 0.5) * CW, GY + Math.floor(open[1] / cols) * CH, '+' + pts, '#ffd166', 20); open = [];
+      if (a.id === b.id) { a.done = b.done = true; combo++; var pts = 20 * Math.min(5, combo); score += pts; A.sfx('match', 1 + Math.min(combo, 12) * 0.05); if (combo > 1) A.sfx('combo', 1 + Math.min(combo, 12) * 0.05); fx.text(GX + (open[1] % cols + 0.5) * CW, GY + Math.floor(open[1] / cols) * CH, '+' + pts, '#ffd166', 20); open = [];
         if (cards.every(function (q) { return q.done; })) { var bonus = Math.round(time) * 5 + stage * 50; score += bonus; time += 10 + stage * 2; fx.text(W / 2, H / 2, '단계 클리어! +' + bonus, '#b48cff', 26); A.sfx('level'); stage++; setTimeout(function () { if (S.state === 'playing') { setup(); S.banner('STAGE ' + stage, '+시간'); } }, 900); lock = 1; } }
-      else { combo = 0; lock = 0.7; A.sfx('wall'); }
+      else { combo = 0; lock = 0.7; A.sfx('wrong'); }
     }
     hud();
   }
   function update(dt) {
     fx.update(dt);
-    if (peekT > 0) { peekT -= dt; if (peekT <= 0) cards.forEach(function (c) { if (!c.done) c.up = false; }); }
+    if (peekT > 0) { peekT -= dt; if (peekT <= 0) { cards.forEach(function (c) { if (!c.done) c.up = false; }); A.sfx('deal'); } }
     if (lock > 0) { lock -= dt; if (lock <= 0 && open.length === 2) { open.forEach(function (i) { cards[i].up = false; }); open = []; } }
     cards.forEach(function (c) { c.f = A.lerp(c.f, c.up || c.done ? 1 : 0, Math.min(1, dt * 14)); });
-    if (peekT <= 0) { time -= dt; if (time <= 0) { time = 0; S.gameOver(score, [['단계', String(stage)]]); return; } }
+    if (peekT <= 0) { time -= dt; if (time > 5) warnN = 0; else if (time > 0 && Math.ceil(time) !== warnN) { warnN = Math.ceil(time); A.sfx('warn'); } if (time <= 0) { time = 0; S.gameOver(score, [['단계', String(stage)]]); return; } }
     hud();
   }
   function render(c) {
@@ -166,7 +166,7 @@
     if (peekT > 0 && S.state === 'playing') { c.fillStyle = '#b48cff'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText('잘 기억하세요!', W / 2, GY - 30); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  var last = '';
+  var last = '', warnN = 0;
   function hud() { var k = score + '|' + stage + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var t = document.getElementById('hC'); t.textContent = Math.ceil(time); t.style.color = time < 8 ? '#ff4d6d' : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e), x = Math.floor((p.x - GX) / CW), y = Math.floor((p.y - GY) / CH); if (x >= 0 && x < cols && y >= 0 && y < rows) flip(y * cols + x); });
   var S = new A.Shell({ id: 'memory', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,

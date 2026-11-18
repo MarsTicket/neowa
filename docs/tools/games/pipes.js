@@ -28,8 +28,9 @@
   function solved() { flow(); return Object.keys(wet).length === N * N; }
   function reset() { stage = 1; score = 0; time = 0; setup(); fx.clear(); hud(); }
   function turn(i) {
-    if (S.state !== 'playing' || done) return; rot[i] = rotm(rot[i]); A.sfx('tick', 1.2);
-    if (solved()) { var pts = Math.max(50, Math.round(N * N * 15 - stageT * 4)); score += pts; done = 1.2; A.sfx('level'); fx.text(W / 2, GY - 40, '연결 완료! +' + pts, '#5effc8', 26); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 750), '#5effc8', 20, 300, 0.7, 4); }
+    if (S.state !== 'playing' || done) return; var w0 = Object.keys(wet).length; rot[i] = rotm(rot[i]); A.sfx('turn', 1.2);
+    var sv = solved(), w1 = Object.keys(wet).length; if (w1 > w0 && !sv) A.sfx('splash', 1 + Math.min(w1 - w0, 6) * 0.08);
+    if (sv) { var pts = Math.max(50, Math.round(N * N * 15 - stageT * 4)); score += pts; done = 1.2; A.sfx('win'); fx.text(W / 2, GY - 40, '연결 완료! +' + pts, '#5effc8', 26); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(250, 750), '#5effc8', 20, 300, 0.7, 4); }
     hud();
   }
   var stageT = 0;

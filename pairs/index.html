@@ -154,18 +154,18 @@
     for (var i = 0; i < tiles.length; i++) for (var j = i + 1; j < tiles.length; j++) if (b[tiles[i]] === b[tiles[j]] && connect(tiles[i], tiles[j])) return [tiles[i], tiles[j]];
     return null;
   }
-  function reshuffle() { var vals = [], pos = []; b.forEach(function (v, i) { if (v >= 0) { vals.push(v); pos.push(i); } }); for (var t = 0; t < 20; t++) { shuffle(vals); pos.forEach(function (p, k) { b[p] = vals[k]; }); if (findPair()) break; } fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); A.sfx('turn'); }
+  function reshuffle() { var vals = [], pos = []; b.forEach(function (v, i) { if (v >= 0) { vals.push(v); pos.push(i); } }); for (var t = 0; t < 20; t++) { shuffle(vals); pos.forEach(function (p, k) { b[p] = vals[k]; }); if (findPair()) break; } fx.text(W / 2, H / 2, '섞는 중…', '#fff', 24); A.sfx('deal'); }
   function reset() { stage = 1; time = 120; score = 0; combo = 0; dyingT = 0; setup(); fx.clear(); hud(); }
   function choose(i) {
     if (S.state !== 'playing' || dyingT > 0 || b[i] < 0) return;
-    if (sel == null) { sel = i; A.sfx('tick', 1.2); return; }
-    if (sel === i) { sel = null; return; }
-    if (b[sel] !== b[i]) { sel = i; A.sfx('tick', 1.2); return; }
+    if (sel == null) { sel = i; A.sfx('select', 1.2); return; }
+    if (sel === i) { sel = null; A.sfx('tap', 0.8); return; }
+    if (b[sel] !== b[i]) { sel = i; A.sfx('select', 1.2); return; }
     var p = connect(sel, i);
-    if (!p) { A.sfx('wall'); combo = 0; sel = i; return; }
+    if (!p) { A.sfx('wrong'); combo = 0; sel = i; return; }
     path = p; pathT = 0.3; combo++; var pts = 10 * Math.min(5, combo); score += pts;
     [sel, i].forEach(function (k) { var x = k % (COLS + 2), y = Math.floor(k / (COLS + 2)); fx.burst(GX + (x + 0.5) * CW, GY + (y + 0.5) * CH, COL[b[k]], 10, 200, 0.4, 3); b[k] = -1; });
-    A.sfx('coin', 1 + Math.min(combo, 10) * 0.05); sel = null; hintPair = null;
+    A.sfx('match', 1 + Math.min(combo, 12) * 0.05); if (combo > 1) A.sfx('combo', 1 + Math.min(combo, 12) * 0.05); sel = null; hintPair = null;
     if (b.every(function (v) { return v < 0; })) { var bonus = Math.round(time * 3) + stage * 100; score += bonus; time += 45; stage++; fx.text(W / 2, H / 2, '판 클리어! +' + bonus, '#c3ff5e', 26); A.sfx('level'); setup(); S.banner('STAGE ' + stage, '+45초'); }
     else if (!findPair()) reshuffle();
     hud();
@@ -174,7 +174,7 @@
   function update(dt) {
     fx.update(dt); if (pathT > 0) { pathT -= dt; if (pathT <= 0) path = null; }
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['단계', String(stage)]]); return; }
-    time -= dt; if (time <= 0) { time = 0; dyingT = 1; A.sfx('over'); }
+    time -= dt; if (time > 5) warnN = 0; else if (time > 0 && Math.ceil(time) !== warnN) { warnN = Math.ceil(time); A.sfx('warn'); } if (time <= 0) { time = 0; dyingT = 1; A.sfx('hurt'); }
     hud();
   }
   function render(c) {
@@ -195,7 +195,7 @@
     c.fillStyle = 'rgba(195,255,94,.12)'; A.rr(c, W / 2 - 80, 880, 160, 52, 14); c.fill(); c.fillStyle = '#c3ff5e'; c.font = '700 17px "Pretendard Variable",system-ui'; c.fillText('힌트 (-5초)', W / 2, 906);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  var last = '';
+  var last = '', warnN = 0;
   function hud() { var left = b ? b.filter(function (v) { return v >= 0; }).length : 0, k = score + '|' + left + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = left; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 15 ? '#ff4d6d' : ''; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e);

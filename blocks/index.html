@@ -163,7 +163,7 @@
     var p = tray[k]; if (!p || p.used || !fits(p, gx, gy)) return false;
     var wc = wouldClear(p, gx, gy);
     p.cells.forEach(function (c) { grid[gy + c[1]][gx + c[0]] = p.c; pops.push({ x: gx + c[0], y: gy + c[1], t: 0 }); });
-    p.used = true; score += p.cells.length; A.sfx('brick', 0.9);
+    p.used = true; score += p.cells.length; A.sfx('place', 1 + Math.min(p.cells.length, 9) * 0.02);
     var n = wc.rows.length + wc.cols.length;
     if (n) {
       streak++; maxStreak = Math.max(maxStreak, streak); lines += n;
@@ -179,8 +179,8 @@
       var cx = GX + (gx + p.w / 2) * CS, cy = GY + (gy + p.h / 2) * CS;
       fx.text(cx, cy - 30, (n > 1 ? n + '줄! ' : '') + '+' + pts, n > 1 ? '#ffd166' : '#fff', n > 1 ? 26 : 20);
       if (streak > 1) fx.text(cx, cy + 4, 'COMBO ×' + streak, '#7aa2ff', 18);
-      fx.shake(3 + n * 2, 0.25); A.sfx(n > 1 ? 'gold' : 'coin', 1 + streak * 0.05); A.vibrate(n > 1 ? [20, 30, 20] : 15);
-      if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) { score += 300; S.banner('판 비우기!', '+300'); A.sfx('level'); }
+      fx.shake(3 + n * 2, 0.25); A.sfx('line', 1 + Math.min(streak, 12) * 0.05); if (n > 1) A.sfx('gold'); if (streak > 1) A.sfx('combo', 1 + Math.min(streak, 12) * 0.05); A.vibrate(n > 1 ? [20, 30, 20] : 15);
+      if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) { score += 300; S.banner('판 비우기!', '+300'); A.sfx('win'); }
     } else streak = 0;
     if (tray.every(function (q) { return q.used; })) refill();
     if (!canPlaceAny()) { dyingT = 1; A.sfx('hurt'); }
@@ -290,7 +290,7 @@
         kbd = false;
         var lift = e.pointerType === 'mouse' ? 0 : 120;
         drag = { k: i, id: e.pointerId, lift: lift, x: p.x, y: p.y - lift };
-        A.sfx('click'); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+        A.sfx('select'); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
         return;
       }
     }

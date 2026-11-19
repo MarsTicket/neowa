@@ -88,8 +88,8 @@
        w 파형(sine/square/triangle/sawtooth/p1/p2), f 시작 높이(Hz), f2 끝 높이, d 길이(초), v 크기, at 시작 지연
        n:1 잡음(바람·폭발·타격), ft 잡음 필터(lowpass/bandpass/highpass), q 필터 날카로움
        fm 종소리 배율(값을 주면 FM 합성: 3.5=종, 1=전자피아노), mi 종소리 세기, a 올라오는 시간, r 잔향 양(0~1) */
-  function tone(o, p, pan) {
-    var t = ac.currentTime + 0.005 + (o.at || 0), d = o.d || 0.1, v = o.v || 0.2, a = o.a || 0.005;
+  function tone(o, p, pan, lg) {
+    var t = ac.currentTime + 0.005 + (o.at || 0), d = o.d || 0.1, v = (o.v || 0.2) * (lg || 1), a = o.a || 0.005;
     var g = ac.createGain(), src, mod;
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(v, t + a);
@@ -179,8 +179,25 @@
   // 음악을 잠깐 줄이는 소리(크게 터지는 순간이 더 크게 느껴지게)
   var DUCK = { bigboom: [0.35, 0.7], hurt: [0.5, 0.45], boom: [0.75, 0.25], level: [0.5, 0.8], win: [0.3, 1.4], record: [0.3, 1.2], over: [0.2, 1.0], gold: [0.8, 0.4], line: [0.7, 0.6] };
 
+  // 음량 맞춤: 녹음해서 잰 소리 크기를 기준으로 종류별로 고르게(작은 버튼음 < 보통 사건 < 보상 < 큰 사건)
+  var LOUD = { laser: 1.7, hit: 1.5, boom: 1.25, bigboom: 0.8, hurt: 0.8, charge: 0.75, whoosh: 3, jump: 0.75, land: 0.5, drop: 0.55, step: 1.7, splash: 1.35, warn: 1.5, coin: 0.85, eat: 0.75, ding: 0.7, right: 0.8, wrong: 2, pop: 0.78, deal: 1.15, chip: 1.15, slide: 2.4, select: 1.4, tap: 0.85, bounce: 0.78, wall: 0.85, brick: 1.3, count: 0.65, go: 0.6, start: 1.8, win: 0.65, over: 1.2, tick: 1.8 };
+
+  /* ---------- 진동(햅틱): 지원하는 기기(주로 안드로이드)에서만. 소리를 꺼도 진동은 따로 켜고 끕니다 ---------- */
+  var haptic = A.get('neowa_haptic', '1') === '1', canVib = !!(navigator.vibrate), lastVib = 0, gameVib = 0;
+  var HAP = { hurt: 60, bigboom: [30, 40, 70], boom: 18, win: [20, 40, 20, 40, 50], record: [30, 50, 30, 50, 80], level: [20, 30, 20], over: 90, wrong: 25, combo: 14, match: 12, line: [15, 25, 15], gold: 16, power: 14, drop: 22, land: 8, place: 8, puck: 10, jump: 6, warn: 20, go: 30 };
+  function vib(p) { try { if (canVib && haptic) { navigator.vibrate(p); lastVib = performance.now(); } } catch (e) {} }
+  A.vibrate = function (p) { gameVib = performance.now(); vib(p); }; // 게임이 직접 부르는 진동
+  A.haptic = function (on) { if (on == null) return haptic && canVib; haptic = !!on; A.set('neowa_haptic', haptic ? '1' : '0'); paintPanel(); };
+  function autoVib(name) {
+    var h = HAP[name]; if (!h || !canVib || !haptic || !document.body.classList.contains('touch')) return;
+    var now = performance.now(); if (now - gameVib < 150) return; // 게임이 이미 진동을 줬으면 겹치지 않게
+    if (now - lastVib < 80 && typeof h === 'number' && h < 25) return; // 작은 진동은 연달아 내지 않음
+    vib(h);
+  }
+
   var lastPlay = {};
   A.sfx = function (name, pitch, pan) {
+    autoVib(name);
     if (muted || volSfx <= 0) return;
     var list = SFX[name]; if (!list) return;
     var now = performance.now();
@@ -190,7 +207,8 @@
     if (voices > MAXV && !TUNED[name]) return; // 소리가 너무 많이 겹치면 작은 소리는 생략
     if ((name === 'over' || name === 'record' || name === 'win') && !pitch && jingle(name)) { duck(0.3, 1.2); if (name === 'win') M.levelUp(); return; }
     var p = (pitch || 1) * (TUNED[name] ? 1 : 1 + (Math.random() - 0.5) * 0.04);
-    try { for (var i = 0; i < list.length; i++) tone(list[i], p, pan); } catch (e) {}
+    var lg = LOUD[name] || 1;
+    try { for (var i = 0; i < list.length; i++) tone(list[i], p, pan, lg); } catch (e) {}
     if (DUCK[name]) duck(DUCK[name][0], DUCK[name][1]);
     if (name === 'level') M.levelUp();
   };
@@ -233,12 +251,11 @@
     reversi: 'zen', solitaire: 'casino', blackjack: 'casino', baseball: 'casino', reaction: 'brain', math: 'brain', stroop: 'brain',
     aim: 'brain', oddcolor: 'brain', schulte: 'brain', baduk: 'zen', fall: 'chip', _template: 'chip',
     bridge: 'puzzle', knight: 'zen', four: 'brain', merge: 'chip', paint: 'puzzle',
-    sort: 'zen', sum: 'brain', hexa: 'puzzle',
-    cannon: 'chip', golf: 'sport', bowling: 'sport', tank: 'synth', yacht: 'casino', td: 'drive',
-    hangul: 'zen', typing: 'brain', idle: 'chip'
+    sort: 'puzzle', sum: 'zen', hexa: 'puzzle', cannon: 'sport', golf: 'sport', bowling: 'sport', tank: 'drive', yacht: 'casino', td: 'synth',
+    hangul: 'puzzle', typing: 'brain', idle: 'space'
   };
   // 집중이 필요한 게임은 음악을 조금 작게
-  var SOFT = { reaction: 0.6, sequence: 0.6, baduk: 0.8, stroop: 0.8, math: 0.85 };
+  var SOFT = { reaction: 0.6, sequence: 0.6, typing: 0.8, hangul: 0.85, baduk: 0.8, stroop: 0.8, math: 0.85 };
 
   function makeSong(id, styleName) {
     var st = STY[styleName] || STY.chip, R = rng(hash('neowa:' + id));
@@ -547,6 +564,7 @@
     '.snd input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;background:#fff}' +
     '.snd-mute{justify-self:center;font-size:13px;font-weight:700;color:var(--sub,#aab0d4);padding:6px 12px;border-radius:10px}.snd-mute:hover{background:rgba(255,255,255,.06);color:var(--ink,#fff)}' +
     'body.muted .snd-row{opacity:.4}' +
+    '.snd-btns{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}' +
     '.land .g-ov .snd{margin-top:10px}';
   var panel = null;
   function row(kind, label) {
@@ -563,6 +581,7 @@
       ins[i].nextSibling.textContent = v;
     }
     var mb = panel.querySelector('.snd-mute'); if (mb) mb.textContent = muted ? '🔇 소리 꺼짐 · 켜기' : '🔊 모든 소리 끄기';
+    var hb = panel.querySelector('.snd-hap'); if (hb) { hb.textContent = haptic ? '📳 진동 켜짐' : '📴 진동 꺼짐'; hb.setAttribute('aria-pressed', haptic ? 'true' : 'false'); }
   }
   function mountPanel() {
     var pause = document.getElementById('ovPause'); if (!pause || panel) return;
@@ -572,6 +591,11 @@
     panel.appendChild(row('sfx', '효과음')); panel.appendChild(row('bgm', '배경음악'));
     var mb = document.createElement('button'); mb.type = 'button'; mb.className = 'snd-mute'; panel.appendChild(mb);
     mb.addEventListener('click', function (e) { e.stopPropagation(); A.setMuted(!muted); if (!muted) A.sfx('click'); });
+    if (canVib) { // 진동을 지원하는 기기에서만 버튼 표시
+      var bb = document.createElement('div'); bb.className = 'snd-btns'; panel.removeChild(mb); bb.appendChild(mb);
+      var hb = document.createElement('button'); hb.type = 'button'; hb.className = 'snd-mute snd-hap'; bb.appendChild(hb); panel.appendChild(bb);
+      hb.addEventListener('click', function (e) { e.stopPropagation(); A.haptic(!haptic); if (haptic) vib(30); });
+    }
     panel.addEventListener('input', function (e) {
       var k = e.target.getAttribute('data-snd'); if (!k) return;
       if (muted && +e.target.value > 0) A.setMuted(false);

@@ -65,23 +65,6 @@ SCENE = {
  'schulte': ('a 5x5 grid of tiles with scattered colorful abstract numeral shapes, a quick tap trail connecting them in sequence', '흩어진 숫자를 순서대로 찾는 격자'),
  'baduk': ('a glowing wooden go board seen from above with black and white stones, a small group of white stones encircled by a pulsing red target ring and a black stone landing to capture them', '표시된 백 돌을 잡는 바둑 수읽기'),
  'fall': ('a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap', '떨어지는 블록을 돌려 줄을 지우는 퍼즐'),
- 'bridge': ('a tiny glowing round light-robot with a pink scarf standing on the edge of a tall dark pillar at night, a shining beam of ice-blue light falling forward like a bridge toward the next pillar with a red glowing center mark, aurora sky and full moon', '빛 다리를 쓰러뜨려 다음 기둥으로 건너는 장면'),
- 'knight': ('a glowing white chess knight piece leaping in an L-shaped arc over a dark violet checkerboard, a trail of light lines connecting numbered visited squares, candidate squares softly glowing ice-blue', '나이트가 L자로 뛰며 판을 밟아 가는 장면'),
- 'four': ('a glossy deep-blue upright game board with round holes, shiny yellow and magenta discs stacked inside, one yellow disc falling into a column, four yellow discs in a diagonal row glowing with a bright light line', '돌을 떨어뜨려 4개를 잇는 판'),
- 'merge': ('glossy rounded number tiles in warm amber, teal and magenta stacked in five columns, one tile shooting upward with a light trail and merging into a matching tile in a burst of golden sparks', '숫자 블록을 쏘아 올려 합치는 장면'),
- 'paint': ('a glowing pink-to-orange brush stroke snaking through a grid of rounded tiles, filling each square exactly once around a few dark blocked squares, a bright white brush tip glowing', '한붓으로 격자를 칠해 가는 장면'),
- 'sort': ('a row of tall glass test-tube bottles on a dark shelf filled with stacked layers of glossy liquid in red, yellow, cyan and violet, one bottle tilted pouring a violet stream into another, soft purple glow', '색 병 사이로 액체를 부어 정리하는 장면'),
- 'sum': ('a glowing lime-green number cross puzzle grid with dark clue squares split diagonally holding small sums, bright digits filling white squares, one row lighting up as it completes', '합계 단서로 숫자를 채우는 퍼즐판'),
- 'hexa': ('a glowing hexagonal board made of small hexagon cells, glossy mint, cyan and pink hex tiles filling it, one straight diagonal line of hexes bursting into light as it clears, a hex piece hovering above', '육각 판에서 한 줄이 터지는 순간'),
- 'cannon': ('a fan of dozens of glowing white balls shooting up from a launcher at the bottom, bouncing between glossy neon-red and cyan numbered square blocks that crack apart, one green +1 ring, dark arcade background', '공 수십 개로 숫자 블록 부수기'),
- 'golf': ('a top-down neon mini golf course on dark green turf with glowing mint borders, a white golf ball with a dotted aim line bouncing off a wall, a spinning yellow windmill bar, a small pond and sand trap, a red flag on the hole', '네온 미니 골프 코스'),
- 'bowling': ('a glossy orange bowling ball crashing into ten white bowling pins with red stripes on a polished wooden lane, pins flying apart, warm neon orange glow, low dramatic perspective', '핀이 와르르 쓰러지는 볼링'),
- 'tank': ('a top-down neon maze with glowing golden walls, a small yellow tank firing a glowing shell that ricochets off a wall corner toward a red enemy tank, dotted bounce trail, sparks', '벽에 튕기는 포탄 탱크 전투'),
- 'yacht': ('five glossy white dice with red and black pips tumbling on a dark pink felt table, two dice glowing pink as held, a neat score sheet with rows of numbers in the background', '주사위 다섯 개와 족보 점수표'),
- 'td': ('a top-down winding orange path through a dark grid, rows of small neon towers (yellow machine gun, orange cannon, icy blue, pink laser beam) shooting at a line of colorful creeping enemies, a big red boss', '길 옆 네온 타워들이 적을 막는 장면'),
- 'hangul': ('a grid of rounded square tiles each showing a single Korean jamo letter, rows colored glowing green, golden yellow and dark gray, a neat on-screen Korean keyboard below, dark green neon background', '자모 칸 낱말 맞히기 판'),
- 'typing': ('glowing blue Korean word bubbles falling down a dark night screen toward a red line, one golden word bursting into sparks, a glowing text input box at the bottom', '떨어지는 한글 낱말 타자 게임'),
- 'idle': ('a giant glowing lime-green energy core in the center of a neon factory, little machines (pinwheel, water wheel, lightning rod, telescope) feeding glowing particles into it, huge floating numbers', '숫자가 불어나는 네온 공장'),
 }
 
 def build():

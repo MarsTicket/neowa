@@ -3,15 +3,23 @@
   var A = Arcade, W = 540, H = 960, MAXT = 10, land = false;
   var fx = new A.FX();
   var diff = +A.get('neowa_baseball_diff', '0') || 0, LEN, secret, input, tries, log, score, streak, solved, endT, shake = 0;
-  function newSecret() { LEN = diff ? 4 : 3; var d = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; for (var i = d.length - 1; i > 0; i--) { var j = A.irand(0, i), t = d[i]; d[i] = d[j]; d[j] = t; } secret = d.slice(0, LEN); input = []; tries = 0; log = []; endT = 0; }
-  function reset() { score = 0; streak = 0; solved = 0; newSecret(); fx.clear(); hud(); }
+  function newSecret() { LEN = diff === 1 ? 4 : 3; var d = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; for (var i = d.length - 1; i > 0; i--) { var j = ri(0, i), t = d[i]; d[i] = d[j]; d[j] = t; } secret = d.slice(0, LEN); input = []; tries = 0; log = []; endT = 0; }
+  // 오늘의 도전: 로컬 날짜(YYYYMMDD)로 시드를 고정해 오늘은 누구나 같은 문제. rnd()는 평소엔 Math.random
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  var rnd = Math.random;
+  function seedRnd(on) { if (!on) { rnd = Math.random; return; } var a = (Math.imul(today(), 0x9E3779B1) ^ 0x5bd1e995) >>> 0;
+    rnd = function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // mulberry32
+  function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
+  function dailyBest(sc) { var k = 'neowa_baseball_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); b = sc; } return b; } // 오늘 최고 점수
+  var totalT = 0; // 맞힌 문제들의 시도 횟수 합 (평균 시도 계산)
+  function reset() { score = 0; streak = 0; solved = 0; totalT = 0; seedRnd(diff === 2); newSecret(); fx.clear(); hud(); }
   function press(n) { if (S.state !== 'playing' || endT > 0) return; if (input.length >= LEN || input.indexOf(n) >= 0) { A.sfx('wall'); return; } input.push(n); A.sfx('tap', 1 + n * 0.04); }
   function back() { if (input.length) { input.pop(); A.sfx('slide', 0.8); } }
   function submit() {
     if (S.state !== 'playing' || endT > 0) return; if (input.length !== LEN) { shake = 0.3; A.sfx('wall'); return; }
     var s = 0, b = 0; input.forEach(function (v, i) { if (secret[i] === v) s++; else if (secret.indexOf(v) >= 0) b++; });
     tries++; log.push({ g: input.slice(), s: s, b: b }); input = [];
-    if (s === LEN) { var pts = (MAXT - tries + 1) * 50 * (diff + 1); score += pts; streak++; solved++; endT = 1.4; A.sfx('win'); fx.text(W / 2, 330, '정답! +' + pts, '#9be7ff', 30); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(200, 500), '#9be7ff', 20, 300, 0.7, 4); }
+    if (s === LEN) { var pts = (MAXT - tries + 1) * 50 * (LEN === 4 ? 2 : 1); score += pts; streak++; solved++; totalT += tries; endT = 1.4; A.sfx('win'); fx.text(W / 2, 330, '정답! +' + pts, '#9be7ff', 30); for (var k = 0; k < 4; k++) fx.burst(A.rand(100, W - 100), A.rand(200, 500), '#9be7ff', 20, 300, 0.7, 4); }
     else if (tries >= MAXT) { endT = 2; A.sfx('hurt'); }
     else A.sfx(s ? 'match' : b ? 'select' : 'wrong', 1 + s * 0.1);
     hud();
@@ -20,7 +28,7 @@
     fx.update(dt); if (shake > 0) shake -= dt;
     if (endT > 0) { endT -= dt; if (endT <= 0) {
       if (log.length && log[log.length - 1].s === LEN) { newSecret(); S.banner(solved + 1 + '번째 문제', '연속 ' + streak); hud(); }
-      else S.gameOver(score, [['맞힌 문제', String(solved)], ['정답', secret.join('')]]);
+      else S.gameOver(score, [['맞힌 문제', String(solved)], ['정답', secret.join('')], diff === 2 ? ['오늘 최고', A.fmt(dailyBest(score))] : ['평균 시도', solved ? (totalT / solved).toFixed(1) + '번' : '-']]);
     } }
   }
   // OUT(0S 0B)이 나온 숫자는 정답에 없으므로 숫자판에서 흐리게 표시 (누를 수는 있음)
@@ -55,7 +63,7 @@
     c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '500 14px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('S 스트라이크 = 숫자·자리 모두 맞음 · B 볼 = 숫자만 맞음', land ? 678 : W / 2, land ? 535 : 900);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
-  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = tries + '/' + MAXT; document.getElementById('hC').textContent = streak; document.getElementById('hMult').textContent = LEN + '자리'; }
+  function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = tries + '/' + MAXT; document.getElementById('hC').textContent = streak; document.getElementById('hMult').textContent = diff === 2 ? '오늘의 도전' : LEN + '자리'; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) {
     if (S.state !== 'playing') return; var p = S.toLocal(e);
     keys().forEach(function (b) { if (p.x > b[1] && p.x < b[1] + b[3] && p.y > b[2] && p.y < b[2] + b[4]) { if (b[0] === 'del') back(); else if (b[0] === 'ok') submit(); else press(b[0]); hud(); } });

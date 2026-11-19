@@ -68,7 +68,18 @@
     if (diff === 2 || (diff === 1 && Math.random() < 0.6)) { var best = null, bv = 1e9; lines.forEach(function (l) { var g = chainGift(l) + Math.random() * 0.1; if (g < bv) { bv = g; best = l; } }); return place(best, 2); }
     place(A.pick(lines), 2);
   }
-  function reset() { wins = 0; score = 0; setup(); fx.clear(); hud(); }
+  var boxesTot = 0;
+  // 첫 플레이 안내: 처음 한 번만 판 위에 짧은 안내를 띄우고, 첫 올바른 행동을 하면 사라짐 (neowa_dots_tut = 1)
+  var tut = A.get('neowa_dots_tut', '0') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_dots_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function tutBox(c, x, y, txt, size, tx, ty) { // 글 상자 + (tx, ty)에 깜빡이는 손가락 원
+    c.save(); c.font = '700 ' + size + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(txt).width + size * 1.6; c.fillStyle = 'rgba(0,0,0,.78)'; A.rr(c, x - w / 2, y - size, w, size * 2, size * 0.7); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5; c.stroke(); c.fillStyle = '#fff'; c.fillText(txt, x, y + 1);
+    if (tx != null) { var k = (S.time * 1.6) % 1; c.strokeStyle = 'rgba(255,255,255,' + (1 - k) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(tx, ty, 10 + k * 26, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(tx, ty, 8, 0, 7); c.fill(); }
+    c.restore(); }
+  function reset() { wins = 0; score = 0; boxesTot = 0; setup(); fx.clear(); hud(); }
   function lineAt(p) {
     var best = null, bd = SP * 0.35;
     for (var i = 0; i < hL.length; i++) { var y = Math.floor(i / B), x = i % B, cx = GX + (x + 0.5) * SP, cy = GY + y * SP, d = Math.hypot((p.x - cx) * 0.6, p.y - cy); if (Math.abs(p.x - cx) < SP / 2 && d < bd) { bd = d; best = { t: 'h', i: i }; } }
@@ -84,15 +95,16 @@
     all.forEach(function (l) { var c1 = lc(l), ax = (c1[0] - c0[0]) * dx + (c1[1] - c0[1]) * dy, px = Math.abs((c1[0] - c0[0]) * dy) + Math.abs((c1[1] - c0[1]) * dx); if (ax <= 0.1) return; var v = ax + px * 2.2; if (v < bv) { bv = v; best = l; } });
     if (best) { curL = best; A.sfx('tick', 1.6); }
   }
-  function humanPlace(l) { if (!l || (turn !== 1 && !duo()) || thinking > 0 || endT > 0 || S.state !== 'playing') return; if ((l.t === 'h' ? hL : vL)[l.i]) { A.sfx('wall'); return; } place(l, duo() ? turn : 1); }
+  function humanPlace(l) { if (!l || (turn !== 1 && !duo()) || thinking > 0 || endT > 0 || S.state !== 'playing') return; if ((l.t === 'h' ? hL : vL)[l.i]) { A.sfx('wall'); return; } tutDone(); place(l, duo() ? turn : 1); }
   function update(dt) {
     fx.update(dt);
     if (endT > 0) { endT -= dt; if (endT <= 0) {
       if (duo()) { var wp = me > cpu ? 1 : cpu > me ? 2 : 0; if (wp) tally[wp - 1]++; A.sfx('win'); hud();
         S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['상자', me + ' : ' + cpu]], { title: wp ? 'P' + wp + ' 승리!' : '무승부', kick: '2인 대결', win: true, noRecord: true }); return; }
+      boxesTot += me;
       if (me > cpu) { wins++; var pts = (me - cpu) * 20 * (diff + 1) + 100 * (diff + 1); score += pts; S.banner('승리 ' + me + ':' + cpu, '+' + pts); A.sfx('win'); setup(); hud(); }
       else if (me === cpu) { score += 50; S.banner('무승부', '+50'); setup(); hud(); }
-      else S.gameOver(score, [['이긴 판', String(wins)], ['마지막', me + ' : ' + cpu]]);
+      else S.gameOver(score, [['이긴 판', String(wins)], ['마지막', me + ' : ' + cpu], ['모은 상자', String(boxesTot)]]);
     } return; }
     if (thinking > 0) { thinking -= dt; if (thinking <= 0 && turn === 2) aiMove(); }
   }
@@ -111,6 +123,8 @@
       if (L.t === 'h') { c.moveTo(GX + (L.i % B) * SP + 8, GY + Math.floor(L.i / B) * SP); c.lineTo(GX + (L.i % B + 1) * SP - 8, GY + Math.floor(L.i / B) * SP); } else { c.moveTo(GX + (L.i % (B + 1)) * SP, GY + Math.floor(L.i / (B + 1)) * SP + 8); c.lineTo(GX + (L.i % (B + 1)) * SP, GY + (Math.floor(L.i / (B + 1)) + 1) * SP - 8); }
       c.stroke(); var cc = lc(L); c.globalAlpha = 0.9; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(GX + cc[0] * SP, GY + cc[1] * SP, 13, 0, 7); c.stroke(); c.restore(); }
     c.fillStyle = turn === 1 ? '#5ee7ff' : '#ff4d6d'; c.font = '700 ' + (land ? 30 : 20) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(S.state === 'playing' ? (duo() ? (turn === 1 ? 'P1 (파랑) 차례' : 'P2 (빨강) 차례') : turn === 1 ? '내 차례' : '컴퓨터 생각 중…') : '', W / 2, GY - 40);
+    if (tut && S.state === 'playing' && turn === 1 && !thinking) { var tl = { t: 'h', i: Math.floor(B / 2) }, tp = lc(tl);
+      tutBox(c, W / 2, GY + B * SP / 2, isTouch() ? '두 점 사이를 탭해서 선을 그어요' : '두 점 사이 클릭 · 방향키 + Space', land ? 26 : 20, hL[tl.i] ? null : GX + tp[0] * SP, GY + tp[1] * SP); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = me + ' : ' + cpu; document.getElementById('hC').textContent = wins; document.getElementById('hMult').textContent = ['쉬움', '보통', '어려움'][diff];

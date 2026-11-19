@@ -46,6 +46,7 @@
           <div>1부터 순서대로</div>
           <div>틀리면 +1초</div>
           <div>난이도: 4×4 · 5×5 · 6×6</div>
+          <div>오늘의 도전: 오늘은 모두 같은 5×5 판</div>
         </div>
       </div>
     </aside>
@@ -67,7 +68,7 @@
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>순서대로 탭</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>시간 기록</span>
         </div>
-        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">4×4</button><button type="button" data-diff="1">5×5</button><button type="button" data-diff="2">6×6</button></div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">4×4</button><button type="button" data-diff="1">5×5</button><button type="button" data-diff="2">6×6</button><button type="button" data-diff="3">오늘의 도전</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -120,7 +121,15 @@
   var fx = new A.FX();
   var diff = +A.get('neowa_schulte_diff', '1') || 0, n, nums, nextN, time, endT, done, flashI = {}, kbdBuf = '', idleT = 0;
   var PAL = ['#ff9e4d', '#5ee7ff', '#7dff9b', '#ff7aa8', '#b48cff', '#ffd166'];
-  function reset() { n = 4 + diff; nums = []; for (var i = 1; i <= n * n; i++) nums.push(i); for (i = nums.length - 1; i > 0; i--) { var j = A.irand(0, i), t = nums[i]; nums[i] = nums[j]; nums[j] = t; } nextN = 1; time = 0; endT = 0; idleT = 0; kbdBuf = ''; done = {}; flashI = {}; fx.clear(); hud(); }
+  // 오늘의 도전: 로컬 날짜(YYYYMMDD)로 시드를 고정해 오늘은 누구나 같은 문제. rnd()는 평소엔 Math.random
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  var rnd = Math.random;
+  function seedRnd(on) { if (!on) { rnd = Math.random; return; } var a = (Math.imul(today(), 0x9E3779B1) ^ 0x5bd1e995) >>> 0;
+    rnd = function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // mulberry32
+  function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
+  function dailyBest(sc) { var k = 'neowa_schulte_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); b = sc; } return b; } // 오늘 최고 점수
+  function si() { return diff === 3 ? 1 : diff; } // 크기 단계 (오늘의 도전 = 5x5)
+  function reset() { seedRnd(diff === 3); n = 4 + si(); nums = []; for (var i = 1; i <= n * n; i++) nums.push(i); for (i = nums.length - 1; i > 0; i--) { var j = ri(0, i), t = nums[i]; nums[i] = nums[j]; nums[j] = t; } nextN = 1; time = 0; endT = 0; idleT = 0; kbdBuf = ''; done = {}; flashI = {}; fx.clear(); hud(); }
   function cs() { return SZ / n; }
   function tap(i) {
     if (S.state !== 'playing' || endT > 0 || done[i]) return;
@@ -129,10 +138,13 @@
     else { time += 1; flashI[i] = -0.3; A.sfx('wrong'); fx.text(W / 2, 150, '+1초', '#ff4d6d', 22); }
     hud();
   }
-  function score() { var par = [12, 22, 40][diff]; return Math.max(10, Math.round(1000 * (diff + 1) * par / Math.max(par * 0.3, time))); }
+  function score() { var par = [12, 22, 40][si()]; return Math.max(10, Math.round(1000 * (si() + 1) * par / Math.max(par * 0.3, time))); }
   function update(dt) {
     fx.update(dt); for (var k in flashI) { flashI[k] += flashI[k] > 0 ? -dt : dt; if (Math.abs(flashI[k]) < 0.02) delete flashI[k]; }
-    if (endT > 0) { endT -= dt; if (endT <= 0) { var key = 'neowa_schulte_time_' + diff, b = parseFloat(A.get(key, '0')); if (!b || time < b) A.set(key, time.toFixed(2)); S.gameOver(score(), [['기록', time.toFixed(2) + '초'], ['최단', parseFloat(A.get(key, '0')).toFixed(2) + '초']], { kick: 'CLEAR!', win: true }); } return; }
+    if (endT > 0) { endT -= dt; if (endT <= 0) {
+      if (diff === 3) { var sc = score(), db = dailyBest(sc); S.gameOver(sc, [['기록', time.toFixed(2) + '초'], ['오늘 최고', A.fmt(db)], ['모드', '오늘의 도전']], { kick: 'CLEAR!', win: true }); return; }
+      var key = 'neowa_schulte_time_' + diff, b = parseFloat(A.get(key, '0')), prev = b; if (!b || time < b) A.set(key, time.toFixed(2));
+      S.gameOver(score(), [['기록', time.toFixed(2) + '초'], ['최단', parseFloat(A.get(key, '0')).toFixed(2) + '초'], ['최단 대비', prev ? (time < prev ? '-' : '+') + Math.abs(time - prev).toFixed(2) + '초' : '첫 기록']], { kick: 'CLEAR!', win: true }); } return; }
     time += dt; idleT += dt; hud();
   }
   function render(c) {
@@ -151,7 +163,7 @@
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
-  function hud() { var k = nextN + '|' + Math.floor(time * 10); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = Math.min(nextN, n * n); document.getElementById('hC').textContent = time.toFixed(1); document.getElementById('hMult').textContent = n + '×' + n; }
+  function hud() { var k = nextN + '|' + Math.floor(time * 10); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score()); document.getElementById('hB').textContent = Math.min(nextN, n * n); document.getElementById('hC').textContent = time.toFixed(1); document.getElementById('hMult').textContent = diff === 3 ? '오늘의 도전' : n + '×' + n; }
   document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), s = cs(), x = Math.floor((p.x - (W - SZ) / 2) / s), y = Math.floor((p.y - Y0) / s); if (x >= 0 && y >= 0 && x < n && y < n) tap(y * n + x); });
   var dbtns = document.querySelectorAll('[data-diff]');
   function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }

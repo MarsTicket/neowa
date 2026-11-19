@@ -123,6 +123,16 @@
   A.load3D('orbit', function () { return { planets: planets, ship: ship, stars: stars, cam: cam, dying: dyingT, playing: S.state === 'playing' }; }, function (h) { G3 = h; });
   var planets = [], ship, cam = 0, camT = 0, maxCam = 0, skipN = 0, score = 0, hops = 0, starN = 0, dyingT = 0, flyT = 0, nextY, stars = [], trail = [], bgStars = [];
   var PAL = ['#ff7a45', '#5ee7ff', '#b48cff', '#7dff9b', '#ffd166', '#ff7aa8'];
+  // 첫 판 안내: 첫 행성에 붙잡힐 때까지 (neowa_orbit_tut = 1 이면 안 보임)
+  var tut = A.get('neowa_orbit_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_orbit_tut', '1'); } }
+  function drawTut(c, x, y, msg) {
+    c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(msg).width + 40, a = 0.6 + Math.sin(S.time * 5) * 0.4;
+    c.fillStyle = 'rgba(14,6,4,.88)'; A.rr(c, x - w / 2, y - 23, w, 46, 23); c.fill();
+    c.strokeStyle = '#ffd166'; c.lineWidth = 2; c.globalAlpha = 0.5 + a * 0.5; c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = '#fff'; c.fillText(msg, x, y + 1); c.restore();
+  }
   var SHIP = A.sprite('oship', 44, 44, function (x) {
     x.translate(22, 22); x.shadowColor = '#ffb08a'; x.shadowBlur = 14; x.fillStyle = '#fff';
     x.beginPath(); x.moveTo(14, 0); x.lineTo(-10, -9); x.lineTo(-5, 0); x.lineTo(-10, 9); x.closePath(); x.fill();
@@ -215,6 +225,7 @@
           p.spin = Math.abs(p.spin) * (cross > 0 ? 1 : -1);
           ship.p = p; ship.a = a; ship.fly = false; trail = [];
           if (p.y < ship.from.y - 10) {
+            tutDone();
             // 사이에 있던 행성을 건너뛰고 더 먼 행성에 붙으면 보너스
             var skipped = 0; for (var q2 = 0; q2 < planets.length; q2++) { var pq = planets[q2]; if (pq !== p && pq !== ship.from && pq.y < ship.from.y - 10 && pq.y > p.y + 10) skipped++; }
             var oldHops = hops; hops += 1 + skipped; skipN += skipped;
@@ -283,7 +294,9 @@
       }
     }
     fx.draw(c);
-    c.restore(); c.restore(); fx.drawFlash(c, W, H);
+    c.restore();
+    if (tut && ship && S.state === 'playing' && dyingT <= 0) drawTut(c, W / 2, Math.min(H - 60, ship.p.y + cam + ship.p.r + 90), document.body.classList.contains('touch') ? '조준선이 노랗게 바뀌면 탭!' : '조준선이 노랗게 바뀌면 Space!');
+    c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() {
     document.getElementById('hA').textContent = A.fmt(score);

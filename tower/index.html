@@ -46,6 +46,7 @@
           <div>한 층 10점, 어긋난 부분은 잘려 나감</div>
           <div><kbd style="color:#ffe066">★</kbd> 완벽하게 맞추면 콤보 보너스(최대 +50)</div>
           <div>블록을 놓치면 끝</div>
+          <div>20층부터 바람: 블록 속도가 출렁임</div>
         </div>
       </div>
     </aside>
@@ -127,12 +128,26 @@
     x.fillStyle = g; x.fillRect(0, 0, W, H);
     for (var i = 0; i < 90; i++) { x.globalAlpha = Math.random() * 0.7; x.fillStyle = '#fff'; x.fillRect(Math.random() * W, Math.random() * H * 0.5, 1.6, 1.6); }
   });
+  // 첫 판 안내 (neowa_tower_tut = 1 이면 안 보임)
+  var tut = A.get('neowa_tower_tut', '') !== '1', windT = 0;
+  function tutDone() { if (tut) { tut = false; A.set('neowa_tower_tut', '1'); } }
+  function drawTut(c, x, y, msg) {
+    c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(msg).width + 40, a = 0.6 + Math.sin(S.time * 5) * 0.4;
+    c.fillStyle = 'rgba(14,10,30,.88)'; A.rr(c, x - w / 2, y - 23, w, 46, 23); c.fill();
+    c.strokeStyle = '#ffe066'; c.lineWidth = 2; c.globalAlpha = 0.5 + a * 0.5; c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = '#fff'; c.fillText(msg, x, y + 1);
+    var by = y + 38 + Math.sin(S.time * 6) * 6; c.fillStyle = '#ffe066'; c.beginPath(); c.moveTo(x - 11, by); c.lineTo(x + 11, by); c.lineTo(x, by + 13); c.closePath(); c.fill();
+    c.restore();
+  }
+  // 바람: 20층부터 블록 속도가 출렁임(빨라졌다 느려졌다). 층이 높을수록 세짐
+  function windAmp() { return floors < 20 ? 0 : Math.min(0.55, 0.25 + (floors - 20) * 0.012); }
   function hueFor(n) { return (n * 9 + 40) % 360; }
   function col(n, l) { return 'hsl(' + hueFor(n) + ',85%,' + l + '%)'; }
 
   function reset() {
     stack = [{ x: W / 2 - 110, w: 220, n: 0 }]; // 맨 아래 받침
-    chips = []; perfects = 0; combo = 0; floors = 0; dyingT = 0; cam = 0; camT = 0; score = 0;
+    chips = []; perfects = 0; combo = 0; floors = 0; dyingT = 0; cam = 0; camT = 0; score = 0; windT = 0;
     spawn(); fx.clear(); hud();
   }
   function topY(i) { return 760 - i * BH; } // i층 블록의 윗면 y (월드 좌표)
@@ -144,6 +159,7 @@
   }
   function drop() {
     if (S.state !== 'playing' || dyingT > 0 || !cur) return;
+    tutDone();
     var last = stack[stack.length - 1], off = cur.x - last.x;
     // 완벽 판정 폭: 빨라질수록 조금 넓게 (한 프레임에 움직이는 거리가 커지므로)
     var tol = 7 + spd / 140;
@@ -171,7 +187,8 @@
     }
     stack.push({ x: cur.x, w: cur.w, n: cur.n }); floors++; score += 10;
     fx.shake(2, 0.08);
-    if (floors % 10 === 0) { S.banner(floors + '층', '계속 올라가요'); A.sfx('level'); }
+    if (floors === 20) { S.banner('20층 · 바람 구간', '블록 속도가 출렁여요'); A.sfx('level'); }
+    else if (floors % 10 === 0) { S.banner(floors + '층', floors > 20 ? '바람이 더 세져요' : '계속 올라가요'); A.sfx('level'); }
     spawn(); hud();
   }
   function sy(wy) { return wy + cam; } // 월드 → 화면
@@ -184,7 +201,8 @@
     for (var i = chips.length - 1; i >= 0; i--) { var c = chips[i]; c.vy += 1800 * dt; c.y += c.vy * dt; c.x += c.vx * dt; c.rot += c.vx * 0.002 * dt * 10; if (sy(c.y) > H + 200) chips.splice(i, 1); }
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['층수', String(floors)], ['완벽', String(perfects)], ['최대 콤보', String(maxCombo)]]); return; }
     if (cur) {
-      cur.x += dir * spd * dt;
+      windT += dt;
+      cur.x += dir * spd * (1 + Math.sin(windT * 2.3) * windAmp()) * dt;
       var last = stack[stack.length - 1];
       if (dir > 0 && cur.x > W - cur.w * 0.15) dir = -1;
       if (dir < 0 && cur.x < -cur.w * 0.85) dir = 1;
@@ -220,6 +238,10 @@
     // 땅
     c.fillStyle = '#1a1030'; c.fillRect(0, sy(topY(0)) + BH, W, H);
     for (var i = 0; i < st.length; i++) { var b = st[i], y = sy(topY(b.n)); if (y > H + 50 || y < -80) continue; block(c, b.x, y, b.w, b.n); }
+    if (cur && windAmp() > 0) { // 바람 줄기
+      c.strokeStyle = 'rgba(255,255,255,.12)'; c.lineWidth = 2;
+      for (var wi = 0; wi < 7; wi++) { var wy = (wi * 137) % H, wx = ((wi * 211 + t * 420) % (W + 300)) - 150; c.beginPath(); c.moveTo(wx, wy); c.lineTo(wx + 60 + windAmp() * 120, wy); c.stroke(); }
+    }
     if (cur) {
       var yy = sy(topY(cur.n));
       // 그림자 가이드
@@ -229,6 +251,7 @@
     }
     for (i = 0; i < chips.length; i++) { var ch = chips[i]; c.save(); c.translate(ch.x + ch.w / 2, sy(ch.y) + BH / 2); c.rotate(ch.rot); block(c, -ch.w / 2, -BH / 2, ch.w, ch.n, 0.9); c.restore(); }
     if (!stack) { for (var d = 1; d < 9; d++) block(c, W / 2 - 110 + Math.sin(d * 1.3) * 8, topY(d), 220 - d * 6, d); }
+    if (tut && cur && S.state === 'playing') { var ly = sy(topY(stack.length - 1)); drawTut(c, W / 2, ly - 150, document.body.classList.contains('touch') ? '아래층과 딱 겹칠 때 탭!' : '아래층과 딱 겹칠 때 Space!'); }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }

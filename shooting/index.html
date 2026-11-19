@@ -421,6 +421,7 @@
     var budget = 6 + n * 2.2, patterns = ['line', 'vee', 'column', 'rain'];
     if (n >= 2) patterns.push('gunners');
     if (n >= 3) patterns.push('tank');
+    if (n >= 6) patterns.push('swoop', 'swoop'); // 6웨이브부터: 옆에서 가로질러 날아드는 편대
     while (budget > 0) {
       var p = A.pick(patterns);
       if (p === 'line') { var c = A.irand(4, 6); for (i = 0; i < c; i++) q.push({ t: t, type: 'drone', x: (W / (c + 1)) * (i + 1), m: 'straight' }); t += 1.6; budget -= c; }
@@ -428,6 +429,7 @@
       else if (p === 'column') { var cx = A.rand(120, W - 120); for (i = 0; i < 5; i++) q.push({ t: t + i * 0.32, type: 'weaver', x: cx, m: 'sine' }); t += 2.4; budget -= 6; }
       else if (p === 'rain') { for (i = 0; i < 8; i++) q.push({ t: t + i * 0.22, type: 'drone', x: A.rand(40, W - 40), m: 'dive' }); t += 2.4; budget -= 7; }
       else if (p === 'gunners') { k = n >= 6 ? 3 : 2; for (i = 0; i < k; i++) q.push({ t: t + i * 0.3, type: 'gunner', x: (W / (k + 1)) * (i + 1), m: 'hover' }); t += 3; budget -= 8; }
+      else if (p === 'swoop') { var side = Math.random() < 0.5 ? -1 : 1, y0 = A.rand(130, 250); for (i = 0; i < 6; i++) q.push({ t: t + i * 0.26, type: 'weaver', x: side < 0 ? -30 : W + 30, y: y0, side: side, m: 'swoop' }); t += 2.6; budget -= 7; }
       else if (p === 'tank') { q.push({ t: t, type: 'tank', x: A.rand(140, W - 140), m: 'slow' }); t += 3; budget -= 10; }
     }
     return q;
@@ -442,10 +444,13 @@
     if (e.m === 'dive') { e.vy = 260 * sp; e.vx = (P.x - e.x) * 0.25; }
     if (e.m === 'hover') { e.vy = 160; e.ty = A.rand(150, 300); }
     if (e.m === 'slow') e.vy = 60 * sp;
+    if (e.m === 'swoop') { e.y = s.y; e.y0 = s.y; e.vx = -s.side * 230 * sp; e.vy = 0; }
     if (s.type === 'boss') { e.vy = 70; e.ty = 200; e.phase = 0; boss = e; document.getElementById('hBossBar').hidden = false; var bp = document.getElementById('bossPortrait'); if (bp) { bp.hidden = false; if (window.__bpT) clearTimeout(window.__bpT); window.__bpT = setTimeout(function () { bp.hidden = true; }, 5000); } A.sfx('bigboom'); A.music.mood('boss'); fx.shake(6, 0.6); }
     enemies.push(e);
   }
 
+  // 첫 판 안내: 처음 60px 움직일 때까지 (neowa_shooting_tut = 1 이면 안 보임)
+  var tut = A.get('neowa_shooting_tut', '') !== '1', tutMove = 0;
   /* ---------- 게임 로직 ---------- */
   function reset() {
     P = { x: W / 2, y: H - 150, inv: 2, pow: 1, shield: 0, fireT: 0, tilt: 0 };
@@ -539,6 +544,9 @@
     if (kx || ky) { var l = Math.hypot(kx, ky); P.x += kx / l * 520 * dt; P.y += ky / l * 520 * dt; }
     P.x = A.clamp(P.x, 24, W - 24); P.y = A.clamp(P.y, 120, H - 40);
     P.tilt = A.lerp(P.tilt, A.clamp((P.x - px) / (dt * 600), -1, 1), 0.2);
+    // 드래그는 update 밖에서 P를 옮기므로 지난 프레임 위치와 비교
+    if (tut) { if (P.lx != null) tutMove += Math.abs(P.x - P.lx) + Math.abs(P.y - P.ly); if (tutMove > 60) { tut = false; A.set('neowa_shooting_tut', '1'); } }
+    P.lx = P.x; P.ly = P.y;
     if (P.inv > 0) P.inv -= dt;
     // 발사
     P.fireT -= dt;
@@ -605,6 +613,7 @@
       else if (e.m === 'sine') { e.y += e.vy * dt; e.x = e.x0 + Math.sin(e.t * 2.6) * 110; }
       else if (e.m === 'dive') { e.y += e.vy * dt; e.x += e.vx * dt; }
       else if (e.m === 'slow') { e.y += e.vy * dt; e.x = e.x0 + Math.sin(e.t * 0.9) * 40; }
+      else if (e.m === 'swoop') { e.x += e.vx * dt; e.y = e.y0 + Math.sin(e.t * 2.4) * 70 + e.t * 26; if (e.t > 1 && (e.x < -60 || e.x > W + 60)) { enemies.splice(i, 1); continue; } }
       else if (e.m === 'hover') {
         if (e.y < e.ty) e.y += e.vy * dt; else { e.x = e.x0 + Math.sin(e.t * 1.2) * 70; if (e.t > 9) e.y += 120 * dt; }
       }
@@ -729,6 +738,13 @@
         }
         if (showShip && P.shield) { c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.7 + Math.sin(S.time * 8) * 0.2; A.draw(c, SHIELD, P.x, P.y, 1, S.time * 0.6); c.restore(); }
         if (showShip && drag) { c.fillStyle = 'rgba(255,255,255,.9)'; c.beginPath(); c.arc(P.x, P.y + 2, 3, 0, Math.PI * 2); c.fill(); }
+      }
+      if (tut && S.state === 'playing' && dyingT <= 0) {
+        var tm = document.body.classList.contains('touch') ? '화면 아무 데나 끌어서 이동 · 발사는 자동' : '방향키·WASD로 이동 · 발사는 자동';
+        c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        var tw = c.measureText(tm).width + 40, ty = P.y - 120; c.fillStyle = 'rgba(4,10,20,.9)'; A.rr(c, W / 2 - tw / 2, ty - 23, tw, 46, 23); c.fill();
+        c.strokeStyle = '#5ee7ff'; c.lineWidth = 2; c.globalAlpha = 0.6 + Math.sin(S.time * 5) * 0.4; c.stroke(); c.globalAlpha = 1;
+        c.fillStyle = '#fff'; c.fillText(tm, W / 2, ty + 1); c.restore();
       }
       // 보스 체력
       if (boss) document.getElementById('hBoss').style.width = (boss.hp / boss.max * 100) + '%';

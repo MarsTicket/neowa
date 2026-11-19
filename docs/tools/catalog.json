@@ -1038,5 +1038,25 @@
   "new": true,
   "art": "capture",
   "maxScore": 10000000
+ },
+ {
+  "id": "summon",
+  "name": "운명의 소환진",
+  "genre": "SUMMON DEFENSE",
+  "kgenre": "소환 디펜스",
+  "cat": "액션",
+  "accent": "#c6a15a",
+  "rgb": "198,161,90",
+  "ink": "#1a1206",
+  "desc": "영웅을 무작위로 소환하고 같은 영웅을 합쳐 성문을 지키세요. 10웨이브마다 보스와 운명의 카드가 나옵니다.",
+  "tags": [
+   "소환",
+   "합성",
+   "보스"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 900000
  }
 ]

@@ -131,14 +131,30 @@
     hud();
   }
   function update(dt) { fx.update(dt); if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 1; A.sfx('over'); } hud(); }
+  /* 그림: 모든 칸에 똑같은 유리 광택을 덧씌움(다른 색 찾기의 공정함은 그대로), 갤러리 배경 */
+  function glossSpr(cs) {
+    cs = Math.round(cs);
+    return A.sprite('odg' + cs, cs, cs, function (x) {
+      var r = Math.min(18, cs * 0.2), g = x.createLinearGradient(0, 0, 0, cs); g.addColorStop(0, 'rgba(255,255,255,.28)'); g.addColorStop(0.45, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.18)');
+      x.fillStyle = g; A.rr(x, 0, 0, cs, cs, r); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 1.5; A.rr(x, 1, 1, cs - 2, cs - 2, r); x.stroke();
+    });
+  }
+  var OBG = A.sprite('odbg', W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, 440, 50, W / 2, 440, 620); g.addColorStop(0, '#1a2418'); g.addColorStop(1, '#050805'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  });
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#0a0f0a'; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(OBG, -10, -10, W + 20, H + 20);
     if (!base) { level = 3; next(); }
-    var g = geo();
+    var g = geo(), GL = glossSpr(g.cs);
+    c.fillStyle = 'rgba(0,0,0,.4)'; A.rr(c, g.x0 - 14, g.y0 - 10, 508, 508, 22); c.fill();
+    c.fillStyle = '#141a14'; A.rr(c, g.x0 - 14, g.y0 - 14, 508, 508, 22); c.fill();
     for (var i = 0; i < n * n; i++) { var x = g.x0 + (i % n) * (g.cs + g.gap), y = g.y0 + Math.floor(i / n) * (g.cs + g.gap), dx = i === shakeI && shakeT > 0 ? Math.sin(t * 60) * 5 : 0;
-      c.fillStyle = i === odd ? oddC : base; if (endT > 0 && i === odd) { c.save(); c.shadowColor = '#fff'; c.shadowBlur = 20; } A.rr(c, x + dx, y, g.cs, g.cs, Math.min(18, g.cs * 0.2)); c.fill(); if (endT > 0 && i === odd) c.restore(); }
+      c.fillStyle = i === odd ? oddC : base; A.rr(c, x + dx, y, g.cs, g.cs, Math.min(18, g.cs * 0.2)); c.fill();
+      c.drawImage(GL, x + dx, y, g.cs, g.cs);
+      if (endT > 0 && i === odd) { c.strokeStyle = '#fff'; c.lineWidth = 4; A.rr(c, x - 3, y - 3, g.cs + 6, g.cs + 6, Math.min(20, g.cs * 0.22)); c.stroke(); } }
     c.fillStyle = 'rgba(255,255,255,.5)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('하나만 다른 색을 찾아 탭하세요', W / 2, 740);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }

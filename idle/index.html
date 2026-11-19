@@ -169,22 +169,23 @@
     if (tapTimes.length >= 15) return; // 연타 매크로 방지: 초당 15회까지만
     tapTimes.push(now); var v = tapPower(); gain(v); st.taps++; pulse = 1;
     floats.push({ x: x + A.rand(-20, 20), y: y, v: '+' + big(v), t: 0.9 });
-    fx.burst(x, y, '#c3ff5e', 6, 180, 0.35, 2.2); A.sfx('tick', 1 + Math.random() * 0.3); A.vibrate(5); hud();
+    fx.burst(x, y, '#c3ff5e', 6, 180, 0.35, 2.2); A.sfx('tap', 1 + Math.random() * 0.2); A.vibrate(5); hud();
   }
   function buy(i) {
-    var c = cost(i); if (st.e < c) { A.sfx('hurt'); return; }
-    st.e -= c; st.own[i]++; var r = rowRect(i); fx.burst(r.x + 30, r.y + r.h / 2, M[i].col, 10, 160, 0.35, 2); A.sfx('coin');
+    var c = cost(i); if (st.e < c) { A.sfx('wrong'); return; }
+    st.e -= c; st.own[i]++; var r = rowRect(i); fx.burst(r.x + 30, r.y + r.h / 2, M[i].col, 10, 160, 0.35, 2); A.sfx('chip');
+    if ([1, 10, 25, 50, 100].indexOf(st.own[i]) >= 0 && st.own[i] > 1) A.sfx('gold');
     if ([1, 10, 25, 50, 100].indexOf(st.own[i]) >= 0 && st.own[i] > 1) S.banner(M[i].n + ' ' + st.own[i] + '대', '업그레이드가 열렸어요');
     hud();
   }
   function buyUp() {
-    var u = upgrades()[0]; if (!u) return; if (st.e < u.c) { A.sfx('hurt'); return; }
-    st.e -= u.c; if (u.id === 'tap') st.tapLv++; else st.up[u.id] = 1; A.sfx('level'); fx.flashIt('#c3ff5e', 0.15); hud();
+    var u = upgrades()[0]; if (!u) return; if (st.e < u.c) { A.sfx('wrong'); return; }
+    st.e -= u.c; if (u.id === 'tap') st.tapLv++; else st.up[u.id] = 1; A.sfx('power'); fx.flashIt('#c3ff5e', 0.15); hud();
   }
   function prestige() {
     var g = ppGain(); if (g < 1) return;
     var keep = { life: st.life, pp: st.pp + g, taps: st.taps }; st = fresh(keep); save();
-    S.banner('프레스티지 +' + g, '이제 모든 생산 ×' + mult().toFixed(1)); A.sfx('record'); fx.flashIt('#ffffff', 0.5); fx.burst(W / 2, 300, '#c3ff5e', 60, 500, 1, 4); hud();
+    S.banner('프레스티지 +' + g, '이제 모든 생산 ×' + mult().toFixed(1)); A.sfx('level'); fx.flashIt('#ffffff', 0.5); fx.burst(W / 2, 300, '#c3ff5e', 60, 500, 1, 4); hud();
   }
   function saveRecord() { save(); S.gameOver(scoreNow(), [['누적 생산', big(st.life)], ['초당 생산', big(perSec())], ['프레스티지', String(st.pp)]], { title: '기록 저장!', win: true }); }
 

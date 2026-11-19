@@ -183,27 +183,28 @@
     if (phase !== 'play' || revealT > 0) return;
     if (shift && SHIFT[j]) j = SHIFT[j]; shift = false;
     var last = cur[cur.length - 1];
-    if (isV(j) && last && VCOMB[last + j]) { cur[cur.length - 1] = VCOMB[last + j]; A.sfx('tick'); return; }
+    if (isV(j) && last && VCOMB[last + j]) { cur[cur.length - 1] = VCOMB[last + j]; A.sfx('tap', 1.15); return; }
     if (cur.length >= cells.length) { shakeT = 0.3; A.sfx('wall'); return; }
-    cur.push(j); A.sfx('tick');
+    cur.push(j); A.sfx('tap');
   }
   function backspace() {
     if (phase !== 'play' || revealT > 0 || !cur.length) return;
-    var last = cur[cur.length - 1]; if (VSPLIT[last]) cur[cur.length - 1] = VSPLIT[last]; else cur.pop(); A.sfx('turn');
+    var last = cur[cur.length - 1]; if (VSPLIT[last]) cur[cur.length - 1] = VSPLIT[last]; else cur.pop(); A.sfx('slide');
   }
   function submit() {
     if (phase !== 'play' || revealT > 0) return;
-    if (cur.length < cells.length) { shakeT = 0.4; say('칸을 모두 채워 주세요'); A.sfx('hurt'); A.vibrate(20); return; }
+    if (cur.length < cells.length) { shakeT = 0.4; say('칸을 모두 채워 주세요'); A.sfx('wrong'); A.vibrate(20); return; }
     var w = compose(cur);
-    if (!w || w.length !== 2) { shakeT = 0.4; say('글자가 만들어지지 않아요'); A.sfx('hurt'); A.vibrate(20); return; }
-    if (!DICT[w]) { shakeT = 0.4; say('「' + w + '」은(는) 사전에 없는 낱말이에요'); A.sfx('hurt'); A.vibrate(20); return; }
+    if (!w || w.length !== 2) { shakeT = 0.4; say('글자가 만들어지지 않아요'); A.sfx('wrong'); A.vibrate(20); return; }
+    if (!DICT[w]) { shakeT = 0.4; say('「' + w + '」은(는) 사전에 없는 낱말이에요'); A.sfx('wrong'); A.vibrate(20); return; }
     // 판정: 초록 먼저, 남은 개수만큼만 노랑
     var res = [], left = {}, i;
     for (i = 0; i < cells.length; i++) { if (cur[i] === cells[i]) res[i] = 2; else { res[i] = 0; left[cells[i]] = (left[cells[i]] || 0) + 1; } }
     for (i = 0; i < cells.length; i++) if (res[i] === 0 && left[cur[i]]) { res[i] = 1; left[cur[i]]--; }
     rows.push({ j: cur.slice(), r: res, w: w }); cur = []; tries++; revealT = cells.length * 0.13 + 0.25;
     res.forEach(function (v, k) { var jm = rows[rows.length - 1].j[k]; keyState[jm] = Math.max(keyState[jm] == null ? -1 : keyState[jm], v); });
-    A.sfx('click'); hud();
+    res.forEach(function (v, k) { setTimeout(function () { A.sfx('flip', v === 2 ? 1.3 : v === 1 ? 1.1 : 0.85); }, k * 120); });
+    hud();
   }
   function afterReveal() {
     var last = rows[rows.length - 1], win = last.r.every(function (v) { return v === 2; });
@@ -212,10 +213,10 @@
       streak++; best = Math.max(best, streak); solved++;
       var mult = Math.min(3, 1 + (streak - 1) * 0.1), pts = Math.round((7 - tries) * 100 * mult); score += pts;
       S.banner(tries === 1 ? '한 번에!' : '정답!', target + ' · +' + pts + (streak > 1 ? ' (연속 ' + streak + ')' : ''));
-      A.sfx(tries <= 2 ? 'record' : 'level'); A.vibrate([20, 30, 20]); fx.burst(W / 2, 300, '#7dff9b', 34, 380, 0.8, 3.5); fx.burst(W / 2, 300, '#ffd166', 20, 300, 0.8, 3);
+      A.sfx('win'); A.vibrate([20, 30, 20]); fx.burst(W / 2, 300, '#7dff9b', 34, 380, 0.8, 3.5); fx.burst(W / 2, 300, '#ffd166', 20, 300, 0.8, 3);
       phase = 'win'; phaseT = 0; hud();
     } else if (tries >= 6) {
-      phase = 'lose'; phaseT = 0; A.sfx('over'); say('정답은 「' + target + '」 (' + cells.join(' ') + ')', 4);
+      phase = 'lose'; phaseT = 0; say('정답은 「' + target + '」 (' + cells.join(' ') + ')', 4);
     }
   }
   function update(dt) {

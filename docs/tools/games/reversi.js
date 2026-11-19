@@ -52,12 +52,33 @@
       else S.gameOver(score, [['연승', String(wins)], ['마지막', me + ' : ' + cp]]); } return; }
     if (thinking > 0) { thinking -= dt; if (thinking <= 0 && turn === 2) { var ms = moves(bd, 2); if (ms.length) play(aiPick(ms), 2); else next(1); } }
   }
+  /* 그림: 나무 테두리 펠트 판, 그림자 있는 원판(앞·뒤), 어두운 배경 */
+  function discSpr(white, cs) {
+    cs = Math.round(cs);
+    return A.sprite('rvd' + (white ? 'w' : 'b') + cs, cs, cs, function (x) {
+      var cx = cs / 2, cy = cs / 2, r = cs * 0.4;
+      x.fillStyle = 'rgba(0,0,0,.4)'; x.beginPath(); x.arc(cx + 1, cy + 3, r, 0, 7); x.fill();
+      x.fillStyle = white ? '#b8bcc8' : '#000'; x.beginPath(); x.arc(cx, cy + 1.5, r, 0, 7); x.fill();
+      var g = x.createRadialGradient(cx - r * 0.3, cy - r * 0.35, 1, cx, cy, r); if (white) { g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#dcdfe8'); } else { g.addColorStop(0, '#4a4a54'); g.addColorStop(1, '#0c0c10'); }
+      x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+      x.strokeStyle = white ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'; x.lineWidth = 1; x.beginPath(); x.arc(cx, cy, r * 0.7, 0, 7); x.stroke();
+    });
+  }
+  var RFELT = A.sprite('rvfelt', 520, 520, function (x) {
+    var fg = x.createLinearGradient(0, 0, 520, 520); fg.addColorStop(0, '#7a4a22'); fg.addColorStop(1, '#3a2010'); x.fillStyle = fg; A.rr(x, 0, 0, 520, 520, 18); x.fill();
+    var g = x.createRadialGradient(260, 240, 40, 260, 260, 360); g.addColorStop(0, '#16703a'); g.addColorStop(1, '#0a4a24'); x.fillStyle = g; x.fillRect(12, 12, 496, 496);
+    for (var i = 0; i < 5000; i++) { x.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,.03)' : 'rgba(0,0,0,.06)'; x.fillRect(12 + Math.random() * 496, 12 + Math.random() * 496, 1, 1); }
+  });
+  var RBG = A.sprite('rvbg', W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, H * 0.45, 60, W / 2, H * 0.45, 640); g.addColorStop(0, '#0c2416'); g.addColorStop(1, '#020804'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  });
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#031008'; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(RBG, -10, -10, W + 20, H + 20);
     if (!bd) newGame();
-    c.fillStyle = '#0d4a26'; A.rr(c, GX - 10, GY - 10, 500, 500, 16); c.fill();
+    c.fillStyle = 'rgba(0,0,0,.5)'; A.rr(c, GX - 18 + 4, GY - 18 + 8, N * CS + 36, N * CS + 36, 18); c.fill();
+    c.drawImage(RFELT, GX - 18, GY - 18, N * CS + 36, N * CS + 36);
     var legal = S.state === 'playing' && turn && (turn === 1 || duo()) && thinking <= 0 ? moves(bd, turn).map(function (m) { return m.i; }) : [];
     for (var i = 0; i < 64; i++) {
       var x = GX + (i % N) * CS, y = GY + Math.floor(i / N) * CS;
@@ -67,7 +88,7 @@
         var f = flips[i], sx = f != null && f > 0 ? Math.abs(Math.cos(Math.min(1, f / 0.35) * Math.PI)) : 1, col = bd[i] === 1 ? '#111' : '#f4f5fb';
         if (f != null && f > 0 && f < 0.175) col = bd[i] === 1 ? '#f4f5fb' : '#111';
         if (f != null && f < 0) col = bd[i] === 1 ? '#f4f5fb' : '#111';
-        c.save(); c.translate(x + CS / 2, y + CS / 2); c.scale(Math.max(0.08, sx), 1); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 5; c.shadowOffsetY = 2; c.fillStyle = col; c.beginPath(); c.arc(0, 0, CS * 0.4, 0, 7); c.fill(); c.restore();
+        c.save(); c.translate(x + CS / 2, y + CS / 2); c.scale(Math.max(0.08, sx), 1); c.drawImage(discSpr(col !== '#111', CS), -CS / 2, -CS / 2, CS, CS); c.restore();
       }
       if (lastMv === i) { c.fillStyle = '#ff4d6d'; c.beginPath(); c.arc(x + CS / 2, y + CS / 2, 4, 0, 7); c.fill(); }
     }

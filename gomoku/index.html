@@ -180,19 +180,44 @@
     } return; }
     if (thinking > 0) { thinking -= dt; if (thinking <= 0 && turn === 2) aiMove(); }
   }
+  /* 그림: 나뭇결 판(한 번 그려 크기만 맞춤), 그림자까지 미리 그린 바둑돌(칸 크기별), 어두운 다다미 배경 */
+  var WOOD = A.sprite('gmwood', 600, 600, function (x) {
+    var g = x.createLinearGradient(0, 0, 600, 600); g.addColorStop(0, '#e2b468'); g.addColorStop(1, '#b07a35'); x.fillStyle = g; x.fillRect(0, 0, 600, 600);
+    for (var i = 0; i < 70; i++) { var yy = i * 9 + Math.random() * 6; x.strokeStyle = 'rgba(120,70,20,' + (0.05 + Math.random() * 0.12) + ')'; x.lineWidth = 1 + Math.random() * 2; x.beginPath(); x.moveTo(0, yy); for (var xx = 0; xx <= 600; xx += 40) x.lineTo(xx, yy + Math.sin(xx * 0.01 + i) * 6); x.stroke(); }
+    x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(0, 0, 600, 140);
+  });
+  function stoneSpr(v, cs) {
+    cs = Math.round(cs);
+    return A.sprite('gms' + v + '_' + cs, cs + 8, cs + 8, function (x) {
+      var cx = cs / 2 + 4, cy = cs / 2 + 4, r = cs * 0.45;
+      x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.arc(cx + 1.5, cy + 2.5, r, 0, 7); x.fill();
+      var gr = x.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
+      if (v === 1) { gr.addColorStop(0, '#6a6a6a'); gr.addColorStop(1, '#0a0a0a'); } else { gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#c9c2b0'); }
+      x.fillStyle = gr; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+      x.fillStyle = v === 1 ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.8)'; x.beginPath(); x.ellipse(cx - r * 0.35, cy - r * 0.4, r * 0.25, r * 0.12, -0.6, 0, 7); x.fill();
+    });
+  }
+  var MAT = A.sprite('gmmat', W, H, function (x) {
+    x.fillStyle = '#1a1206'; x.fillRect(0, 0, W, H);
+    for (var yy = 0; yy < H; yy += 3) { x.fillStyle = 'rgba(255,220,150,' + (0.015 + Math.random() * 0.02) + ')'; x.fillRect(0, yy, W, 1); }
+    x.strokeStyle = 'rgba(0,0,0,.4)'; x.lineWidth = 6; for (var i = 1; i < 3; i++) { x.beginPath(); x.moveTo(0, i * H / 3); x.lineTo(W, i * H / 3); x.stroke(); }
+    var v = x.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 640); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.5)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
+  });
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#120c02'; c.fillRect(-10, -10, W + 20, H + 20);
-    var g = c.createLinearGradient(0, GY - BP, 0, GY + 12 * CS + BP); g.addColorStop(0, '#d9a85a'); g.addColorStop(1, '#b07a35'); c.fillStyle = g; A.rr(c, GX - BP, GY - BP, 12 * CS + BP * 2, 12 * CS + BP * 2, land ? 0 : 14); c.fill();
+    c.drawImage(MAT, -10, -10, W + 20, H + 20);
+    var bs = 12 * CS + BP * 2;
+    c.fillStyle = 'rgba(0,0,0,.5)'; A.rr(c, GX - BP + 4, GY - BP + 8, bs, bs, land ? 0 : 14); c.fill();
+    c.save(); A.rr(c, GX - BP, GY - BP, bs, bs, land ? 0 : 14); c.clip(); c.drawImage(WOOD, GX - BP, GY - BP, bs, bs); c.restore();
+    c.fillStyle = '#8a5a24'; c.fillRect(GX - BP, GY - BP + bs - 6, bs, 6);
     c.strokeStyle = 'rgba(60,35,10,.7)'; c.lineWidth = 1.2;
     for (var i = 0; i < N; i++) { c.beginPath(); c.moveTo(GX, GY + i * CS); c.lineTo(GX + 12 * CS, GY + i * CS); c.stroke(); c.beginPath(); c.moveTo(GX + i * CS, GY); c.lineTo(GX + i * CS, GY + 12 * CS); c.stroke(); }
     [[3, 3], [9, 3], [6, 6], [3, 9], [9, 9]].forEach(function (p) { c.fillStyle = 'rgba(60,35,10,.8)'; c.beginPath(); c.arc(GX + p[0] * CS, GY + p[1] * CS, CS * 0.1, 0, 7); c.fill(); });
     if (!bd) newGame();
     for (i = 0; i < N * N; i++) if (bd[i]) {
-      var x = GX + (i % N) * CS, y = GY + Math.floor(i / N) * CS, gr = c.createRadialGradient(x - 5, y - 5, 2, x, y, CS * 0.46);
-      if (bd[i] === 1) { gr.addColorStop(0, '#666'); gr.addColorStop(1, '#0a0a0a'); } else { gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#c9c2b0'); }
-      c.save(); c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 4; c.shadowOffsetY = 2; c.fillStyle = gr; c.beginPath(); c.arc(x, y, CS * 0.45, 0, 7); c.fill(); c.restore();
+      var x = GX + (i % N) * CS, y = GY + Math.floor(i / N) * CS;
+      c.drawImage(stoneSpr(bd[i], CS), x - CS / 2 - 4, y - CS / 2 - 4, CS + 8, CS + 8);
     }
     if (lastMv) { c.fillStyle = '#ff4d6d'; c.beginPath(); c.arc(GX + lastMv[0] * CS, GY + lastMv[1] * CS, CS * 0.11, 0, 7); c.fill(); }
     if (winLine && winLine.length) { c.save(); c.strokeStyle = '#ffd166'; c.lineWidth = 6; c.shadowColor = '#ffd166'; c.shadowBlur = 16; var sorted = winLine.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }); c.beginPath(); c.moveTo(GX + sorted[0][0] * CS, GY + sorted[0][1] * CS); c.lineTo(GX + sorted[sorted.length - 1][0] * CS, GY + sorted[sorted.length - 1][1] * CS); c.stroke(); c.restore(); }

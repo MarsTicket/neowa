@@ -70,7 +70,7 @@
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>밀어서 이동 · 탭 회전</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>4줄 한 번에 = 대박</span>
         </div>
-        
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">레벨 1부터</button><button type="button" data-diff="1">레벨 5부터</button><button type="button" data-diff="2">레벨 10부터</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>게임 시작</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -124,6 +124,10 @@
   var SX = GX + COLS * CS + 14, SW = W - SX - 14; // 오른쪽 정보 칸
   var BY = 824, BH = 120, BW = 78, BG = 8;       // 아래 버튼 6개
   var fx = new A.FX();
+  // 시작 레벨 선택 (시작 화면 버튼, neowa_fall_diff = 0/1/2 → 레벨 1/5/10)
+  var START = [1, 5, 10], diff = +A.get('neowa_fall_diff', '0') || 0, startLv = 1;
+  // 첫 판 안내: 블록 3개를 놓을 때까지 조작법 말풍선 (본 뒤 neowa_fall_tut = 1)
+  var tut = A.get('neowa_fall_tut', '') !== '1', tutN = 0, tutT = 0;
 
   // 블록 7종 (n = 회전 상자 크기). 색은 이 사이트만의 네온 배색
   var TYPES = [
@@ -236,6 +240,7 @@
       top = Math.min(top, gy);
     }
     cur = null; A.sfx('land', 1.1);
+    if (tut && ++tutN >= 3) { tut = false; A.set('neowa_fall_tut', '1'); }
     // 꽉 찬 줄 찾기
     var full = [];
     for (var y = 0; y < ROWS; y++) if (grid[y].every(Boolean)) full.push(y);
@@ -276,7 +281,7 @@
     for (var i = 0; i < n; i++) grid.unshift(emptyRow());
     clearRows = [];
     var oldLv = level;
-    lines += n; level = 1 + Math.floor(lines / 10);
+    lines += n; level = startLv + Math.floor(lines / 10);
     if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) {
       var bonus = 2000 * level; score += bonus;
       S.banner('올 클리어!', '+' + A.fmt(bonus)); A.sfx('record');
@@ -294,7 +299,8 @@
 
   function reset() {
     grid = newGrid(); bag = []; queue = [nextType(), nextType(), nextType()];
-    holdT = -1; canHold = true; score = 0; lines = 0; level = 1; combo = 0; maxCombo = 0; b2b = false; quads = 0;
+    startLv = START[diff] || 1; tutT = 0;
+    holdT = -1; canHold = true; score = 0; lines = 0; level = startLv; combo = 0; maxCombo = 0; b2b = false; quads = 0;
     clearRows = []; clearT = 0; dyingT = 0; pops = []; lastHud = '';
     heldDir = 0; dasT = 0; arrT = 0; keySoft = false; btnSoft = false; keyL = keyR = false; ptrs = {}; btnDown = {};
     fx.clear(); spawnNext(); hud();
@@ -311,7 +317,7 @@
         for (var x = 0; x < COLS; x++) if (grid[dieRow][x]) grid[dieRow][x] = '#3a4256';
         dieRow--;
       }
-      if (dyingT <= 0) S.gameOver(score, [['레벨', String(level)], ['지운 줄', String(lines)], ['4줄 지우기', String(quads)]]);
+      if (dyingT <= 0) S.gameOver(score, [['레벨', startLv > 1 ? startLv + '→' + level : String(level)], ['지운 줄', String(lines)], ['4줄 · 최대 콤보', quads + ' · ×' + maxCombo]]);
       return;
     }
     if (clearT > 0) { clearT -= dt; if (clearT <= 0) finishClear(); return; }
@@ -456,10 +462,23 @@
       drawIcon(c, BTN[b].k, bx + BW / 2, BY + 48);
       c.fillStyle = 'rgba(255,255,255,.7)'; c.font = '600 14px Pretendard,system-ui'; c.textAlign = 'center'; c.fillText(BTN[b].lb, bx + BW / 2, BY + 100);
     }
+    if (tut && cur && S.state === 'playing') drawTut(c);
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }
 
+  function drawTut(c) {
+    tutT += 1 / 60;
+    var touch = document.body.classList.contains('touch');
+    var l1 = touch ? '좌우로 밀어서 이동 · 탭하면 회전' : '←→ 이동 · ↑ 회전 · ↓ 빨리 내리기';
+    var l2 = touch ? '아래로 휙 튕기면 바로 놓기 (아래 버튼도 OK)' : 'Space 바로 놓기 · C 보관';
+    var bw = COLS * CS - 16, bx = GX + 8, by = GY + 300, a = Math.min(1, tutT * 3);
+    c.globalAlpha = a * 0.9; c.fillStyle = '#04131c'; A.rr(c, bx, by, bw, 88, 16); c.fill(); c.strokeStyle = '#5ee7ff'; c.lineWidth = 2; c.stroke(); c.globalAlpha = a;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#5ee7ff'; c.font = '800 18px "Pretendard Variable",system-ui'; c.fillText(l1, bx + bw / 2, by + 30);
+    c.fillStyle = 'rgba(255,255,255,.8)'; c.font = '600 14px "Pretendard Variable",system-ui'; c.fillText(l2, bx + bw / 2, by + 60);
+    c.globalAlpha = 1;
+  }
   function hud() {
     var s = score + '|' + level + '|' + lines + '|' + combo;
     if (s === lastHud) return; lastHud = s;
@@ -564,6 +583,11 @@
   });
   // 일시정지·탭 이동 때 눌린 상태 풀기 (다시 시작했을 때 혼자 움직이지 않게)
   window.addEventListener('blur', function () { heldDir = 0; keyL = keyR = false; keySoft = false; btnSoft = false; btnDown = {}; ptrs = {}; });
+  // 시작 레벨 버튼
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_fall_diff', diff); A.sfx('click'); paintDiff(); }); });
+  paintDiff();
 })();
 
 </script>

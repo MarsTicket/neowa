@@ -7,6 +7,6 @@
   "keys": [["k-only", "<kbd>↑↓←→</kbd> 칸 이동"], ["k-only", "<kbd>Space</kbd> 열기 <kbd>X</kbd> 깃발"], ["k-only", "<kbd>클릭</kbd> 열기 <kbd>우클릭</kbd> 깃발"], ["t-only", "<kbd>탭</kbd> 열기 <kbd>길게</kbd> 깃발"], ["t-only", "<kbd>🚩</kbd> 깃발 모드 버튼으로 전환"]],
   "rules": ["숫자 = 주변 8칸의 지뢰 수", "깃발 수가 맞는 숫자를 누르면 주변을 한 번에 열기", "지뢰를 열면 끝"],
   "hud": [["SCORE"], ["TIME", "0"], ["MINES", "0"]],
-  "diff": ["쉬움", "보통", "어려움"],
+  "diff": ["쉬움", "보통", "어려움", "오늘의 퍼즐"],
   "startLabel": "시작하기"
 }

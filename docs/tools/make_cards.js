@@ -21,6 +21,7 @@ const G={
  mines:{acts:async(p)=>{await p.click('[data-diff="1"]');await p.keyboard.press('Space');await p.keyboard.press('Space');await p.keyboard.press('ArrowUp');await p.keyboard.press('ArrowUp');await p.keyboard.press('ArrowUp');await p.keyboard.press('ArrowUp');await p.keyboard.press('x');await p.waitForTimeout(500);}, cy:0.42, acc:'#4dffd2'},
  fall:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(200);const mv=[-4,4,-2,2,0,-3,3,1,-1,4,-4,2,-2];for(let i=0;i<mv.length;i++){if(i%3===1)await p.keyboard.press('ArrowUp');const k=mv[i]<0?'ArrowLeft':'ArrowRight';for(let j=0;j<Math.abs(mv[i]);j++)await p.keyboard.press(k);await p.keyboard.press('Space');await p.waitForTimeout(90);}await p.waitForTimeout(500);}, cy:0.62, acc:'#5ee7ff'},
  sudoku:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(300);for(const k of ['h','ArrowDown','ArrowRight','ArrowRight','h','ArrowDown','h'])await p.keyboard.press(k);await p.waitForTimeout(250);}, cy:0.36, acc:'#c3ff5e'},
+ summon:{acts:async(p)=>{await p.keyboard.press('Space');await p.waitForTimeout(400);for(let i=0;i<4;i++){await p.keyboard.press('Space');await p.waitForTimeout(220);}await p.waitForTimeout(700);}, cy:0.48, acc:'#c6a15a'},
 };
 (async()=>{const br=await chromium.launch();
 for(const cat of CAT){

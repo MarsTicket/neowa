@@ -90,6 +90,7 @@ Style: premium mobile arcade game key art, glossy neon on a very dark navy-black
 | 50 | 숫자 순서 찾기 | `assets/schulte-card.jpg` | ⬜ 임시 캡처 | 흩어진 숫자를 순서대로 찾는 격자 |
 | 51 | 바둑 묘수풀이 | `assets/baduk-card.jpg` | ⬜ 임시 캡처 | 표시된 백 돌을 잡는 바둑 수읽기 |
 | 52 | 떨어지는 블록 | `assets/fall-card.jpg` | ⬜ 임시 캡처 | 떨어지는 블록을 돌려 줄을 지우는 퍼즐 |
+| 53 | 운명의 소환진 | `assets/summon-card.jpg` | ⬜ 임시 캡처 | 횃불 아래 소환진과 성문으로 몰려오는 마물 |
 
 ## 프롬프트 (만들어야 할 것만)
 
@@ -581,4 +582,14 @@ a glowing wooden go board seen from above with black and white stones, a small g
 
 ```
 a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap, dominant glow color #5ee7ff. Style: premium mobile arcade game key art, glossy neon on a very dark navy-black background, soft bloom and glow, subtle film grain, cinematic lighting, high detail, clean composition, vibrant but not oversaturated. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
+```
+
+### 53. 운명의 소환진 (`summon`)
+
+- 파일: `assets/summon-card.jpg`
+- 대표색: `#c6a15a` (이 색이 그림의 주된 빛이 되도록)
+- 장면: 횃불 아래 소환진과 성문으로 몰려오는 마물
+
+```
+a dark fantasy stone courtyard at night, a rusted-gold summoning circle burning with torchlight, tall cloaked knights and a grim archer standing on pedestals, a horde of armored monsters marching toward a heavy castle gate, parchment and dried blood colors, no neon, no cute chibi, dominant glow color #c6a15a. Style: premium dark-fantasy key art, ink black and deep navy, rusted gold and dried blood, warm torchlight, parchment, fog, film grain, cinematic lighting, high detail, serious silhouettes. No neon, no fluorescent glow, no cute chibi. No text, no letters, no numbers, no logos, no UI, no watermark. Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; the bottom 30% should be darker and calm because a title is overlaid there.
 ```

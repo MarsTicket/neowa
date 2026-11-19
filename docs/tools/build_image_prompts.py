@@ -65,6 +65,7 @@ SCENE = {
  'schulte': ('a 5x5 grid of tiles with scattered colorful abstract numeral shapes, a quick tap trail connecting them in sequence', '흩어진 숫자를 순서대로 찾는 격자'),
  'baduk': ('a glowing wooden go board seen from above with black and white stones, a small group of white stones encircled by a pulsing red target ring and a black stone landing to capture them', '표시된 백 돌을 잡는 바둑 수읽기'),
  'fall': ('a tall glowing neon well filled with stacked four-square blocks in pink, cyan, yellow and mint, a bright horizontal row bursting into light as a long bar drops into a gap', '떨어지는 블록을 돌려 줄을 지우는 퍼즐'),
+ 'summon': ('a dark fantasy stone courtyard at night, a rusted-gold summoning circle burning with torchlight, tall cloaked knights and a grim archer standing on pedestals, a horde of armored monsters marching toward a heavy castle gate, parchment and dried blood colors, no neon, no cute chibi', '횃불 아래 소환진과 성문으로 몰려오는 마물'),
 }
 
 def build():
@@ -98,9 +99,16 @@ def build():
         if g.get('art') != 'illust' and sc: todo.append((i + 1, g, sc))
     lines += ['', '## 프롬프트 (만들어야 할 것만)', '']
     for n, g, sc in todo:
+        style = STYLE
+        if g['id'] == 'summon':
+            style = ("Style: premium dark-fantasy key art, ink black and deep navy, rusted gold and dried blood, "
+                     "warm torchlight, parchment, fog, film grain, cinematic lighting, high detail, serious silhouettes. "
+                     "No neon, no fluorescent glow, no cute chibi. No text, no letters, no numbers, no logos, no UI, no watermark. "
+                     "Aspect ratio 16:10 (1200x750). Keep the main subject in the upper two-thirds and slightly right of center; "
+                     "the bottom 30% should be darker and calm because a title is overlaid there.")
         lines += [f"### {n}. {g['name']} (`{g['id']}`)", '',
                   f"- 파일: `assets/{g['id']}-card.jpg`", f"- 대표색: `{g['accent']}` (이 색이 그림의 주된 빛이 되도록)", f"- 장면: {sc[1]}", '',
-                  '```', f"{sc[0]}, dominant glow color {g['accent']}. {STYLE}", '```', '']
+                  '```', f"{sc[0]}, dominant glow color {g['accent']}. {style}", '```', '']
     open(os.path.join(ROOT, 'docs', 'IMAGE_PROMPTS.md'), 'w', encoding='utf-8').write('\n'.join(lines))
     missing = [g['id'] for g in CAT if g.get('art') != 'illust' and g['id'] not in SCENE]
     print('IMAGE_PROMPTS.md 생성:', len(todo), '개 프롬프트', ('/ 장면 없음: ' + ', '.join(missing)) if missing else '')

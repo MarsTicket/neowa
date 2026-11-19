@@ -70,15 +70,16 @@
       x.strokeStyle = right ? 'rgba(125,255,155,.9)' : 'rgba(90,50,20,.5)'; x.lineWidth = right ? 3 : 1.5; A.rr(x, 4, 4, cs - 8, cs - 8, 12); x.stroke();
     });
   }
-  var SBG = A.sprite('slbg', W, H, function (x) {
+  // 화면 크기(세로/가로)별로 따로 그림
+  function sbgSpr() { return A.sprite('slbg' + W + 'x' + H, W, H, function (x) {
     var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1a1208'); g.addColorStop(1, '#0a0704'); x.fillStyle = g; x.fillRect(0, 0, W, H);
     for (var i = 0; i < 40; i++) { x.strokeStyle = 'rgba(255,200,140,.03)'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, i * 26); x.bezierCurveTo(W * 0.3, i * 26 - 8, W * 0.6, i * 26 + 10, W, i * 26); x.stroke(); }
     var r = x.createRadialGradient(W / 2, 200, 0, W / 2, 200, 500); r.addColorStop(0, 'rgba(255,200,120,.15)'); r.addColorStop(1, 'rgba(255,200,120,0)'); x.fillStyle = r; x.fillRect(0, 0, W, H);
-  });
+  }); }
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(SBG, -10, -10, W + 20, H + 20);
+    c.drawImage(sbgSpr(), -10, -10, W + 20, H + 20);
     if (!tiles) { layout(); tiles = []; for (var i = 1; i < N * N; i++) tiles.push(i); tiles.push(0); anim = {}; }
     c.fillStyle = 'rgba(0,0,0,.5)'; A.rr(c, GX - 12, GY - 8, N * CS + 26, N * CS + 26, 20); c.fill();
     var fg = c.createLinearGradient(0, GY - 14, 0, GY + N * CS + 14); fg.addColorStop(0, '#6a4020'); fg.addColorStop(1, '#3a2010'); c.fillStyle = fg; A.rr(c, GX - 14, GY - 14, N * CS + 28, N * CS + 28, 20); c.fill();

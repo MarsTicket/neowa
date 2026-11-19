@@ -37,13 +37,14 @@
       x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 1.5; A.rr(x, 1, 1, cs - 2, cs - 2, r); x.stroke();
     });
   }
-  var OBG = A.sprite('odbg', W, H, function (x) {
+  // 화면 크기(세로/가로)별로 따로 그림
+  function obgSpr() { return A.sprite('odbg' + W + 'x' + H, W, H, function (x) {
     var g = x.createRadialGradient(W / 2, 440, 50, W / 2, 440, 620); g.addColorStop(0, '#1a2418'); g.addColorStop(1, '#050805'); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  });
+  }); }
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(OBG, -10, -10, W + 20, H + 20);
+    c.drawImage(obgSpr(), -10, -10, W + 20, H + 20);
     if (!base) { level = 3; next(); }
     var g = geo(), GL = glossSpr(g.cs);
     c.fillStyle = 'rgba(0,0,0,.4)'; A.rr(c, g.x0 - 14, g.y0 - 10, 508, 508, 22); c.fill();

@@ -210,14 +210,15 @@
       x.fillStyle = 'rgba(0,0,0,.35)'; x.font = '900 22px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(MARK[k], 0, 4);
     });
   }
-  var FBG = A.sprite('flbg', W, H, function (x) {
+  // 화면 크기(세로/가로)별로 따로 그림
+  function fbgSpr() { return A.sprite('flbg' + W + 'x' + H, W, H, function (x) {
     var g = x.createRadialGradient(W / 2, H * 0.4, 30, W / 2, H * 0.4, 640); g.addColorStop(0, '#2a1030'); g.addColorStop(1, '#08020a'); x.fillStyle = g; x.fillRect(0, 0, W, H);
     for (var i = 0; i < 40; i++) { x.fillStyle = A.hexA(COLS[i % 6], 0.06); x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 6 + Math.random() * 30, 0, 7); x.fill(); }
-  });
+  }); }
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(FBG, -10, -10, W + 20, H + 20);
+    c.drawImage(fbgSpr(), -10, -10, W + 20, H + 20);
     if (!grid) setup();
     // 액자
     c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(GX - 8, GY - 4, N * CS + 18, N * CS + 18);

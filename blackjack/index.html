@@ -219,11 +219,12 @@
     });
   }
   function shadow(c, x, y) { c.fillStyle = 'rgba(0,0,0,.28)'; A.rr(c, x + 2, y + 3, CW, CH, 9); c.fill(); }
-  var FELT = A.sprite('bjfelt', W, H, function (x) {
+  // 화면 크기(세로/가로)별로 따로 그림
+  function feltSpr() { return A.sprite('bjfelt' + W + 'x' + H, W, H, function (x) {
     var g = x.createRadialGradient(W / 2, 420, 60, W / 2, 420, 720); g.addColorStop(0, '#167a5a'); g.addColorStop(1, '#03160f'); x.fillStyle = g; x.fillRect(0, 0, W, H);
     for (var i = 0; i < 6000; i++) { x.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.05)'; x.fillRect(Math.random() * W, Math.random() * H, 1, 1); }
     var v = x.createRadialGradient(W / 2, H / 2, 260, W / 2, H / 2, 680); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.45)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
-  });
+  }); }
   function cardDraw(c, cd, x, y) {
     var e = cd.t == null ? 1 : cd.t; y += (1 - e) * -200; c.globalAlpha = e;
     shadow(c, x, y);
@@ -242,7 +243,7 @@
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    c.drawImage(FELT, -10, -10, W + 20, H + 20);
+    c.drawImage(feltSpr(), -10, -10, W + 20, H + 20);
     c.strokeStyle = 'rgba(255,209,102,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(TX(), land ? -400 : -200, 640, 0.4, Math.PI - 0.4); c.stroke(); if (land) { c.strokeStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.moveTo(632, 20); c.lineTo(632, H - 20); c.stroke(); }
     c.fillStyle = 'rgba(255,209,102,.5)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('딜러는 16 이하에서 받고 17 이상에서 멈춥니다 · 블랙잭 1.5배', TX(), land ? 222 : 415);
     var PY = land ? 290 : 470;

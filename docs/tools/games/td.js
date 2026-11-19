@@ -172,22 +172,43 @@
     c.restore();
   }
   function selCell() { return sel ? (sel.tw ? { r: sel.tw.r, c: sel.tw.c } : sel) : null; }
+  /* 그림: 풀밭 칸(4종 무늬), 흙길, 성 모양 기지, 적이 나오는 문 */
+  function grassSpr(k) {
+    return A.sprite('tdg' + k, CS, CS, function (x) {
+      var g = x.createLinearGradient(0, 0, CS, CS); g.addColorStop(0, k % 2 ? '#24401c' : '#2a4a20'); g.addColorStop(1, k % 2 ? '#1a3014' : '#203a18'); x.fillStyle = g; x.fillRect(0, 0, CS, CS);
+      x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 1; x.strokeRect(0.5, 0.5, CS - 1, CS - 1);
+      for (var i = 0; i < 16; i++) { var gx = 3 + Math.random() * (CS - 6), gy = 6 + Math.random() * (CS - 8); x.strokeStyle = 'rgba(140,210,90,' + (0.2 + Math.random() * 0.3) + ')'; x.beginPath(); x.moveTo(gx, gy); x.lineTo(gx - 1.5, gy - 5); x.moveTo(gx, gy); x.lineTo(gx + 1.5, gy - 5); x.stroke(); }
+      if (k === 2) { x.fillStyle = '#ffd166'; x.beginPath(); x.arc(CS * 0.3, CS * 0.6, 2.2, 0, 7); x.arc(CS * 0.7, CS * 0.3, 2, 0, 7); x.fill(); }
+      if (k === 3) { x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.ellipse(CS * 0.62, CS * 0.68, 8, 4, 0, 0, 7); x.fill(); x.fillStyle = '#7a7a70'; x.beginPath(); x.ellipse(CS * 0.6, CS * 0.64, 8, 5.5, 0, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.2)'; x.beginPath(); x.ellipse(CS * 0.57, CS * 0.61, 3, 1.6, 0, 0, 7); x.fill(); }
+    });
+  }
+  var CASTLE = A.sprite('tdcastle', 60, 60, function (x) {
+    x.translate(30, 34);
+    x.fillStyle = 'rgba(0,0,0,.4)'; x.beginPath(); x.ellipse(2, 20, 24, 6, 0, 0, 7); x.fill();
+    var g = x.createLinearGradient(-20, 0, 20, 0); g.addColorStop(0, '#d8d0c0'); g.addColorStop(1, '#8a8070'); x.fillStyle = g;
+    x.fillRect(-18, -10, 36, 28); for (var k = 0; k < 4; k++) x.fillRect(-18 + k * 10, -16, 6, 7);
+    x.fillRect(-24, -20, 10, 38); x.fillRect(14, -20, 10, 38); x.fillRect(-24, -25, 4, 5); x.fillRect(-18, -25, 4, 5); x.fillRect(14, -25, 4, 5); x.fillRect(20, -25, 4, 5);
+    x.fillStyle = '#3a2a1a'; x.beginPath(); x.moveTo(-6, 18); x.lineTo(-6, 4); x.arc(0, 4, 6, Math.PI, 0); x.lineTo(6, 18); x.fill();
+    x.strokeStyle = '#e8e8e8'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(0, -10); x.lineTo(0, -28); x.stroke(); x.fillStyle = '#ff4d6d'; x.beginPath(); x.moveTo(0, -28); x.lineTo(12, -24); x.lineTo(0, -20); x.fill();
+  });
   function render(c, t) {
     if (!path) reset();
-    c.fillStyle = '#0e0806'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#0a1408'; c.fillRect(0, 0, W, H);
     var o = fx.offset(); c.save(); c.translate(o[0], o[1]);
-    // 바닥 칸
+    c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(GX - 4, GY - 2, COLS * CS + 8, ROWS * CS + 8);
+    // 바닥 칸: 풀밭
     for (var r = 0; r < ROWS; r++) for (var cc = 0; cc < COLS; cc++) {
       var x = GX + cc * CS, y = GY + r * CS;
-      if (onPath[r + ',' + cc]) continue;
-      c.fillStyle = (r + cc) % 2 ? '#1b120c' : '#1f1510'; c.fillRect(x, y, CS, CS);
+      c.drawImage(grassSpr(((r * 7 + cc * 13) % 11) % 4), x, y, CS, CS);
     }
-    // 길
+    // 길: 가장자리 돌 → 흙 → 바퀴 자국
     c.lineCap = 'round'; c.lineJoin = 'round';
     c.beginPath(); var s0 = pathPos(-1); c.moveTo(s0.x, s0.y); path.forEach(function (q) { var p = cpos(q[0], q[1]); c.lineTo(p.x, p.y); }); var e0 = pathPos(path.length); c.lineTo(e0.x, e0.y);
-    c.strokeStyle = '#3a2416'; c.lineWidth = CS - 6; c.stroke(); c.strokeStyle = 'rgba(255,122,69,.18)'; c.lineWidth = CS - 18; c.stroke();
+    c.strokeStyle = '#4a3a28'; c.lineWidth = CS - 2; c.stroke(); c.strokeStyle = '#8a6a44'; c.lineWidth = CS - 10; c.stroke(); c.strokeStyle = '#a07e52'; c.lineWidth = CS - 24; c.stroke();
+    c.strokeStyle = 'rgba(70,50,30,.35)'; c.lineWidth = 2; c.setLineDash([10, 8]); c.lineDashOffset = 0; c.save(); c.translate(-8, 0); c.stroke(); c.restore(); c.save(); c.translate(8, 0); c.stroke(); c.restore();
     c.setLineDash([6, 12]); c.lineDashOffset = -t * 30; c.strokeStyle = 'rgba(255,122,69,.45)'; c.lineWidth = 2; c.stroke(); c.setLineDash([]);
-    var ep = cpos(path[path.length - 1][0], path[path.length - 1][1]); c.fillStyle = 'rgba(255,77,109,.8)'; c.font = '800 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('기지', ep.x, ep.y + 4);
+    var ep = cpos(path[path.length - 1][0], path[path.length - 1][1]); A.draw(c, CASTLE, ep.x, ep.y - 6, 0.95);
+    var sp0 = cpos(path[0][0], path[0][1]); c.save(); c.globalCompositeOperation = 'lighter'; A.draw(c, A.glowDot('#ff4d6d', 10), sp0.x, sp0.y, 1 + Math.sin(t * 4) * 0.1); c.restore();
     // 선택·커서
     var sc = selCell();
     if (sc) { c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.strokeRect(GX + sc.c * CS + 2, GY + sc.r * CS + 2, CS - 4, CS - 4); }

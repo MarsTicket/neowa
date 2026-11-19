@@ -202,10 +202,33 @@
       if (round >= MAXR) { S.gameOver(Math.min(chips, MAXSC), [['최종 칩', A.fmt(chips)], ['수익', (chips >= 1000 ? '+' : '') + A.fmt(chips - 1000)], ['최대 연승', String(bestStreak)]], { kick: 'FINISH', win: chips > 1000 }); return; } // 점수는 한도에서 자름(칩 표시는 그대로)
       round++; phase = 'bet'; hands = []; hi = 0; dl = []; bet = Math.max(Math.min(bet, chips), Math.min(10, chips)); msg = ''; if (round === MAXR) S.banner('마지막 판', '남은 칩이 점수'); hud(); } }
   }
+  /* 그림: 카드 뒷면(격자 무늬·문장), 카드 앞면 바탕과 그림자, 펠트 천 테이블(실 무늬·나무 테두리) */
+  function backSpr() {
+    return A.sprite('bjback', CW, CH, function (x) {
+      var g = x.createLinearGradient(0, 0, CW, CH); g.addColorStop(0, '#1a9a7a'); g.addColorStop(1, '#0a4a3a'); x.fillStyle = g; A.rr(x, 0, 0, CW, CH, 9); x.fill();
+      x.fillStyle = '#fbfbf7'; A.rr(x, 3, 3, CW - 6, CH - 6, 9 - 2); x.fill(); x.fillStyle = g; A.rr(x, 5, 5, CW - 10, CH - 10, 9 - 3); x.fill();
+      x.save(); A.rr(x, 5, 5, CW - 10, CH - 10, 9 - 3); x.clip(); x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 1;
+      for (var k = -CH; k < CW + CH; k += 8) { x.beginPath(); x.moveTo(k, 0); x.lineTo(k + CH, CH); x.moveTo(k + CH, 0); x.lineTo(k, CH); x.stroke(); } x.restore();
+      x.fillStyle = '#ffd166'; x.save(); x.translate(CW / 2, CH / 2); x.rotate(Math.PI / 4); x.fillRect(-9, -9, 18, 18); x.fillStyle = '#0a4a3a'; x.fillRect(-5, -5, 10, 10); x.restore();
+    });
+  }
+  function faceSpr(hl) {
+    return A.sprite('bjface' + (hl ? 'h' : ''), CW, CH, function (x) {
+      var g = x.createLinearGradient(0, 0, 0, CH); g.addColorStop(0, hl ? '#fff9e0' : '#ffffff'); g.addColorStop(1, hl ? '#ffeaa8' : '#ecebe4'); x.fillStyle = g; A.rr(x, 0, 0, CW, CH, 9); x.fill();
+      x.strokeStyle = 'rgba(0,0,0,.22)'; x.lineWidth = 1; A.rr(x, 0.5, 0.5, CW - 1, CH - 1, 9); x.stroke();
+    });
+  }
+  function shadow(c, x, y) { c.fillStyle = 'rgba(0,0,0,.28)'; A.rr(c, x + 2, y + 3, CW, CH, 9); c.fill(); }
+  var FELT = A.sprite('bjfelt', W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, 420, 60, W / 2, 420, 720); g.addColorStop(0, '#167a5a'); g.addColorStop(1, '#03160f'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 6000; i++) { x.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.05)'; x.fillRect(Math.random() * W, Math.random() * H, 1, 1); }
+    var v = x.createRadialGradient(W / 2, H / 2, 260, W / 2, H / 2, 680); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.45)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
+  });
   function cardDraw(c, cd, x, y) {
     var e = cd.t == null ? 1 : cd.t; y += (1 - e) * -200; c.globalAlpha = e;
-    if (!cd.up) { var g = c.createLinearGradient(x, y, x, y + CH); g.addColorStop(0, '#1a8a6a'); g.addColorStop(1, '#0a4a3a'); c.fillStyle = g; A.rr(c, x, y, CW, CH, 9); c.fill(); c.strokeStyle = 'rgba(255,255,255,.35)'; A.rr(c, x + 6, y + 6, CW - 12, CH - 12, 6); c.stroke(); c.globalAlpha = 1; return; }
-    c.fillStyle = '#fbfbf7'; A.rr(c, x, y, CW, CH, 9); c.fill();
+    shadow(c, x, y);
+    if (!cd.up) { c.drawImage(backSpr(), x, y, CW, CH); c.globalAlpha = 1; return; }
+    c.drawImage(faceSpr(false), x, y, CW, CH);
     var col = cd.s === 1 || cd.s === 2 ? '#d6284f' : '#1a1a2a'; c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'top'; c.font = '700 22px "Pretendard Variable",system-ui'; c.fillText(RANKS[cd.r], x + 7, y + 6); c.font = '700 18px system-ui'; c.fillText(SUITS[cd.s], x + 7, y + 30);
     c.font = '700 44px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(SUITS[cd.s], x + CW / 2, y + CH * 0.6); c.globalAlpha = 1;
   }
@@ -219,7 +242,7 @@
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    var g = c.createRadialGradient(TX(), land ? 260 : 420, 60, TX(), land ? 260 : 420, 700); g.addColorStop(0, '#0f5a46'); g.addColorStop(1, '#03160f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(FELT, -10, -10, W + 20, H + 20);
     c.strokeStyle = 'rgba(255,209,102,.25)'; c.lineWidth = 2; c.beginPath(); c.arc(TX(), land ? -400 : -200, 640, 0.4, Math.PI - 0.4); c.stroke(); if (land) { c.strokeStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.moveTo(632, 20); c.lineTo(632, H - 20); c.stroke(); }
     c.fillStyle = 'rgba(255,209,102,.5)'; c.font = '700 13px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('딜러는 16 이하에서 받고 17 이상에서 멈춥니다 · 블랙잭 1.5배', TX(), land ? 222 : 415);
     var PY = land ? 290 : 470;

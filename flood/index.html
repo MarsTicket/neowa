@@ -191,19 +191,44 @@
     if (nextT > 0) { nextT -= dt; if (nextT <= 0) { setup(); S.banner(wins + 1 + '번째 판', '제한 ' + maxM + '번'); hud(); } }
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) endGame(); }
   }
+  /* 그림: 광택 있는 색 칸(색·칸 크기별 캐시), 물감 통 버튼(색마다 무늬가 달라 색 구분이 어려워도 고를 수 있음), 화실 배경 */
+  var MARK = ['●', '▲', '■', '◆', '★', '♥'];
+  function cellSpr(k, cs) {
+    return A.sprite('fl2' + k + '_' + cs, cs, cs, function (x) {
+      x.fillStyle = COLS[k]; x.fillRect(0, 0, cs, cs); x.fillStyle = 'rgba(255,255,255,.22)'; x.fillRect(0, 0, cs, Math.max(1, cs * 0.14));
+      x.fillStyle = 'rgba(0,0,0,.12)'; x.fillRect(0, cs - Math.max(1, cs * 0.12), cs, Math.max(1, cs * 0.12));
+    });
+  }
+  function potSpr(k) {
+    return A.sprite('flpot' + k, 76, 76, function (x) {
+      x.translate(38, 38);
+      var gl = x.createRadialGradient(0, 0, 20, 0, 0, 38); gl.addColorStop(0, A.hexA(COLS[k], 0.45)); gl.addColorStop(1, A.hexA(COLS[k], 0)); x.fillStyle = gl; x.fillRect(-38, -38, 76, 76);
+      x.fillStyle = 'rgba(0,0,0,.4)'; A.rr(x, -31, -29, 64, 66, 18); x.fill();
+      var g = x.createLinearGradient(0, -33, 0, 33); g.addColorStop(0, '#ffffff'); g.addColorStop(0.2, COLS[k]); g.addColorStop(1, A.hexA(COLS[k], 0.75));
+      x.fillStyle = g; A.rr(x, -33, -33, 66, 66, 18); x.fill();
+      x.fillStyle = 'rgba(255,255,255,.5)'; A.rr(x, -26, -29, 52, 10, 5); x.fill();
+      x.fillStyle = 'rgba(0,0,0,.35)'; x.font = '900 22px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(MARK[k], 0, 4);
+    });
+  }
+  var FBG = A.sprite('flbg', W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, H * 0.4, 30, W / 2, H * 0.4, 640); g.addColorStop(0, '#2a1030'); g.addColorStop(1, '#08020a'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (var i = 0; i < 40; i++) { x.fillStyle = A.hexA(COLS[i % 6], 0.06); x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 6 + Math.random() * 30, 0, 7); x.fill(); }
+  });
   function render(c) {
     var o = fx.offset();
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#0c0410'; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(FBG, -10, -10, W + 20, H + 20);
     if (!grid) setup();
+    // 액자
+    c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(GX - 8, GY - 4, N * CS + 18, N * CS + 18);
+    var fg = c.createLinearGradient(GX - 12, GY - 12, GX + N * CS + 12, GY + N * CS + 12); fg.addColorStop(0, '#e8d0a8'); fg.addColorStop(0.5, '#7a5a3a'); fg.addColorStop(1, '#c8a878'); c.fillStyle = fg; c.fillRect(GX - 12, GY - 12, N * CS + 24, N * CS + 24);
     for (var i = 0; i < N * N; i++) {
       var x = i % N, y = Math.floor(i / N), r = ripple[i], s = r != null && r < 0 ? 1 + Math.sin(-r / 0.3 * Math.PI) * 0.18 : 1;
-      c.fillStyle = COLS[grid[i]]; var sz = CS * s; c.fillRect(GX + x * CS + (CS - sz) / 2, GY + y * CS + (CS - sz) / 2, sz + 0.5, sz + 0.5);
+      var sz = CS * s; c.drawImage(cellSpr(grid[i], CS), GX + x * CS + (CS - sz) / 2, GY + y * CS + (CS - sz) / 2, sz + 0.5, sz + 0.5);
     }
-    c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3; c.strokeRect(GX - 2, GY - 2, N * CS + 4, N * CS + 4);
     // 색 버튼
-    if (!land) for (var k = 0; k < NC; k++) { var bx = 30 + k * 82, by = 760, cur = grid[0] === k; c.save(); if (!cur) { c.fillStyle = A.hexA(COLS[k], 0.22); A.rr(c, bx - 5, by - 5, 80, 80, 22); c.fill(); } c.fillStyle = COLS[k]; c.globalAlpha = cur ? 0.25 : 1; A.rr(c, bx, by, 70, 70, 18); c.fill(); c.restore();
-      c.fillStyle = 'rgba(0,0,0,.45)'; c.font = '700 16px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(k + 1), bx + 35, by + 35); }
+    if (!land) for (var k = 0; k < NC; k++) { var bx = 30 + k * 82, by = 760, cur = grid[0] === k; c.globalAlpha = cur ? 0.3 : 1; c.drawImage(potSpr(k), bx - 3, by - 3, 76, 76); c.globalAlpha = 1;
+      c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 13px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(k + 1), bx + 35, by + 84); }
     if (!land) { c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('왼쪽 위부터 같은 색이 퍼져 나갑니다', W / 2, 870);
     if (cpu) { c.fillStyle = 'rgba(255,209,102,.8)'; c.font = '600 15px "Pretendard Variable",system-ui'; c.fillText('컴퓨터는 ' + cpu + '번에 풀었어요 · 같거나 적으면 보너스', W / 2, 900); } }
     // 첫 판 안내: 세로는 색 버튼, 가로는 판의 이웃 칸을 가리킴

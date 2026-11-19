@@ -141,8 +141,11 @@
     });
     hud();
   }
+  function tutLayer(c) {
+    if (tut && ship && S.state === 'playing' && dyingT <= 0) drawTut(c, W / 2, Math.min(H - 60, ship.p.y + cam + ship.p.r + 90), document.body.classList.contains('touch') ? '조준선이 노랗게 바뀌면 탭!' : '조준선이 노랗게 바뀌면 Space!');
+  }
   function render(c) {
-    if (G3.draw(c, fx)) return;
+    if (G3.draw(c, fx)) { tutLayer(c); return; } // 3D 화면에서도 첫 판 안내는 위에 겹쳐 그림
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#04030c'); g.addColorStop(1, '#12081f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
@@ -180,7 +183,7 @@
     }
     fx.draw(c);
     c.restore();
-    if (tut && ship && S.state === 'playing' && dyingT <= 0) drawTut(c, W / 2, Math.min(H - 60, ship.p.y + cam + ship.p.r + 90), document.body.classList.contains('touch') ? '조준선이 노랗게 바뀌면 탭!' : '조준선이 노랗게 바뀌면 Space!');
+    tutLayer(c);
     c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() {

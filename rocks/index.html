@@ -204,8 +204,11 @@
     if (!rocks.length) { nextWaveT += dt; if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2, 'CLEAR +' + wave * 200, '#ffd166', 24); A.sfx('gold'); startWave(); } }
     hud();
   }
+  function tutLayer(c) {
+    if (tut && P && S.state === 'playing' && !drag) tutText(c, isTouch() ? '누른 채 끌면 그 방향으로 날아가요' : '방향키·WASD 또는 끌어서 비행', '총은 가까운 운석을 자동으로 쏩니다', H * 0.78);
+  }
   function render(c) {
-    if (G3.draw(c, fx)) return;
+    if (G3.draw(c, fx)) { tutLayer(c); return; } // 3D 화면에서도 첫 판 안내는 위에 겹쳐 그림
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#03060f'; c.fillRect(-10, -10, W + 20, H + 20);
@@ -223,7 +226,7 @@
       c.save(); c.translate(P.x, P.y); c.rotate(P.a); c.shadowColor = '#9be7ff'; c.shadowBlur = 16; c.fillStyle = '#e8fbff';
       c.beginPath(); c.moveTo(20, 0); c.lineTo(-14, -13); c.lineTo(-8, 0); c.lineTo(-14, 13); c.closePath(); c.fill(); c.restore();
     } else if (!P) { c.fillStyle = '#e8fbff'; c.beginPath(); c.arc(W / 2, H * 0.6, 10, 0, 7); c.fill(); }
-    if (tut && P && S.state === 'playing' && !drag) tutText(c, isTouch() ? '누른 채 끌면 그 방향으로 날아가요' : '방향키·WASD 또는 끌어서 비행', '총은 가까운 운석을 자동으로 쏩니다', H * 0.78);
+    tutLayer(c);
     if (drag && S.state === 'playing') {
       var jx = drag.x - drag.sx, jy = drag.y - drag.sy, jl = Math.hypot(jx, jy), jk = jl > 60 ? 60 / jl : 1;
       c.strokeStyle = 'rgba(155,231,255,.35)'; c.lineWidth = 3; c.beginPath(); c.arc(drag.sx, drag.sy, 60, 0, 7); c.stroke();

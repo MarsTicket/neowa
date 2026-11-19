@@ -5,7 +5,25 @@
   function geo(sh) { var nW = sh ? sh.W : 540, nH = sh ? sh.H : 960; land = !!(sh && sh.land); TOP = land ? 16 : 70; cam.x += (W - nW) / 2; cam.y += (H - nH) / 2; W = nW; H = nH; }
   function cardY(i) { return land ? 130 + i * 145 : 320 + i * 150; }
   var fx = new A.FX();
-  var P, foes, bullets, gems, orbs, time, score, kills, lvl, xp, need, choosing, choices, spawnT, dyingT, drag = null, keys = {}, cam = { x: 0, y: 0 }, bossN, hearts;
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_survivor_tut)
+  var tutOn = A.get('neowa_survivor_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_survivor_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
+  var P, foes, bullets, gems, orbs, time, score, kills, lvl, xp, need, choosing, choices, spawnT, dyingT, drag = null, keys = {}, cam = { x: 0, y: 0 }, bossN, hearts, tutT = 0;
   var UP = [
     { id: 'rate', name: '연사 속도', d: '공격이 20% 빨라짐' },
     { id: 'dmg', name: '공격력', d: '총알 피해 +1' },
@@ -18,7 +36,7 @@
   ];
   function reset() {
     P = { x: 0, y: 0, hp: 5, max: 5, inv: 0, rate: 0.45, dmg: 1, multi: 1, spd: 230, orbs: 0, magnet: 90, pierce: 0, fire: 0 };
-    foes = []; bullets = []; gems = []; orbs = []; time = 0; score = 0; kills = 0; lvl = 1; xp = 0; need = 5; choosing = false; spawnT = 0; dyingT = 0; drag = null; keys = {}; bossN = 0; hearts = []; choices = []; A.music.mood(null); fx.clear(); hud();
+    foes = []; bullets = []; gems = []; orbs = []; time = 0; score = 0; kills = 0; lvl = 1; xp = 0; need = 5; choosing = false; spawnT = 0; dyingT = 0; drag = null; keys = {}; bossN = 0; tutT = 0; hearts = []; choices = []; A.music.mood(null); fx.clear(); hud();
   }
   function spawnFoe(boss) {
     var a = Math.random() * Math.PI * 2, d = 560, lv = time / 60;
@@ -42,13 +60,14 @@
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['버틴 시간', fmtT(time)], ['처치', String(kills)], ['레벨', String(lvl)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['버틴 시간', fmtT(time)], ['처치 · 레벨', kills + ' · ' + lvl], ['최고 대비', vsBest(score)]]); return; }
     if (choosing) return;
     time += dt;
     var tx = 0, ty = 0;
     if (drag) { tx = drag.x - drag.sx; ty = drag.y - drag.sy; var d = Math.hypot(tx, ty); if (d > 10) { tx /= d; ty /= d; } else tx = ty = 0; }
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
     if (kx || ky) { var l = Math.hypot(kx, ky); tx = kx / l; ty = ky / l; }
+    if (tutOn && (tx || ty)) { tutT += dt; if (tutT > 1) tutDone(); }
     P.x += tx * P.spd * dt; P.y += ty * P.spd * dt; if (P.inv > 0) P.inv -= dt;
     cam.x = A.lerp(cam.x, P.x - W / 2, Math.min(1, dt * 8)); cam.y = A.lerp(cam.y, P.y - H / 2, Math.min(1, dt * 8));
     // 적 생성
@@ -177,6 +196,9 @@
       });
     }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+    // 다음 보스까지 남은 시간 (보스가 없을 때만)
+    if (P && S.state === 'playing' && !choosing && !foes.some(function (f) { return f.tp === 'boss'; })) { var bl = 150 * (bossN + 1) - time; if (bl < 60) { c.fillStyle = bl < 10 ? '#ff7aa8' : 'rgba(255,255,255,.6)'; c.font = '700 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('보스까지 ' + Math.ceil(bl) + '초', W / 2, TOP + 30); } }
+    if (P && tutOn && !choosing) tutDraw(c, H * 0.3, '화면 아무 데나 끌어서 이동 · 공격은 자동', 'WASD·방향키로 이동 · 공격은 자동');
   }
   var last = '';
   function hud() { var k = score + '|' + lvl + '|' + Math.floor(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = lvl; document.getElementById('hC').textContent = fmtT(time); }

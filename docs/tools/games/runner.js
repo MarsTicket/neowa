@@ -167,8 +167,11 @@
     hud();
   }
 
+  function tutLayer(c) {
+    if (tut && S.state === 'playing' && P && dyingT <= 0) drawTut(c, W / 2, 470, document.body.classList.contains('touch') ? '화면을 탭하면 점프! 공중에서 한 번 더' : 'Space·↑ 점프! 공중에서 한 번 더', false);
+  }
   function render(c) {
-    if (G3.draw(c, fx)) return;
+    if (G3.draw(c, fx)) { tutLayer(c); return; } // 3D 화면에서도 첫 판 안내는 위에 겹쳐 그림
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.drawImage(BG, -10, -10, W + 20, H + 20);
@@ -211,7 +214,7 @@
       c.save(); c.translate(px, py - 22); c.rotate(rot); c.scale(1 + sq * 0.25, 1 - sq * 0.25);
       c.drawImage(CUBE, -36, -36, 72, 72); c.restore();
     }
-    if (tut && S.state === 'playing' && P && dyingT <= 0) drawTut(c, W / 2, 470, document.body.classList.contains('touch') ? '화면을 탭하면 점프! 공중에서 한 번 더' : 'Space·↑ 점프! 공중에서 한 번 더', false);
+    tutLayer(c);
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }

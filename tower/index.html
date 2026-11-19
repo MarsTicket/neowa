@@ -224,8 +224,11 @@
     c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(x, y, w, 2);
     c.globalAlpha = 1;
   }
+  function tutLayer(c) {
+    if (tut && cur && S.state === 'playing') { var ly = sy(topY(stack.length - 1)); drawTut(c, W / 2, ly - 150, document.body.classList.contains('touch') ? '아래층과 딱 겹칠 때 탭!' : '아래층과 딱 겹칠 때 Space!'); }
+  }
   function render(c) {
-    if (G3.draw(c, fx)) return;
+    if (G3.draw(c, fx)) { tutLayer(c); return; } // 3D 화면에서도 첫 판 안내는 위에 겹쳐 그림
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     // 배경은 높이에 따라 천천히 올라감(하늘 → 우주)
@@ -251,7 +254,7 @@
     }
     for (i = 0; i < chips.length; i++) { var ch = chips[i]; c.save(); c.translate(ch.x + ch.w / 2, sy(ch.y) + BH / 2); c.rotate(ch.rot); block(c, -ch.w / 2, -BH / 2, ch.w, ch.n, 0.9); c.restore(); }
     if (!stack) { for (var d = 1; d < 9; d++) block(c, W / 2 - 110 + Math.sin(d * 1.3) * 8, topY(d), 220 - d * 6, d); }
-    if (tut && cur && S.state === 'playing') { var ly = sy(topY(stack.length - 1)); drawTut(c, W / 2, ly - 150, document.body.classList.contains('touch') ? '아래층과 딱 겹칠 때 탭!' : '아래층과 딱 겹칠 때 Space!'); }
+    tutLayer(c);
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }

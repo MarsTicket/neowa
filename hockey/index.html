@@ -130,7 +130,7 @@
     if (d < MR + PR && d > 0) {
       var nx = dx / d, ny = dy / d; puck.x = m.x + nx * (MR + PR); puck.y = m.y + ny * (MR + PR);
       var rv = (puck.vx - m.vx) * nx + (puck.vy - m.vy) * ny;
-      if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('bounce', pr ? 1.2 : 0.9); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
+      if (rv < 0) { if (pr) tutDone(); puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('bounce', pr ? 1.2 : 0.9); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
       var sp = Math.hypot(puck.vx, puck.vy); if (sp > 1500) { puck.vx *= 1500 / sp; puck.vy *= 1500 / sp; }
     }
   }
@@ -174,7 +174,7 @@
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0 && duo()) S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['점수', sMe + ' : ' + sCpu]], { title: 'P' + duoWin + ' 승리!', kick: '2인 대결', win: true, noRecord: true }); else if (dyingT <= 0) S.gameOver(score, [['라운드', String(round)], ['마지막 점수', sMe + ' : ' + sCpu]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0 && duo()) S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['점수', sMe + ' : ' + sCpu]], { title: 'P' + duoWin + ' 승리!', kick: '2인 대결', win: true, noRecord: true }); else if (dyingT <= 0) S.gameOver(score, [['라운드', String(round)], ['마지막 점수', sMe + ' : ' + sCpu], vsBest(score)]); return; }
     var mid = (TOP + BOT) / 2, two = duo(), m0 = { x: me.x, y: me.y }, c0 = { x: cpu.x, y: cpu.y };
     // 내 말렛
     var tx = target ? target.x : me.x, ty = target ? target.y : me.y;
@@ -236,6 +236,7 @@
     mallet(cpu || { x: W / 2, y: TOP + 120 }, '#ff4d6d'); mallet(me || { x: W / 2, y: BOT - 120 }, '#5ee7ff');
     var pk = puck || { x: W / 2 + Math.sin(t) * 80, y: mid };
     c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; c.fillStyle = '#f4f5fb'; c.beginPath(); c.arc(pk.x, pk.y, PR, 0, 7); c.fill(); c.restore();
+    if (tut && me && !duo() && S.state === 'playing' && dyingT <= 0) tutText(c, isTouch() ? '아래 파란 말렛을 끌어 퍽을 치세요' : '마우스·방향키로 파란 말렛 이동', '위쪽 빨간 골문에 넣으면 득점', 640);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() { var two = duo(); document.getElementById('hA').textContent = two ? tally[0] + ' : ' + tally[1] : A.fmt(score); document.getElementById('hB').textContent = (sMe || 0) + ' : ' + (sCpu || 0); document.getElementById('hC').textContent = two ? tally[0] + tally[1] + 1 : round; }
@@ -250,6 +251,18 @@
   function lift(e) { if (tTop && tTop.id === e.pointerId) tTop = null; if (e.pointerType !== 'mouse' && target && target.id === e.pointerId) target = null; }
   stage.addEventListener('pointerup', lift); stage.addEventListener('pointercancel', lift);
   window.addEventListener('blur', function () { keys = {}; });
+  // 첫 판 안내(한 번 제대로 하면 다시 안 나옴)와 종료 화면 '최고 대비'
+  var tut = A.get('neowa_hockey_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_hockey_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function vsBest(sc) { var b = S.best || 0; return ['최고 대비', !b ? '첫 기록' : sc > b ? '+' + A.fmt(sc - b) + ' 신기록' : '-' + A.fmt(b - sc)]; }
+  function tutText(c, a, b, y) {
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle'; var w = Math.max(a.length * 23, b ? b.length * 15 : 0) + 40;
+    c.fillStyle = 'rgba(0,0,0,.55)'; A.rr(c, W / 2 - w / 2, y - 30, w, b ? 82 : 60, 16); c.fill();
+    c.fillStyle = 'rgba(255,255,255,' + (0.8 + Math.sin(S.time * 5) * 0.2) + ')'; c.font = '800 24px "Pretendard Variable",system-ui'; c.fillText(a, W / 2, y);
+    if (b) { c.font = '600 16px "Pretendard Variable",system-ui'; c.fillStyle = 'rgba(255,255,255,.7)'; c.fillText(b, W / 2, y + 30); }
+    c.restore();
+  }
   var S = null; S = new A.Shell({ id: 'hockey', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k1 = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (!duo() || k1.indexOf('Arrow') === 0) target = null; else if ('wasd'.indexOf(k1) >= 0) tTop = null; keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
 })();

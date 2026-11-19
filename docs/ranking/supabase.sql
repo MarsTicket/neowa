@@ -90,7 +90,10 @@ insert into public.score_limits (game, max_score) values
   ('bowling', 300),
   ('tank', 500000),
   ('yacht', 400),
-  ('td', 5000000)
+  ('td', 5000000),
+  ('hangul', 300000),
+  ('typing', 1000000),
+  ('idle', 100000)
 on conflict (game) do update set max_score = excluded.max_score;
 
 -- 점수 등록: 이름 정리, 상한 검사, 같은 이름 20초 안 재등록 금지

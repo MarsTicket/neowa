@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- 이 파일은 docs/tools/make_game_page.py 로 생성했습니다. 게임 코드를 고칠 때는 docs/tools/games/hangul.js 를 고친 뒤 다시 생성하세요. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05060c">
+<title>한글 단어 맞히기 · 너와 아케이드</title>
+<meta name="description" content="설치 없이 바로 하는 한글 단어 맞히기. 2글자 낱말을 자모 칸으로 풀어 6번 안에 맞히세요. 초록은 자리까지 맞음, 노랑은 다른 자리에 있음. 무한 모드와 오늘의 단어.">
+<meta property="og:title" content="한글 단어 맞히기 · 너와 아케이드">
+<meta property="og:description" content="자모 힌트로 좁혀 가는 2글자 낱말 추리. 6번 안에 맞힐 수 있을까?">
+<meta property="og:image" content="https://neowa.kr/assets/hangul-card.jpg">
+<link rel="icon" href="../assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../assets/arcade/arcade.css?v=5">
+<style>:root{--accent:#7dff9b;--accent-ink:#04170a;--ar:125,255,155}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
+</head>
+<body class="g" data-state="ready">
+<div class="g-shell">
+  <header class="g-top">
+    <a class="g-back" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>아케이드</span></a>
+    <div class="g-name"><small>STAGE 67</small>한글 단어 맞히기</div>
+    <div class="g-icons">
+      <button class="g-ic" data-act="mute" aria-label="소리 켜기/끄기"><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <button class="g-ic" data-act="fs" aria-label="전체 화면"><svg class="enter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+      <button class="g-ic" data-act="pause" aria-label="일시정지"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+    </div>
+  </header>
+
+  <main class="g-wrap" id="wrap">
+    <aside class="g-side">
+      <div class="g-card"><h3>CONTROLS</h3>
+        <div class="g-keys">
+          <div class="k-only">평소 자판 그대로(2벌식) · <kbd>Shift</kbd> 쌍자음</div>
+          <div class="k-only"><kbd>Enter</kbd> 입력 · <kbd>Backspace</kbd> 지우기</div>
+          <div class="t-only"><kbd>자모 탭</kbd> · <kbd>쌍</kbd> 쌍자음 · <kbd>입력</kbd> 확인</div>
+          <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
+        </div>
+      </div>
+      <div class="g-card"><h3>RULES</h3>
+        <div class="g-keys">
+          <div>겹모음(ㅘ·ㅢ 등)은 한 칸 · ㅗ 다음 ㅏ를 치면 ㅘ로 합쳐져요</div>
+          <div>사전에 있는 2글자 낱말만 입력할 수 있어요</div>
+          <div>6번 안에 못 맞히면 끝 · 빨리 맞힐수록 높은 점수</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="g-stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="g-hud">
+        <div class="h-box"><span class="h-lb">SCORE</span><span class="h-v" id="hA">0</span><span class="h-mult" id="hMult"></span></div>
+        <div class="h-box c"><span class="h-lb">TRY</span><span class="h-v sm" id="hB">1/6</span></div>
+        <div class="h-box r"><span class="h-lb">STREAK</span><span class="h-v sm" id="hC">0</span></div>
+      </div>
+      <div class="g-banner" id="banner"></div>
+
+      <section class="g-ov" id="ovStart" aria-label="시작 화면">
+        <p class="ov-kick">NEOWA ARCADE · 67</p>
+        <h1 class="ov-title">한글 단어 맞히기</h1>
+        <p class="ov-desc">2글자 낱말을 자모로 풀어 맞히세요. 초록 = 자리까지 맞음, 노랑 = 다른 자리에 있음, 회색 = 없음.</p>
+        <div class="ov-ctrl">
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>자모 자판으로 입력</span>
+          <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>연속으로 맞히면 배율 UP</span>
+        </div>
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">무한 모드</button><button type="button" data-diff="1">오늘의 단어</button></div>
+        <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>게임 시작</button>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+        <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>아래에서 모드를 고르고 탭</p>
+      </section>
+
+      <section class="g-ov" id="ovPause" aria-label="일시정지">
+        <p class="ov-kick">PAUSED</p>
+        <h2 class="ov-title">일시정지</h2>
+        <div class="ov-col" style="margin-top:14px">
+          <button class="btn btn-p" data-act="resume">계속하기</button>
+          <button class="btn btn-g" data-act="restart">처음부터</button>
+          <a class="btn btn-g" href="../">아케이드 홈</a>
+        </div>
+      </section>
+
+      <section class="g-ov" id="ovOver" aria-label="게임 종료">
+        <p class="ov-kick">GAME OVER</p>
+        <span class="ov-new" id="ovNew" hidden>NEW RECORD</span>
+        <div class="ov-score" id="ovScore">0</div>
+        <div class="ov-meta" id="ovMeta"></div>
+        <div class="ov-col">
+          <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
+          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+        </div>
+        <p class="ov-best">최고기록<b data-best>0</b></p>
+      </section>
+    </div>
+
+    <aside class="g-side">
+      <div class="g-card"><h3>RECORD</h3>
+        <div class="g-stat"><span>최고기록</span><b data-best>0</b></div>
+        <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
+      </div>
+      <div class="g-card"><h3>MORE GAMES</h3>
+        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
+        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+      </div>
+    </aside>
+  </main>
+  <div></div>
+</div>
+
+<script src="../assets/arcade/arcade.js?v=5"></script>
+<script>
+(function () {
+  'use strict';
+  // 한글 단어 맞히기: 2음절 낱말을 자모 칸으로 풀어 6번 안에 맞히기. 초록 = 자리까지 맞음, 노랑 = 다른 자리에 있음, 회색 = 없음
+  var A = Arcade, W = 540, H = 960;
+  var CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ', JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+  var DBL_FINAL = 'ㄳㄵㄶㄺㄻㄼㄽㄾㄿㅀㅄ';
+  var VCOMB = { 'ㅗㅏ': 'ㅘ', 'ㅗㅐ': 'ㅙ', 'ㅗㅣ': 'ㅚ', 'ㅜㅓ': 'ㅝ', 'ㅜㅔ': 'ㅞ', 'ㅜㅣ': 'ㅟ', 'ㅡㅣ': 'ㅢ' }, VSPLIT = {};
+  Object.keys(VCOMB).forEach(function (k) { VSPLIT[VCOMB[k]] = k.charAt(0); });
+  var SHIFT = { 'ㅂ': 'ㅃ', 'ㅈ': 'ㅉ', 'ㄷ': 'ㄸ', 'ㄱ': 'ㄲ', 'ㅅ': 'ㅆ', 'ㅐ': 'ㅒ', 'ㅔ': 'ㅖ' };
+  var CODE = { KeyQ: 'ㅂ', KeyW: 'ㅈ', KeyE: 'ㄷ', KeyR: 'ㄱ', KeyT: 'ㅅ', KeyY: 'ㅛ', KeyU: 'ㅕ', KeyI: 'ㅑ', KeyO: 'ㅐ', KeyP: 'ㅔ', KeyA: 'ㅁ', KeyS: 'ㄴ', KeyD: 'ㅇ', KeyF: 'ㄹ', KeyG: 'ㅎ', KeyH: 'ㅗ', KeyJ: 'ㅓ', KeyK: 'ㅏ', KeyL: 'ㅣ', KeyZ: 'ㅋ', KeyX: 'ㅌ', KeyC: 'ㅊ', KeyV: 'ㅍ', KeyB: 'ㅠ', KeyN: 'ㅜ', KeyM: 'ㅡ' };
+  var ROWS = [['ㅂ', 'ㅈ', 'ㄷ', 'ㄱ', 'ㅅ', 'ㅛ', 'ㅕ', 'ㅑ', 'ㅐ', 'ㅔ'], ['ㅁ', 'ㄴ', 'ㅇ', 'ㄹ', 'ㅎ', 'ㅗ', 'ㅓ', 'ㅏ', 'ㅣ'], ['SH', 'ㅋ', 'ㅌ', 'ㅊ', 'ㅍ', 'ㅠ', 'ㅜ', 'ㅡ', 'BS'], ['OK']];
+  var fx = new A.FX();
+  var ANS = [], DICT = {}, ready = false;
+  var won = false, target, cells, rows, cur, keyState, shift, tries, score, streak, best, solved, phase, phaseT, shakeT, msg, msgT, mode = +A.get('neowa_hangul_mode', 0) || 0, daily, revealT, tim = 0;
+
+  // ---------- 낱말 목록 불러오기(공용 파일) ----------
+  function isV(j) { return JUNG.indexOf(j) >= 0; }
+  function split(word) {
+    // 낱말 → 자모 칸(겹모음은 한 칸, 겹받침이 있으면 null)
+    var out = [];
+    for (var i = 0; i < word.length; i++) {
+      var c = word.charCodeAt(i) - 0xAC00; if (c < 0 || c > 11171) return null;
+      var jo = c % 28, ju = ((c - jo) / 28) % 21, ch = Math.floor(c / 588);
+      out.push(CHO.charAt(ch), JUNG.charAt(ju)); if (jo) { var f = JONG.charAt(jo); if (DBL_FINAL.indexOf(f) >= 0) return null; out.push(f); }
+    }
+    return out;
+  }
+  function compose(cl) {
+    // 자모 칸 → 글자(규칙에 맞지 않으면 null)
+    var s = '', i = 0;
+    while (i < cl.length) {
+      var ch = CHO.indexOf(cl[i]), ju = i + 1 < cl.length ? JUNG.indexOf(cl[i + 1]) : -1; if (ch < 0 || ju < 0) return null;
+      i += 2; var jo = 0;
+      if (i < cl.length && !isV(cl[i]) && !(i + 1 < cl.length && isV(cl[i + 1]))) { jo = JONG.indexOf(cl[i]); if (jo <= 0) return null; i++; }
+      s += String.fromCharCode(0xAC00 + (ch * 21 + ju) * 28 + jo);
+    }
+    return s;
+  }
+  function load() {
+    var W0 = window.NEOWA_WORDS; if (!W0) return;
+    W0.answers.split(' ').forEach(function (w) { if (w.length === 2 && split(w)) ANS.push(w); });
+    W0.words.split(' ').forEach(function (w) { if (w.length === 2 && split(w)) DICT[w] = 1; });
+    ANS.forEach(function (w) { DICT[w] = 1; }); ready = true;
+  }
+  (function () {
+    if (window.NEOWA_WORDS) { load(); return; }
+    var s = document.createElement('script'); s.src = '../assets/arcade/hangul-words.js?v=1'; s.onload = load; document.head.appendChild(s);
+  })();
+
+  // ---------- 진행 ----------
+  function kstDay() { return Math.floor((Date.now() + 9 * 3600e3) / 86400e3); }
+  function pickTarget() {
+    if (mode === 1) { var d = kstDay(); return ANS[(d * 7919 + 13) % ANS.length]; }
+    var w; do { w = ANS[Math.floor(Math.random() * ANS.length)]; } while (w === target && ANS.length > 1); return w;
+  }
+  function newWord() {
+    target = pickTarget(); cells = split(target); rows = []; cur = []; keyState = {}; shift = false; tries = 0; phase = 'play'; revealT = 0; hud();
+  }
+  function reset() {
+    score = 0; streak = 0; best = 0; solved = 0; msg = ''; msgT = 0; shakeT = 0; fx.clear();
+    if (!ready) load();
+    daily = mode === 1; won = false;
+    if (daily && A.get('neowa_hangul_daily', '') === String(kstDay())) say('오늘의 단어는 이미 풀었어요 · 연습으로 한 번 더!', 3);
+    if (ready) newWord(); else { phase = 'wait'; cells = null; }
+  }
+  function say(t, d) { msg = t; msgT = d || 1.6; }
+  function typeJamo(j) {
+    if (phase !== 'play' || revealT > 0) return;
+    if (shift && SHIFT[j]) j = SHIFT[j]; shift = false;
+    var last = cur[cur.length - 1];
+    if (isV(j) && last && VCOMB[last + j]) { cur[cur.length - 1] = VCOMB[last + j]; A.sfx('tick'); return; }
+    if (cur.length >= cells.length) { shakeT = 0.3; A.sfx('wall'); return; }
+    cur.push(j); A.sfx('tick');
+  }
+  function backspace() {
+    if (phase !== 'play' || revealT > 0 || !cur.length) return;
+    var last = cur[cur.length - 1]; if (VSPLIT[last]) cur[cur.length - 1] = VSPLIT[last]; else cur.pop(); A.sfx('turn');
+  }
+  function submit() {
+    if (phase !== 'play' || revealT > 0) return;
+    if (cur.length < cells.length) { shakeT = 0.4; say('칸을 모두 채워 주세요'); A.sfx('hurt'); A.vibrate(20); return; }
+    var w = compose(cur);
+    if (!w || w.length !== 2) { shakeT = 0.4; say('글자가 만들어지지 않아요'); A.sfx('hurt'); A.vibrate(20); return; }
+    if (!DICT[w]) { shakeT = 0.4; say('「' + w + '」은(는) 사전에 없는 낱말이에요'); A.sfx('hurt'); A.vibrate(20); return; }
+    // 판정: 초록 먼저, 남은 개수만큼만 노랑
+    var res = [], left = {}, i;
+    for (i = 0; i < cells.length; i++) { if (cur[i] === cells[i]) res[i] = 2; else { res[i] = 0; left[cells[i]] = (left[cells[i]] || 0) + 1; } }
+    for (i = 0; i < cells.length; i++) if (res[i] === 0 && left[cur[i]]) { res[i] = 1; left[cur[i]]--; }
+    rows.push({ j: cur.slice(), r: res, w: w }); cur = []; tries++; revealT = cells.length * 0.13 + 0.25;
+    res.forEach(function (v, k) { var jm = rows[rows.length - 1].j[k]; keyState[jm] = Math.max(keyState[jm] == null ? -1 : keyState[jm], v); });
+    A.sfx('click'); hud();
+  }
+  function afterReveal() {
+    var last = rows[rows.length - 1], win = last.r.every(function (v) { return v === 2; });
+    won = win;
+    if (win) {
+      streak++; best = Math.max(best, streak); solved++;
+      var mult = Math.min(3, 1 + (streak - 1) * 0.1), pts = Math.round((7 - tries) * 100 * mult); score += pts;
+      S.banner(tries === 1 ? '한 번에!' : '정답!', target + ' · +' + pts + (streak > 1 ? ' (연속 ' + streak + ')' : ''));
+      A.sfx(tries <= 2 ? 'record' : 'level'); A.vibrate([20, 30, 20]); fx.burst(W / 2, 300, '#7dff9b', 34, 380, 0.8, 3.5); fx.burst(W / 2, 300, '#ffd166', 20, 300, 0.8, 3);
+      phase = 'win'; phaseT = 0; hud();
+    } else if (tries >= 6) {
+      phase = 'lose'; phaseT = 0; A.sfx('over'); say('정답은 「' + target + '」 (' + cells.join(' ') + ')', 4);
+    }
+  }
+  function update(dt) {
+    tim += dt; fx.update(dt); if (phase === 'wait') { if (ready) newWord(); return; } if (shakeT > 0) shakeT -= dt; if (msgT > 0) msgT -= dt;
+    if (revealT > 0) { revealT -= dt; if (revealT <= 0) { revealT = 0; afterReveal(); } }
+    if (phase === 'win' || phase === 'lose') {
+      phaseT += dt;
+      if (phase === 'win' && phaseT > 1.6) { if (daily) finish(); else newWord(); }
+      if (phase === 'lose' && phaseT > 2.6) finish();
+    }
+  }
+  function finish() {
+    phase = 'done';
+    var again = daily && A.get('neowa_hangul_daily', '') === String(kstDay());
+    if (daily) A.set('neowa_hangul_daily', kstDay());
+    S.gameOver(score, daily ? [['오늘의 단어', target], ['시도', tries + '/6']] : [['맞힌 낱말', String(solved)], ['최고 연속', String(best)], ['마지막 정답', target]], daily ? { noRecord: again, win: won, title: won ? '오늘의 단어 성공!' : '아쉬워요' } : {});
+  }
+
+  // ---------- 그리기 ----------
+  var COL = ['#3a3a44', '#e0b43c', '#3fbf6a'];
+  var BY = 118, CW = 58, CG = 8, RH = 66;
+  function boardX() { return (W - (cells.length * CW + (cells.length - 1) * CG)) / 2; }
+  var KY = 572, KH = 62, KG = 6;
+  function keyRects() {
+    var out = [];
+    ROWS.forEach(function (row, ri) {
+      var y = KY + ri * (KH + KG);
+      if (ri === 3) { out.push({ k: 'OK', x: 70, y: y, w: 400, h: KH }); return; }
+      var units = row.reduce(function (s, k) { return s + (k === 'SH' || k === 'BS' ? 1.5 : 1); }, 0), uw = (W - 24 - (row.length - 1) * KG) / Math.max(units, 10), tw = units * uw + (row.length - 1) * KG, x = (W - tw) / 2;
+      row.forEach(function (k) { var w = (k === 'SH' || k === 'BS' ? 1.5 : 1) * uw; out.push({ k: k, x: x, y: y, w: w, h: KH }); x += w + KG; });
+    });
+    return out;
+  }
+  function cellBox(c, x, y, ch, state, flip) {
+    var sc = flip == null ? 1 : Math.abs(Math.cos(flip * Math.PI));
+    var fill = state == null ? 'rgba(255,255,255,.05)' : COL[state];
+    c.save(); c.translate(x + CW / 2, y + CW / 2); c.scale(1, Math.max(0.05, sc));
+    c.fillStyle = fill; A.rr(c, -CW / 2, -CW / 2, CW, CW, 10); c.fill();
+    if (state == null) { c.strokeStyle = ch ? 'rgba(125,255,155,.75)' : 'rgba(255,255,255,.18)'; c.lineWidth = 2; A.rr(c, -CW / 2 + 1, -CW / 2 + 1, CW - 2, CW - 2, 9); c.stroke(); }
+    if (ch) { c.fillStyle = '#ffffff'; c.font = '800 30px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ch, 0, 2); }
+    c.restore();
+  }
+  function render(c, t) {
+    c.fillStyle = '#06120a'; c.fillRect(0, 0, W, H);
+    var o = fx.offset(); c.save(); c.translate(o[0], o[1]);
+    if (!ready || !cells) {
+      c.fillStyle = '#7dff9b'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText(ready ? '' : '낱말 목록을 불러오는 중…', W / 2, 400);
+      c.restore(); return;
+    }
+    var bx = boardX();
+    for (var r = 0; r < 6; r++) {
+      var y = BY + r * RH, row = rows[r], isCur = r === rows.length && phase === 'play', dx = isCur && shakeT > 0 ? Math.sin(shakeT * 60) * 8 * shakeT / 0.4 : 0;
+      for (var i = 0; i < cells.length; i++) {
+        var x = bx + i * (CW + CG) + dx;
+        if (row) {
+          var isLast = r === rows.length - 1 && revealT > 0, tStart = i * 0.13, el = cells.length * 0.13 + 0.25 - revealT - tStart;
+          if (isLast && el < 0) cellBox(c, x, y, row.j[i], null);
+          else if (isLast && el < 0.25) cellBox(c, x, y, row.j[i], el < 0.125 ? null : row.r[i], el / 0.25);
+          else cellBox(c, x, y, row.j[i], row.r[i]);
+        } else cellBox(c, x, y, isCur ? cur[i] : '', null);
+      }
+      // 만들어지는 글자 미리보기
+      var wtxt = row ? row.w : '';
+      if (isCur && cur.length) { var part = cur.slice(); while (part.length && !compose(part)) part.pop(); wtxt = part.length ? compose(part) : ''; }
+      if (wtxt) { c.fillStyle = row ? 'rgba(255,255,255,.55)' : 'rgba(125,255,155,.8)'; c.font = '800 20px "Pretendard Variable",system-ui'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(wtxt, bx + cells.length * (CW + CG) + 4, y + CW / 2); }
+    }
+    // 안내 문구
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    var line = msgT > 0 ? msg : phase === 'play' ? (daily ? '오늘의 단어 · ' : '') + '자모 ' + cells.length + '칸 · 2글자 낱말' : '';
+    c.fillStyle = msgT > 0 ? '#ffe9a8' : 'rgba(200,255,215,.6)'; c.font = '700 18px "Pretendard Variable",system-ui'; c.fillText(line, W / 2, BY + 6 * RH + 14);
+    // 자판
+    keyRects().forEach(function (k) {
+      var st = keyState[k.k], lbl = k.k === 'SH' ? '쌍' : k.k === 'BS' ? '⌫' : k.k === 'OK' ? '입력' : (shift && SHIFT[k.k] ? SHIFT[k.k] : k.k);
+      c.fillStyle = k.k === 'OK' ? (cur.length === cells.length ? '#7dff9b' : 'rgba(125,255,155,.25)') : k.k === 'SH' && shift ? '#7dff9b' : st == null ? 'rgba(255,255,255,.12)' : st < 0 ? '#1d1d24' : COL[st];
+      if (st === 0) c.fillStyle = '#121216';
+      A.rr(c, k.x, k.y, k.w, k.h, 10); c.fill();
+      c.fillStyle = k.k === 'OK' && cur.length === cells.length ? '#04170a' : k.k === 'SH' && shift ? '#04170a' : st === 0 ? 'rgba(255,255,255,.22)' : '#ffffff';
+      c.font = '800 ' + (k.k === 'OK' ? 24 : 24) + 'px "Pretendard Variable",system-ui'; c.fillText(lbl, k.x + k.w / 2, k.y + k.h / 2 + 1);
+    });
+    c.textBaseline = 'alphabetic';
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  var lastHud = '';
+  function hud() {
+    var k = score + '|' + tries + '|' + streak; if (k === lastHud) return; lastHud = k;
+    document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = Math.min(6, tries + (phase === 'play' ? 1 : 0)) + '/6'; document.getElementById('hC').textContent = streak;
+    document.getElementById('hMult').textContent = streak > 1 ? '×' + Math.min(3, 1 + (streak - 1) * 0.1).toFixed(1) : '';
+  }
+
+  // ---------- 입력 ----------
+  function pressKey(k) { if (k === 'SH') { shift = !shift; A.sfx('tick'); } else if (k === 'BS') backspace(); else if (k === 'OK') submit(); else typeJamo(k); }
+  document.getElementById('stage').addEventListener('click', function (e) {
+    if (S.state !== 'playing' || !cells) return; var p = S.toLocal(e), ks = keyRects();
+    for (var i = 0; i < ks.length; i++) { var k = ks[i]; if (p.x > k.x - 3 && p.x < k.x + k.w + 3 && p.y > k.y - 3 && p.y < k.y + k.h + 3) { pressKey(k.k); A.vibrate(6); return; } }
+  });
+  // 2벌식 자판을 직접 처리(운영체제 한/영 상태와 관계없이 같은 자리 = 같은 자모). P·M·F 키도 글자로 씀
+  window.addEventListener('keydown', function (e) {
+    if (S.state !== 'playing' || !cells || e.ctrlKey || e.metaKey || e.altKey) return;
+    var j = CODE[e.code];
+    if (j) { e.preventDefault(); e.stopImmediatePropagation(); if (e.shiftKey && SHIFT[j]) j = SHIFT[j]; typeJamo(j); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); e.stopImmediatePropagation(); backspace(); return; }
+    if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); submit(); }
+  }, true);
+  // 이 게임에서는 P·M·F가 자모(ㅔ·ㅡ·ㄹ)이므로 안내 문구를 바꿈
+  Array.prototype.forEach.call(document.querySelectorAll('.k-only'), function (el) { if (/일시정지/.test(el.textContent) && el.querySelector('kbd') && el.querySelector('kbd').textContent === 'P') el.innerHTML = '<kbd>Esc</kbd> 일시정지 · 소리·전체 화면은 위 단추'; });
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === mode); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); mode = +b.getAttribute('data-diff'); A.set('neowa_hangul_mode', mode); A.sfx('click'); paintDiff(); }); });
+  paintDiff();
+  var S = new A.Shell({ id: 'hangul', W: W, H: H, reset: reset, update: update, idle: function (dt) { tim += dt; fx.update(dt); }, render: render });
+})();
+
+</script>
+</body>
+</html>

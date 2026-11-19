@@ -1318,5 +1318,65 @@
   "new": true,
   "art": "capture",
   "maxScore": 5000000
+ },
+ {
+  "id": "hangul",
+  "name": "한글 단어 맞히기",
+  "genre": "WORD GUESS",
+  "kgenre": "낱말 추리",
+  "cat": "두뇌",
+  "accent": "#7dff9b",
+  "rgb": "125,255,155",
+  "ink": "#04170a",
+  "desc": "2글자 낱말을 자모 칸으로 풀어 6번 안에 맞히세요. 초록·노랑 힌트로 좁혀 가는 추리, 오늘의 단어도!",
+  "tags": [
+   "자모 힌트",
+   "오늘의 단어",
+   "연속 배율"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 300000
+ },
+ {
+  "id": "typing",
+  "name": "한글 타자 레이스",
+  "genre": "TYPING",
+  "kgenre": "타자 연습",
+  "cat": "두뇌",
+  "accent": "#7aa2ff",
+  "rgb": "122,162,255",
+  "ink": "#060f2a",
+  "desc": "떨어지는 낱말을 빠르게 쳐서 없애세요. 점점 빨라지고 길어지는 낱말, 분당 타수 측정까지!",
+  "tags": [
+   "한글 타자",
+   "분당 타수",
+   "황금 낱말"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 1000000
+ },
+ {
+  "id": "idle",
+  "name": "네온 공장",
+  "genre": "IDLE",
+  "kgenre": "방치형",
+  "cat": "두뇌",
+  "accent": "#c3ff5e",
+  "rgb": "195,255,94",
+  "ink": "#172400",
+  "desc": "탭해서 에너지를 모으고 기계 8종으로 자동 생산! 자리를 비워도 쌓이고, 프레스티지로 영구 배율까지.",
+  "tags": [
+   "방치형",
+   "자동 저장",
+   "프레스티지"
+  ],
+  "made": "gen",
+  "new": true,
+  "art": "capture",
+  "maxScore": 100000
  }
 ]

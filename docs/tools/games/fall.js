@@ -7,6 +7,10 @@
   var SX = GX + COLS * CS + 14, SW = W - SX - 14; // 오른쪽 정보 칸
   var BY = 824, BH = 120, BW = 78, BG = 8;       // 아래 버튼 6개
   var fx = new A.FX();
+  // 시작 레벨 선택 (시작 화면 버튼, neowa_fall_diff = 0/1/2 → 레벨 1/5/10)
+  var START = [1, 5, 10], diff = +A.get('neowa_fall_diff', '0') || 0, startLv = 1;
+  // 첫 판 안내: 블록 3개를 놓을 때까지 조작법 말풍선 (본 뒤 neowa_fall_tut = 1)
+  var tut = A.get('neowa_fall_tut', '') !== '1', tutN = 0, tutT = 0;
 
   // 블록 7종 (n = 회전 상자 크기). 색은 이 사이트만의 네온 배색
   var TYPES = [
@@ -32,7 +36,7 @@
 
   var grid, cur, bag, queue, holdT, canHold, score, lines, level, combo, maxCombo, b2b, quads;
   var fallT, lockT, lockResets, clearRows, clearT, dyingT, dieRow, pops, lastHud;
-  var heldDir = 0, dasT = 0, arrT = 0, keySoft = false, btnSoft = false;
+  var heldDir = 0, dasT = 0, arrT = 0, keySoft = false, btnSoft = false, keyL = false, keyR = false;
   var ptrs = {}, btnDown = {};
 
   function emptyRow() { var r = []; for (var x = 0; x < COLS; x++) r.push(0); return r; }
@@ -56,7 +60,7 @@
 
   function spawn(t) {
     var n = TYPES[t].n;
-    cur = { t: t, r: 0, x: Math.floor((COLS - n) / 2), y: 1 };
+    cur = { t: t, r: 0, x: Math.floor((COLS - n) / 2), y: 1, low: 1 };
     if (!fits(cur.t, cur.r, cur.x, cur.y)) {
       cur.y = 0;
       if (!fits(cur.t, cur.r, cur.x, cur.y)) { die(); return; }
@@ -79,7 +83,9 @@
       var k = KICKS[i], dx = k[0], dy = k[1];
       if (cur.t === 0 && Math.abs(dx) === 1 && i >= 4) dx *= 2; // 긴 막대는 2칸까지
       if (fits(cur.t, nr, cur.x + dx, cur.y + dy)) {
-        cur.r = nr; cur.x += dx; cur.y += dy; A.sfx('turn', 1.2); afterMove(); return;
+        cur.r = nr; cur.x += dx; cur.y += dy; A.sfx('turn', 1.2);
+        if (dy < 0) lockResets++; // 위로 튕긴 회전도 버티기 횟수에 셈
+        afterMove(); return;
       }
     }
     A.sfx('wall', 1.4);
@@ -98,7 +104,7 @@
       var px = GX + (cur.x + cs[i][0]) * CS + CS / 2, py = GY + (cur.y + cs[i][1] - HID) * CS;
       for (var j = 0; j < 3; j++) fx.spark(px + A.rand(-12, 12), py - A.rand(0, Math.min(d, 6) * CS), col, 0, -A.rand(40, 160), 0.35, 2.5);
     }
-    fx.shake(d > 4 ? 4 : 2, 0.12); A.sfx('wall', 0.8); A.vibrate(12);
+    fx.shake(d > 4 ? 4 : 2, 0.12); A.sfx('drop', d > 4 ? 0.9 : 1.2); A.vibrate(12);
     lockPiece();
   }
   function doHold() {
@@ -106,7 +112,7 @@
     var t = cur.t;
     if (holdT < 0) { holdT = t; spawnNext(); }
     else { var h = holdT; holdT = t; spawn(h); }
-    canHold = false; A.sfx('power', 0.9);
+    canHold = false; A.sfx('select', 0.9);
   }
 
   function lockPiece() {
@@ -116,7 +122,8 @@
       if (gy >= 0) { grid[gy][gx] = col; pops.push({ x: gx, y: gy, t: 0 }); }
       top = Math.min(top, gy);
     }
-    cur = null; A.sfx('click', 0.8);
+    cur = null; A.sfx('land', 1.1);
+    if (tut && ++tutN >= 3) { tut = false; A.set('neowa_fall_tut', '1'); }
     // 꽉 찬 줄 찾기
     var full = [];
     for (var y = 0; y < ROWS; y++) if (grid[y].every(Boolean)) full.push(y);
@@ -145,9 +152,9 @@
     if (combo > 1) fx.text(cx, midY + 26, 'COMBO ×' + combo, '#5ee7ff', 20);
     if (isQuad) {
       fx.shake(12, 0.45); fx.flashIt('#5ee7ff', 0.35); fx.ring(cx, midY, '#ffd166', 220, 0.6);
-      A.sfx('bigboom'); A.sfx('gold'); A.vibrate([30, 40, 30]);
+      A.sfx('bigboom'); A.sfx('line', 1.3); A.vibrate([30, 40, 30]);
     } else {
-      fx.shake(3 + n * 2, 0.25); A.sfx(n >= 2 ? 'gold' : 'coin', 1 + combo * 0.05); A.vibrate(n >= 2 ? [20, 30, 20] : 15);
+      fx.shake(3 + n * 2, 0.25); A.sfx('line', 1 + n * 0.08); if (combo > 1) A.sfx('combo', 1 + Math.min(combo, 12) * 0.05); A.vibrate(n >= 2 ? [20, 30, 20] : 15);
     }
     hud();
   }
@@ -157,7 +164,7 @@
     for (var i = 0; i < n; i++) grid.unshift(emptyRow());
     clearRows = [];
     var oldLv = level;
-    lines += n; level = 1 + Math.floor(lines / 10);
+    lines += n; level = startLv + Math.floor(lines / 10);
     if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) {
       var bonus = 2000 * level; score += bonus;
       S.banner('올 클리어!', '+' + A.fmt(bonus)); A.sfx('record');
@@ -175,9 +182,10 @@
 
   function reset() {
     grid = newGrid(); bag = []; queue = [nextType(), nextType(), nextType()];
-    holdT = -1; canHold = true; score = 0; lines = 0; level = 1; combo = 0; maxCombo = 0; b2b = false; quads = 0;
+    startLv = START[diff] || 1; tutT = 0;
+    holdT = -1; canHold = true; score = 0; lines = 0; level = startLv; combo = 0; maxCombo = 0; b2b = false; quads = 0;
     clearRows = []; clearT = 0; dyingT = 0; pops = []; lastHud = '';
-    heldDir = 0; dasT = 0; arrT = 0; keySoft = false; btnSoft = false; ptrs = {}; btnDown = {};
+    heldDir = 0; dasT = 0; arrT = 0; keySoft = false; btnSoft = false; keyL = keyR = false; ptrs = {}; btnDown = {};
     fx.clear(); spawnNext(); hud();
   }
 
@@ -192,7 +200,7 @@
         for (var x = 0; x < COLS; x++) if (grid[dieRow][x]) grid[dieRow][x] = '#3a4256';
         dieRow--;
       }
-      if (dyingT <= 0) S.gameOver(score, [['레벨', String(level)], ['지운 줄', String(lines)], ['4줄 지우기', String(quads)]]);
+      if (dyingT <= 0) S.gameOver(score, [['레벨', startLv > 1 ? startLv + '→' + level : String(level)], ['지운 줄', String(lines)], ['4줄 · 최대 콤보', quads + ' · ×' + maxCombo]]);
       return;
     }
     if (clearT > 0) { clearT -= dt; if (clearT <= 0) finishClear(); return; }
@@ -203,11 +211,14 @@
       if (dasT > 0.17) { arrT += dt; while (arrT > 0.045) { arrT -= 0.045; if (!move(heldDir)) { arrT = 0; break; } } }
     }
     var soft = keySoft || btnSoft, g = soft ? Math.min(gravity(), 0.035) : gravity();
+    // 더 아래로 내려가면 고정 대기 횟수를 다시 채워 줌 (같은 높이에서 회전으로 위로 튕기며 끝없이 버티기 방지)
+    if (cur.y > cur.low) { cur.low = cur.y; lockResets = 0; }
     if (grounded()) {
       fallT = 0; lockT += dt;
       if (lockT >= 0.5) lockPiece();
     } else {
-      lockT = 0; fallT += dt;
+      if (lockResets < 15) lockT = 0;
+      fallT += dt;
       while (fallT >= g) {
         fallT -= g;
         if (fits(cur.t, cur.r, cur.x, cur.y + 1)) { cur.y++; if (soft) score += 1; }
@@ -334,10 +345,23 @@
       drawIcon(c, BTN[b].k, bx + BW / 2, BY + 48);
       c.fillStyle = 'rgba(255,255,255,.7)'; c.font = '600 14px Pretendard,system-ui'; c.textAlign = 'center'; c.fillText(BTN[b].lb, bx + BW / 2, BY + 100);
     }
+    if (tut && cur && S.state === 'playing') drawTut(c);
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
   }
 
+  function drawTut(c) {
+    tutT += 1 / 60;
+    var touch = document.body.classList.contains('touch');
+    var l1 = touch ? '좌우로 밀어서 이동 · 탭하면 회전' : '←→ 이동 · ↑ 회전 · ↓ 빨리 내리기';
+    var l2 = touch ? '아래로 휙 튕기면 바로 놓기 (아래 버튼도 OK)' : 'Space 바로 놓기 · C 보관';
+    var bw = COLS * CS - 16, bx = GX + 8, by = GY + 300, a = Math.min(1, tutT * 3);
+    c.globalAlpha = a * 0.9; c.fillStyle = '#04131c'; A.rr(c, bx, by, bw, 88, 16); c.fill(); c.strokeStyle = '#5ee7ff'; c.lineWidth = 2; c.stroke(); c.globalAlpha = a;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#5ee7ff'; c.font = '800 18px "Pretendard Variable",system-ui'; c.fillText(l1, bx + bw / 2, by + 30);
+    c.fillStyle = 'rgba(255,255,255,.8)'; c.font = '600 14px "Pretendard Variable",system-ui'; c.fillText(l2, bx + bw / 2, by + 60);
+    c.globalAlpha = 1;
+  }
   function hud() {
     var s = score + '|' + level + '|' + lines + '|' + combo;
     if (s === lastHud) return; lastHud = s;
@@ -424,8 +448,8 @@
     keydown: function (e) {
       if (e.repeat) return;
       var k = keyName(e);
-      if (k === 'ArrowLeft' || k === 'a') pressDir(-1);
-      else if (k === 'ArrowRight' || k === 'd') pressDir(1);
+      if (k === 'ArrowLeft' || k === 'a') { keyL = true; pressDir(-1); }
+      else if (k === 'ArrowRight' || k === 'd') { keyR = true; pressDir(1); }
       else if (k === 'ArrowDown' || k === 's') { keySoft = true; if (cur && clearT <= 0 && dyingT <= 0) softStep(); }
       else if (k === 'ArrowUp' || k === 'w' || k === 'x') rotate(1);
       else if (k === 'z') rotate(-1);
@@ -434,11 +458,17 @@
     },
     keyup: function (e) {
       var k = keyName(e);
-      if (k === 'ArrowLeft' || k === 'a') releaseDir(-1);
-      else if (k === 'ArrowRight' || k === 'd') releaseDir(1);
+      // 양쪽을 같이 누르다 하나를 떼면 남은 쪽으로 계속 이동
+      if (k === 'ArrowLeft' || k === 'a') { keyL = false; releaseDir(-1); if (keyR && !heldDir && S.state === 'playing') pressDir(1); }
+      else if (k === 'ArrowRight' || k === 'd') { keyR = false; releaseDir(1); if (keyL && !heldDir && S.state === 'playing') pressDir(-1); }
       else if (k === 'ArrowDown' || k === 's') keySoft = false;
     }
   });
   // 일시정지·탭 이동 때 눌린 상태 풀기 (다시 시작했을 때 혼자 움직이지 않게)
-  window.addEventListener('blur', function () { heldDir = 0; keySoft = false; btnSoft = false; btnDown = {}; ptrs = {}; });
+  window.addEventListener('blur', function () { heldDir = 0; keyL = keyR = false; keySoft = false; btnSoft = false; btnDown = {}; ptrs = {}; });
+  // 시작 레벨 버튼
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_fall_diff', diff); A.sfx('click'); paintDiff(); }); });
+  paintDiff();
 })();

@@ -5,12 +5,21 @@
   /* NAMES:START */ ~ /* NAMES:END */ 사이만 바꿉니다. 나머지는 손대지 않습니다.
 - 사용법: python3 docs/tools/build_hub.py
 """
-import json, os, html
+import json, re, os, html
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 CAT = json.load(open(os.path.join(os.path.dirname(__file__), 'catalog.json'), encoding='utf-8'))
 ORDER = ['액션', '원탭', '퍼즐', '보드·카드', '두뇌']
 e = html.escape
+
+
+def art(g, alt):
+    """메인 카드 그림: 작은 webp 썸네일(make_thumbs.py)이 있으면 그것을, 없으면 원래 jpg"""
+    gid = g['id']
+    jpg = f'<img src="assets/{gid}-card.jpg" alt="{alt}" loading="lazy" decoding="async" width="1200" height="750">'
+    if os.path.exists(os.path.join(ROOT, 'assets', 'thumbs', gid + '.webp')):
+        return f'<picture><source type="image/webp" srcset="assets/thumbs/{gid}.webp">{jpg}</picture>'
+    return jpg
 
 
 def card(i, g):
@@ -19,7 +28,7 @@ def card(i, g):
     alt = e(g['name'] + ' 게임 화면')
     return f'''        <article class="gc" data-cat="{g['cat']}" data-q="{e(g['name'] + ' ' + g['kgenre'] + ' ' + ' '.join(g['tags']))}" style="--c:{g['accent']};--cr:{g['rgb']}">
           <a class="cover" href="{g['id']}/" aria-label="{e(g['name'])} 플레이"></a>
-          <div class="gc-art"><span class="gc-no">{i + 1:02d}</span>{new}<img src="assets/{g['id']}-card.jpg" alt="{alt}" loading="lazy" width="1200" height="750"></div>
+          <div class="gc-art"><span class="gc-no">{i + 1:02d}</span>{new}{art(g, alt)}</div>
           <div class="gc-body">
             <p class="gc-genre">{e(g['genre'])}</p>
             <h3>{e(g['name'])}</h3>
@@ -60,7 +69,7 @@ def build():
     s = s[:a] + block + s[b:]
     a, b = s.index('/* NAMES:START */'), s.index('/* NAMES:END */') + len('/* NAMES:END */')
     s = s[:a] + names + s[b:]
-    s = s.replace('게임 10종과', f'게임 {n}종과')
+    s = re.sub(r'(바로 켜지는 게임 )\d+(종)', lambda m: m.group(1) + str(n) + m.group(2), s)
     open(p, 'w', encoding='utf-8').write(s)
     print(f'메인 갱신: 게임 {n}개', counts)
     # 랭킹 페이지가 쓰는 게임 목록

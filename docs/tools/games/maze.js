@@ -1,78 +1,177 @@
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960;
+  var A = Arcade, W = 540, H = 960, land = false;
+  // 칸 크기·판 위치. 가로 화면은 720x720 정사각형 판을 거의 꽉 채움 (미로 내용은 그대로)
+  function layout() { if (land) { CS = Math.floor(690 / N); GX = (W - N * CS) / 2; GY = (H - N * CS) / 2; } else { CS = Math.floor(Math.min(500 / N, 780 / N)); GX = (W - N * CS) / 2; GY = 110 + (800 - N * CS) / 2; } }
+  function geo(sh) { W = sh ? sh.W : 540; H = sh ? sh.H : 960; land = !!(sh && sh.land); if (N) layout(); }
   var fx = new A.FX();
-  var N, CS, GX, GY, cells, P, goal, stars, stage, time, score, moving, dyingT, trail;
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_maze_tut)
+  var tutOn = A.get('neowa_maze_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_maze_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
+  var N, CS, GX, GY, cells, P, goal, stars, stage, time, score, moving, dyingT, trail, queued, moves, par, idleT = 0, hint = null, hinted = false;
+  // 모드: 0 = 무한 모드(예전 그대로), 1 = 오늘의 미로(날짜로 고정된 5단계, 모두 같은 판)
+  var diff = +A.get('neowa_maze_diff', '0') || 0, DAILY_N = 5, rnd = Math.random; if (diff > 1) diff = 0;
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function irand(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
+  var SIDE = { e: ['n', 's'], w: ['n', 's'], n: ['e', 'w'], s: ['e', 'w'] }, DIRS = [[1, 0, 'e'], [-1, 0, 'w'], [0, 1, 's'], [0, -1, 'n']];
   // 미로 생성 (재귀적 백트래킹). cells[y][x] = {n,e,s,w 벽}
   function build(n) {
-    N = n; CS = Math.floor(Math.min(500 / n, 780 / n)); GX = (W - N * CS) / 2; GY = 110 + (800 - N * CS) / 2;
+    rnd = diff === 1 ? mulberry32(today() * 31 + n) : Math.random;
+    N = n; layout();
     cells = []; for (var y = 0; y < N; y++) { cells.push([]); for (var x = 0; x < N; x++) cells[y].push({ n: 1, e: 1, s: 1, w: 1, v: 0 }); }
     var st = [[0, 0]]; cells[0][0].v = 1;
     while (st.length) {
       var c = st[st.length - 1], opts = [];
       [[0, -1, 'n', 's'], [1, 0, 'e', 'w'], [0, 1, 's', 'n'], [-1, 0, 'w', 'e']].forEach(function (d) { var nx = c[0] + d[0], ny = c[1] + d[1]; if (nx >= 0 && ny >= 0 && nx < N && ny < N && !cells[ny][nx].v) opts.push([nx, ny, d[2], d[3]]); });
       if (!opts.length) { st.pop(); continue; }
-      var o = A.pick(opts); cells[c[1]][c[0]][o[2]] = 0; cells[o[1]][o[0]][o[3]] = 0; cells[o[1]][o[0]].v = 1; st.push([o[0], o[1]]);
+      var o = opts[Math.floor(rnd() * opts.length)]; cells[c[1]][c[0]][o[2]] = 0; cells[o[1]][o[0]][o[3]] = 0; cells[o[1]][o[0]].v = 1; st.push([o[0], o[1]]);
     }
     // 벽 몇 개 더 뚫어 길을 여러 갈래로
-    for (var k = 0; k < N; k++) { var rx = A.irand(1, N - 2), ry = A.irand(1, N - 2); cells[ry][rx].e = 0; cells[ry][rx + 1].w = 0; }
+    for (var k = 0; k < N; k++) { var rx = irand(1, N - 2), ry = irand(1, N - 2); cells[ry][rx].e = 0; cells[ry][rx + 1].w = 0; }
     P = { x: 0, y: 0, px: 0, py: 0 }; goal = { x: N - 1, y: N - 1 }; stars = [];
-    for (k = 0; k < Math.floor(N / 2); k++) stars.push({ x: A.irand(1, N - 1), y: A.irand(1, N - 1) });
-    trail = [];
+    for (k = 0; k < Math.floor(N / 2); k++) { var sx = irand(1, N - 1), sy = irand(1, N - 1); if ((sx !== goal.x || sy !== goal.y) && !stars.some(function (q) { return q.x === sx && q.y === sy; })) stars.push({ x: sx, y: sy }); }
+    trail = []; queued = null; moves = 0; idleT = 0; hint = null; hinted = false; par = solve(0, 0)[0];
   }
-  function newStage() { stage++; var n = Math.min(17, 6 + stage); build(n); time += 12 + n * 1.2; if (stage > 1) { S.banner('STAGE ' + stage, '탈출 성공'); A.sfx('level'); } hud(); }
-  function reset() { stage = 0; time = 18; score = 0; dyingT = 0; moving = null; newStage(); fx.clear(); }
+  // 한 번 밀었을 때 멈추는 칸: 벽 앞, 갈림길(옆으로 길이 열린 칸), 출구
+  function dest(x, y, dx, dy, key, path) { while (!cells[y][x][key]) { x += dx; y += dy; if (path) path.push([x, y]); if (x === goal.x && y === goal.y) break; if (!cells[y][x][SIDE[key][0]] || !cells[y][x][SIDE[key][1]]) break; } return [x, y]; }
+  function solve(sx, sy) { // 출구까지 최소 몇 번 밀어야 하는지와 첫 방향 (BFS)
+    var seen = {}, q = [[sx, sy, 0, null]]; seen[sx + ',' + sy] = 1;
+    while (q.length) { var c = q.shift(); if (c[0] === goal.x && c[1] === goal.y) return [c[2], c[3]];
+      DIRS.forEach(function (d) { var t = dest(c[0], c[1], d[0], d[1], d[2]), k = t[0] + ',' + t[1]; if (!seen[k]) { seen[k] = 1; q.push([t[0], t[1], c[2] + 1, c[3] || d]); } }); }
+    return [99, null];
+  }
+  function newStage() { stage++; var n = Math.min(17, 6 + stage); build(n); time = Math.min(90, time + 10 + n * 1.1); /* 남는 시간이 끝없이 쌓이지 않게 상한 90초 */ if (stage > 1) { S.banner('STAGE ' + stage, '탈출 성공'); A.sfx('level'); } hud(); }
+  function reset() { hint = null; stage = 0; time = 18; score = 0; dyingT = 0; moving = null; newStage(); fx.clear(); }
   function slide(dx, dy) {
-    if (S.state !== 'playing' || moving || dyingT > 0) return;
-    var key = dx > 0 ? 'e' : dx < 0 ? 'w' : dy > 0 ? 's' : 'n', x = P.x, y = P.y, path = [];
-    while (!cells[y][x][key]) { x += dx; y += dy; path.push([x, y]); if (x === goal.x && y === goal.y) break; }
+    if (S.state !== 'playing' || dyingT > 0) return;
+    if (moving) { queued = [dx, dy]; return; } // 움직이는 중 입력은 한 개 저장했다가 멈추면 실행
+    var key = dx > 0 ? 'e' : dx < 0 ? 'w' : dy > 0 ? 's' : 'n', path = [];
+    dest(P.x, P.y, dx, dy, key, path);
     if (!path.length) { A.sfx('wall', 0.8); return; }
-    moving = { path: path, i: 0, t: 0 }; A.sfx('turn', 1.2);
+    moving = { path: path, i: 0, t: 0 }; moves++; idleT = 0; hint = null; tutDone(); A.sfx('whoosh', 1 + Math.min(path.length, 8) * 0.03);
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['단계', String(stage)]]); return; }
-    time -= dt; if (time <= 0) { time = 0; dyingT = 1; A.sfx('over'); fx.flashIt('#ff2244', 0.4); hud(); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, diff === 1 ? [['오늘의 미로', (stage - 1) + ' / ' + DAILY_N + '단계'], ['오늘 최고', dailyBest(score)]] : [['단계', String(stage)], ['최고 대비', vsBest(score)]]); return; }
+    // 6초 동안 멈춰 있으면 다음 한 수를 화살표로 알려 줌 (이 단계 최단 보너스는 사라짐)
+    if (!moving) { idleT += dt; if (idleT > 6 && !hint) { hint = solve(P.x, P.y)[1]; if (hint) { hinted = true; A.sfx('tick', 1.4); } } }
+    time -= dt; if (time > 5) warnN = 0; else if (time > 0 && Math.ceil(time) !== warnN) { warnN = Math.ceil(time); A.sfx('warn'); } if (time <= 0) { time = 0; dyingT = 1; A.sfx('hurt'); fx.flashIt('#ff2244', 0.4); hud(); return; }
     if (moving) {
       moving.t += dt * 22;
       while (moving && moving.t >= 1) {
         moving.t -= 1; var c = moving.path[moving.i++]; trail.push({ x: P.x, y: P.y, t: 0.5 }); P.x = c[0]; P.y = c[1];
-        for (var i = stars.length - 1; i >= 0; i--) if (stars[i].x === P.x && stars[i].y === P.y) { stars.splice(i, 1); time += 3; score += 50; fx.burst(GX + (P.x + 0.5) * CS, GY + (P.y + 0.5) * CS, '#ffd166', 12, 200, 0.4, 3); fx.text(GX + (P.x + 0.5) * CS, GY + P.y * CS, '+3초', '#ffd166', 18); A.sfx('coin'); }
-        if (P.x === goal.x && P.y === goal.y) { moving = null; var bonus = Math.round(100 * stage + time * 10); score += bonus; fx.burst(GX + (goal.x + 0.5) * CS, GY + (goal.y + 0.5) * CS, '#7dff9b', 40, 360, 0.8, 4); fx.text(W / 2, H / 2, '탈출! +' + bonus, '#7dff9b', 28); newStage(); return; }
-        if (moving.i >= moving.path.length) moving = null;
+        for (var i = stars.length - 1; i >= 0; i--) if (stars[i].x === P.x && stars[i].y === P.y) { stars.splice(i, 1); time += 3; score += 50; fx.burst(GX + (P.x + 0.5) * CS, GY + (P.y + 0.5) * CS, '#ffd166', 12, 200, 0.4, 3); fx.text(GX + (P.x + 0.5) * CS, GY + P.y * CS, '+3초', '#ffd166', 18); A.sfx('coin', 1, A.clamp((P.x + 0.5) / N * 2 - 1, -1, 1)); }
+        if (P.x === goal.x && P.y === goal.y) { moving = null; var bonus = Math.round(100 * stage + time * 10); if (moves <= par && !hinted) { bonus += 100 * stage; fx.text(W / 2, H / 2 + 44, '최단 경로 ' + par + '수!', '#ffd166', 24); A.sfx('gold'); } score += bonus; fx.burst(GX + (goal.x + 0.5) * CS, GY + (goal.y + 0.5) * CS, '#7dff9b', 40, 360, 0.8, 4); fx.text(W / 2, H / 2, '탈출! +' + bonus, '#7dff9b', 28);
+          if (diff === 1 && stage >= DAILY_N) { var best = dailyBest(score); S.gameOver(score, [['오늘의 미로', DAILY_N + '단계 완료'], ['남은 시간', Math.ceil(time) + '초'], ['오늘 최고', best]], { kick: 'CLEAR!', win: true }); return; }
+          newStage(); return; }
+        if (moving.i >= moving.path.length) { moving = null; if (queued) { var qd = queued; queued = null; slide(qd[0], qd[1]); } }
       }
     }
     for (i = trail.length - 1; i >= 0; i--) { trail[i].t -= dt; if (trail[i].t <= 0) trail.splice(i, 1); }
     hud();
   }
-  function render(c) {
-    var o = fx.offset(), t = S.time;
-    c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#0c0a02'; c.fillRect(-10, -10, W + 20, H + 20);
-    if (!cells) build(9);
-    c.fillStyle = 'rgba(255,209,102,.04)'; c.fillRect(GX, GY, N * CS, N * CS);
-    trail.forEach(function (tr) { c.fillStyle = 'rgba(255,209,102,' + tr.t * 0.5 + ')'; c.fillRect(GX + tr.x * CS + CS * 0.3, GY + tr.y * CS + CS * 0.3, CS * 0.4, CS * 0.4); });
-    c.fillStyle = '#7dff9b'; c.globalAlpha = 0.5 + Math.sin(t * 5) * 0.3; c.fillRect(GX + goal.x * CS + 3, GY + goal.y * CS + 3, CS - 6, CS - 6); c.globalAlpha = 1;
-    c.save(); c.globalCompositeOperation = 'lighter'; stars.forEach(function (s) { A.draw(c, A.glowDot('#ffd166', 5), GX + (s.x + 0.5) * CS, GY + (s.y + 0.5) * CS, CS / 40); }); c.restore();
-    c.strokeStyle = '#ffd166'; c.lineWidth = Math.max(2, CS * 0.09); c.lineCap = 'round'; c.beginPath();
+  /* 그림: 고대 신전 배경(횃불 빛), 돌 바닥 타일, 금빛 돌벽, 빛나는 출구 문, 동전, 빛 구슬 */
+  function bgSpr() { var W0 = W, H0 = H; return A.sprite('mzbg' + W + 'x' + H, W, H, function (x) {
+    x.fillStyle = '#100c04'; x.fillRect(0, 0, W, H);
+    for (var r = 0; r < Math.ceil(H / 40); r++) for (var col = 0; col < Math.ceil(W / 80) + 1; col++) { var bw = 80, bh = 40, px = col * bw - (r % 2) * 40, py = r * bh; x.fillStyle = 'rgba(' + (40 + Math.random() * 14) + ',' + (30 + Math.random() * 10) + ',12,1)'; x.fillRect(px + 1, py + 1, bw - 2, bh - 2); x.fillStyle = 'rgba(255,220,150,.05)'; x.fillRect(px + 1, py + 1, bw - 2, 2); }
+    [[30, 140], [W - 30, 140], [30, H - 80], [W - 30, H - 80]].forEach(function (p) { var g = x.createRadialGradient(p[0], p[1], 0, p[0], p[1], 220); g.addColorStop(0, 'rgba(255,160,60,.35)'); g.addColorStop(1, 'rgba(255,160,60,0)'); x.fillStyle = g; x.fillRect(p[0] - 220, p[1] - 220, 440, 440); });
+    var v = x.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 640); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
+  }); }
+  var FLOOR = A.sprite('mzfloor', 64, 64, function (x) {
+    x.fillStyle = '#2a2210'; x.fillRect(0, 0, 64, 64);
+    for (var i = 0; i < 4; i++) { var px = (i % 2) * 32, py = Math.floor(i / 2) * 32; var g = x.createLinearGradient(px, py, px + 32, py + 32); g.addColorStop(0, '#3e3218'); g.addColorStop(1, '#2a2010'); x.fillStyle = g; x.fillRect(px + 1, py + 1, 30, 30); }
+    for (i = 0; i < 30; i++) { x.fillStyle = 'rgba(0,0,0,.18)'; x.fillRect(Math.random() * 64, Math.random() * 64, 2, 2); }
+  });
+  var DOOR = A.sprite('mzdoor', 60, 60, function (x) {
+    x.translate(30, 30); var g = x.createRadialGradient(0, 0, 2, 0, 0, 26); g.addColorStop(0, '#eaffef'); g.addColorStop(0.4, '#7dff9b'); g.addColorStop(1, 'rgba(30,140,60,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 26, 0, 7); x.fill();
+    x.strokeStyle = '#c8ffd6'; x.lineWidth = 2; for (var k = 0; k < 3; k++) { x.beginPath(); x.arc(0, 0, 8 + k * 6, k, k + 4); x.stroke(); }
+  });
+  var COIN = A.sprite('mzcoin', 40, 40, function (x) {
+    x.translate(20, 20); var g = x.createRadialGradient(-5, -5, 1, 0, 0, 14); g.addColorStop(0, '#fff6c8'); g.addColorStop(0.6, '#ffd166'); g.addColorStop(1, '#a06a10');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, 13, 0, 7); x.fill(); x.strokeStyle = 'rgba(120,70,0,.6)'; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, 9.5, 0, 7); x.stroke();
+    x.fillStyle = '#a06a10'; x.font = '900 12px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('★', 0, 1);
+  });
+  var ORB = A.sprite('mzorb', 60, 60, function (x) {
+    x.translate(30, 30); var g = x.createRadialGradient(0, 0, 0, 0, 0, 30); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(0.3, 'rgba(255,230,170,.5)'); g.addColorStop(1, 'rgba(255,200,120,0)'); x.fillStyle = g; x.fillRect(-30, -30, 60, 60);
+    var b = x.createRadialGradient(-4, -4, 1, 0, 0, 12); b.addColorStop(0, '#ffffff'); b.addColorStop(1, '#ffe0a0'); x.fillStyle = b; x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill();
+  });
+  function walls(c) {
+    c.beginPath();
     for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
       var cl = cells[y][x], px = GX + x * CS, py = GY + y * CS;
       if (cl.n) { c.moveTo(px, py); c.lineTo(px + CS, py); } if (cl.w) { c.moveTo(px, py); c.lineTo(px, py + CS); }
       if (y === N - 1 && cl.s) { c.moveTo(px, py + CS); c.lineTo(px + CS, py + CS); } if (x === N - 1 && cl.e) { c.moveTo(px + CS, py); c.lineTo(px + CS, py + CS); }
     }
-    c.stroke();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.drawImage(bgSpr(), -10, -10, W + 20, H + 20);
+    if (!cells) build(9);
+    // 바닥 타일
+    c.save(); c.beginPath(); c.rect(GX, GY, N * CS, N * CS); c.clip();
+    for (var fy = GY; fy < GY + N * CS; fy += 64) for (var fx2 = GX; fx2 < GX + N * CS; fx2 += 64) c.drawImage(FLOOR, fx2, fy, 64, 64);
+    c.restore();
+    trail.forEach(function (tr) { c.fillStyle = 'rgba(255,209,102,' + tr.t * 0.35 + ')'; c.beginPath(); c.arc(GX + (tr.x + 0.5) * CS, GY + (tr.y + 0.5) * CS, CS * 0.18, 0, 7); c.fill(); });
+    c.save(); c.globalAlpha = 0.75 + Math.sin(t * 5) * 0.25; A.draw(c, DOOR, GX + (goal.x + 0.5) * CS, GY + (goal.y + 0.5) * CS, CS / 44, t); c.restore();
+    stars.forEach(function (s) { A.draw(c, COIN, GX + (s.x + 0.5) * CS, GY + (s.y + 0.5) * CS + Math.sin(t * 4 + s.x) * CS * 0.05, CS / 46); });
+    // 돌벽: 그림자 → 몸통 → 위쪽 빛
+    var lw = Math.max(4, CS * 0.2);
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.save(); c.translate(2, 4); c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = lw; walls(c); c.stroke(); c.restore();
+    c.strokeStyle = '#8a6420'; c.lineWidth = lw; walls(c); c.stroke();
+    c.strokeStyle = '#ffd166'; c.lineWidth = Math.max(1.5, lw * 0.35); c.save(); c.translate(-lw * 0.12, -lw * 0.18); walls(c); c.stroke(); c.restore();
+    c.lineCap = 'butt';
     var mx = P.x, my = P.y;
     if (moving && moving.path[moving.i]) { mx = A.lerp(P.x, moving.path[moving.i][0], moving.t); my = A.lerp(P.y, moving.path[moving.i][1], moving.t); }
-    c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; c.fillStyle = '#fff'; c.beginPath(); c.arc(GX + (mx + 0.5) * CS, GY + (my + 0.5) * CS, CS * 0.32, 0, 7); c.fill(); c.restore();
+    A.draw(c, ORB, GX + (mx + 0.5) * CS, GY + (my + 0.5) * CS, CS / 34);
+    if (hint && S.state === 'playing' && !moving) { var hx = GX + (P.x + 0.5 + hint[0] * 0.95) * CS, hy = GY + (P.y + 0.5 + hint[1] * 0.95) * CS, ha = Math.atan2(hint[1], hint[0]), hs = CS * (0.32 + Math.sin(t * 8) * 0.06);
+      c.save(); c.translate(hx, hy); c.rotate(ha); c.fillStyle = '#7dff9b'; c.globalAlpha = 0.9; c.beginPath(); c.moveTo(hs, 0); c.lineTo(-hs * 0.7, -hs * 0.8); c.lineTo(-hs * 0.7, hs * 0.8); c.closePath(); c.fill(); c.restore(); }
+    if (diff === 1 && S.state !== 'over' && !land) { c.fillStyle = '#ffd166'; c.font = '700 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('오늘의 미로 ' + String(today()).slice(4, 6) + '/' + String(today()).slice(6) + ' · ' + Math.max(1, stage || 1) + ' / ' + DAILY_N, W / 2, land ? GY / 2 + 2 : GY - 22); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+    if (cells && tutOn && S.state === 'playing') tutDraw(c, land ? Math.max(40, GY + N * CS - 40) : GY + N * CS + 40, '스와이프하면 그 방향으로 미끄러져요', '방향키·WASD로 미끄러져요');
   }
-  var last = '';
-  function hud() { var k = score + '|' + stage + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 6 ? '#ff4d6d' : ''; }
+  var last = '', warnN = 0;
+  function hud() { var k = score + '|' + stage + '|' + Math.ceil(time) + '|' + moves + '|' + diff; if (k === last) return; last = k; document.getElementById('hMult').textContent = (diff === 1 ? '오늘 ' + stage + '/' + DAILY_N + ' · ' : '') + moves + ' / 최단 ' + par + '수'; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = stage; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 6 ? '#ff4d6d' : ''; }
   var stage_ = document.getElementById('stage'), sw = null;
   stage_.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; sw = { x: e.clientX, y: e.clientY }; });
-  stage_.addEventListener('pointermove', function (e) { if (!sw) return; var dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; if (Math.abs(dx) > Math.abs(dy)) slide(dx > 0 ? 1 : -1, 0); else slide(0, dy > 0 ? 1 : -1); sw = null; });
+  stage_.addEventListener('pointermove', function (e) { if (!sw) return; var dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; if (Math.abs(dx) > Math.abs(dy)) slide(dx > 0 ? 1 : -1, 0); else slide(0, dy > 0 ? 1 : -1); sw = { x: e.clientX, y: e.clientY }; }); // 손을 떼지 않고 이어서 스와이프 가능
   stage_.addEventListener('pointerup', function () { sw = null; });
+  // 오늘의 미로 하루 최고 기록 (neowa_maze_daily_YYYYMMDD)
+  function dailyBest(sc) { var k = 'neowa_maze_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); return A.fmt(sc) + ' 갱신!'; } return A.fmt(b); }
+  // 시작 화면 모드 버튼
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); if (S && S.state !== 'playing') { cells = null; } }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_maze_diff', diff); A.sfx('click'); paintDiff(); }); }); paintDiff();
   var MAP = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
-  var S = new A.Shell({ id: 'maze', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
-    keydown: function (e) { var m = MAP[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (m) slide(m[0], m[1]); } });
+  var S = new A.Shell({ id: 'maze', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { var m = MAP[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (m && !e.repeat) slide(m[0], m[1]); } });
+  // 가로 화면: 점수판을 오른쪽 패널로 옮김 (게임판 위 점수판은 가로에서 숨김)
+  (function () {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !S.panelSlot) return; hudEl.setAttribute('data-land-hide', '');
+    var lbs = hudEl.querySelectorAll('.h-lb'), ids = ['hA', 'hB', 'hC'], html = '<div class="g-card gp-stats">';
+    for (var i = 0; i < 3; i++) html += '<div><span>' + lbs[i].textContent + '</span><b id="p' + ids[i] + '"></b></div>';
+    S.panelSlot.innerHTML = html + '</div><div class="g-card" id="phMult" style="font-weight:800;font-size:17px;color:var(--gold);text-align:center"></div>' + '';
+    ids.concat('hMult').forEach(function (id) {
+      var src = document.getElementById(id), dst = document.getElementById('p' + id); if (!src || !dst) return;
+      function cp() { dst.textContent = src.textContent; dst.style.color = src.style.color; if (id === 'hMult') dst.style.display = src.textContent ? '' : 'none'; }
+      cp(); new MutationObserver(cp).observe(src, { childList: true, characterData: true, subtree: true, attributes: true });
+    });
+  })();
 })();

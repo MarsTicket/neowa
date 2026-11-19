@@ -9,87 +9,16 @@
   A.getInt = function (k) { return parseInt(A.get(k, '0'), 10) || 0; };
   A.fmt = function (n) { return Math.floor(n).toLocaleString('ko-KR'); };
 
-  /* ---------- 사운드 (파일 없이 즉석 합성) ---------- */
-  var ac = null, master = null, noiseBuf = null;
+  /* ---------- 사운드 ----------
+     효과음·배경음악 엔진은 assets/arcade/sound.js 에 있고, 이 파일 맨 아래에서 불러옵니다.
+     불러오기 전(또는 실패했을 때)에도 게임이 멈추지 않도록 빈 함수를 먼저 둡니다. */
   var muted = A.get('neowa_mute', '0') === '1';
-  function audio() {
-    if (!ac) {
-      var C = window.AudioContext || window.webkitAudioContext;
-      if (!C) return null;
-      ac = new C();
-      master = ac.createGain(); master.gain.value = 0.32;
-      var comp = ac.createDynamicsCompressor();
-      master.connect(comp); comp.connect(ac.destination);
-    }
-    if (ac.state === 'suspended') ac.resume();
-    return ac;
-  }
-  function noise(c) {
-    if (noiseBuf) return noiseBuf;
-    noiseBuf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate);
-    var d = noiseBuf.getChannelData(0);
-    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    return noiseBuf;
-  }
-  function tone(o, p) {
-    var c = audio(); if (!c) return;
-    var t = c.currentTime + (o.at || 0), d = o.d || 0.1, v = o.v || 0.2;
-    var g = c.createGain(), src;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(v, t + 0.006);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    if (o.n) {
-      src = c.createBufferSource(); src.buffer = noise(c);
-      var f = c.createBiquadFilter(); f.type = 'lowpass';
-      f.frequency.setValueAtTime(o.f, t);
-      if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + d);
-      src.connect(f); f.connect(g);
-    } else {
-      src = c.createOscillator(); src.type = o.w || 'square';
-      src.frequency.setValueAtTime(o.f * p, t);
-      if (o.f2) src.frequency.exponentialRampToValueAtTime(o.f2 * p, t + d);
-      src.connect(g);
-    }
-    g.connect(master); src.start(t); src.stop(t + d + 0.03);
-  }
-  var SFX = {
-    shoot: [{ w: 'square', f: 1400, f2: 500, d: 0.05, v: 0.035 }],
-    hit: [{ w: 'square', f: 420, f2: 160, d: 0.06, v: 0.08 }],
-    boom: [{ n: 1, f: 2400, f2: 90, d: 0.32, v: 0.32 }, { w: 'sine', f: 150, f2: 40, d: 0.28, v: 0.3 }],
-    bigboom: [{ n: 1, f: 3000, f2: 60, d: 0.9, v: 0.45 }, { w: 'sine', f: 110, f2: 28, d: 0.8, v: 0.45 }, { w: 'sawtooth', f: 220, f2: 40, d: 0.5, v: 0.12, at: 0.05 }],
-    hurt: [{ w: 'sawtooth', f: 300, f2: 60, d: 0.35, v: 0.22 }, { n: 1, f: 1200, f2: 100, d: 0.3, v: 0.25 }],
-    power: [{ w: 'triangle', f: 523, f2: 1046, d: 0.12, v: 0.22 }, { w: 'triangle', f: 784, f2: 1568, d: 0.16, v: 0.2, at: 0.08 }],
-    coin: [{ w: 'square', f: 988, d: 0.06, v: 0.09 }, { w: 'square', f: 1319, d: 0.14, v: 0.09, at: 0.06 }],
-    eat: [{ w: 'triangle', f: 660, f2: 990, d: 0.08, v: 0.25 }],
-    gold: [{ w: 'triangle', f: 784, d: 0.07, v: 0.2 }, { w: 'triangle', f: 988, d: 0.07, v: 0.2, at: 0.07 }, { w: 'triangle', f: 1319, d: 0.16, v: 0.2, at: 0.14 }],
-    bounce: [{ w: 'sine', f: 420, f2: 380, d: 0.07, v: 0.22 }],
-    wall: [{ w: 'sine', f: 260, f2: 240, d: 0.05, v: 0.12 }],
-    brick: [{ w: 'square', f: 660, f2: 640, d: 0.07, v: 0.1 }],
-    steel: [{ w: 'triangle', f: 1800, f2: 1700, d: 0.08, v: 0.12 }],
-    turn: [{ w: 'sine', f: 300, d: 0.03, v: 0.06 }],
-    start: [{ w: 'square', f: 523, d: 0.08, v: 0.12 }, { w: 'square', f: 659, d: 0.08, v: 0.12, at: 0.08 }, { w: 'square', f: 784, d: 0.08, v: 0.12, at: 0.16 }, { w: 'square', f: 1046, d: 0.2, v: 0.12, at: 0.24 }],
-    level: [{ w: 'triangle', f: 523, d: 0.1, v: 0.2 }, { w: 'triangle', f: 659, d: 0.1, v: 0.2, at: 0.1 }, { w: 'triangle', f: 784, d: 0.1, v: 0.2, at: 0.2 }, { w: 'triangle', f: 1046, d: 0.3, v: 0.22, at: 0.3 }],
-    over: [{ w: 'square', f: 392, d: 0.16, v: 0.12 }, { w: 'square', f: 330, d: 0.16, v: 0.12, at: 0.16 }, { w: 'square', f: 262, d: 0.16, v: 0.12, at: 0.32 }, { w: 'sawtooth', f: 196, f2: 98, d: 0.5, v: 0.12, at: 0.48 }],
-    record: [{ w: 'square', f: 784, d: 0.08, v: 0.1 }, { w: 'square', f: 988, d: 0.08, v: 0.1, at: 0.09 }, { w: 'square', f: 1175, d: 0.08, v: 0.1, at: 0.18 }, { w: 'square', f: 1568, d: 0.3, v: 0.1, at: 0.27 }],
-    click: [{ w: 'sine', f: 880, d: 0.04, v: 0.1 }],
-    tick: [{ w: 'square', f: 1200, d: 0.02, v: 0.03 }]
-  };
-  var lastPlay = {};
-  A.sfx = function (name, pitch) {
-    if (muted) return;
-    var now = performance.now();
-    if (lastPlay[name] && now - lastPlay[name] < 30) return; // 같은 소리 겹침 방지
-    lastPlay[name] = now;
-    var list = SFX[name]; if (!list) return;
-    try { for (var i = 0; i < list.length; i++) tone(list[i], pitch || 1); } catch (e) {}
-  };
+  A.sfx = function () {};
+  A.music = { play: function () {}, stop: function () {}, paused: function () {}, intensity: function () {}, tempo: function () {}, style: function () {}, mood: function () {}, isOn: function () { return false; } };
   A.isMuted = function () { return muted; };
-  A.setMuted = function (m) {
-    muted = !!m; A.set('neowa_mute', muted ? '1' : '0');
-    document.body.classList.toggle('muted', muted);
-  };
-  A.unlockAudio = function () { if (!muted) audio(); };
-  A.vibrate = function (p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
+  A.setMuted = function (m) { muted = !!m; A.set('neowa_mute', muted ? '1' : '0'); document.body.classList.toggle('muted', muted); };
+  A.unlockAudio = function () {};
+  A.vibrate = function (p) { try { if (navigator.vibrate && A.get('neowa_haptic', '1') === '1') navigator.vibrate(p); } catch (e) {} };
 
   /* ---------- 수학 ---------- */
   A.rand = function (a, b) { return a + Math.random() * (b - a); };
@@ -226,7 +155,8 @@
   /* ---------- 게임 틀: 상태(대기/플레이/일시정지/종료), 무대 크기, 키·버튼 ---------- */
   A.Shell = function (cfg) {
     var S = this;
-    S.cfg = cfg; S.W = cfg.W; S.H = cfg.H; S.id = cfg.id;
+    A.cur = S; S.cfg = cfg; S.W = cfg.W; S.H = cfg.H; S.id = cfg.id;
+    A.shell = S; // 그래픽 보강(gfx.js)이 지금 게임 틀을 찾을 때 씀
     S.state = 'ready'; S.time = 0;
     S.bestKey = 'neowa_hub_' + cfg.id + '_high';
     S.best = A.getInt(S.bestKey);
@@ -269,6 +199,7 @@
     panel.className = 'g-panel'; panel.id = 'panel';
     panel.innerHTML = '<div class="gp-slot" id="panelSlot"></div><div class="gp-padbox"></div>' +
       '<button class="gp-btn" data-act="pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>일시정지</button>' +
+      '<p class="gp-tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 9a9 9 0 0 1 3-5M21 15a9 9 0 0 1-3 5"/></svg><span>휴대폰을 세로로 돌리면 게임 화면이 더 커져요.</span></p>' +
       '<div class="gp-cards"></div>';
     var cardsBox = panel.querySelector('.gp-cards'), padBox = panel.querySelector('.gp-padbox');
     document.querySelectorAll('.g-side .g-card').forEach(function (c) { cardsBox.appendChild(c.cloneNode(true)); });
@@ -308,10 +239,12 @@
         if (wide) aw -= 2 * (220 + 28);
       }
       S.wrap.classList.toggle('wide', wide);
+      // 휴대폰 가로 + 세로형 게임: 세로로 돌리라는 안내
+      body.classList.toggle('rot-tip', land && body.classList.contains('touch') && window.innerHeight < 500 && ar < 0.8);
       var w = Math.min(aw, ah * ar), h = w / ar;
       w = Math.floor(w); h = Math.floor(h);
       S.stage.style.setProperty('--sw', w + 'px'); S.stage.style.setProperty('--sh', h + 'px');
-      var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      var dpr = Math.min(window.devicePixelRatio || 1, A.dprCap || 2.5); // 저사양 기기는 gfx.js가 낮춤
       S.canvas.width = Math.round(w * dpr); S.canvas.height = Math.round(h * dpr);
       S.scale = (w * dpr) / S.W; S.cssScale = w / S.W;
       if (cfg.onResize) cfg.onResize(S);
@@ -319,6 +252,22 @@
     window.addEventListener('resize', S.fit);
     window.addEventListener('orientationchange', function () { setTimeout(S.fit, 200); });
     S.fit();
+    A.current = S;
+    // 길게 누르면 뜨는 메뉴(이미지 저장 등) 막기: 게임판을 오래 누르는 조작이 많음
+    S.stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    // 게임 중 '뒤로'를 실수로 누르면 바로 나가지 않고 일시정지 (일시정지 화면에 '아케이드 홈'이 있음)
+    document.querySelectorAll('.g-back').forEach(function (a) {
+      a.addEventListener('click', function (e) { if (S.state === 'playing') { e.preventDefault(); S.pause(); } });
+    });
+    // 종료 화면에 '다른 게임 고르기' 링크 (없을 때만)
+    (function () {
+      var col = document.querySelector('#ovOver .ov-col'), back = document.querySelector('.g-back');
+      if (!col || col.querySelector('.ov-home') || !back) return;
+      var h = document.createElement('a');
+      h.className = 'ov-home'; h.href = back.getAttribute('href') || '../';
+      h.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>다른 게임 고르기';
+      col.appendChild(h);
+    })();
 
     function setState(st) { S.state = st; body.setAttribute('data-state', st); }
     S.setState = setState;
@@ -439,14 +388,19 @@
 
     // 루프
     var last = performance.now();
+    // 짧은 슬로모션(타격감): S.slow(0.3, 0.1) → 0.1초 동안 30% 속도
+    var slowS = 1, slowT = 0;
+    S.slow = function (s, t) { if (S.state === 'playing') { slowS = s; slowT = Math.max(slowT, t); } };
     function frame(now) {
       var dt = Math.min(0.033, (now - last) / 1000); last = now;
+      if (slowT > 0) { slowT -= dt; dt *= slowS; }
       S.time += dt;
       if (S.state === 'playing') cfg.update(dt);
       else if (cfg.idle) cfg.idle(dt);
       var c = S.ctx;
       c.setTransform(S.scale, 0, 0, S.scale, 0, 0);
       cfg.render(c, dt);
+      if (A.post) A.post(c, S, dt); // 화면 후처리(빛 번짐 등, gfx.js)
       requestAnimationFrame(frame);
     }
     if (cfg.init) cfg.init();
@@ -526,6 +480,18 @@
       load(this.nick());
     }
   };
+  // 사운드 엔진 읽기
+  (function () {
+    var s = document.createElement('script');
+    s.src = BASE + 'sound.js?v=1';
+    document.head.appendChild(s);
+  })();
+  // 그래픽 보강(파티클·빛 번짐·화면 연출) 따로 불러오기. 없어도 게임은 그대로 돌아감
+  (function () {
+    var s = document.createElement('script');
+    s.src = BASE + 'gfx.js?v=1';
+    document.head.appendChild(s);
+  })();
   // 설정 파일 읽기
   (function () {
     var s = document.createElement('script');
@@ -536,4 +502,16 @@
     };
     document.head.appendChild(s);
   })();
+})();
+
+/* 홈 화면에 설치(PWA) + 한 번 열어 본 게임은 오프라인에서도 열리게 (sw.js) */
+(function () {
+  try {
+    if (!document.querySelector('link[rel="manifest"]')) {
+      var l = document.createElement('link'); l.rel = 'manifest'; l.href = '/manifest.webmanifest'; document.head.appendChild(l);
+    }
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+    }
+  } catch (e) {}
 })();

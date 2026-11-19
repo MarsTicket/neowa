@@ -36,15 +36,18 @@
     <aside class="g-side">
       <div class="g-card"><h3>CONTROLS</h3>
         <div class="g-keys">
-          <div><kbd>탭</kbd> 클릭으로 다른 색 고르기</div>
+          <div class="k-only"><kbd>↑↓←→</kbd> 칸 고르기 <kbd>Space</kbd> 선택</div>
+          <div><kbd>탭</kbd> 다른 색 타일</div>
           <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
         </div>
       </div>
       <div class="g-card"><h3>RULES</h3>
         <div class="g-keys">
-          <div>틀리면 -3초</div>
+          <div>틀리면 -3초, 맞히면 +1초</div>
+          <div>2초 안에 찾으면 1.5배</div>
           <div>단계마다 칸 증가</div>
           <div>색 차이가 점점 작아짐</div>
+          <div>오늘의 도전: 오늘은 모두 같은 색 문제</div>
         </div>
       </div>
     </aside>
@@ -61,12 +64,12 @@
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 49</p>
         <h1 class="ov-title">다른 색 찾기</h1>
-        <p class="ov-desc">여러 타일 중 하나만 색이 조금 다릅니다. 찾아서 탭하세요. 시간 안에 못 찾거나 틀리면 시간이 줄어요.</p>
+        <p class="ov-desc">여러 타일 중 하나만 색이 조금 다릅니다. 찾아서 탭하세요. 틀리면 3초가 줄어요.</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>다른 색 탭</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>60초</span>
         </div>
-        
+        <div class="ov-diff" data-nostart role="group" aria-label="난이도"><button type="button" data-diff="0">기본</button><button type="button" data-diff="1">오늘의 도전</button></div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>시작하기</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
@@ -113,39 +116,87 @@
 <script>
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960;
+  var A = Arcade, W = 540, H = 960, land = false;
   var fx = new A.FX();
-  var level, n, odd, base, oddC, time, score, endT, shakeI = -1, shakeT = 0;
+  var level, n, odd, base, oddC, time, score, endT, shakeI = -1, shakeT = 0, qT = 0, cur = { x: 0, y: 0 }, kbd = false, streak = 0, fastN = 0, bestStreak = 0, diff = A.get('neowa_oddcolor_diff', '0') === '1' ? 1 : 0;
+  // 오늘의 도전: 로컬 날짜(YYYYMMDD)로 시드를 고정해 오늘은 누구나 같은 문제. rnd()는 평소엔 Math.random
+  function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  var rnd = Math.random;
+  function seedRnd(on) { if (!on) { rnd = Math.random; return; } var a = (Math.imul(today(), 0x9E3779B1) ^ 0x5bd1e995) >>> 0;
+    rnd = function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // mulberry32
+  function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
+  function dailyBest(sc) { var k = 'neowa_oddcolor_daily_' + today(), b = A.getInt(k); if (sc > b) { A.set(k, sc); b = sc; } return b; } // 오늘 최고 점수
+
   function hsl(h, s, l) { return 'hsl(' + h + ',' + s + '%,' + l + '%)'; }
   function next() {
-    n = Math.min(9, 2 + Math.floor((level + 1) / 2)); odd = A.irand(0, n * n - 1);
-    var h = A.irand(0, 359), s = A.irand(55, 85), l = A.irand(40, 62), d = Math.max(3, 24 - level * 1.1);
-    base = hsl(h, s, l); oddC = hsl(h, s, l + (l > 52 ? -d : d));
+    n = Math.min(9, 2 + Math.floor((level + 1) / 2)); odd = ri(0, n * n - 1);
+    var h = ri(0, 359), s = ri(55, 85), l = ri(40, 62), d = Math.max(3, 24 - level * 1.1);
+    base = hsl(h, s, l); oddC = hsl(h, s, l + (l > 52 ? -d : d)); qT = 0;
+    cur.x = Math.min(cur.x, n - 1); cur.y = Math.min(cur.y, n - 1);
   }
-  function reset() { level = 1; time = 60; score = 0; endT = 0; next(); fx.clear(); hud(); }
-  function geo() { var size = 480, gap = n > 6 ? 4 : 8, cs = (size - gap * (n - 1)) / n; return { x0: (W - size) / 2, y0: 200, cs: cs, gap: gap }; }
+  function reset() { level = 1; time = 60; score = 0; endT = 0; streak = 0; fastN = 0; bestStreak = 0; seedRnd(diff === 1); next(); document.getElementById('hMult') && (document.getElementById('hMult').textContent = diff === 1 ? '오늘의 도전' : ''); fx.clear(); hud(); }
+  function geo() { var size = land ? 600 : 480, gap = n > 6 ? 4 : 8, cs = (size - gap * (n - 1)) / n; return { x0: (W - size) / 2, y0: land ? 70 : 200, cs: cs, gap: gap }; } // 가로 화면은 720x720 정사각형 판
   function tap(i) {
     if (S.state !== 'playing' || endT > 0) return;
-    if (i === odd) { var pts = 10 * level; score += pts; var g = geo(); fx.burst(g.x0 + (i % n + 0.5) * (g.cs + g.gap), g.y0 + (Math.floor(i / n) + 0.5) * (g.cs + g.gap), '#fff', 16, 260, 0.4, 3); A.sfx('coin', 1 + Math.min(level, 20) * 0.03); level++; time = Math.min(99, time + 1); next(); }
-    else { time -= 3; shakeI = i; shakeT = 0.3; A.sfx('hurt', 1.4); fx.flashIt('#ff2244', 0.2); }
+    if (i === odd) { var fast = qT < 2, pts = 10 * level + (fast ? 5 * level : 0); score += pts; streak = fast ? streak + 1 : 0; if (fast) fastN++; bestStreak = Math.max(bestStreak, streak); // 2초 안에 찾으면 1.5배
+      if (fast) fx.text(W / 2, 180, '빠름! +' + pts, '#ffd166', 22); var g = geo(); fx.burst(g.x0 + (i % n + 0.5) * (g.cs + g.gap), g.y0 + (Math.floor(i / n) + 0.5) * (g.cs + g.gap), '#fff', 16, 260, 0.4, 3); A.sfx('right', 1 + Math.min(level, 20) * 0.03); level++; time = Math.min(99, time + 1); next(); }
+    else { time -= 3; streak = 0; shakeI = i; shakeT = 0.3; A.sfx('wrong'); fx.flashIt('#ff2244', 0.2); }
     hud();
   }
-  function update(dt) { fx.update(dt); if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)]], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time <= 0) { time = 0; endT = 1; A.sfx('over'); } hud(); }
+  function update(dt) { fx.update(dt); qT += dt; if (shakeT > 0) shakeT -= dt; if (endT > 0) { endT -= dt; if (endT <= 0) S.gameOver(score, [['도달 단계', String(level)], ['빠른 찾기', fastN + '번 (최고 ' + bestStreak + '연속)'], diff === 1 ? ['오늘 최고', A.fmt(dailyBest(score))] : ['마지막 색 차이', Math.round(Math.max(3, 24 - level * 1.1)) + '%']], { kick: 'TIME UP', win: true }); return; } time -= dt; if (time > 0 && time <= 5 && Math.ceil(time) < Math.ceil(time + dt)) A.sfx('warn'); if (time <= 0) { time = 0; endT = 1; } hud(); }
+  /* 그림: 모든 칸에 똑같은 유리 광택을 덧씌움(다른 색 찾기의 공정함은 그대로), 갤러리 배경 */
+  function glossSpr(cs) {
+    cs = Math.round(cs);
+    return A.sprite('odg' + cs, cs, cs, function (x) {
+      var r = Math.min(18, cs * 0.2), g = x.createLinearGradient(0, 0, 0, cs); g.addColorStop(0, 'rgba(255,255,255,.28)'); g.addColorStop(0.45, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.18)');
+      x.fillStyle = g; A.rr(x, 0, 0, cs, cs, r); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 1.5; A.rr(x, 1, 1, cs - 2, cs - 2, r); x.stroke();
+    });
+  }
+  // 화면 크기(세로/가로)별로 따로 그림
+  function obgSpr() { return A.sprite('odbg' + W + 'x' + H, W, H, function (x) {
+    var g = x.createRadialGradient(W / 2, 440, 50, W / 2, 440, 620); g.addColorStop(0, '#1a2418'); g.addColorStop(1, '#050805'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  }); }
   function render(c) {
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
-    c.fillStyle = '#0a0f0a'; c.fillRect(-10, -10, W + 20, H + 20);
+    c.drawImage(obgSpr(), -10, -10, W + 20, H + 20);
     if (!base) { level = 3; next(); }
-    var g = geo();
+    var g = geo(), GL = glossSpr(g.cs);
+    c.fillStyle = 'rgba(0,0,0,.4)'; A.rr(c, g.x0 - 14, g.y0 - 10, 508, 508, 22); c.fill();
+    c.fillStyle = '#141a14'; A.rr(c, g.x0 - 14, g.y0 - 14, 508, 508, 22); c.fill();
     for (var i = 0; i < n * n; i++) { var x = g.x0 + (i % n) * (g.cs + g.gap), y = g.y0 + Math.floor(i / n) * (g.cs + g.gap), dx = i === shakeI && shakeT > 0 ? Math.sin(t * 60) * 5 : 0;
-      c.fillStyle = i === odd ? oddC : base; if (endT > 0 && i === odd) { c.save(); c.shadowColor = '#fff'; c.shadowBlur = 20; } A.rr(c, x + dx, y, g.cs, g.cs, Math.min(18, g.cs * 0.2)); c.fill(); if (endT > 0 && i === odd) c.restore(); }
-    c.fillStyle = 'rgba(255,255,255,.5)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('하나만 다른 색을 찾아 탭하세요', W / 2, 740);
+      c.fillStyle = i === odd ? oddC : base; A.rr(c, x + dx, y, g.cs, g.cs, Math.min(18, g.cs * 0.2)); c.fill();
+      c.drawImage(GL, x + dx, y, g.cs, g.cs);
+      if (endT > 0 && i === odd) { c.strokeStyle = '#fff'; c.lineWidth = 4; A.rr(c, x - 3, y - 3, g.cs + 6, g.cs + 6, Math.min(20, g.cs * 0.22)); c.stroke(); } }
+    if (kbd && S.state === 'playing') { c.strokeStyle = '#fff'; c.lineWidth = 3; A.rr(c, g.x0 + cur.x * (g.cs + g.gap) - 3, g.y0 + cur.y * (g.cs + g.gap) - 3, g.cs + 6, g.cs + 6, Math.min(20, g.cs * 0.22)); c.stroke(); }
+    c.fillStyle = 'rgba(255,255,255,.5)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.fillText('하나만 다른 색을 찾아 탭하세요 · 2초 안에 찾으면 보너스', W / 2, land ? 700 : 740);
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
   function hud() { var k = score + '|' + level + '|' + Math.ceil(time); if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = level; var tt = document.getElementById('hC'); tt.textContent = Math.ceil(time); tt.style.color = time < 10 ? '#ff4d6d' : ''; }
-  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), g = geo(), x = Math.floor((p.x - g.x0) / (g.cs + g.gap)), y = Math.floor((p.y - g.y0) / (g.cs + g.gap)); if (x >= 0 && y >= 0 && x < n && y < n) tap(y * n + x); });
-  var S = new A.Shell({ id: 'oddcolor', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render });
+  document.getElementById('stage').addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), g = geo(), x = Math.floor((p.x - g.x0) / (g.cs + g.gap)), y = Math.floor((p.y - g.y0) / (g.cs + g.gap)); if (x >= 0 && y >= 0 && x < n && y < n) { kbd = false; tap(y * n + x); } });
+  // 모드 버튼: 0 = 기본, 1 = 오늘의 도전
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function pd() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_oddcolor_diff', diff); A.sfx('click'); pd(); }); }); pd();
+  var S = new A.Shell({ id: 'oddcolor', W: W, H: H, land: [720, 720], onResize: function (sh) { land = !!sh.land; W = sh.W; H = sh.H; }, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+    keydown: function (e) { var k = e.key.length === 1 ? e.key.toLowerCase() : e.key; kbd = true;
+      if (k === 'ArrowLeft' || k === 'a') cur.x = (cur.x + n - 1) % n; if (k === 'ArrowRight' || k === 'd') cur.x = (cur.x + 1) % n;
+      if (k === 'ArrowUp' || k === 'w') cur.y = (cur.y + n - 1) % n; if (k === 'ArrowDown' || k === 's') cur.y = (cur.y + 1) % n;
+      if ((k === ' ' || k === 'Enter') && !e.repeat) tap(cur.y * n + cur.x); } });
+  // 가로 화면: 게임판 위 점수판을 숨기고 같은 내용을 오른쪽 패널 점수판에 보여 줌 (extra = 패널에 더 넣을 HTML)
+  function landStats(sh, extra) {
+    var hudEl = document.querySelector('.g-hud'); if (!hudEl || !sh.panelSlot) return;
+    hudEl.setAttribute('data-land-hide', '');
+    var ids = ['hA', 'hB', 'hC'];
+    sh.panelSlot.innerHTML = '<div class="g-card gp-stats">' + ids.map(function (id) { return '<div><span id="p' + id + 'L"></span><b id="p' + id + '"></b>' + (id === 'hA' ? '<em id="phM" style="font-style:normal;font-size:12px;font-weight:700;color:#ffd166"></em>' : '') + '</div>'; }).join('') + '</div>' + (extra || '');
+    function sync() { var m = document.getElementById('hMult'); document.getElementById('phM').textContent = m ? m.textContent : '';
+      ids.forEach(function (id) { var v = document.getElementById(id), lb = v && v.parentNode.querySelector('.h-lb');
+        document.getElementById('p' + id).textContent = v ? v.textContent : ''; document.getElementById('p' + id + 'L').textContent = lb ? lb.textContent : ''; }); }
+    new MutationObserver(sync).observe(hudEl, { subtree: true, childList: true, characterData: true }); sync();
+  }
+  landStats(S);
 })();
 
 </script>

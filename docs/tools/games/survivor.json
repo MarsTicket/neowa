@@ -27,8 +27,8 @@
  ],
  "rules": [
   "체력 0이면 끝",
-  "<kbd style=\"color:#c3ff5e\">◆</kbd> 보석 = 경험치",
-  "5분 버티면 보스 등장"
+  "<kbd style=\"color:#c3ff5e\">◆</kbd> 보석 = 경험치 · <kbd style=\"color:#ff4d6d\">♥</kbd> 체력 +1",
+  "2분 30초마다 보스 등장"
  ],
  "hud": [
   [

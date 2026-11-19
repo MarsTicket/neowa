@@ -2,6 +2,10 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, TOP = 90, BOT = 930, GW = 180, MR = 38, PR = 24;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/hockey.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('hockey', function () { return { me: me, cpu: cpu, puck: puck, sMe: sMe, sCpu: sCpu, duo: duo() }; }, function (h) { G3 = h; });
   // 둘이서 모드: 아래 파랑 = P1, 위 빨강 = P2 (화면 절반씩 손가락으로, 키보드는 P1 방향키 / P2 WASD)
   var duo = A.duo('hockey', { solo: ['SCORE', 'ME : CPU', 'ROUND'], duo: ['P1 : P2 승', 'P1 : P2', '판'] }, function () { if (S) hud(); }), tally = [0, 0], duoWin = 0, tTop = null;
   var me, cpu, puck, sMe, sCpu, round, score, pauseT, dyingT, target = null, keys = {}, lvl, stuckT = 0;
@@ -13,7 +17,7 @@
     if (d < MR + PR && d > 0) {
       var nx = dx / d, ny = dy / d; puck.x = m.x + nx * (MR + PR); puck.y = m.y + ny * (MR + PR);
       var rv = (puck.vx - m.vx) * nx + (puck.vy - m.vy) * ny;
-      if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('bounce', pr ? 1.2 : 0.9); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
+      if (rv < 0) { puck.vx -= 1.9 * rv * nx; puck.vy -= 1.9 * rv * ny; A.sfx('puck', (pr ? 1.1 : 0.9) + Math.min(Math.hypot(puck.vx, puck.vy), 1500) / 1500 * 0.5, A.clamp(puck.x / W * 2 - 1, -1, 1)); fx.burst(puck.x - nx * PR, puck.y - ny * PR, pr ? '#5ee7ff' : '#ff4d6d', 6, 160, 0.25, 2.2); }
       var sp = Math.hypot(puck.vx, puck.vy); if (sp > 1500) { puck.vx *= 1500 / sp; puck.vy *= 1500 / sp; }
     }
   }
@@ -25,7 +29,7 @@
     var inGoal = Math.abs(puck.x - W / 2) < GW / 2;
     if (!inGoal && puck.y < TOP + PR) { puck.y = TOP + PR; puck.vy = Math.abs(puck.vy) * 0.92; hit = true; }
     if (!inGoal && puck.y > BOT - PR) { puck.y = BOT - PR; puck.vy = -Math.abs(puck.vy) * 0.92; hit = true; }
-    if (hit && sound) A.sfx('wall');
+    if (hit && sound) A.sfx('wall', 1, A.clamp(puck.x / W * 2 - 1, -1, 1));
     return hit;
   }
   // 말렛이 퍽을 벽(구석)으로 밀어붙이면 퍽은 벽 안에 두고 말렛을 밀어낸다
@@ -39,11 +43,11 @@
     if (duo()) { // 둘이서: mine = P1(아래)이 넣은 골
       var col = mine ? '#5ee7ff' : '#ff4d6d'; if (mine) sMe++; else sCpu++;
       fx.text(W / 2, mine ? TOP + 80 : BOT - 80, (mine ? 'P1' : 'P2') + ' GOAL!', col, 32); fx.burst(W / 2, mine ? TOP : BOT, col, 40, 400, 0.8, 4); A.sfx('gold'); fx.shake(5, 0.2); A.vibrate(80);
-      if (sMe >= 7 || sCpu >= 7) { duoWin = sMe >= 7 ? 1 : 2; tally[duoWin - 1]++; dyingT = 1.2; A.sfx('level'); } else resetPuck(!mine);
+      if (sMe >= 7 || sCpu >= 7) { duoWin = sMe >= 7 ? 1 : 2; tally[duoWin - 1]++; dyingT = 1.2; A.sfx('win'); } else resetPuck(!mine);
       hud(); return;
     }
     if (mine) { sMe++; score += 100 * round; fx.text(W / 2, TOP + 80, 'GOAL!', '#5ee7ff', 34); A.sfx('gold'); fx.burst(W / 2, TOP, '#5ee7ff', 40, 400, 0.8, 4); }
-    else { sCpu++; fx.text(W / 2, BOT - 80, '실점', '#ff4d6d', 30); A.sfx('hurt'); fx.shake(8, 0.3); A.vibrate(120); }
+    else { sCpu++; fx.text(W / 2, BOT - 80, '실점', '#ff4d6d', 30); A.sfx('hurt'); fx.shake(8, 0.3); A.vibrate(120); if (sCpu === 6) A.sfx('warn', 1.2); }
     if (sMe >= 7) { score += 500 * round; round++; S.banner('ROUND ' + round, '더 강한 상대'); A.sfx('level'); newRound(); }
     else if (sCpu >= 7) { dyingT = 1; }
     else resetPuck(!mine);
@@ -58,7 +62,7 @@
   function update(dt) {
     fx.update(dt);
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0 && duo()) S.gameOver(0, [['P1 승', String(tally[0])], ['P2 승', String(tally[1])], ['점수', sMe + ' : ' + sCpu]], { title: 'P' + duoWin + ' 승리!', kick: '2인 대결', win: true, noRecord: true }); else if (dyingT <= 0) S.gameOver(score, [['라운드', String(round)], ['마지막 점수', sMe + ' : ' + sCpu]]); return; }
-    var mid = (TOP + BOT) / 2, two = duo();
+    var mid = (TOP + BOT) / 2, two = duo(), m0 = { x: me.x, y: me.y }, c0 = { x: cpu.x, y: cpu.y };
     // 내 말렛
     var tx = target ? target.x : me.x, ty = target ? target.y : me.y;
     var kx = (keys.ArrowRight || (!two && keys.d) ? 1 : 0) - (keys.ArrowLeft || (!two && keys.a) ? 1 : 0), ky = (keys.ArrowDown || (!two && keys.s) ? 1 : 0) - (keys.ArrowUp || (!two && keys.w) ? 1 : 0);
@@ -76,17 +80,19 @@
     moveMallet(cpu, cx + Math.sin(S.time * 3) * (1 - lvl) * 20, cy, cspd, dt, TOP + MR, mid - MR);
     }
     if (pauseT > 0) { pauseT -= dt; hud(); return; }
-    // 퍽
-    var steps = 3;
+    // 퍽: 말렛도 잘게 나눠 같이 움직여야 빠르게 휘두를 때 퍽을 뚫고 지나가지 않음
+    var m1 = { x: me.x, y: me.y }, c1 = { x: cpu.x, y: cpu.y };
+    var steps = Math.max(3, Math.ceil(Math.max(Math.hypot(m1.x - m0.x, m1.y - m0.y), Math.hypot(c1.x - c0.x, c1.y - c0.y), Math.hypot(puck.vx, puck.vy) * dt) / 20));
     for (var s = 0; s < steps; s++) {
-      var h = dt / steps; puck.x += puck.vx * h; puck.y += puck.vy * h;
+      var h = dt / steps, k = (s + 1) / steps; puck.x += puck.vx * h; puck.y += puck.vy * h;
+      me.x = A.lerp(m0.x, m1.x, k); me.y = A.lerp(m0.y, m1.y, k); cpu.x = A.lerp(c0.x, c1.x, k); cpu.y = A.lerp(c0.y, c1.y, k);
       var inGoal = Math.abs(puck.x - W / 2) < GW / 2;
       if (inGoal && puck.y < TOP - PR) { goal(true); return; }
       if (inGoal && puck.y > BOT + PR) { goal(false); return; }
       walls(true);
       collide(me, true); collide(cpu, false);
       // 말렛에 밀려 벽을 뚫고 나가지 않도록 벽을 한 번 더 적용하고, 겹친 말렛은 비켜 준다
-      if (walls(false)) { unpin(me); unpin(cpu); }
+      if (walls(false)) { unpin(me); unpin(cpu); m1.x = me.x; m1.y = me.y; c1.x = cpu.x; c1.y = cpu.y; m0.x = me.x; m0.y = me.y; c0.x = cpu.x; c0.y = cpu.y; }
     }
     // 안전장치: 퍽이 벽·구석에 붙어 거의 멈춘 채 1.5초 넘게 있으면 가운데 쪽으로 살짝 밀어 준다
     var nearWall = puck.x < PR + 6 || puck.x > W - PR - 6 || puck.y < TOP + PR + 6 || puck.y > BOT - PR - 6;
@@ -100,6 +106,7 @@
     hud();
   }
   function render(c) {
+    if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#060a16'; c.fillRect(-10, -10, W + 20, H + 20);
@@ -122,13 +129,15 @@
   function hud() { var two = duo(); document.getElementById('hA').textContent = two ? tally[0] + ' : ' + tally[1] : A.fmt(score); document.getElementById('hB').textContent = (sMe || 0) + ' : ' + (sCpu || 0); document.getElementById('hC').textContent = two ? tally[0] + tally[1] + 1 : round; }
   var stage = document.getElementById('stage');
   // 손가락마다 따로 추적: 둘이서면 화면 위 절반을 누른 손가락은 P2(위), 아래 절반은 P1(아래). 마우스는 P1
-  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), t = { x: p.x, y: p.y, id: e.pointerId };
-    if (duo() && e.pointerType !== 'mouse' && p.y < (TOP + BOT) / 2) tTop = t; else target = t; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  // 손가락은 누르는 순간부터 같은 간격(50px)을 띄움 → 누를 때 말렛이 툭 튀지 않음
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), touch = e.pointerType !== 'mouse';
+    if (duo() && touch && p.y < (TOP + BOT) / 2) tTop = { x: p.x, y: p.y + 50, id: e.pointerId }; else target = { x: p.x, y: p.y - (touch ? 50 : 0), id: e.pointerId }; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (S.state !== 'playing') return; var p = S.toLocal(e), touch = e.pointerType !== 'mouse';
     if (tTop && tTop.id === e.pointerId) tTop = { x: p.x, y: p.y + 50, id: e.pointerId }; // 위쪽 사람은 손가락 아래(화면 방향)로 말렛이 보이게
     else if (!touch || (target && target.id === e.pointerId)) target = { x: p.x, y: p.y - (touch ? 50 : 0), id: e.pointerId }; });
   function lift(e) { if (tTop && tTop.id === e.pointerId) tTop = null; if (e.pointerType !== 'mouse' && target && target.id === e.pointerId) target = null; }
   stage.addEventListener('pointerup', lift); stage.addEventListener('pointercancel', lift);
+  window.addEventListener('blur', function () { keys = {}; });
   var S = null; S = new A.Shell({ id: 'hockey', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k1 = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (!duo() || k1.indexOf('Arrow') === 0) target = null; else if ('wasd'.indexOf(k1) >= 0) tTop = null; keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
 })();

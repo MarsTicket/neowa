@@ -39,14 +39,16 @@
           <div class="k-only"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 조각 고르기</div>
           <div class="k-only"><kbd>↑↓←→</kbd> 위치 · <kbd>Space</kbd> 놓기</div>
           <div><kbd>드래그</kbd> 끌어다 놓기</div>
+          <div class="k-only"><kbd>Z</kbd> 한 수 되돌리기</div>
           <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
         </div>
       </div>
       <div class="g-card"><h3>RULES</h3>
         <div class="g-keys">
           <div>가로·세로 한 줄 채우면 삭제</div>
-          <div><kbd style="color:#ffd166">×2</kbd> 연속으로 지우면 콤보</div>
+          <div><kbd style="color:#ffd166">×2</kbd> 3번 놓는 안에 또 지우면 콤보 유지</div>
           <div>놓을 곳이 없으면 끝</div>
+          <div>↶ 되돌리기 1번, 1000점마다 +1 (최대 3)</div>
         </div>
       </div>
     </aside>
@@ -63,7 +65,7 @@
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 08</p>
         <h1 class="ov-title">네온 블록</h1>
-        <p class="ov-desc">아래 조각을 판 위로 끌어다 놓으세요. 가로·세로 한 줄을 다 채우면 사라집니다. 세 조각 모두 놓을 곳이 없으면 끝.</p>
+        <p class="ov-desc">조각 3개를 판 위로 끌어다 놓으세요. 가로·세로 한 줄을 다 채우면 사라집니다. 세 조각 모두 놓을 곳이 없으면 끝.</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>끌어다 놓기</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>여러 줄 동시 = 큰 점수</span>
@@ -116,9 +118,15 @@
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960, N = 8, CS = 58, GX = (540 - 8 * 58) / 2, GY = 140;
-  var TRAY_Y = 790, SLOT_X = [95, 270, 445], TS = 0.5;
+  var SLOT_X = [95, 270, 445], SLOT_Y = [790, 790, 790], SBW = 80, SBH = 90, TS = 0.5, land = false;
+  // 화면 배치: 세로는 540x960(판 위, 조각 3개 아래), 가로는 820x600(판 왼쪽, 조각 3개 오른쪽 세로 줄)
+  function geo(sh) {
+    land = !!(sh && sh.land); W = sh ? sh.W : 540; H = sh ? sh.H : 960;
+    if (land) { CS = 66; GX = 36; GY = 36; SLOT_X = [712, 712, 712]; SLOT_Y = [112, 300, 488]; SBW = 92; SBH = 86; }
+    else { CS = 58; GX = (540 - 8 * 58) / 2; GY = 140; SLOT_X = [95, 270, 445]; SLOT_Y = [790, 790, 790]; SBW = 80; SBH = 90; }
+  }
   var fx = new A.FX();
-  var grid, tray, score, lines, streak, drag = null, cursor = { x: 3, y: 3, sel: 0 }, kbd = false, clearing = [], pops = [], dyingT = 0, maxStreak = 0;
+  var grid, tray, score, lines, streak, drag = null, cursor = { x: 3, y: 3, sel: 0 }, kbd = false, clearing = [], pops = [], dyingT = 0, maxStreak = 0, streakLife = 0;
   var COLORS = ['#5ee7ff', '#7dff9b', '#ffb547', '#ff7aa8', '#b48cff', '#ffe066', '#ff7a45', '#7aa2ff'];
   // 조각 모양 (x,y 칸 목록)
   var SHAPES = [
@@ -143,7 +151,13 @@
     cells.forEach(function (c) { w = Math.max(w, c[0] + 1); h = Math.max(h, c[1] + 1); });
     return { cells: cells, w: w, h: h, c: A.pick(COLORS), used: false };
   }
-  function refill() { tray = [randPiece(), randPiece(), randPiece()]; }
+  // 새 조각 3개: 판이 비좁아도 적어도 하나는 놓을 수 있게 몇 번 다시 뽑음 (운으로만 끝나는 판 줄이기)
+  function refill() {
+    for (var tries = 0; tries < 25; tries++) {
+      tray = [randPiece(), randPiece(), randPiece()];
+      if (!grid || canFit(tray[0]) || canFit(tray[1]) || canFit(tray[2])) return;
+    }
+  }
   function fits(p, gx, gy) {
     for (var i = 0; i < p.cells.length; i++) { var x = gx + p.cells[i][0], y = gy + p.cells[i][1]; if (x < 0 || y < 0 || x >= N || y >= N || grid[y][x]) return false; }
     return true;
@@ -159,14 +173,34 @@
     for (var i = 0; i < N; i++) { if (g[i].every(Boolean)) rows.push(i); var full = true; for (var j = 0; j < N; j++) if (!g[j][i]) full = false; if (full) cols.push(i); }
     return { rows: rows, cols: cols };
   }
+  // 되돌리기: 판마다 1번으로 시작, 1000점마다 +1 (최대 3). 바로 앞 한 수만 되돌림
+  var undos = 1, undoUsed = 0, nextUndoAt = 1000, hist = null;
+  var tut = A.get('neowa_blocks_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_blocks_tut', '1'); } }
+  var UB = { w: 200, h: 46 }; // 세로 화면 캔버스 안 되돌리기 버튼 (판과 조각 줄 사이)
+  function ubY() { return GY + N * CS + 22; }
+  function onUndoBtn(p) { return !land && Math.abs(p.x - W / 2) < UB.w / 2 && p.y > ubY() && p.y < ubY() + UB.h; }
+  function snapshot() {
+    return { grid: grid.map(function (r) { return r.slice(); }), tray: tray.map(function (q) { return { cells: q.cells, w: q.w, h: q.h, c: q.c, used: q.used }; }),
+      score: score, lines: lines, streak: streak, streakLife: streakLife, maxStreak: maxStreak };
+  }
+  function doUndo() {
+    if (S.state !== 'playing') return;
+    if (!hist || undos <= 0) { A.sfx('wall'); if (undos <= 0) fx.text(W / 2, land ? H / 2 : ubY() - 10, '되돌리기가 없어요', '#ff7aa8', 18); return; }
+    grid = hist.grid; tray = hist.tray; score = hist.score; lines = hist.lines; streak = hist.streak; streakLife = hist.streakLife; maxStreak = hist.maxStreak;
+    hist = null; undos--; undoUsed++; dyingT = 0; clearing = []; pops = []; drag = null;
+    for (var s2 = 0; s2 < 3; s2++) if (!tray[s2].used) { cursor.sel = s2; break; }
+    A.sfx('turn', 0.8); fx.text(W / 2, land ? H / 2 : ubY() - 10, '한 수 되돌림', '#9fe8ff', 20); hud();
+  }
   function place(k, gx, gy) {
     var p = tray[k]; if (!p || p.used || !fits(p, gx, gy)) return false;
+    hist = snapshot(); tutDone();
     var wc = wouldClear(p, gx, gy);
     p.cells.forEach(function (c) { grid[gy + c[1]][gx + c[0]] = p.c; pops.push({ x: gx + c[0], y: gy + c[1], t: 0 }); });
-    p.used = true; score += p.cells.length; A.sfx('brick', 0.9);
+    p.used = true; score += p.cells.length; A.sfx('place', 1 + Math.min(p.cells.length, 9) * 0.02);
     var n = wc.rows.length + wc.cols.length;
     if (n) {
-      streak++; maxStreak = Math.max(maxStreak, streak); lines += n;
+      streak++; streakLife = 3; maxStreak = Math.max(maxStreak, streak); lines += n;
       var pts = n * n * 10 + (streak - 1) * 10 * n; score += pts;
       var cells = {};
       wc.rows.forEach(function (r) { for (var x = 0; x < N; x++) cells[x + ',' + r] = 1; });
@@ -179,18 +213,23 @@
       var cx = GX + (gx + p.w / 2) * CS, cy = GY + (gy + p.h / 2) * CS;
       fx.text(cx, cy - 30, (n > 1 ? n + '줄! ' : '') + '+' + pts, n > 1 ? '#ffd166' : '#fff', n > 1 ? 26 : 20);
       if (streak > 1) fx.text(cx, cy + 4, 'COMBO ×' + streak, '#7aa2ff', 18);
-      fx.shake(3 + n * 2, 0.25); A.sfx(n > 1 ? 'gold' : 'coin', 1 + streak * 0.05); A.vibrate(n > 1 ? [20, 30, 20] : 15);
-      if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) { score += 300; S.banner('판 비우기!', '+300'); A.sfx('level'); }
-    } else streak = 0;
+      fx.shake(3 + n * 2, 0.25); A.sfx('line', 1 + Math.min(streak, 12) * 0.05); if (n > 1) A.sfx('gold'); if (streak > 1) A.sfx('combo', 1 + Math.min(streak, 12) * 0.05); A.vibrate(n > 1 ? [20, 30, 20] : 15);
+      if (grid.every(function (r) { return r.every(function (v) { return !v; }); })) { score += 300; S.banner('판 비우기!', '+300'); A.sfx('win'); }
+    } else if (streak > 0) { streakLife--; if (streakLife <= 0) { streak = 0; } } // 콤보는 3번 놓는 동안 유지
     if (tray.every(function (q) { return q.used; })) refill();
-    if (!canPlaceAny()) { dyingT = 1; A.sfx('hurt'); }
+    while (score >= nextUndoAt) { nextUndoAt += 1000; if (undos < 3) { undos++; fx.text(W / 2, land ? 60 : ubY() - 10, '되돌리기 +1', '#9fe8ff', 20); A.sfx('power'); } }
+    if (!canPlaceAny()) {
+      // 되돌리기가 남아 있으면 4초 동안 살릴 기회를 줌
+      dyingT = undos > 0 ? 4 : 1.2; A.sfx('hurt'); fx.shake(6, 0.3);
+      fx.text(GX + N * CS / 2, land ? GY + N * CS / 2 : SLOT_Y[0] - 130, undos > 0 ? '놓을 곳이 없어요 · 되돌리기로 살리기!' : '놓을 곳이 없어요', '#ff7aa8', undos > 0 ? 20 : 24);
+    }
     // 키보드 선택을 남은 조각으로
     if (tray[cursor.sel].used) for (var s = 0; s < 3; s++) if (!tray[s].used) { cursor.sel = s; break; }
     hud(); return true;
   }
   function reset() {
     grid = []; for (var y = 0; y < N; y++) { grid.push([]); for (var x = 0; x < N; x++) grid[y].push(0); }
-    refill(); score = 0; lines = 0; streak = 0; maxStreak = 0; clearing = []; pops = []; dyingT = 0; drag = null; cursor = { x: 3, y: 3, sel: 0 };
+    refill(); score = 0; lines = 0; streak = 0; maxStreak = 0; streakLife = 0; undos = 1; undoUsed = 0; nextUndoAt = 1000; hist = null; clearing = []; pops = []; dyingT = 0; drag = null; cursor = { x: 3, y: 3, sel: 0 };
     fx.clear(); hud();
   }
   function update(dt) {
@@ -201,7 +240,7 @@
       if (c.t > 0.35) clearing.splice(i, 1);
     }
     for (i = pops.length - 1; i >= 0; i--) { pops[i].t += dt; if (pops[i].t > 0.2) pops.splice(i, 1); }
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['지운 줄', String(lines)], ['최대 콤보', String(maxStreak)]]); }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['지운 줄', String(lines)], ['최대 콤보', String(maxStreak)], ['되돌리기', String(undoUsed)]]); }
   }
 
   function cellSpr(col) {
@@ -218,11 +257,17 @@
     c.globalAlpha = 1;
   }
   // 드래그 중인 조각의 판 위치 계산
+  // 손가락 위치가 칸에서 조금 어긋나도 가장 가까운 놓을 수 있는 자리로 붙여 줌
   function dragTarget() {
     if (!drag) return null;
-    var p = tray[drag.k], left = drag.x - p.w * CS / 2, top = drag.y - p.h * CS / 2;
-    var gx = Math.round((left - GX) / CS), gy = Math.round((top - GY) / CS);
-    return fits(p, gx, gy) ? { gx: gx, gy: gy } : null;
+    var p = tray[drag.k], fx0 = (drag.x - p.w * CS / 2 - GX) / CS, fy0 = (drag.y - p.h * CS / 2 - GY) / CS;
+    var bx = Math.round(fx0), by = Math.round(fy0), best = null, bd = 0.8 * 0.8;
+    if (fits(p, bx, by)) return { gx: bx, gy: by };
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      var gx = bx + dx, gy = by + dy, d = (gx - fx0) * (gx - fx0) + (gy - fy0) * (gy - fy0);
+      if (d < bd && fits(p, gx, gy)) { bd = d; best = { gx: gx, gy: gy }; }
+    }
+    return best;
   }
   function render(c) {
     var o = fx.offset(), t = S.time;
@@ -257,17 +302,35 @@
     }
     // 조각 받침
     if (tray) {
-      for (i = 0; i < 3; i++) { c.fillStyle = 'rgba(255,255,255,.03)'; A.rr(c, SLOT_X[i] - 80, TRAY_Y - 90, 160, 180, 16); c.fill(); }
+      for (i = 0; i < 3; i++) { c.fillStyle = 'rgba(255,255,255,.03)'; A.rr(c, SLOT_X[i] - SBW, SLOT_Y[i] - SBH, SBW * 2, SBH * 2, 16); c.fill(); }
       for (i = 0; i < 3; i++) {
-        var p = tray[i]; if (kbd && i === cursor.sel && S.state === 'playing') { c.strokeStyle = 'rgba(122,162,255,.7)'; c.lineWidth = 2; A.rr(c, SLOT_X[i] - 80, TRAY_Y - 90, 160, 180, 16); c.stroke(); }
+        var p = tray[i]; if (kbd && i === cursor.sel && S.state === 'playing') { c.strokeStyle = 'rgba(122,162,255,.7)'; c.lineWidth = 2; A.rr(c, SLOT_X[i] - SBW, SLOT_Y[i] - SBH, SBW * 2, SBH * 2, 16); c.stroke(); }
         if (p.used || (drag && drag.k === i)) continue;
         var ok = !grid || canFit(p);
-        drawPiece(c, p, SLOT_X[i] - p.w * CS * TS / 2, TRAY_Y - p.h * CS * TS / 2, TS, ok ? 1 : 0.3);
-        if (kbd) { c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 14px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(i + 1), SLOT_X[i], TRAY_Y + 80); }
+        drawPiece(c, p, SLOT_X[i] - p.w * CS * TS / 2, SLOT_Y[i] - p.h * CS * TS / 2, TS, ok ? 1 : 0.3);
+        if (kbd) { c.fillStyle = 'rgba(255,255,255,.4)'; c.font = '700 14px "Chakra Petch",system-ui'; c.textAlign = 'center'; c.fillText(String(i + 1), land ? SLOT_X[i] - SBW + 14 : SLOT_X[i], land ? SLOT_Y[i] - SBH + 22 : SLOT_Y[i] + 80); }
       }
       if (drag) drawPiece(c, tray[drag.k], drag.x - tray[drag.k].w * CS / 2, drag.y - tray[drag.k].h * CS / 2, 1, 0.95);
     } else {
-      [[0, '#5ee7ff', 2], [4, '#ff7aa8', 9], [6, '#ffe066', 13]].forEach(function (d, j) { drawPiece(c, { cells: SHAPES[d[2]], c: d[1] }, SLOT_X[j] - 30, TRAY_Y - 30, TS); });
+      [[0, '#5ee7ff', 2], [4, '#ff7aa8', 9], [6, '#ffe066', 13]].forEach(function (d, j) { drawPiece(c, { cells: SHAPES[d[2]], c: d[1] }, SLOT_X[j] - 30, SLOT_Y[j] - 30, TS); });
+    }
+    if (tray && !land && S.state === 'playing') {
+      var by = ubY(), on = undos > 0 && hist, pulse = dyingT > 0 && undos > 0 ? 0.5 + Math.sin(t * 10) * 0.5 : 0;
+      c.save(); c.globalAlpha = on ? 1 : 0.4;
+      c.fillStyle = pulse ? 'rgba(122,162,255,' + (0.25 + pulse * 0.35) + ')' : 'rgba(122,162,255,.14)'; A.rr(c, W / 2 - UB.w / 2, by, UB.w, UB.h, 23); c.fill();
+      c.strokeStyle = 'rgba(122,162,255,.6)'; c.lineWidth = 2; c.stroke();
+      c.fillStyle = '#fff'; c.font = '700 17px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('↶ 되돌리기 ' + undos + (kbd ? '  (Z)' : ''), W / 2, by + UB.h / 2 + 1); c.restore();
+    }
+    if (tut && tray && S.state === 'playing' && !drag) {
+      // 조각 → 판 방향 안내 (첫 조각을 놓으면 사라짐)
+      var touch = document.body.classList.contains('touch'), msg = touch || !kbd ? '조각을 끌어서 판에 놓으세요' : '1·2·3 고르고 방향키, Space로 놓기';
+      var mx = land ? GX + N * CS / 2 : W / 2, my = land ? GY + N * CS / 2 : GY + N * CS / 2;
+      c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      var tw = c.measureText(msg).width + 40; c.fillStyle = 'rgba(6,10,30,.9)'; A.rr(c, mx - tw / 2, my - 23, tw, 46, 23); c.fill();
+      c.strokeStyle = '#7aa2ff'; c.lineWidth = 2; c.globalAlpha = 0.6 + Math.sin(t * 5) * 0.4; c.stroke(); c.globalAlpha = 1; c.fillStyle = '#fff'; c.fillText(msg, mx, my + 1);
+      var k3 = (t * 0.8) % 1, sx0 = SLOT_X[0], sy0 = SLOT_Y[0], ex = GX + 2.5 * CS, ey = GY + 5.5 * CS;
+      c.globalAlpha = 1 - k3; c.fillStyle = '#7aa2ff'; c.beginPath(); c.arc(A.lerp(sx0, ex, k3), A.lerp(sy0, ey, k3), 14, 0, Math.PI * 2); c.fill(); c.restore();
     }
     fx.draw(c);
     c.restore(); fx.drawFlash(c, W, H);
@@ -278,19 +341,22 @@
     document.getElementById('hB').textContent = lines;
     document.getElementById('hC').textContent = streak;
     document.getElementById('hMult').textContent = streak > 1 ? 'COMBO ×' + streak : '';
+    if (pEl.score) { pEl.score.textContent = A.fmt(score); pEl.lines.textContent = lines; pEl.combo.textContent = streak > 1 ? '×' + streak : '0'; pEl.undo.textContent = undos; }
   }
   // 입력
   var stage = document.getElementById('stage');
   stage.addEventListener('pointerdown', function (e) {
-    if (S.state !== 'playing' || dyingT > 0) return;
+    if (S.state !== 'playing') return;
     var p = S.toLocal(e);
-    if (p.y < TRAY_Y - 110) return;
+    if (onUndoBtn(p)) { doUndo(); return; }
+    if (dyingT > 0) return;
     for (var i = 0; i < 3; i++) {
-      if (Math.abs(p.x - SLOT_X[i]) < 88 && !tray[i].used) {
+      var dy = p.y - SLOT_Y[i];
+      if (Math.abs(p.x - SLOT_X[i]) < SBW + 8 && dy > -(SBH + 20) && dy < SBH + 60 && !tray[i].used) {
         kbd = false;
-        var lift = e.pointerType === 'mouse' ? 0 : 120;
+        var lift = e.pointerType === 'mouse' ? 0 : (land ? 90 : 120);
         drag = { k: i, id: e.pointerId, lift: lift, x: p.x, y: p.y - lift };
-        A.sfx('click'); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
+        A.sfx('select'); try { stage.setPointerCapture(e.pointerId); } catch (er) {}
         return;
       }
     }
@@ -306,11 +372,14 @@
   });
   stage.addEventListener('pointercancel', function () { drag = null; });
 
+  var pEl = {};
   var S = new A.Shell({
-    id: 'blocks', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); update0(dt); }, render: render,
+    id: 'blocks', W: W, H: H, land: [820, 600], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); update0(dt); }, render: render,
     keydown: function (e) {
+      var k = e.key;
+      if (k === 'z' || k === 'Z' || k === 'u' || k === 'U') { doUndo(); return; }
       if (dyingT > 0) return;
-      var k = e.key; kbd = true;
+      kbd = true;
       if (k === '1' || k === '2' || k === '3') { var s = +k - 1; if (!tray[s].used) cursor.sel = s; }
       else if (k === 'ArrowLeft' || k === 'a') cursor.x--;
       else if (k === 'ArrowRight' || k === 'd') cursor.x++;
@@ -320,6 +389,13 @@
       else if (k === 'Tab') { e.preventDefault(); for (var j = 1; j <= 3; j++) { var n = (cursor.sel + j) % 3; if (!tray[n].used) { cursor.sel = n; break; } } }
     }
   });
+  // 가로 화면: 점수판을 오른쪽 패널로 (게임판 위 점수판은 가로에서 숨김)
+  document.querySelector('.g-hud').setAttribute('data-land-hide', '');
+  S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>LINES</span><b id="pkLines">0</b></div><div><span>COMBO</span><b id="pkCombo">0</b></div></div>' +
+    '<button class="gp-btn main" id="pkUndo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>한 수 되돌리기 <span class="cnt" id="pkUndoN">1</span></button>';
+  pEl = { score: document.getElementById('pkScore'), lines: document.getElementById('pkLines'), combo: document.getElementById('pkCombo'), undo: document.getElementById('pkUndoN') };
+  document.getElementById('pkUndo').addEventListener('click', doUndo);
+  if (score != null) hud();
   function update0(dt) { for (var i = clearing.length - 1; i >= 0; i--) { clearing[i].t += dt; if (clearing[i].t > 0.35) clearing.splice(i, 1); } }
 })();
 

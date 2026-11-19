@@ -130,11 +130,17 @@
     ['.11....11.', '1221..1221', '1222112221', '.12222221.', '..122*21..', '...1221...', '....11....'],
     ['#1#1#1#1#1', '1*1111*111', '2222222222', '#3#3##3#3#', '1111111111', '*22222222*'],
     ['3333333333', '3#######.3', '3.2222222.', '3.2*11*2.3', '.2222222.3', '3.#######3', '3333333333'],
-    ['*1*1*1*1*1', '2323232323', '3232323232', '#2#2#2#2#2', '1111111111', '2*2*2*2*2*', '3333333333']
+    ['*1*1*1*1*1', '2323232323', '3232323232', '#2#2#2#2#2', '1111111111', '2*2*2*2*2*', '3333333333'],
+    ['....11....', '...1221...', '..12##21..', '.123**321.', '..12##21..', '...1221...', '....11....'],
+    ['1111111111', '##.####.##', '2222222222', '.##.##.##.', '3*33333*33'],
+    ['..1....1..', '...1..1...', '..222222..', '.22.22.22.', '3333333333', '3.333333.3', '3.3....3.3'],
+    ['*.*.*.*.*.', '.3.3.3.3.3', '2.2.2.2.2.', '.#.#.#.#.#', '1.1.1.1.1.', '.2*2.2*2.2']
   ];
   var ROWC = ['#ff4d6d', '#ff7a45', '#ffb547', '#ffe066', '#7dff9b', '#5ee7ff', '#7aa2ff', '#b48cff'];
   var ITEMS = { W: '#5ee7ff', M: '#7dff9b', F: '#ff7a45', S: '#b48cff', L: '#ff4d6d' };
-  var bricks, balls, paddle, drops, score, lives, level, loop, combo, best, keys = {}, ptr = null, launchT, slowT, fireT, wideT, clearT, total, broken, dyingT;
+  // 첫 판 안내: 처음 패들을 움직일 때까지 (neowa_breakout_tut = 1 이면 안 보임)
+  var tut = A.get('neowa_breakout_tut', '') !== '1', tutMove = 0;
+  var bricks, balls, paddle, drops, score, lives, level, loop, combo, best, keys = {}, ptr = null, launchT, slowT, fireT, wideT, clearT, total, broken, dyingT, idleT = 0, noBreakT = 0;
 
   function brickSprite(col, hp) {
     return A.sprite('br' + col + hp, BW + 12, BH + 12, function (x) {
@@ -196,7 +202,7 @@
   }
   function reset() {
     paddle = { x: W / 2, w: 104, tw: 104, vx: 0 };
-    score = 0; lives = 3; level = 1; combo = 0; slowT = 0; fireT = 0; wideT = 0; clearT = 0; dyingT = 0;
+    A.music.mood(null); score = 0; lives = 3; level = 1; combo = 0; slowT = 0; fireT = 0; wideT = 0; clearT = 0; dyingT = 0; idleT = 0; noBreakT = 0;
     drops = []; fx.clear(); keys = {};
     buildLevel(1);
     balls = [newBall(true)]; launchT = 3;
@@ -214,22 +220,22 @@
   }
 
   function hitBrick(b, ball) {
-    if (b.steel) { b.hit = 0.15; A.sfx('steel'); fx.burst(ball.x, ball.y, '#c9cee8', 4, 160, 0.25, 2); return false; }
+    if (b.steel) { b.hit = 0.15; A.sfx('steel', 1, A.clamp(ball.x / W * 2 - 1, -1, 1)); fx.burst(ball.x, ball.y, '#c9cee8', 4, 160, 0.25, 2); return false; }
     b.hp -= fireT > 0 ? 3 : 1; b.hit = 0.12;
     combo++;
     if (b.hp <= 0) {
-      broken++;
+      broken++; idleT = 0; noBreakT = 0;
       var pts = 50 + combo * 10; score += pts;
       var cx = b.x + BW / 2, cy = b.y + BH / 2;
       fx.burst(cx, cy, b.c, 16, 300, 0.55, 3.2); fx.burst(cx, cy, '#fff', 4, 200, 0.25, 2);
       if (combo >= 3) fx.text(cx, cy, '+' + pts, combo >= 8 ? '#ffd166' : '#fff', combo >= 8 ? 22 : 17);
-      A.sfx('brick', 1 + Math.min(combo, 16) * 0.06);
+      A.sfx('brick', 1 + Math.min(combo, 16) * 0.06, A.clamp(cx / W * 2 - 1, -1, 1)); if (combo >= 5 && combo % 5 === 0) A.sfx('combo', 1 + Math.min(combo / 5, 8) * 0.06);
       fx.shake(1.5 + Math.min(combo, 10) * 0.25, 0.08);
       if (b.item || Math.random() < 0.06) dropItem(cx, cy);
       bricks.splice(bricks.indexOf(b), 1);
       return true;
     }
-    A.sfx('wall', 1.6); score += 10;
+    A.sfx('wall', 1.6, A.clamp(ball.x / W * 2 - 1, -1, 1)); score += 10;
     return false;
   }
   function dropItem(x, y) {
@@ -238,7 +244,7 @@
     drops.push({ x: x, y: y, k: A.pick(pool), vy: 170, t: 0 });
   }
   function applyItem(k) {
-    A.sfx('power'); A.vibrate(20);
+    A.sfx(k === 'L' ? 'gold' : k === 'M' ? 'combo' : k === 'F' ? 'laser' : k === 'S' ? 'charge' : 'power'); A.vibrate(20);
     var label = { W: 'WIDE', M: 'MULTI BALL', F: 'FIRE BALL', S: 'SLOW', L: '1UP' }[k];
     fx.text(paddle.x, PY - 40, label, ITEMS[k], 20); fx.ring(paddle.x, PY, ITEMS[k], 100, 0.4);
     if (k === 'W') { wideT = 12; paddle.tw = 160; }
@@ -265,7 +271,7 @@
     if (clearT > 0) {
       clearT -= dt;
       if (clearT <= 0) {
-        stat.bricks += broken; level++; buildLevel(level); balls = [newBall(true)]; launchT = 3; drops = [];
+        stat.bricks += broken; level++; buildLevel(level); balls = [newBall(true)]; launchT = 3; drops = []; idleT = 0; noBreakT = 0;
         fireT = 0; slowT = 0; S.banner('STAGE ' + level, level > LEVELS.length ? 'HARD MODE' : 'READY'); hud();
       }
       return;
@@ -279,11 +285,16 @@
     paddle.w = A.lerp(paddle.w, paddle.tw, Math.min(1, dt * 10));
     paddle.x = A.clamp(paddle.x, paddle.w / 2 + 6, W - paddle.w / 2 - 6);
     paddle.vx = (paddle.x - ox) / dt;
+    if (tut) { tutMove += Math.abs(paddle.x - ox); if (tutMove > 70) { tut = false; A.set('neowa_breakout_tut', '1'); } }
     if (slowT > 0) slowT -= dt;
     if (fireT > 0) fireT -= dt;
     // 자동 발사
     if (balls.some(function (q) { return q.stuck; })) { launchT -= dt; if (launchT <= 0) launch(); }
 
+    // 막힘 방지: 공이 오래 패들·벽돌을 못 건드리면 반사 각도를 조금씩 흔들고, 벽돌이 너무 오래 안 깨지면 불꽃공 지원
+    idleT += dt;
+    if (!clearT && balls.some(function (q) { return !q.stuck; })) noBreakT += dt;
+    if (noBreakT > 25) { noBreakT = 0; drops.push({ x: A.rand(80, W - 80), y: 90, k: 'F', vy: 170, t: 0 }); fx.text(W / 2, H / 2, '지원 도착! 불꽃공을 받으세요', '#ff7a45', 20); A.sfx('power'); }
     var spMul = slowT > 0 ? 0.65 : 1;
     for (i = balls.length - 1; i >= 0; i--) {
       b = balls[i];
@@ -294,9 +305,9 @@
       var dist = cur * dt, steps = Math.ceil(dist / 5), sdt = dt / steps;
       for (var s = 0; s < steps; s++) {
         b.x += b.vx * sdt; b.y += b.vy * sdt;
-        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); A.sfx('wall'); }
-        if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); A.sfx('wall'); }
-        if (b.y < 66 + b.r) { b.y = 66 + b.r; b.vy = Math.abs(b.vy); A.sfx('wall'); }
+        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); A.sfx('wall', 1, -0.8); unstick(b); }
+        if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); A.sfx('wall', 1, 0.8); unstick(b); }
+        if (b.y < 66 + b.r) { b.y = 66 + b.r; b.vy = Math.abs(b.vy); A.sfx('wall', 1.2, A.clamp(b.x / W * 2 - 1, -1, 1)); unstick(b); }
         // 패들
         if (b.vy > 0 && b.y + b.r >= PY - PH / 2 && b.y - b.r < PY + PH / 2 && Math.abs(b.x - paddle.x) < paddle.w / 2 + b.r) {
           var off = A.clamp((b.x - paddle.x) / (paddle.w / 2), -1, 1);
@@ -304,8 +315,8 @@
           var sp = Math.hypot(b.vx, b.vy);
           b.vx = Math.cos(ang) * sp; b.vy = Math.sin(ang) * sp; b.y = PY - PH / 2 - b.r;
           if (combo >= 5) fx.text(paddle.x, PY - 34, combo + ' COMBO', '#ffd166', 16);
-          stat.maxCombo = Math.max(stat.maxCombo, combo); combo = 0;
-          A.sfx('bounce'); fx.burst(b.x, PY - 8, '#ffb547', 6, 160, 0.3, 2.2); paddle.squash = 0.15;
+          stat.maxCombo = Math.max(stat.maxCombo, combo); combo = 0; idleT = 0;
+          A.sfx('bounce', 1, A.clamp(b.x / W * 2 - 1, -1, 1)); fx.burst(b.x, PY - 8, '#ffb547', 6, 160, 0.3, 2.2); paddle.squash = 0.15;
         }
         // 벽돌
         for (j = bricks.length - 1; j >= 0; j--) {
@@ -314,6 +325,7 @@
           var dx = b.x - nx, dy = b.y - ny;
           if (dx * dx + dy * dy <= b.r * b.r) {
             var destroyed = hitBrick(k, b);
+            if (k.steel) unstick(b);
             if (fireT > 0 && destroyed) break; // 불꽃공은 관통
             // 반사 방향: 겹침이 적은 축
             var oxl = Math.min(b.x + b.r - k.x, k.x + BW - (b.x - b.r));
@@ -351,11 +363,17 @@
     }
     hud();
   }
+  function unstick(b) {
+    if (idleT < 7) return;
+    var sp = Math.hypot(b.vx, b.vy), a = Math.atan2(b.vy, b.vx) + A.rand(-0.35, 0.35);
+    b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp;
+  }
   function loseLife() {
     lives--; combo = 0; wideT = 0; paddle.tw = 104; fireT = 0; slowT = 0;
     fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(150);
     fx.burst(paddle.x, PY, '#ff4d6d', 30, 360, 0.7, 3.5);
-    if (lives <= 0) { dyingT = 1; balls = []; hud(); return; }
+    if (lives <= 0) { dyingT = 1; balls = []; A.music.mood(null); hud(); return; }
+    if (lives === 1) { A.music.mood('danger'); A.sfx('warn'); }
     balls = [newBall(true)]; launchT = 3; drops = [];
     S.banner(lives === 1 ? '마지막 기회' : '목숨 ' + lives, 'BALL LOST');
     hud();
@@ -407,11 +425,25 @@
       c.textAlign = 'center'; c.fillText(document.body.classList.contains('touch') ? '화면을 탭하면 발사' : '탭 또는 스페이스로 발사', W / 2, PY - 60); c.restore();
       c.setLineDash([4, 6]); c.strokeStyle = 'rgba(255,255,255,.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(paddle.x, PY - 24); c.lineTo(paddle.x, PY - 44); c.stroke(); c.setLineDash([]);
     }
+    if (tut && S.state === 'playing' && clearT <= 0 && dyingT <= 0) {
+      var tm = document.body.classList.contains('touch') ? '화면을 좌우로 끌어 패들 이동' : '←→·A D 또는 마우스로 패들 이동';
+      c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      var tw = c.measureText(tm).width + 40, ty = PY - 130; c.fillStyle = 'rgba(20,10,4,.9)'; A.rr(c, W / 2 - tw / 2, ty - 23, tw, 46, 23); c.fill();
+      c.strokeStyle = '#ffb547'; c.lineWidth = 2; c.globalAlpha = 0.6 + Math.sin(t * 5) * 0.4; c.stroke(); c.globalAlpha = 1;
+      c.fillStyle = '#fff'; c.fillText(tm, W / 2, ty + 1);
+      var ax = Math.sin(t * 3) * 50; c.fillStyle = '#ffb547';
+      c.beginPath(); c.moveTo(W / 2 + ax - 34, ty + 44); c.lineTo(W / 2 + ax - 18, ty + 36); c.lineTo(W / 2 + ax - 18, ty + 52); c.fill();
+      c.beginPath(); c.moveTo(W / 2 + ax + 34, ty + 44); c.lineTo(W / 2 + ax + 18, ty + 36); c.lineTo(W / 2 + ax + 18, ty + 52); c.fill();
+      c.restore();
+    }
     // 패들
     if (paddle && dyingT <= 0) {
       var sq = paddle.squash > 0 ? paddle.squash / 0.15 : 0, pw = paddle.w * (1 + sq * 0.06), ph = PH * (1 - sq * 0.25);
+      // 빛 번짐: 매 프레임 shadowBlur 대신 미리 그린 빛 점을 가로로 늘려 겹침
+      c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.55;
+      c.drawImage(A.glowDot(fireT > 0 ? '#ff7a45' : '#ffb547', 10), paddle.x - pw / 2 - 26, PY - 30, pw + 52, 60);
+      c.restore();
       c.save();
-      c.shadowColor = fireT > 0 ? '#ff7a45' : '#ffb547'; c.shadowBlur = 20;
       var g = c.createLinearGradient(0, PY - ph / 2, 0, PY + ph / 2); g.addColorStop(0, '#fff3d6'); g.addColorStop(0.5, '#ffb547'); g.addColorStop(1, '#a35a00');
       c.fillStyle = g; A.rr(c, paddle.x - pw / 2, PY - ph / 2, pw, ph, ph / 2); c.fill();
       c.restore();
@@ -464,6 +496,7 @@
   stage.addEventListener('pointercancel', function () { down = null; ptr = null; });
   stage.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') ptr = null; });
 
+  window.addEventListener('blur', function () { keys = {}; }); // 창을 벗어날 때 눌린 키가 남지 않게
   var S = new A.Shell({
     id: 'breakout', W: W, H: H,
     init: function () { paddle = { x: W / 2, w: 104, tw: 104 }; level = 1; buildLevel(1); balls = []; drops = []; },

@@ -36,8 +36,8 @@
     <aside class="g-side">
       <div class="g-card"><h3>CONTROLS</h3>
         <div class="g-keys">
-          <div class="k-only"><kbd>↑↓←→</kbd> 이동 (자동 조준)</div>
-          <div><kbd>드래그</kbd> 끄는 방향으로 비행</div>
+          <div class="k-only"><kbd>↑↓←→</kbd><kbd>WASD</kbd> 이동 (자동 조준)</div>
+          <div><kbd>드래그</kbd> 누른 곳에서 끄는 방향으로 비행</div>
           <div class="k-only"><kbd>P</kbd> 일시정지 <kbd>M</kbd> 소리 <kbd>F</kbd> 전체</div>
         </div>
       </div>
@@ -46,6 +46,8 @@
           <div>큰 운석 → 중간 → 작은 조각</div>
           <div><kbd style="color:#ffd166">◆</kbd> 광석 5개마다 화력 UP</div>
           <div>화면 끝은 반대편과 이어짐</div>
+          <div>웨이브 5마다 거대 운석 (+1000)</div>
+          <div>웨이브 3개를 넘길 때마다 목숨 +1</div>
         </div>
       </div>
     </aside>
@@ -62,9 +64,9 @@
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 16</p>
         <h1 class="ov-title">우주 광부</h1>
-        <p class="ov-desc">손가락을 끄는 방향으로 우주선이 날아가고 그쪽으로 자동 발사합니다. 운석에 부딪히면 목숨이 줄어요.</p>
+        <p class="ov-desc">화면을 누른 채 끌면 그 방향으로 우주선이 날아가고, 가까운 운석을 자동으로 쏩니다. 운석에 부딪히면 목숨이 줄어요.</p>
         <div class="ov-ctrl">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>드래그로 비행</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>끌어서 조이스틱 비행</span>
           <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>광석 모으면 화력 UP</span>
         </div>
         
@@ -114,35 +116,60 @@
 <script>
 (function () {
   'use strict';
-  var A = Arcade, W = 540, H = 960, TOP = 70;
+  var A = Arcade, W = 540, H = 960, TOP = 70, giants = 0;
   var fx = new A.FX();
+  // 3D 그래픽(assets/arcade/3d/rocks.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('rocks', function () { return { P: P, rocks: rocks, shots: shots, ores: ores, dying: dyingT }; }, function (h) { G3 = h; });
   var P, rocks, shots, ores, wave, score, lives, power, oreN, dyingT, drag = null, keys = {}, nextWaveT;
   function wrap(o) { if (o.x < -40) o.x += W + 80; if (o.x > W + 40) o.x -= W + 80; if (o.y < TOP - 40) o.y += H - TOP + 80; if (o.y > H + 40) o.y -= H - TOP + 80; }
-  function rockShape(r) { var pts = [], n = 11; for (var i = 0; i < n; i++) pts.push(r * A.rand(0.72, 1.08)); return pts; }
-  function addRock(x, y, size) { var r = [0, 18, 32, 52][size], a = Math.random() * Math.PI * 2, sp = A.rand(40, 90) * (4 - size) * 0.5 + wave * 6; rocks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: r, size: size, hp: size, rot: 0, vr: A.rand(-1, 1), shape: rockShape(r), hit: 0 }); }
-  function startWave() {
-    wave++; var n = 2 + wave;
-    for (var i = 0; i < n; i++) { var side = Math.random() < 0.5; addRock(side ? (Math.random() < 0.5 ? -30 : W + 30) : A.rand(0, W), side ? A.rand(TOP, H) : (Math.random() < 0.5 ? TOP - 30 : H + 30), 3); }
-    S.banner('WAVE ' + wave, '운석 접근'); if (wave > 1) A.sfx('level');
+  // 화면 비율이 바뀌면(세로↔가로) 진행 중인 물체 위치를 새 판에 맞게 늘이고 줄임
+  function geo(sh) {
+    landStats(sh); var nW = sh.W, nH = sh.H, nT = sh.land ? 12 : 70; if (nW === W && nH === H) return;
+    var sx = nW / W, sy = (nH - nT) / (H - TOP);
+    function m(o) { o.x *= sx; o.y = nT + (o.y - TOP) * sy; }
+    if (P) { m(P); rocks.forEach(m); shots.forEach(m); ores.forEach(m); if (drag) drag = null; }
+    W = nW; H = nH; TOP = nT;
   }
-  function reset() { P = { x: W / 2, y: H * 0.6, vx: 0, vy: 0, a: -Math.PI / 2, inv: 2, fire: 0 }; rocks = []; shots = []; ores = []; wave = 0; score = 0; lives = 3; power = 1; oreN = 0; dyingT = 0; nextWaveT = 0; drag = null; keys = {}; startWave(); fx.clear(); hud(); }
+  function rockShape(r) { var pts = [], n = 11; for (var i = 0; i < n; i++) pts.push(r * A.rand(0.72, 1.08)); return pts; }
+  function addRock(x, y, size) { var r = [0, 18, 32, 52, 80][size], a = Math.random() * Math.PI * 2, sp = size === 4 ? 45 : A.rand(40, 90) * (4 - size) * 0.5 + Math.min(wave, 10) * 6; rocks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: r, size: size, hp: size === 4 ? 16 : size, rot: 0, vr: A.rand(-1, 1) * (size === 4 ? 0.4 : 1), shape: rockShape(r), hit: 0 }); }
+  function startWave() {
+    wave++; var n = Math.min(10, 2 + wave);
+    for (var i = 0; i < n; i++) {
+      // 화면 가장자리에서 나오되, 화면이 이어져 있으니 우주선과 220px 이상 떨어진 곳에서만
+      for (var tries = 0, x, y; tries < 12; tries++) {
+        var side = Math.random() < 0.5; x = side ? (Math.random() < 0.5 ? -30 : W + 30) : A.rand(0, W); y = side ? A.rand(TOP, H) : (Math.random() < 0.5 ? TOP - 30 : H + 30);
+        var dx = Math.abs(x - P.x), dy = Math.abs(y - P.y); dx = Math.min(dx, W + 80 - dx); dy = Math.min(dy, H - TOP + 80 - dy);
+        if (Math.hypot(dx, dy) > 220) break;
+      }
+      addRock(x, y, i === 0 && wave % 5 === 0 ? 4 : 3);
+    }
+    if (wave > 1 && (wave - 1) % 3 === 0 && lives < 5) { lives++; fx.text(P.x, P.y - 50, '목숨 +1', '#ff9ecf', 22); A.sfx('power'); }
+    if (wave % 5 === 0) S.banner('WAVE ' + wave, '거대 운석 출현!'); else S.banner('WAVE ' + wave, '운석 접근'); if (wave > 1) A.sfx('level');
+  }
+  function reset() { giants = 0; P = { x: W / 2, y: H * 0.6, vx: 0, vy: 0, a: -Math.PI / 2, inv: 2, fire: 0 }; rocks = []; shots = []; ores = []; wave = 0; score = 0; lives = 3; power = 1; oreN = 0; dyingT = 0; nextWaveT = 0; drag = null; keys = {}; startWave(); fx.clear(); hud(); }
   function hurt() {
     if (P.inv > 0 || dyingT > 0) return; lives--; P.inv = 2.2; power = Math.max(1, power - 1);
-    fx.burst(P.x, P.y, '#9be7ff', 30, 380, 0.7, 3.5); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt'); A.vibrate(150);
-    if (lives <= 0) { dyingT = 1.3; A.sfx('bigboom'); } hud();
+    fx.burst(P.x, P.y, '#9be7ff', 30, 380, 0.7, 3.5); fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.5); A.sfx('hurt', 1, A.clamp(P.x / W * 2 - 1, -1, 1)); A.vibrate(150);
+    if (lives <= 0) { dyingT = 1.3; A.sfx('bigboom'); } else if (lives === 1) A.sfx('warn', 1.2); hud();
   }
   function breakRock(r, i) {
-    rocks.splice(i, 1); score += [0, 100, 50, 20][r.size];
+    rocks.splice(i, 1); score += [0, 100, 50, 20, 1000][r.size];
+    if (r.size === 4) { giants++; fx.text(r.x, r.y - 40, '거대 운석 격파 +1000', '#ffd166', 26); fx.shake(14, 0.6); A.sfx('bigboom'); for (var g = 0; g < 4; g++) ores.push({ x: r.x + A.rand(-30, 30), y: r.y + A.rand(-30, 30), t: 0 }); addRock(r.x, r.y, 3); addRock(r.x, r.y, 3); return; }
     fx.burst(r.x, r.y, '#b8a48c', 10 + r.size * 6, 200 + r.size * 40, 0.6, 3); fx.ring(r.x, r.y, '#9be7ff', r.r * 2, 0.3);
-    A.sfx(r.size > 1 ? 'boom' : 'hit', 1 + (3 - r.size) * 0.2); fx.shake(r.size * 1.5, 0.12);
+    A.sfx(r.size > 1 ? 'boom' : 'hit', 1 + (3 - r.size) * 0.2, A.clamp(r.x / W * 2 - 1, -1, 1)); fx.shake(r.size * 1.5, 0.12);
     if (r.size > 1) { addRock(r.x, r.y, r.size - 1); addRock(r.x, r.y, r.size - 1); }
     if (Math.random() < 0.18 + (r.size === 3 ? 0.3 : 0)) ores.push({ x: r.x, y: r.y, t: 0 });
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['광석', String(oreN)], ['화력', 'LV ' + power]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['거대 운석', String(giants)], vsBest(score)]); return; }
     var tx = 0, ty = 0;
-    if (drag) { tx = drag.x - P.x; ty = drag.y - P.y; var d = Math.hypot(tx, ty); if (d > 20) { tx /= d; ty /= d; } else { tx = 0; ty = 0; } }
+    // 가상 조이스틱: 누른 곳에서 끈 방향·거리만큼 추진 (손가락이 우주선을 가리지 않음)
+    if (drag && tut && Math.hypot(drag.x - drag.sx, drag.y - drag.sy) > 40) tutDone();
+    if ((keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight || keys.w || keys.a || keys.s || keys.d) && tut) tutDone();
+    if (drag) { tx = drag.x - drag.sx; ty = drag.y - drag.sy; var d = Math.hypot(tx, ty); if (d > 10) { var pw = Math.min(1, d / 60); tx = tx / d * pw; ty = ty / d * pw; } else { tx = 0; ty = 0; } }
     var kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
     if (kx || ky) { var l = Math.hypot(kx, ky); tx = kx / l; ty = ky / l; }
     P.vx += tx * 900 * dt; P.vy += ty * 900 * dt; P.vx *= 1 - 1.6 * dt; P.vy *= 1 - 1.6 * dt;
@@ -159,25 +186,29 @@
       P.fire = Math.max(0.09, 0.2 - power * 0.02);
       var spread = power >= 3 ? [-0.12, 0, 0.12] : power >= 2 ? [-0.06, 0.06] : [0];
       spread.forEach(function (s) { shots.push({ x: P.x + Math.cos(P.a) * 18, y: P.y + Math.sin(P.a) * 18, vx: Math.cos(P.a + s) * 760, vy: Math.sin(P.a + s) * 760, life: 0.75 }); });
-      A.sfx('shoot');
+      A.sfx('shoot', 1, A.clamp(P.x / W * 2 - 1, -1, 1));
     }
     var i, j;
     for (i = shots.length - 1; i >= 0; i--) { var s = shots[i]; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; wrap(s); if (s.life <= 0) shots.splice(i, 1); }
     for (i = rocks.length - 1; i >= 0; i--) {
       var r = rocks[i]; r.x += r.vx * dt; r.y += r.vy * dt; r.rot += r.vr * dt; wrap(r); if (r.hit > 0) r.hit -= dt;
-      for (j = shots.length - 1; j >= 0; j--) { if (Math.hypot(shots[j].x - r.x, shots[j].y - r.y) < r.r) { shots.splice(j, 1); r.hp--; r.hit = 0.08; if (r.hp <= 0) { breakRock(r, i); break; } else A.sfx('hit'); } }
+      for (j = shots.length - 1; j >= 0; j--) { if (Math.hypot(shots[j].x - r.x, shots[j].y - r.y) < r.r) { shots.splice(j, 1); r.hp--; r.hit = 0.08; if (r.hp <= 0) { breakRock(r, i); break; } else A.sfx('steel', 1 + (3 - r.size) * 0.15, A.clamp(r.x / W * 2 - 1, -1, 1)); } }
       if (rocks[i] === r && Math.hypot(r.x - P.x, r.y - P.y) < r.r * 0.85 + 12) hurt();
     }
     for (i = ores.length - 1; i >= 0; i--) {
       var o = ores[i]; o.t += dt; var od = Math.hypot(P.x - o.x, P.y - o.y);
       if (od < 140) { o.x += (P.x - o.x) * 5 * dt; o.y += (P.y - o.y) * 5 * dt; }
-      if (od < 26) { ores.splice(i, 1); oreN++; score += 30; A.sfx('coin'); if (oreN % 5 === 0 && power < 4) { power++; fx.text(P.x, P.y - 40, '화력 UP', '#ffd166', 20); A.sfx('power'); } }
+      if (od < 26) { ores.splice(i, 1); oreN++; score += 30; A.sfx('coin', 1 + (oreN % 5) * 0.08, A.clamp(o.x / W * 2 - 1, -1, 1)); if (oreN % 5 === 0 && power < 4) { power++; fx.text(P.x, P.y - 40, '화력 UP', '#ffd166', 20); A.sfx('power'); } }
       else if (o.t > 9) ores.splice(i, 1);
     }
-    if (!rocks.length) { nextWaveT += dt; if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2, 'CLEAR +' + wave * 200, '#ffd166', 24); startWave(); } }
+    if (!rocks.length) { nextWaveT += dt; if (nextWaveT > 1.2) { nextWaveT = 0; score += wave * 200; fx.text(W / 2, H / 2, 'CLEAR +' + wave * 200, '#ffd166', 24); A.sfx('gold'); startWave(); } }
     hud();
   }
+  function tutLayer(c) {
+    if (tut && P && S.state === 'playing' && !drag) tutText(c, isTouch() ? '누른 채 끌면 그 방향으로 날아가요' : '방향키·WASD 또는 끌어서 비행', '총은 가까운 운석을 자동으로 쏩니다', H * 0.78);
+  }
   function render(c) {
+    if (G3.draw(c, fx)) { tutLayer(c); return; } // 3D 화면에서도 첫 판 안내는 위에 겹쳐 그림
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     c.fillStyle = '#03060f'; c.fillRect(-10, -10, W + 20, H + 20);
@@ -195,15 +226,45 @@
       c.save(); c.translate(P.x, P.y); c.rotate(P.a); c.shadowColor = '#9be7ff'; c.shadowBlur = 16; c.fillStyle = '#e8fbff';
       c.beginPath(); c.moveTo(20, 0); c.lineTo(-14, -13); c.lineTo(-8, 0); c.lineTo(-14, 13); c.closePath(); c.fill(); c.restore();
     } else if (!P) { c.fillStyle = '#e8fbff'; c.beginPath(); c.arc(W / 2, H * 0.6, 10, 0, 7); c.fill(); }
+    tutLayer(c);
+    if (drag && S.state === 'playing') {
+      var jx = drag.x - drag.sx, jy = drag.y - drag.sy, jl = Math.hypot(jx, jy), jk = jl > 60 ? 60 / jl : 1;
+      c.strokeStyle = 'rgba(155,231,255,.35)'; c.lineWidth = 3; c.beginPath(); c.arc(drag.sx, drag.sy, 60, 0, 7); c.stroke();
+      c.fillStyle = 'rgba(155,231,255,.45)'; c.beginPath(); c.arc(drag.sx + jx * jk, drag.sy + jy * jk, 22, 0, 7); c.fill();
+    }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
   }
   var last = '';
   function hud() { var k = score + '|' + wave + '|' + lives + power; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = wave; document.getElementById('hC').textContent = lives; document.getElementById('hMult').textContent = '화력 LV ' + power; }
   var stage = document.getElementById('stage');
-  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; drag = S.toLocal(e); drag.id = e.pointerId; drag.sx = drag.x; drag.sy = drag.y; try { stage.setPointerCapture(e.pointerId); } catch (er) {} });
   stage.addEventListener('pointermove', function (e) { if (drag && drag.id === e.pointerId) { var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; } });
-  function end() { drag = null; } stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
-  var S = new A.Shell({ id: 'rocks', W: W, H: H, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  function end(e) { if (drag && e.pointerId !== drag.id) return; drag = null; } stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  window.addEventListener('blur', function () { keys = {}; drag = null; });
+  // 가로 화면: 판 위 점수판이 판을 가리지 않게, 오른쪽 패널에 같은 점수판을 만들어 글자를 따라 씀
+  function landStats(S) {
+    var hd = document.querySelector('.g-hud'); if (!hd || !S.panelSlot || S.panelSlot.firstChild) return; hd.setAttribute('data-land-hide', '');
+    var src = ['hA', 'hB', 'hC'].map(function (id) { return document.getElementById(id); }), mult = document.getElementById('hMult');
+    var card = document.createElement('div'); card.className = 'g-card gp-stats';
+    var outs = src.map(function (el) { var d = document.createElement('div'), sp = document.createElement('span'), b = document.createElement('b'), lb = el.parentNode.querySelector('.h-lb'); sp.textContent = lb ? lb.textContent : ''; d.appendChild(sp); d.appendChild(b); card.appendChild(d); return b; });
+    var om = document.createElement('div'); om.className = 'g-card'; om.style.cssText = 'text-align:center;font-weight:800;color:var(--gold)';
+    S.panelSlot.appendChild(card); S.panelSlot.appendChild(om);
+    function sync() { src.forEach(function (el, i) { outs[i].textContent = el.textContent; }); om.textContent = mult ? mult.textContent : ''; om.style.display = om.textContent ? '' : 'none'; }
+    var mo = new MutationObserver(sync); src.concat(mult ? [mult] : []).forEach(function (el) { mo.observe(el, { childList: true, characterData: true, subtree: true }); }); sync();
+  }
+  // 첫 판 안내(한 번 제대로 하면 다시 안 나옴)와 종료 화면 '최고 대비'
+  var tut = A.get('neowa_rocks_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_rocks_tut', '1'); } }
+  function isTouch() { return document.body.classList.contains('touch'); }
+  function vsBest(sc) { var b = S.best || 0; return ['최고 대비', !b ? '첫 기록' : sc > b ? '+' + A.fmt(sc - b) + ' 신기록' : '-' + A.fmt(b - sc)]; }
+  function tutText(c, a, b, y) {
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle'; var w = Math.max(a.length * 23, b ? b.length * 15 : 0) + 40;
+    c.fillStyle = 'rgba(0,0,0,.55)'; A.rr(c, W / 2 - w / 2, y - 30, w, b ? 82 : 60, 16); c.fill();
+    c.fillStyle = 'rgba(255,255,255,' + (0.8 + Math.sin(S.time * 5) * 0.2) + ')'; c.font = '800 24px "Pretendard Variable",system-ui'; c.fillText(a, W / 2, y);
+    if (b) { c.font = '600 16px "Pretendard Variable",system-ui'; c.fillStyle = 'rgba(255,255,255,.7)'; c.fillText(b, W / 2, y + 30); }
+    c.restore();
+  }
+  var S = new A.Shell({ id: 'rocks', W: W, H: H, land: [780, 720], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; }, keyup: function (e) { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; } });
 })();
 

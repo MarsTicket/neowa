@@ -46,6 +46,7 @@
           <div>다음 행성의 중력권에 들어가면 붙잡힘</div>
           <div><kbd style="color:#ff4d6d">●</kbd> 소행성에 닿으면 끝</div>
           <div><kbd style="color:#ffd166">★</kbd> 별 50점, 빨리 갈수록 보너스</div>
+          <div>행성을 건너뛰어 더 먼 곳에 붙으면 +150</div>
         </div>
       </div>
     </aside>
@@ -62,7 +63,7 @@
       <section class="g-ov" id="ovStart" aria-label="시작 화면">
         <p class="ov-kick">NEOWA ARCADE · 06</p>
         <h1 class="ov-title">오빗 점프</h1>
-        <p class="ov-desc">우주선은 행성 주위를 돕니다. 다음 행성을 향할 때 탭하면 그 방향으로 날아갑니다. 빗나가면 우주 미아!</p>
+        <p class="ov-desc">우주선은 행성 주위를 돕니다. 조준선이 노랗게 빛나며 다음 행성에 닿을 때 탭하세요. 빗나가면 우주 미아!</p>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>탭으로 발사</span>
           <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>별 50점</span>
@@ -116,8 +117,26 @@
   'use strict';
   var A = Arcade, W = 540, H = 960;
   var fx = new A.FX();
-  var planets = [], ship, cam = 0, camT = 0, score = 0, hops = 0, starN = 0, dyingT = 0, flyT = 0, nextY, stars = [], trail = [], bgStars = [];
+  // 3D 그래픽(assets/arcade/3d/orbit.js). 못 쓰는 기기에서는 아래 2D 그림 그대로
+  var G3 = { draw: function () { return false; } };
+  A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
+  A.load3D('orbit', function () { return { planets: planets, ship: ship, stars: stars, cam: cam, dying: dyingT, playing: S.state === 'playing' }; }, function (h) { G3 = h; });
+  var planets = [], ship, cam = 0, camT = 0, maxCam = 0, skipN = 0, score = 0, hops = 0, starN = 0, dyingT = 0, flyT = 0, nextY, stars = [], trail = [], bgStars = [];
   var PAL = ['#ff7a45', '#5ee7ff', '#b48cff', '#7dff9b', '#ffd166', '#ff7aa8'];
+  // 첫 판 안내: 첫 행성에 붙잡힐 때까지 (neowa_orbit_tut = 1 이면 안 보임)
+  var tut = A.get('neowa_orbit_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_orbit_tut', '1'); } }
+  function drawTut(c, x, y, msg) {
+    c.save(); c.font = '700 19px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var w = c.measureText(msg).width + 40, a = 0.6 + Math.sin(S.time * 5) * 0.4;
+    c.fillStyle = 'rgba(14,6,4,.88)'; A.rr(c, x - w / 2, y - 23, w, 46, 23); c.fill();
+    c.strokeStyle = '#ffd166'; c.lineWidth = 2; c.globalAlpha = 0.5 + a * 0.5; c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = '#fff'; c.fillText(msg, x, y + 1); c.restore();
+  }
+  var SHIP = A.sprite('oship', 44, 44, function (x) {
+    x.translate(22, 22); x.shadowColor = '#ffb08a'; x.shadowBlur = 14; x.fillStyle = '#fff';
+    x.beginPath(); x.moveTo(14, 0); x.lineTo(-10, -9); x.lineTo(-5, 0); x.lineTo(-10, 9); x.closePath(); x.fill();
+  });
   for (var i = 0; i < 140; i++) bgStars.push({ x: Math.random() * W, y: Math.random() * H, z: Math.random() });
 
   function planetSprite(color, r) {
@@ -145,7 +164,7 @@
     if (!first && Math.random() < 0.7) stars.push({ x: A.rand(60, W - 60), y: y + A.rand(80, 160), got: false });
   }
   function reset() {
-    planets = []; stars = []; trail = []; hops = 0; starN = 0; score = 0; dyingT = 0; flyT = 0; cam = 0; camT = 0;
+    planets = []; stars = []; trail = []; hops = 0; starN = 0; score = 0; dyingT = 0; flyT = 0; cam = 0; camT = 0; maxCam = 0; skipN = 0;
     addPlanet(700, true); nextY = 700;
     for (var i = 0; i < 5; i++) { nextY -= A.rand(230, 300); addPlanet(nextY); }
     var p = planets[0];
@@ -154,27 +173,44 @@
   }
   function orbitR(p) { return p.r + 28; }
   function placeShip() { var p = ship.p, R = orbitR(p); ship.x = p.x + Math.cos(ship.a) * R; ship.y = p.y + Math.sin(ship.a) * R; }
+  // 지금 발사하면 어느 행성에 붙잡힐지 미리 계산 (직선 비행)
+  function aimTarget() {
+    if (!ship || ship.fly) return null;
+    var p = ship.p, dir = Math.sign(p.spin), tx = -Math.sin(ship.a) * dir, ty = Math.cos(ship.a) * dir;
+    var spd = 620 + Math.min(260, hops * 6), best = null, bestT = 1e9;
+    for (var i = 0; i < planets.length; i++) {
+      var q = planets[i]; if (q === p) continue;
+      var dx = q.x - ship.x, dy = q.y - ship.y, pr = dx * tx + dy * ty; if (pr <= 0) continue;
+      var R = orbitR(q) + 6, d2 = dx * dx + dy * dy - pr * pr; if (d2 > R * R) continue;
+      var tt = pr - Math.sqrt(R * R - d2); if (tt < 0 || tt > spd * 2.4 || tt >= bestT) continue;
+      var ex = ship.x + tx * tt, ey = ship.y + ty * tt;
+      if (ex < -40 || ex > W + 40 || ey + cam < -120 || ey + cam > H + 60) continue;
+      bestT = tt; best = { q: q, t: tt, up: q.y < p.y - 10 };
+    }
+    return best;
+  }
   function launch() {
     if (S.state !== 'playing' || dyingT > 0 || ship.fly) return;
     var p = ship.p, dir = Math.sign(p.spin), spd = 620 + Math.min(260, hops * 6);
     // 접선 방향
     ship.vx = -Math.sin(ship.a) * dir * spd; ship.vy = Math.cos(ship.a) * dir * spd;
-    ship.fly = true; ship.from = p; flyT = 0; A.sfx('shoot', 0.6); fx.burst(ship.x, ship.y, p.c, 10, 200, 0.3, 2.5);
+    ship.fly = true; ship.from = p; flyT = 0; A.sfx('whoosh', 1.1, A.clamp(ship.x / W * 2 - 1, -1, 1)); fx.burst(ship.x, ship.y, p.c, 10, 200, 0.3, 2.5);
   }
   function die() {
     if (dyingT > 0) return;
     dyingT = 1.2; fx.burst(ship.x, ship.y, '#ff7a45', 40, 420, 0.8, 4); fx.burst(ship.x, ship.y, '#fff', 14, 300, 0.4, 2.4);
-    fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.4); A.sfx('bigboom'); A.vibrate(160);
+    fx.shake(10, 0.4); fx.flashIt('#ff2244', 0.4); A.sfx('bigboom', 1, A.clamp(ship.x / W * 2 - 1, -1, 1)); A.vibrate(160);
   }
   function update(dt) {
     fx.update(dt);
-    camT = Math.max(camT, 700 - (ship.fly ? ship.from.y : ship.p.y)); // 현재 행성을 화면 아래쪽(y=700)에
-    cam = A.lerp(cam, camT, Math.min(1, dt * 3));
+    // 현재 행성을 화면 아래쪽(y=700)에. 아래 행성에 다시 붙잡혀도 화면 밖으로 사라지지 않게 카메라도 따라 내려감
+    camT = 700 - (ship.fly ? ship.from.y : ship.p.y);
+    cam = A.lerp(cam, camT, Math.min(1, dt * 3)); maxCam = Math.max(maxCam, cam);
     planets.forEach(function (p) {
       if (p.mv) { p.x += p.mv * dt; if (p.x < p.r + 30 || p.x > W - p.r - 30) p.mv *= -1; }
       p.rocks.forEach(function (r) { r.a += p.rockSpin * dt; });
     });
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['행성', String(hops)], ['별', String(starN)], ['최고 높이', Math.floor(cam / 10) + 'km']]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['행성', String(hops)], ['별', String(starN)], ['건너뛰기', String(skipN)]]); return; }
     if (!ship.fly) {
       ship.a += ship.p.spin * dt * (1 + Math.min(0.8, hops * 0.02)); placeShip();
     } else {
@@ -189,11 +225,16 @@
           p.spin = Math.abs(p.spin) * (cross > 0 ? 1 : -1);
           ship.p = p; ship.a = a; ship.fly = false; trail = [];
           if (p.y < ship.from.y - 10) {
-            hops++; var bonus = Math.max(0, Math.round((1.2 - flyT) * 50));
+            tutDone();
+            // 사이에 있던 행성을 건너뛰고 더 먼 행성에 붙으면 보너스
+            var skipped = 0; for (var q2 = 0; q2 < planets.length; q2++) { var pq = planets[q2]; if (pq !== p && pq !== ship.from && pq.y < ship.from.y - 10 && pq.y > p.y + 10) skipped++; }
+            var oldHops = hops; hops += 1 + skipped; skipN += skipped;
+            var bonus = Math.max(0, Math.round((1.2 - flyT) * 50)) + skipped * 150;
             score += 100 + bonus; fx.text(p.x, p.y - p.r - 40, '+' + (100 + bonus), '#fff', 20);
-            if (hops % 10 === 0) { S.banner(hops + ' 행성', '더 깊은 우주로'); A.sfx('level'); }
+            if (skipped) { fx.text(p.x, p.y - p.r - 66, skipped > 1 ? skipped + '개 건너뛰기!' : '건너뛰기!', '#ffd166', 20); A.sfx('gold'); }
+            if (Math.floor(hops / 10) > Math.floor(oldHops / 10)) { S.banner(Math.floor(hops / 10) * 10 + ' 행성', '더 깊은 우주로'); A.sfx('level'); }
           }
-          A.sfx('power'); fx.ring(p.x, p.y, p.c, p.r * 2.4, 0.5); A.vibrate(15);
+          A.sfx('combo', 1 + Math.min(hops, 12) * 0.05, A.clamp(p.x / W * 2 - 1, -1, 1)); A.sfx('land', 1.3, A.clamp(p.x / W * 2 - 1, -1, 1)); fx.ring(p.x, p.y, p.c, p.r * 2.4, 0.5); A.vibrate(15);
           // 행성 보충
           while (nextY > p.y - 1400) { nextY -= A.rand(230, 300 + Math.min(80, hops * 2)); addPlanet(nextY); }
           planets = planets.filter(function (q) { return q.y < p.y + 900; });
@@ -211,11 +252,15 @@
       });
     });
     stars.forEach(function (s) {
-      if (!s.got && Math.hypot(s.x - ship.x, s.y - ship.y) < 34) { s.got = true; starN++; score += 50; fx.burst(s.x, s.y, '#ffd166', 14, 220, 0.5, 3); fx.text(s.x, s.y - 20, '+50', '#ffd166', 18); A.sfx('coin'); }
+      if (!s.got && Math.hypot(s.x - ship.x, s.y - ship.y) < 34) { s.got = true; starN++; score += 50; fx.burst(s.x, s.y, '#ffd166', 14, 220, 0.5, 3); fx.text(s.x, s.y - 20, '+50', '#ffd166', 18); A.sfx('coin', 1 + (starN % 8) * 0.04, A.clamp(s.x / W * 2 - 1, -1, 1)); }
     });
     hud();
   }
+  function tutLayer(c) {
+    if (tut && ship && S.state === 'playing' && dyingT <= 0) drawTut(c, W / 2, Math.min(H - 60, ship.p.y + cam + ship.p.r + 90), document.body.classList.contains('touch') ? '조준선이 노랗게 바뀌면 탭!' : '조준선이 노랗게 바뀌면 Space!');
+  }
   function render(c) {
+    if (G3.draw(c, fx)) { tutLayer(c); return; } // 3D 화면에서도 첫 판 안내는 위에 겹쳐 그림
     var o = fx.offset(), t = S.time;
     c.save(); c.translate(o[0], o[1]);
     var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#04030c'); g.addColorStop(1, '#12081f'); c.fillStyle = g; c.fillRect(-10, -10, W + 20, H + 20);
@@ -241,17 +286,20 @@
       if (dyingT <= 0) {
         // 조준선: 지금 발사하면 날아갈 방향
         if (!ship.fly && S.state === 'playing') {
-          var dir = Math.sign(ship.p.spin), tx = -Math.sin(ship.a) * dir, ty = Math.cos(ship.a) * dir;
-          c.strokeStyle = 'rgba(255,255,255,.35)'; c.setLineDash([3, 9]); c.lineWidth = 2; c.beginPath(); c.moveTo(ship.x, ship.y); c.lineTo(ship.x + tx * 160, ship.y + ty * 160); c.stroke(); c.setLineDash([]);
+          var dir = Math.sign(ship.p.spin), tx = -Math.sin(ship.a) * dir, ty = Math.cos(ship.a) * dir, at = aimTarget();
+          // 다음 행성에 닿는 방향이면 조준선이 노랗게 길어짐 = 지금 탭!
+          var good = at && at.up, len = good ? at.t : 160;
+          c.strokeStyle = good ? 'rgba(255,209,102,.9)' : 'rgba(255,255,255,.35)'; c.setLineDash([3, 9]); c.lineWidth = good ? 3 : 2; c.beginPath(); c.moveTo(ship.x, ship.y); c.lineTo(ship.x + tx * len, ship.y + ty * len); c.stroke(); c.setLineDash([]);
+          if (good) { c.strokeStyle = 'rgba(255,209,102,.55)'; c.lineWidth = 2; c.beginPath(); c.arc(at.q.x, at.q.y, orbitR(at.q) + 6, 0, Math.PI * 2); c.stroke(); }
         }
         var ang = ship.fly ? Math.atan2(ship.vy, ship.vx) : ship.a + Math.PI / 2 * Math.sign(ship.p.spin);
-        c.save(); c.translate(ship.x, ship.y); c.rotate(ang);
-        c.shadowColor = '#ffb08a'; c.shadowBlur = 14; c.fillStyle = '#fff';
-        c.beginPath(); c.moveTo(14, 0); c.lineTo(-10, -9); c.lineTo(-5, 0); c.lineTo(-10, 9); c.closePath(); c.fill(); c.restore();
+        A.draw(c, SHIP, ship.x, ship.y, 1, ang);
       }
     }
     fx.draw(c);
-    c.restore(); c.restore(); fx.drawFlash(c, W, H);
+    c.restore();
+    tutLayer(c);
+    c.restore(); fx.drawFlash(c, W, H);
   }
   function hud() {
     document.getElementById('hA').textContent = A.fmt(score);

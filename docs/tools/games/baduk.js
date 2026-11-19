@@ -50,27 +50,28 @@
   }
 
   var ghosts = {}, prob, bd, ko, step, phase, phaseT, tLeft, hearts, score, solved, count, streak, best, hints, hintOn, usedHint, marks, lastMv, born, wrongAt, dyingT, revealN;
-  var cur = { x: 4, y: 4 }, kbd = false;
+  var cur = { x: 4, y: 4 }, kbd = false, pend = -1; // pend: 터치로 고른 자리 (한 번 더 탭하면 둠)
   function reset() { hearts = 3; score = 0; solved = 0; count = 0; streak = 0; best = 0; hints = 3; dyingT = 0; bags = {}; fx.clear(); next(); }
   function levelFor(n) {
     if (n < 3) return 2; if (n < 8) return Math.random() < 0.5 ? 2 : 3; if (n < 14) return 3;
     if (n < 20) return Math.random() < 0.5 ? 3 : 4; return Math.random() < 0.3 ? 3 : 4;
   }
-  function load(s) { prob = decode(s, A.irand(0, 7)); bd = prob.bd.slice(); ko = -1; step = 0; phase = 'play'; phaseT = 0; tLeft = LIMIT[prob.k]; hintOn = false; usedHint = false; lastMv = null; born = {}; wrongAt = -1; revealN = 0; marks = {}; ghosts = {}; }
+  function load(s) { prob = decode(s, A.irand(0, 7)); bd = prob.bd.slice(); ko = -1; step = 0; phase = 'play'; phaseT = 0; tLeft = LIMIT[prob.k]; hintOn = false; usedHint = false; lastMv = null; born = {}; wrongAt = -1; revealN = 0; marks = {}; ghosts = {}; pend = -1; }
   function next() { count++; load(draw(levelFor(count - 1))); if (S && S.state === 'playing') S.banner('문제 ' + count, prob.k + '수 안에 잡으세요'); hud(); }
   function targetStones() { return bd[prob.t] === 2 ? group(bd, prob.t).stones : []; }
   function put(p, c) {
     var m = play(bd, p, c, ko); if (!m) return null;
     bd = m.bd; ko = m.ko; lastMv = p; born[p] = S ? S.time : 0;
-    A.sfx('tick', c === 1 ? 1.3 : 0.85);
+    A.sfx('place', c === 1 ? 1.1 : 0.85);
     // 잡힌 돌은 반투명하게 남겨서 무엇을 잡았는지 보이게
     m.cap.forEach(function (q) { ghosts[q] = { c: 3 - c, n: marks[q] }; delete marks[q]; });
     m.cap.forEach(function (q) { var x = GX + (q % N) * CS, y = GY + ((q / N) | 0) * CS; fx.burst(x, y, c === 1 ? '#ffffff' : '#555a66', 10, 180, 0.5, 3); });
-    if (m.cap.length) { A.sfx('brick', 1 + m.cap.length * 0.05); fx.shake(3, 0.15); }
+    if (m.cap.length) { A.sfx('pop', 1 + Math.min(m.cap.length, 10) * 0.05); fx.shake(3, 0.15); }
     return m;
   }
   function human(p) {
     if (S.state !== 'playing' || phase !== 'play' || dyingT > 0) return;
+    pend = -1;
     if (bd[p] !== 0) { A.sfx('wall'); return; }
     if (p === prob.seq[step]) {
       put(p, 1); marks[p] = step + 1; step++; hintOn = false;
@@ -85,13 +86,13 @@
     score += pts; solved++; streak++; if (streak > best) best = streak;
     var tx = GX + 4 * CS, ty = GY + 4 * CS;
     fx.text(tx, ty - 30, '정답!', '#f2c879', 44); fx.text(tx, ty + 20, '+' + A.fmt(pts), '#ffd166', 26); fx.flashIt('#f2c879', 0.18);
-    A.sfx('gold'); A.vibrate([15, 30, 15]); if (streak > 0 && streak % 5 === 0) { A.sfx('level'); S.banner(streak + '연속 정답!', '배율 ×' + (1 + Math.min(streak, 10) * 0.1).toFixed(1)); }
+    A.sfx('right'); A.sfx('gold', 1 + Math.min(streak, 10) * 0.03); A.vibrate([15, 30, 15]); if (streak > 0 && streak % 5 === 0) { A.sfx('level'); S.banner(streak + '연속 정답!', '배율 ×' + (1 + Math.min(streak, 10) * 0.1).toFixed(1)); }
     phase = 'solved'; phaseT = 1.3; hud();
   }
   function fail(p) {
-    hearts--; streak = 0; wrongAt = p; hintOn = false;
+    hearts--; streak = 0; wrongAt = p; hintOn = false; pend = -1;
     if (p >= 0) { fx.text(GX + (p % N) * CS, GY + ((p / N) | 0) * CS - 24, '오답', '#ff4d6d', 24); } else fx.text(GX + 4 * CS, GY + 4 * CS, '시간 초과', '#ff4d6d', 34);
-    A.sfx('hurt'); fx.shake(8, 0.3); fx.flashIt('#ff2244', 0.3); A.vibrate(120);
+    A.sfx('wrong'); fx.shake(8, 0.3); fx.flashIt('#ff2244', 0.3); A.vibrate(120);
     phase = 'reveal'; phaseT = 1.0; hud();
   }
   function useHint() {
@@ -103,7 +104,7 @@
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['푼 문제', String(solved)], ['최고 연속', String(best)], ['도전', String(count)]]); return; }
     if (phase === 'play') {
       tLeft -= dt; if (tLeft <= 0) { tLeft = 0; fail(-1); return; }
-      if (tLeft < 5 && Math.ceil(tLeft) !== Math.ceil(tLeft + dt)) A.sfx('tick', 1.6);
+      if (tLeft < 5 && Math.ceil(tLeft) !== Math.ceil(tLeft + dt)) A.sfx('warn');
     } else if (phase === 'white') {
       phaseT -= dt; if (phaseT <= 0) { var p = prob.seq[step]; put(p, 2); marks[p] = step + 1; step++; phase = 'play'; hud(); }
     } else if (phase === 'solved') {
@@ -161,6 +162,12 @@
     }
     // 오답 표시 X
     if (wrongAt >= 0 && phase !== 'play') { var wx = GX + (wrongAt % N) * CS, wy = GY + ((wrongAt / N) | 0) * CS, d = CS * 0.26; c.strokeStyle = '#ff4d6d'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(wx - d, wy - d); c.lineTo(wx + d, wy + d); c.moveTo(wx + d, wy - d); c.lineTo(wx - d, wy + d); c.stroke(); c.lineCap = 'butt'; }
+    // 터치로 고른 자리: 반투명 흑돌 + 깜빡이는 테두리 (한 번 더 탭하면 둠)
+    if (pend >= 0 && play_ && phase === 'play' && !bd[pend]) {
+      var ppx = GX + (pend % N) * CS, ppy = GY + ((pend / N) | 0) * CS;
+      c.globalAlpha = 0.55; A.draw(c, stoneSprite(1, Math.round(r)), ppx, ppy, 1); c.globalAlpha = 1;
+      c.strokeStyle = 'rgba(94,231,255,' + (0.55 + 0.45 * Math.sin(t * 9)) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(ppx, ppy, r + 3, 0, 7); c.stroke();
+    }
     // 키보드 커서
     if (kbd && play_ && phase === 'play') { c.strokeStyle = '#5ee7ff'; c.lineWidth = 3; c.strokeRect(GX + cur.x * CS - CS / 2 + 3, GY + cur.y * CS - CS / 2 + 3, CS - 6, CS - 6); }
     // 위쪽 안내: 문제 설명 + 남은 시간 막대
@@ -169,7 +176,7 @@
     c.fillStyle = '#f2c879'; c.font = '800 ' + (land ? 30 : 27) + 'px "Pretendard Variable",system-ui';
     c.fillText(phase === 'reveal' || phase === 'over' ? '정답 수순' : phase === 'solved' ? '잡았습니다!' : '흑 차례 · 백 ' + tn + '점을 잡으세요', W / 2, ay);
     c.fillStyle = 'rgba(255,255,255,.65)'; c.font = '600 17px "Pretendard Variable",system-ui';
-    c.fillText(prob.k + '수 문제 · ' + (phase === 'white' ? '백이 응수하는 중…' : phase === 'play' ? '흑 ' + Math.max(1, Math.ceil((prob.seq.length - step) / 2)) + '수 남음' : phase === 'solved' ? '다음 문제로' : '번호 순서대로 두면 잡혀요'), W / 2, ay + 36);
+    c.fillText(prob.k + '수 문제 · ' + (phase === 'white' ? '백이 응수하는 중…' : phase === 'play' ? (pend >= 0 ? '한 번 더 탭하면 둡니다' : '흑 ' + Math.max(1, Math.ceil((prob.seq.length - step) / 2)) + '수 남음') : phase === 'solved' ? '다음 문제로' : '번호 순서대로 두면 잡혀요'), W / 2, ay + 36);
     var bw = Math.min(L + BP * 2, 460), bx = W / 2 - bw / 2, by = ay + 62, fr = prob ? A.clamp(tLeft / LIMIT[prob.k], 0, 1) : 1;
     c.fillStyle = 'rgba(255,255,255,.08)'; A.rr(c, bx, by, bw, 8, 4); c.fill();
     c.fillStyle = fr < 0.25 ? '#ff4d6d' : '#f2c879'; if (fr > 0) { A.rr(c, bx, by, Math.max(8, bw * fr), 8, 4); c.fill(); }
@@ -192,7 +199,7 @@
     if (!pEl.title) return;
     var playing = S && S.state === 'playing';
     pEl.title.textContent = playing ? '문제 ' + count + ' · ' + prob.k + '수' : '나는 흑, 먼저 둡니다';
-    pEl.sub.textContent = !playing ? '◎ 표시된 백 돌을 잡으세요' : phase === 'white' ? '백이 응수하는 중…' : phase === 'play' ? '정답 자리를 누르세요' : phase === 'solved' ? '정답!' : '정답 수순을 보는 중';
+    pEl.sub.textContent = !playing ? '◎ 표시된 백 돌을 잡으세요' : phase === 'white' ? '백이 응수하는 중…' : phase === 'play' ? (pend >= 0 ? '한 번 더 탭하면 둡니다' : '정답 자리를 누르세요') : phase === 'solved' ? '정답!' : '정답 수순을 보는 중';
     pEl.score.textContent = A.fmt(score); pEl.streak.textContent = streak; pEl.life.textContent = hs; pEl.hintN.textContent = hints;
     pEl.hintBtn.disabled = !playing || hints <= 0 || phase !== 'play';
   }
@@ -200,7 +207,12 @@
     if (S.state !== 'playing') return; kbd = false; var p = S.toLocal(e);
     if (!land) { var hb = hintBtn(); if (p.x > hb.x && p.x < hb.x + hb.w && p.y > hb.y && p.y < hb.y + hb.h) { useHint(); return; } }
     var x = Math.round((p.x - GX) / CS), y = Math.round((p.y - GY) / CS);
-    if (x >= 0 && y >= 0 && x < N && y < N && Math.abs(p.x - GX - x * CS) < CS * 0.48 && Math.abs(p.y - GY - y * CS) < CS * 0.48) human(y * N + x);
+    if (x >= 0 && y >= 0 && x < N && y < N && Math.abs(p.x - GX - x * CS) < CS * 0.48 && Math.abs(p.y - GY - y * CS) < CS * 0.48) {
+      var q = y * N + x;
+      // 터치는 손가락이 가려 잘못 누르기 쉬워서 두 번에 나눠 둠: 첫 탭 = 자리 고르기, 같은 자리 한 번 더 = 두기
+      if (e.pointerType === 'touch' && phase === 'play' && bd[q] === 0 && pend !== q) { pend = q; A.sfx('tick', 1.6); hud(); return; }
+      human(q);
+    } else if (pend >= 0) { pend = -1; hud(); }
   });
   var pEl = {}, S = null;
   S = new A.Shell({ id: 'baduk', W: W, H: H, land: [720, 820], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,

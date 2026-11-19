@@ -37,7 +37,7 @@
   // ---------- 진행 ----------
   function reset() {
     mobile = document.body.classList.contains('touch');
-    words = []; lives = 5; score = 0; elapsed = 0; spawnT = 0.6; typed = 0; strokes = 0; combo = 0; best = 0; phase = ready ? 'play' : 'wait'; count = 0; fx.clear(); hud();
+    words = []; lives = 5; score = 0; elapsed = 0; spawnT = 0.6; typed = 0; strokes = 0; combo = 0; best = 0; phase = ready ? 'play' : 'wait'; count = 0; fx.clear(); hud(); if (A.music && A.music.mood) A.music.mood(null);
     inp.value = ''; showInput(); setTimeout(function () { try { inp.focus(); } catch (e) {} }, 0);
   }
   function submit(v) {
@@ -45,12 +45,12 @@
     if (!v || phase !== 'play' || S.state !== 'playing') return;
     var idx = -1, low = -1;
     words.forEach(function (o, i) { if (o.w === v && o.y > low) { low = o.y; idx = i; } });
-    if (idx < 0) { combo = 0; flash = 0.3; A.sfx('hurt'); A.vibrate(15); fx.text(W / 2, groundY() - 20, '없는 낱말', '#ff8a9a', 20); hud(); return; }
+    if (idx < 0) { combo = 0; flash = 0.3; A.sfx('wrong'); A.vibrate(15); fx.text(W / 2, groundY() - 20, '없는 낱말', '#ff8a9a', 20); hud(); return; }
     var o = words[idx]; words.splice(idx, 1);
     combo++; best = Math.max(best, combo); typed++; strokes += jamoCount(o.w);
     var mult = 1 + elapsed / 60, pts = Math.round(o.w.length * 10 * mult * (1 + Math.min(combo, 20) * 0.05)); score += pts;
     fx.burst(o.x, o.y, o.gold ? '#ffd166' : '#7aa2ff', o.gold ? 30 : 16, 260, 0.5, 3); fx.text(o.x, o.y - 18, '+' + pts, '#cfe0ff', 18);
-    A.sfx(o.gold ? 'power' : 'coin', 1 + Math.min(combo, 10) * 0.03); A.vibrate(8);
+    A.sfx(o.gold ? 'gold' : combo >= 5 ? 'combo' : 'coin', 1 + Math.min(combo, 12) * 0.05); A.vibrate(8);
     if (o.gold) {
       // 황금 낱말: 화면의 낱말을 모두 터뜨림
       words.forEach(function (q) { var p2 = Math.round(q.w.length * 10 * mult); score += p2; fx.burst(q.x, q.y, '#ffd166', 12, 220, 0.5, 2.5); });
@@ -70,6 +70,7 @@
       var o = words[i]; o.y += o.sp * dt;
       if (o.y >= gy) {
         words.splice(i, 1); lives--; combo = 0; fx.burst(o.x, gy, '#ff4d6d', 18, 240, 0.5, 3); fx.shake(6, 0.2); A.sfx('hurt'); A.vibrate(30); hud();
+        if (A.music && A.music.mood) A.music.mood(lives <= 1 ? 'danger' : null);
         if (lives <= 0) { phase = 'over'; hideInput(); S.gameOver(score, [['지운 낱말', String(typed)], ['분당 타수', String(wpm())], ['최고 연속', String(best)]]); return; }
       }
     }
@@ -146,7 +147,7 @@
     }
   });
   inp.addEventListener('compositionend', function () { if (pending) { pending = false; setTimeout(doSubmit, 0); } });
-  inp.addEventListener('input', function () { if (/\s$/.test(inp.value)) doSubmit(); });
+  inp.addEventListener('input', function () { if (/\s$/.test(inp.value)) doSubmit(); else if (S.state === 'playing' && phase === 'play') { var iv = inp.value; if (iv && words.some(function (o) { return o.w.indexOf(iv) === 0; })) A.sfx('tap'); } });
   document.getElementById('stage').addEventListener('click', function () { if (S.state === 'playing') try { inp.focus(); } catch (e) {} });
   // 입력창에서는 P·M·F가 글자로 들어가므로 안내 문구를 바꿈
   Array.prototype.forEach.call(document.querySelectorAll('.k-only'), function (el) { var k = el.querySelector('kbd'); if (k && k.textContent === 'P' && /일시정지/.test(el.textContent)) el.innerHTML = '소리·전체 화면은 위 단추'; });

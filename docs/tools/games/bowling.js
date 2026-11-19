@@ -225,7 +225,8 @@
     var a = P(x0, y0), b = P(x1, y0), e = P(x1, y1), d = P(x0, y1);
     c.fillStyle = col; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.lineTo(e.x, e.y); c.lineTo(d.x, d.y); c.closePath(); c.fill();
   }
-  function render(c, t) {
+  function render(c) {
+    var t = S.time; // 엔진은 render(ctx, dt)로 부름 → 예전엔 t 가 프레임 간격이라 안내 깜빡임이 멈춰 있었음
     if (!pins) reset();
     c.fillStyle = '#0b0603'; c.fillRect(0, 0, W, H);
     var o = fx.offset(); c.save(); c.translate(o[0], o[1]);

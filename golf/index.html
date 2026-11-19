@@ -91,7 +91,7 @@
         <div class="ov-meta" id="ovMeta"></div>
         <div class="ov-col">
           <button class="btn btn-p" data-act="restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>다시 하기</button>
-          <a class="ov-next" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span class="grow"><b>별빛 수호대</b>다음 게임 해 보기</span><span>→</span></a>
+          <a class="ov-next" href="../bowling/"><img src="../assets/bowling-card.jpg" alt=""><span class="grow"><b>볼링</b>다음 게임 해 보기</span><span>→</span></a>
         </div>
         <p class="ov-best">최고기록<b data-best>0</b></p>
       </section>
@@ -103,8 +103,8 @@
         <div class="g-stat"><span>플레이 횟수</span><b data-plays>0</b></div>
       </div>
       <div class="g-card"><h3>MORE GAMES</h3>
-        <a class="g-more" href="../shooting/"><img src="../assets/shooting-card.jpg" alt=""><span><b>별빛 수호대</b><span>슈팅</span></span></a>
-        <a class="g-more" href="../runner/"><img src="../assets/runner-card.jpg" alt=""><span><b>네온 대시</b><span>원탭 러너</span></span></a>
+        <a class="g-more" href="../bowling/"><img src="../assets/bowling-card.jpg" alt=""><span><b>볼링</b><span>볼링</span></span></a>
+        <a class="g-more" href="../breakout/"><img src="../assets/breakout-card.jpg" alt=""><span><b>네온 브레이커</b><span>벽돌깨기</span></span></a>
       </div>
     </aside>
   </main>
@@ -308,7 +308,8 @@
     if (kbd && phase === 'aim') return { a: kAng, p: kPow };
     return null;
   }
-  function render(c, t) {
+  function render(c) {
+    var t = S.time; // 엔진은 render(ctx, dt)로 부름 → 예전엔 t 가 프레임 간격이라 물결·경사 화살표·깃발·안내 깜빡임이 멈춰 있었음
     if (!C) reset(); // 시작 전 첫 화면에도 코스를 보여 줌
     c.fillStyle = '#04110a'; c.fillRect(0, 0, W, H);
     var o = fx.offset(); c.save(); c.translate(o[0], o[1]);

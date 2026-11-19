@@ -193,7 +193,8 @@
     if (kbd && phase === 'aim') return { a: kAng, p: kPow };
     return null;
   }
-  function render(c, t) {
+  function render(c) {
+    var t = S.time; // 엔진은 render(ctx, dt)로 부름 → 예전엔 t 가 프레임 간격이라 물결·경사 화살표·깃발·안내 깜빡임이 멈춰 있었음
     if (!C) reset(); // 시작 전 첫 화면에도 코스를 보여 줌
     c.fillStyle = '#04110a'; c.fillRect(0, 0, W, H);
     var o = fx.offset(); c.save(); c.translate(o[0], o[1]);

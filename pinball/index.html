@@ -121,6 +121,24 @@
   var G3 = { draw: function () { return false; } };
   A.load3D = A.load3D || function (id, get, done) { var s = document.createElement('script'); s.src = '../assets/arcade/g3d.js?v=1'; s.onload = function () { done(A.G3D.boot(id, get)); }; document.head.appendChild(s); };
   A.load3D('pinball', function () { return { ball: ball, balls: balls, lit: lit, FL: FL, B: BUMPERS, saveT: saveT }; }, function (h) { G3 = h; });
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_pinball_tut)
+  var tutOn = A.get('neowa_pinball_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_pinball_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
   var ball, balls, score, mult, lit, flip, dyingT, launchT, stuck, nextExtra, keysL = false, keysR = false, touchL = false, touchR = false, saveT;
   // 벽 선분 [x1,y1,x2,y2]
   var WALLS = [[30, 960, 30, 230], [30, 230, 120, 110], [120, 110, 420, 110], [420, 110, 510, 230], [510, 230, 510, 960],
@@ -142,9 +160,11 @@
   }
   function update(dt) {
     fx.update(dt);
-    var lUp = keysL || touchL, rUp = keysR || touchR;
+    // 아주 짧은 탭도 플리퍼가 최소 0.1초는 올라가게
+    if (holdL > 0) holdL -= dt; if (holdR > 0) holdR -= dt;
+    var lUp = keysL || touchL || holdL > 0, rUp = keysR || touchR || holdR > 0; if (lUp || rUp) tutDone();
     ['L', 'R'].forEach(function (k) { var f = FL[k], up = k === 'L' ? lUp : rUp, target = up ? f.up : f.rest; if (up && !f.on) A.sfx('tap', k === 'L' ? 0.9 : 1.1, k === 'L' ? -0.6 : 0.6); f.on = up; f.prev = f.a; var sp = 22 * dt; f.a += A.clamp(target - f.a, -sp, sp); });
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최고 배율', '×' + bestMult]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['최고 배율', '×' + bestMult], ['타깃 완성', tgtN + '번'], ['최고 대비', vsBest(score)]]); return; }
     if (!ball) { launchT -= dt; if (launchT <= 0) newBall(); return; }
     if (saveT > 0) saveT -= dt;
     var steps = 8, h = dt / steps;
@@ -154,7 +174,7 @@
       if (saveT > 0 && collideSeg(150, 900, 390, 900, 0.6)) A.sfx('steel', 0.9);
       BUMPERS.forEach(function (b) { var dx = ball.x - b.x, dy = ball.y - b.y, d = Math.hypot(dx, dy); if (d < b.r + R) { var nx = dx / d, ny = dy / d; ball.x = b.x + nx * (b.r + R); ball.y = b.y + ny * (b.r + R); bounce(nx, ny, 0.9); ball.vx += nx * 260; ball.vy += ny * 260; b.hit = 0.15; score += 100 * mult; A.sfx('pop', 1 + (36 - b.r) * 0.03, A.clamp(b.x / W * 2 - 1, -1, 1)); fx.burst(ball.x, ball.y, '#ff5ec4', 8, 200, 0.3, 2.5); A.vibrate(10); } });
       TARGETS.forEach(function (tg, i) { if (!lit[i] && Math.hypot(ball.x - tg.x, ball.y - tg.y) < R + 16) { lit[i] = true; score += 250 * mult; A.sfx('coin', 1 + i * 0.2, A.clamp(tg.x / W * 2 - 1, -1, 1)); fx.text(tg.x, tg.y + 30, '+' + 250 * mult, '#ffd166', 18);
-        if (lit.every(Boolean)) { mult++; bestMult = Math.max(bestMult, mult); lit = [false, false, false]; S.banner('×' + mult, '배율 UP'); A.sfx('level'); } } });
+        if (lit.every(Boolean)) { tgtN++; mult++; bestMult = Math.max(bestMult, mult); lit = [false, false, false]; S.banner('×' + mult, '배율 UP'); A.sfx('level'); } } });
       ['L', 'R'].forEach(function (k) {
         // 플리퍼 각도도 서브스텝마다 조금씩 움직여 판정 (한 번에 휙 돌아 공을 통과하던 문제 방지)
         var f = FL[k], fa = f.prev + (f.a - f.prev) * (s + 1) / steps, ex = f.x + Math.cos(fa) * f.len, ey = f.y + Math.sin(fa) * f.len;
@@ -178,7 +198,7 @@
     BUMPERS.forEach(function (b) { if (b.hit > 0) b.hit -= dt; });
     hud();
   }
-  var bestMult = 1;
+  var bestMult = 1, tgtN = 0, holdL = 0, holdR = 0;
   function render(c) {
     if (G3.draw(c, fx)) return;
     var o = fx.offset(), t = S.time;
@@ -194,14 +214,15 @@
     if (bl) { c.save(); c.shadowColor = '#fff'; c.shadowBlur = 16; var gr = c.createRadialGradient(bl.x - 4, bl.y - 4, 2, bl.x, bl.y, R); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#9aa'); c.fillStyle = gr; c.beginPath(); c.arc(bl.x, bl.y, R, 0, 7); c.fill(); c.restore(); }
     if (S.state === 'playing' && document.body.classList.contains('touch')) { c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(0, 880, W / 2 - 2, 80); c.fillRect(W / 2 + 2, 880, W / 2, 80); }
     fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+    if (ball && tutOn) tutDraw(c, 640, '화면 왼쪽·오른쪽을 누르면 플리퍼', '←·Z 왼쪽  →·/ 오른쪽 플리퍼', 200, 840);
   }
   var last = '';
   function hud() { var k = score + '|' + balls + '|' + mult; if (k === last) return; last = k; document.getElementById('hA').textContent = A.fmt(score); document.getElementById('hB').textContent = balls; document.getElementById('hC').textContent = '×' + mult; }
   var stage = document.getElementById('stage'), ptrs = {};
   function refresh() { touchL = false; touchR = false; for (var k in ptrs) { if (ptrs[k] < W / 2) touchL = true; else touchR = true; } }
-  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; e.preventDefault(); ptrs[e.pointerId] = S.toLocal(e).x; refresh(); });
+  stage.addEventListener('pointerdown', function (e) { if (S.state !== 'playing') return; e.preventDefault(); ptrs[e.pointerId] = S.toLocal(e).x; if (ptrs[e.pointerId] < W / 2) holdL = 0.1; else holdR = 0.1; refresh(); });
   function up(e) { delete ptrs[e.pointerId]; refresh(); } stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up); stage.addEventListener('pointerleave', up);
-  var S = new A.Shell({ id: 'pinball', W: W, H: H, reset: function () { bestMult = 1; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
+  var S = new A.Shell({ id: 'pinball', W: W, H: H, reset: function () { bestMult = 1; tgtN = 0; reset(); }, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'z' || k === 'Z' || k === 'a' || k === 'Shift') keysL = true; if (k === 'ArrowRight' || k === '/' || k === 'l' || k === 'd') keysR = true; if (k === ' ') { keysL = keysR = true; } },
     keyup: function (e) { var k = e.key; if (k === 'ArrowLeft' || k === 'z' || k === 'Z' || k === 'a' || k === 'Shift') keysL = false; if (k === 'ArrowRight' || k === '/' || k === 'l' || k === 'd') keysR = false; if (k === ' ') { keysL = keysR = false; } } });
 })();

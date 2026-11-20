@@ -117,8 +117,27 @@
   'use strict';
   var A = Arcade, W = 540, H = 960, G = 400, STEP = 6;
   var fx = new A.FX();
+  // 첫 판 안내: 처음 한 번만 판 위에 띄우고, 올바른 행동을 하면 사라짐 (저장 키 neowa_artillery_tut)
+  var tutOn = A.get('neowa_artillery_tut', '') !== '1';
+  function tutDone() { if (tutOn) { tutOn = false; A.set('neowa_artillery_tut', '1'); } }
+  function tutDraw(c, y, touchTxt, keyTxt, tx, ty) {
+    if (!tutOn || S.state !== 'playing') return;
+    var txt = document.body.classList.contains('touch') ? touchTxt : keyTxt, fs = 22, b = Math.abs(Math.sin(S.time * 4)) * 12;
+    c.save(); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui';
+    var w = c.measureText(txt).width + 48; if (w > W - 24) { fs = Math.floor(fs * (W - 72) / (w - 48)); c.font = '700 ' + fs + 'px "Pretendard Variable",system-ui'; w = W - 24; }
+    c.fillStyle = 'rgba(0,0,0,.66)'; A.rr(c, W / 2 - w / 2, y - 25, w, 50, 25); c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y + 1);
+    if (tx != null) { // 가리키는 곳을 향해 통통 튀는 화살표
+      var a = Math.atan2(ty - y, tx - W / 2), d = Math.hypot(tx - W / 2, ty - y), r = Math.max(0, d - 40 - b), ax = W / 2 + Math.cos(a) * r, ay = y + Math.sin(a) * r;
+      c.translate(ax, ay); c.rotate(a); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(16, 0); c.lineTo(-10, -13); c.lineTo(-4, 0); c.lineTo(-10, 13); c.closePath(); c.fill();
+    }
+    c.restore();
+  }
+  // 종료 화면용: 개인 최고 기록과 비교
+  function vsBest(sc) { sc = Math.floor(sc); return !S.best ? '첫 기록' : sc > S.best ? '+' + A.fmt(sc - S.best) + ' 신기록' : sc === S.best ? '타이' : '-' + A.fmt(S.best - sc); }
   var ground, me, foe, shell, turn, wind, battle, score, hp, foeHp, aim = { a: -0.9, p: 0.6 }, pulling = null, keys = {}, dyingT, aiErr, foeAim, pending = null;
   // 다음 차례로 넘기는 대기 시간은 setTimeout 대신 update에서 셈 → 일시정지·다시 하기에도 꼬이지 않음
+  var shots = 0, hits = 0;
   function later(sec, fn) { pending = { t: sec, fn: fn }; }
   // 가로 화면은 900x600 가로 전장. 세로(540x960)에선 예전과 같은 지형
   var land = false, TY = 130;
@@ -141,8 +160,9 @@
     foeAim = { a: -Math.PI + 0.9, p: 0.6 };
     if (battle > 1) { S.banner('BATTLE ' + battle, '새로운 적'); A.sfx('level'); } hud();
   }
-  function reset() { battle = 0; score = 0; hp = 3; dyingT = 0; pulling = null; keys = {}; pending = null; newBattle(); fx.clear(); }
+  function reset() { shots = 0; hits = 0; battle = 0; score = 0; hp = 3; dyingT = 0; pulling = null; keys = {}; pending = null; newBattle(); fx.clear(); }
   function fire(a, p, who) {
+    if (who === 'me') { tutDone(); shots++; }
     var v = 300 + p * 520, sx = who === 'me' ? me.x : foe.x, sy = gy(sx) - 24;
     shell = { x: sx + Math.cos(a) * 30, y: sy + Math.sin(a) * 30, vx: Math.cos(a) * v, vy: Math.sin(a) * v, who: who };
     A.sfx('boom', who === 'me' ? 0.7 : 0.55, A.clamp(sx / W * 2 - 1, -1, 1)); fx.burst(shell.x, shell.y, '#ffd166', 10, 160, 0.3, 2.5);
@@ -151,7 +171,7 @@
     shell = null; fx.burst(x, y, '#ff9e4d', 30, 340, 0.6, 4); fx.ring(x, y, '#ff9e4d', 90, 0.4); fx.shake(7, 0.3); if (x > -900) A.sfx('bigboom', 1, A.clamp(x / W * 2 - 1, -1, 1)); else A.sfx('whoosh', 0.7);
     var dFoe = Math.hypot(foe.x - x, gy(foe.x) - 12 - y), hitMe = Math.hypot(me.x - x, gy(me.x) - 12 - y) < 46, hitFoe = dFoe < 46;
     for (var i = 0; i < ground.length; i++) { var gx = i * STEP, d = Math.abs(gx - x); if (d < 44) { var depth = Math.sqrt(44 * 44 - d * d); if (ground[i] < y + depth) ground[i] = Math.min(H - 60, Math.max(ground[i], y + depth * 0.8)); } }
-    if (hitFoe) { foeHp--; var direct = dFoe < 22; score += 100 * battle * (direct ? 2 : 1); fx.text(foe.x, gy(foe.x) - 70, direct ? '직격! ×2' : '명중!', '#ffd166', 26); A.vibrate(40); A.sfx('right'); }
+    if (hitFoe) { if (who === 'me') hits++; foeHp--; var direct = dFoe < 22; score += 100 * battle * (direct ? 2 : 1); fx.text(foe.x, gy(foe.x) - 70, direct ? '직격! ×2' : '명중!', '#ffd166', 26); A.vibrate(40); A.sfx('right'); }
     if (hitMe) { hp--; fx.flashIt('#ff2244', 0.5); fx.text(me.x + 40, gy(me.x) - 70, '피격', '#ff4d6d', 24); A.vibrate(150); A.sfx('hurt'); }
     hud();
     later(0.7, function () {
@@ -175,7 +195,7 @@
   }
   function update(dt) {
     fx.update(dt);
-    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['전투', String(battle)]]); return; }
+    if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['전투', String(battle)], ['명중률', shots ? Math.round(hits / shots * 100) + '%' : '-'], ['최고 대비', vsBest(score)]]); return; }
     if (pending) { pending.t -= dt; if (pending.t <= 0) { var pf = pending.fn; pending = null; pf(); } }
     if (keys.up) aim.a = Math.max(-1.5, aim.a - dt * 1.2); if (keys.down) aim.a = Math.min(-0.05, aim.a + dt * 1.2);
     if (keys.left) aim.p = Math.max(0.05, aim.p - dt * 0.7); if (keys.right) aim.p = Math.min(1, aim.p + dt * 0.7);
@@ -242,15 +262,17 @@
     c.strokeStyle = '#ffae6a'; c.lineWidth = 2; c.beginPath(); ground.forEach(function (y, i) { c[i ? 'lineTo' : 'moveTo'](i * STEP, y); }); c.stroke();
     var am = curAim();
     tank(c, me.x, '#5ee7ff', am.a); tank(c, foe.x, '#ff4d6d', foeAim ? foeAim.a : -Math.PI + 0.8);
-    c.fillStyle = 'rgba(255,255,255,.6)'; c.font = '700 ' + (land ? Math.round(16 * 1.45) : 16) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center';
-    c.fillText('바람 ' + (wind > 0 ? '→ ' : wind < 0 ? '← ' : '') + Math.abs(wind || 0).toFixed(1), W / 2, TY);
-    c.strokeStyle = '#9be7ff'; c.lineWidth = 4; c.beginPath(); c.moveTo(W / 2, TY + 15); c.lineTo(W / 2 + (wind || 0) * 30, TY + 15); c.stroke();
+    // 바람: 방향 화살표 + 세기(약·중·강 색). 궤적 미리보기에는 바람을 넣지 않으므로 이 표시가 유일한 단서
+    var aw = Math.abs(wind || 0), wcol = aw < 0.1 ? 'rgba(255,255,255,.7)' : aw < 1 ? '#9be7ff' : aw < 2 ? '#ffd166' : '#ff7a45', wl = Math.max(0, aw * 40), wd = wind > 0 ? 1 : -1;
+    c.fillStyle = wcol; c.font = '800 ' + (land ? 28 : 20) + 'px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    c.fillText(aw < 0.1 ? '바람 없음' : '바람 ' + (wind > 0 ? '→ ' : '← ') + aw.toFixed(1) + (aw < 1 ? ' 약' : aw < 2 ? ' 중' : ' 강'), W / 2, TY);
+    if (aw >= 0.1) { var wy = TY + 18; c.strokeStyle = wcol; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(W / 2 - wd * wl / 2, wy); c.lineTo(W / 2 + wd * wl / 2, wy); c.stroke(); c.beginPath(); c.moveTo(W / 2 + wd * (wl / 2 + 10), wy); c.lineTo(W / 2 + wd * (wl / 2 - 4), wy - 9); c.lineTo(W / 2 + wd * (wl / 2 - 4), wy + 9); c.closePath(); c.fill(); }
     if (S.state === 'playing' && turn === 'me' && !shell) {
       c.fillStyle = 'rgba(255,255,255,.55)'; var v = 300 + am.p * 520, x = me.x + Math.cos(am.a) * 30, y = gy(me.x) - 24 + Math.sin(am.a) * 30, vx = Math.cos(am.a) * v, vy = Math.sin(am.a) * v;
       for (var i = 0; i < 10; i++) { for (var q = 0; q < 4; q++) { vy += G * 0.012; x += vx * 0.012; y += vy * 0.012; } c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); }
       c.fillStyle = '#5ee7ff'; c.font = '700 ' + (land ? Math.round(15 * 1.45) : 15) + 'px "Pretendard Variable",system-ui'; c.fillText('힘 ' + Math.round(am.p * 100) + '%', me.x + 30, gy(me.x) - 70);
     }
-    if (turn === 'me' && battle === 1 && hp === 3 && foeHp === 3 && S.state === 'playing' && !shell && !pulling) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 ' + (land ? Math.round(18 * 1.45) : 18) + 'px "Pretendard Variable",system-ui'; c.fillText(document.body.classList.contains('touch') ? '화면을 누르고 왼쪽 아래로 당겼다 놓으세요' : '드래그로 당겼다 놓거나 ↑↓←→ + Space', W / 2, TY + 70); }
+    if (tutOn && turn === 'me' && S.state === 'playing' && !shell && !pulling) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '700 ' + (land ? Math.round(18 * 1.45) : 18) + 'px "Pretendard Variable",system-ui'; c.fillText(document.body.classList.contains('touch') ? '화면을 누르고 왼쪽 아래로 당겼다 놓으세요' : '드래그로 당겼다 놓거나 ↑↓←→ + Space', W / 2, TY + 70); }
     if (turn === 'foe' && S.state === 'playing' && !shell) { c.fillStyle = '#ff4d6d'; c.font = '700 ' + (land ? Math.round(18 * 1.45) : 18) + 'px "Pretendard Variable",system-ui'; c.fillText('적이 조준 중…', W / 2, TY + 70); }
     if (shell) { trail.push([shell.x, shell.y]); if (trail.length > 18) trail.shift(); } else if (trail.length) trail.shift();
     for (var tr = 0; tr < trail.length; tr++) { var k2 = tr / trail.length; c.fillStyle = 'rgba(200,180,170,' + (k2 * 0.35) + ')'; c.beginPath(); c.arc(trail[tr][0], trail[tr][1], 2 + (1 - k2) * 7, 0, 7); c.fill(); }

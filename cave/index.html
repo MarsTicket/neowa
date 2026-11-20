@@ -208,18 +208,18 @@
     for (var i = 0; i < 34; i++) { var r = 8 + Math.random() * 22, bx = Math.random() * 240, by = Math.random() * 240, rot = Math.random() * 3; for (var dx = -240; dx <= 240; dx += 240) for (var dy = -240; dy <= 240; dy += 240) { var cx = bx + dx, cy = by + dy; var g = x.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 1, cx, cy, r); g.addColorStop(0, '#1d6a56'); g.addColorStop(1, '#0a2e26'); x.fillStyle = g; x.beginPath(); x.ellipse(cx, cy, r, r * 0.7, rot, 0, 7); x.fill(); } }
     x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 2; for (i = 0; i < 12; i++) { x.beginPath(); var sx = Math.random() * 240, sy = Math.random() * 240; x.moveTo(sx, sy); x.lineTo(sx + 20, sy + 10); x.lineTo(sx + 30, sy + 30); x.stroke(); }
   });
-  var CRYS = A.sprite('cvcrys', 40, 50, function (x) {
+  var CRYS = A.art('cvcrys', 'art/crystal.webp', 40, 50, function (x) {
     x.translate(20, 48); [[-9, 26, -0.3], [0, 40, 0], [9, 22, 0.35]].forEach(function (c) {
       x.save(); x.rotate(c[2]); var g = x.createLinearGradient(-5, 0, 5, 0); g.addColorStop(0, '#d0fff0'); g.addColorStop(0.5, '#5effc8'); g.addColorStop(1, '#1a8a6a');
       x.fillStyle = g; x.beginPath(); x.moveTo(c[0] - 5, 0); x.lineTo(c[0] - 5, -c[1] * 0.75); x.lineTo(c[0], -c[1]); x.lineTo(c[0] + 5, -c[1] * 0.75); x.lineTo(c[0] + 5, 0); x.fill(); x.restore();
     });
   });
-  var GEM = A.sprite('cvgem', 30, 30, function (x) {
+  var GEM = A.art('cvgem', 'art/gem.webp', 30, 30, function (x) {
     x.translate(15, 15); var g = x.createLinearGradient(-8, -10, 8, 10); g.addColorStop(0, '#fff6c8'); g.addColorStop(0.5, '#ffd166'); g.addColorStop(1, '#b06a00');
     x.fillStyle = g; x.beginPath(); x.moveTo(-9, -3); x.lineTo(-4, -9); x.lineTo(4, -9); x.lineTo(9, -3); x.lineTo(0, 10); x.closePath(); x.fill();
     x.strokeStyle = 'rgba(120,60,0,.5)'; x.lineWidth = 1; x.beginPath(); x.moveTo(-9, -3); x.lineTo(9, -3); x.moveTo(-4, -9); x.lineTo(-2, -3); x.lineTo(0, 10); x.lineTo(2, -3); x.lineTo(4, -9); x.stroke();
   });
-  var SHIP = A.sprite('cvship', 64, 44, function (x) {
+  var SHIP = A.art('cvship', 'art/ship.webp', 64, 44, function (x) {
     x.translate(30, 22);
     var g = x.createLinearGradient(0, -12, 0, 12); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#8ac8b8');
     x.fillStyle = '#1a6a56'; x.beginPath(); x.moveTo(-6, -4); x.lineTo(-16, -16); x.lineTo(-2, -8); x.fill(); x.beginPath(); x.moveTo(-6, 4); x.lineTo(-16, 16); x.lineTo(-2, 8); x.fill();

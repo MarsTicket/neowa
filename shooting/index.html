@@ -135,7 +135,7 @@
   var STEEL = function (x, y0, y1) { return grad(x, 0, y0, 0, y1, [0, '#8a96bb', 0.4, '#3e4666', 1, '#141729']); };
 
   // 플레이어 기체
-  var SHIP = A.sprite('ship2', 92, 104, function (x) {
+  var SHIP = A.art('ship2', 'art/ship.webp', 92, 104, function (x) {
     x.translate(46, 54);
     // 날개 (그림자 빛 번짐 포함)
     x.save(); x.shadowColor = 'rgba(94,231,255,.22)'; x.shadowBlur = 7;
@@ -290,18 +290,18 @@
   };
   function enemySprite(type) {
     var def = TYPES[type], sz = def.r * 2 + (type === 'boss' ? 40 : 26);
-    return A.sprite('en2' + type, sz, sz, function (x, w) { x.translate(w / 2, w / 2); DRAW[type](x, def.r, def.c); });
+    return A.art('en2' + type, 'art/' + type + '.webp', sz, sz, function (x, w) { x.translate(w / 2, w / 2); DRAW[type](x, def.r, def.c); });
   }
   // 맞았을 때 하얗게 번쩍이는 실루엣
   function whiteOf(type) {
     var base = enemySprite(type);
-    return A.sprite('enw' + type, base.w, base.h, function (x, w, h) {
+    return A.art('enw' + type, 'art/' + type + '.webp', base.w, base.h, function (x, w, h) {
       x.drawImage(base, 0, 0, w, h); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(255,255,255,.85)'; x.fillRect(0, 0, w, h);
-    });
+    }, 'rgba(255,255,255,.85)');
   }
   var ITEM = { P: '#5ee7ff', S: '#7aa2ff', L: '#ff4d6d' };
   function itemSprite(k) {
-    return A.sprite('it2' + k, 48, 48, function (x) {
+    return A.art('it2' + k, 'art/item_' + k.toLowerCase() + '.webp', 48, 48, function (x) {
       var c = ITEM[k], i, a;
       x.translate(24, 24);
       x.save(); x.shadowColor = A.hexA(c, 0.28); x.shadowBlur = 6; x.beginPath();
@@ -678,6 +678,14 @@
       }
       c.restore();
       // 적
+      // 적 뒤 은은한 빛무리 (어두운 우주 배경에서 기체가 또렷하게 보이도록)
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (i = 0; i < enemies.length; i++) {
+        e = enemies[i]; if (e.type === 'boss') continue;
+        c.globalAlpha = e.type === 'tank' ? 0.3 : 0.24;
+        A.draw(c, A.glowDot(TYPES[e.type].c, 8), e.x, e.y, e.r / 9);
+      }
+      c.restore();
       for (i = 0; i < enemies.length; i++) {
         e = enemies[i];
         var rot = e.type === 'weaver' ? e.t * 2 : (e.m === 'dive' ? -Math.atan2(e.vx || 0, e.vy || 1) * 0.6 : 0);

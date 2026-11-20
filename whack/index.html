@@ -212,7 +212,7 @@
     x.fillStyle = 'rgba(255,220,170,.35)'; x.beginPath(); x.ellipse(-20, 14, 16, 4, -0.1, 0, 7); x.fill(); x.beginPath(); x.ellipse(30, 18, 10, 3, 0.1, 0, 7); x.fill();
   });
   function moleSpr(kind, hit) {
-    return A.sprite('wm' + kind + (hit ? 'h' : ''), 120, 140, function (x) {
+    return A.art('wm' + kind + (hit ? 'h' : ''), 'art/' + kind + '.webp', 120, 140, function (x) {
       x.translate(60, 74);
       if (kind === 'bomb') {
         var bg = x.createRadialGradient(-14, -16, 4, 0, 0, 48); bg.addColorStop(0, '#6a6a7a'); bg.addColorStop(0.35, '#2a2a33'); bg.addColorStop(1, '#0a0a0e');
@@ -240,7 +240,7 @@
         x.fillStyle = '#ffe066'; x.strokeStyle = '#c8901a'; x.lineWidth = 2; x.beginPath(); x.moveTo(-20, -44); x.lineTo(-22, -64); x.lineTo(-10, -52); x.lineTo(0, -68); x.lineTo(10, -52); x.lineTo(22, -64); x.lineTo(20, -44); x.closePath(); x.fill(); x.stroke();
         x.fillStyle = '#ff4d6d'; x.beginPath(); x.arc(0, -52, 3.5, 0, 7); x.fill();
       }
-    });
+    }, hit ? 'rgba(255,255,255,.45)' : null);
   }
   function render(c) {
     var o = fx.offset(), t = S.time;

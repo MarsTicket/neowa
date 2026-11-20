@@ -57,6 +57,35 @@
     var x = c.getContext('2d'); x.scale(s, s); draw(x, w, h);
     c.w = w; c.h = h; sprites[key] = c; return c;
   };
+  /* ---------- 그림 파일 스프라이트 ----------
+     A.art(키, 주소, w, h, 대체그리기, 색덮기): 게임 그림 파일(webp/png)을 불러와
+     A.sprite 와 똑같이 쓸 수 있는 캔버스로 돌려줍니다. 그림이 도착하기 전(또는 실패하면)
+     대체그리기가 그린 그림이 그대로 남으므로 게임은 예전 모습으로 계속 돌아갑니다. */
+  var arts = {};
+  A.art = function (key, src, w, h, fallback, tint) {
+    if (arts[key]) return arts[key];
+    var s = 2, c = document.createElement('canvas');
+    c.width = Math.ceil(w * s); c.height = Math.ceil(h * s);
+    var x = c.getContext('2d'); x.scale(s, s);
+    if (fallback) { try { fallback(x, w, h); } catch (e) {} }
+    c.w = w; c.h = h; c.ready = false;
+    var img = new Image();
+    img.onload = function () {
+      var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+      if (!iw || !ih) return;
+      var k = Math.min(c.width / iw, c.height / ih), dw = iw * k, dh = ih * k;
+      try {
+        x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height);
+        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+        x.drawImage(img, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+        if (tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = tint; x.fillRect(0, 0, c.width, c.height); x.globalCompositeOperation = 'source-over'; }
+        c.ready = true;
+        if (A.onArt) A.onArt(key);
+      } catch (e) {}
+    };
+    img.src = src;
+    arts[key] = c; return c;
+  };
   A.draw = function (ctx, spr, x, y, scale, rot) {
     var w = spr.w * (scale || 1), h = spr.h * (scale || 1);
     if (rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.drawImage(spr, -w / 2, -h / 2, w, h); ctx.restore(); }

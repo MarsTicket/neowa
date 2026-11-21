@@ -249,7 +249,7 @@
     maze: 'space', jumper: 'chip', artillery: 'sport', pinball: 'synth', slide: 'puzzle', lights: 'puzzle', gems: 'puzzle', memory: 'puzzle',
     sequence: 'zen', pipes: 'puzzle', nonogram: 'zen', bubbles: 'chip', flood: 'puzzle', pairs: 'puzzle', dots: 'zen', gomoku: 'zen',
     reversi: 'zen', solitaire: 'casino', blackjack: 'casino', baseball: 'casino', reaction: 'brain', math: 'brain', stroop: 'brain',
-    aim: 'brain', oddcolor: 'brain', schulte: 'brain', baduk: 'zen', fall: 'chip', summon: 'space', _template: 'chip',
+    aim: 'brain', oddcolor: 'brain', schulte: 'brain', baduk: 'zen', fall: 'chip', summon: 'space', marble: 'chip', _template: 'chip',
     bridge: 'puzzle', knight: 'zen', four: 'brain', merge: 'chip', paint: 'puzzle',
     sort: 'puzzle', sum: 'zen', hexa: 'puzzle', cannon: 'sport', golf: 'sport', bowling: 'sport', tank: 'drive', yacht: 'casino', td: 'synth',
     hangul: 'puzzle', typing: 'brain', idle: 'space'

@@ -193,6 +193,7 @@
     P = {
       x: 0, y: 0, hp: 5, max: 5, inv: 0, spd: 215, magnet: 155, fire: 0,
       dashCd: 0, dashCdMax: 1.6, dashT: 0, dx: 0, dy: 0, crit: 0, xpMul: 1,
+      face: -1, lean: 0, depth: 1,
       lv: { rate: 0, dmg: 0, multi: 0, pierce: 0, crit: 0, speed: 0, hp: 0, magnet: 0, xp: 0, dash: 0, blade: 0, bolt: 0, rail: 0, plasma: 0, emp: 0 },
       tBlade: 0, tBolt: 0, tRail: 0, tPlasma: 0, tEmp: 0
     };
@@ -516,10 +517,23 @@
     if (P.dashT > 0) {
       P.dashT -= dt;
       P.x += P.ddx * 760 * dt; P.y += P.ddy * 760 * dt;
-      ghosts.push({ x: P.x, y: P.y, a: 0.55, t: 0 });
+      ghosts.push({ x: P.x, y: P.y, a: 0.55, t: 0, face: P.face });
       if (ghosts.length > 24) ghosts.shift();
     } else {
       P.x += tx * P.spd * dt; P.y += ty * P.spd * dt;
+    }
+    /* --- 보는 방향 (마지막으로 움직인 방향을 기억: 정지·대시 중에도 유지) --- */
+    var fvx = tx, fvy = ty;
+    if (P.dashT > 0) { fvx = P.ddx; fvy = P.ddy; }
+    if (fvx || fvy) {
+      var fl = Math.hypot(fvx, fvy) || 1, nx = fvx / fl, ny = fvy / fl;
+      // 위아래로만 움직일 때 몸이 떨리지 않도록 좌우가 확실할 때만 방향을 바꾼다
+      if (Math.abs(nx) > 0.35) P.face = nx > 0 ? 1 : -1;
+      P.lean = A.lerp(P.lean, nx * 0.16, Math.min(1, dt * 12));   // 옆으로 갈 때 몸을 살짝 기울임
+      P.depth = A.lerp(P.depth, 1 + ny * 0.06, Math.min(1, dt * 8)); // 위로 갈 때 조금 작게(멀리), 아래로 갈 때 크게
+    } else {
+      P.lean = A.lerp(P.lean, 0, Math.min(1, dt * 8));
+      P.depth = A.lerp(P.depth, 1, Math.min(1, dt * 8));
     }
     if (P.dashCd > 0) P.dashCd -= dt;
     if (P.inv > 0) P.inv -= dt;
@@ -876,7 +890,8 @@
     ghosts.forEach(function (g) {
       var a = (1 - g.t / 0.34) * 0.45;
       c.save(); c.globalAlpha = a; c.globalCompositeOperation = 'lighter';
-      A.draw(c, sprite('hero'), g.x, g.y, 1);
+      c.translate(g.x, g.y); c.scale(g.face > 0 ? -1 : 1, 1);
+      A.draw(c, sprite('hero'), 0, 0, 1);
       c.restore();
     });
     c.restore();
@@ -886,7 +901,15 @@
       c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.45 + Math.sin(t * 4) * 0.1;
       A.draw(c, A.glowDot('#c3ff5e', 10), hx, hy, P && P.dashT > 0 ? 1.7 : 1.15); c.restore();
       var heroS = sprite('hero');
-      A.draw(c, heroS, hx, hy - 4 + Math.sin(t * 6) * 1.5, 1);
+      // 기본 그림은 왼쪽을 보고 있어서 오른쪽으로 갈 때 좌우를 뒤집는다.
+      // 발(아래쪽)을 축으로 기울여(lean) 넘어지는 느낌 없이 몸을 움직이는 쪽으로 숙이고,
+      // 위아래 이동은 발을 기준으로 크기(depth)를 바꿔 거리감을 준다.
+      var footY = 26;
+      c.save();
+      c.translate(hx, hy - 4 + Math.sin(t * 6) * 1.5 + footY);
+      if (P) { c.rotate(P.lean); c.scale(P.face > 0 ? -1 : 1, P.depth); }
+      A.draw(c, heroS, 0, -footY, 1);
+      c.restore();
     }
     c.restore();
 

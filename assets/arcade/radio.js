@@ -396,12 +396,15 @@
           s.textContent = '지금 게임에 맞춰 새로 만든 곡';
           pv.hidden = true; nx.hidden = true; pp.hidden = true;
           pp.innerHTML = SVG_PLAY;
+          credit.hidden = true;
         } else {
           pv.hidden = false; nx.hidden = false; pp.hidden = false;
-          b.textContent = tr ? (S.playing ? '♪ ' : '❚❚ ') + tr.t : '준비 중…';
+          credit.hidden = false;
+          var live = S.playing || S.want; // 곡을 받아오는 동안에도 '재생 중'으로 보이게
+          b.textContent = tr ? (live ? '♪ ' : '❚❚ ') + tr.t : '준비 중…';
           s.textContent = tr ? tr.s + ' · ' + info.name : info.note;
-          pp.innerHTML = S.playing ? SVG_STOP : SVG_PLAY;
-          pp.setAttribute('aria-label', S.playing ? '멈춤' : '재생');
+          pp.innerHTML = live ? SVG_STOP : SVG_PLAY;
+          pp.setAttribute('aria-label', live ? '멈춤' : '재생');
         }
       }
     };
@@ -467,11 +470,19 @@
     parent.appendChild(btn);
     var ui = {
       update: function () {
-        var tr = track(), on = S.playing;
+        var tr = track(), on = S.playing || S.want;
         btn.classList.toggle('on', on && S.theme !== 'original');
         var t = btn.querySelector('.nw-t');
-        t.textContent = S.theme === 'original' ? '오리지널' : (tr ? tr.t : '배경음악');
-        btn.title = S.theme === 'original' ? '배경음악: 게임마다 즉석 작곡' : '배경음악: ' + (tr ? tr.t : '') + ' · ' + themeInfo(S.theme).name;
+        if (S.theme === 'original') {
+          t.textContent = '오리지널';
+          btn.title = '배경음악: 게임마다 즉석 작곡';
+        } else if (tr) {
+          t.textContent = tr.t;
+          btn.title = '배경음악: ' + tr.t + ' · ' + themeInfo(S.theme).name;
+        } else {
+          t.textContent = themeInfo(S.theme).name;
+          btn.title = '배경음악: ' + themeInfo(S.theme).name + ' (' + themeInfo(S.theme).note + ')';
+        }
       }
     };
     S.uis.push(ui); ui.update();

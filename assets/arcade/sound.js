@@ -16,12 +16,7 @@
   function rad() { if (RAD === null) RAD = window.NeowaRadio || false; return RAD || null; }
   function radioOn() { var r = rad(); return !!(r && r.active()); }
   function radioLevel() { return (muted || volBgm <= 0) ? 0 : 0.45 * curve(volBgm) / curve(50) * (M.vol || 1); }
-  function radioPlay() { var r = rad(); if (!r || !r.active()) return false; r.setLevel(radioLevel()); r.play(); return true; }
-  function radioToast() {
-    var r = rad(); if (!r) return;
-    var tr = r.track();
-    if (tr && r.playing()) r.toast('♪ ' + tr.title + ' · ' + (r.theme() === 'chill' ? '로파이·칠' : r.theme() === 'modern' ? '최신 일렉·팝' : '90·00 레트로'));
-  }
+  function radioPlay() { var r = rad(); if (!r || !r.active()) return false; r.setLevel(radioLevel()); r.setLow(1); r.play(); return true; }
 
   /* ---------- 설정 ---------- */
   function num(k, d) { var v = parseInt(A.get(k, String(d)), 10); return isNaN(v) ? d : Math.max(0, Math.min(100, v)); }
@@ -542,7 +537,7 @@
     play: function (id, style) {
       id = id || curId || 'neowa';
       /* 외부 음원 라디오가 켜져 있으면 그 곡을 틉니다(게임마다 즉석 작곡은 쉽니다). */
-      if (radioOn()) { curId = id; M.vol = SOFT[id] || 1; if (radioPlay()) radioToast(); return; }
+      if (radioOn()) { curId = id; M.vol = SOFT[id] || 1; if (radioPlay()) return; }
       if (muted || volBgm <= 0) { curId = id; return; }
       if (!unlocked || !audio()) { curId = id; return; }
       var sn = style || curStyle || GAME[id] || ['synth', 'chip', 'puzzle', 'sport'][hash(id) % 4];

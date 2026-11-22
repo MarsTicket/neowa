@@ -128,10 +128,19 @@
     var a = new Audio();
     a.preload = 'none';
     a.volume = 0;
+    a.setAttribute('data-neowa-bgm', '');
+    a.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+    try { document.body.appendChild(a); } catch (e) {}
     a.addEventListener('ended', function () { if (S.want) next(true); });
     a.addEventListener('playing', function () {
       S.playing = true; S.fails = 0; clearTimeout(S.watch); S.watch = 0;
-      applyVol(500); emit();
+      applyVol(500);
+      var tr = track();
+      if (tr && S.announced !== tr.f) { // 곡이 바뀌었을 때만 곡명을 알려 줍니다
+        S.announced = tr.f;
+        toast('♪ ' + tr.t + ' · ' + themeInfo(S.theme).name);
+      }
+      emit();
     });
     a.addEventListener('pause', function () { S.playing = false; emit(); });
     a.addEventListener('error', function () { if (!S.want) return; fail('error'); });
@@ -163,7 +172,13 @@
     a.volume = 0;
     applyVol(700);
     var p = a.play();
-    if (p && p.catch) p.catch(function () { fail('play'); });
+    if (p && p.catch) p.catch(function (err) {
+      /* 화면을 옮기는 등으로 끊긴 것(AbortError)은 고장이 아닙니다. 자동재생 금지(NotAllowedError)도 곡 탓이 아닙니다. */
+      var nm = err && err.name;
+      if (nm === 'AbortError') return;
+      if (nm === 'NotAllowedError') { S.playing = false; emit(); return; }
+      fail('play');
+    });
     watch();
   }
   function next(autoplay) {
@@ -181,7 +196,7 @@
   function fail(reason) {
     clearWatch();
     S.playing = false;
-    if (S.theme === 'original' || !S.want) { emit(); return; }
+    if (S.bye || S.theme === 'original' || !S.want) { emit(); return; }
     if (S.idx >= 0) S.dead[S.theme + ':' + S.idx] = 1;
     S.fails++;
     if (S.fails <= 3 && alive(S.theme) > 0) {
@@ -477,6 +492,8 @@
   API.toast = toast;
 
   /* 화면이 가려지면 잠시 멈추고, 돌아오면 이어서 (데이터·배터리 절약) */
+  /* 화면을 떠나는 중에는 '못 불러옴'으로 세지 않습니다(이동 때문에 곡이 끊긴 것을 고장으로 오해하지 않게) */
+  window.addEventListener('pagehide', function () { S.bye = true; });
   document.addEventListener('visibilitychange', function () {
     if (!S.el || S.theme === 'original') return;
     if (document.hidden) {

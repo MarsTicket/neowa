@@ -152,6 +152,11 @@ h2{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4vw,44px);l
 .gc-new,.gc-today{position:absolute;top:14px;z-index:1;font-family:var(--f-num);font-size:11px;font-weight:700;letter-spacing:2px;padding:6px 10px;border-radius:10px}
 .gc-new{right:14px;background:var(--c);color:#05060c}
 .gc-today{left:62px;background:rgba(255,209,102,.95);color:#2a1a00;font-family:var(--f-body);letter-spacing:0}
+/* 한 화면 2인 플레이 배지: 제목 옆에 붙어 NEW 배지·썸네일과 겹치지 않게 */
+.gc-duo{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;margin-left:10px;padding:3px 9px 3px 8px;
+  border-radius:999px;font-family:var(--f-body);font-size:11px;font-weight:800;line-height:1.4;letter-spacing:0;white-space:nowrap;
+  color:var(--c);background:rgba(var(--cr),.13);border:1px solid rgba(var(--cr),.5);transform:translateY(-3px)}
+.gc-duo::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
 
 /* 스토리 배너 */
 .story{position:relative;border-radius:28px;overflow:hidden;border:1px solid rgba(255,122,168,.25);background:#1a0f1c;display:grid;grid-template-columns:1.15fr .85fr;min-height:420px;isolation:isolate}
@@ -246,6 +251,7 @@ footer nav a:hover{color:var(--ink)}
   .gc-no{left:10px;top:10px;font-size:11px;padding:4px 7px}
   .gc-new{right:10px;top:10px;font-size:10px;padding:4px 7px}
   .gc-today{left:48px;top:10px;font-size:10px;padding:4px 7px}
+  .gc-duo{margin-left:7px;padding:2px 7px 2px 6px;font-size:10px;transform:translateY(-2px)}
   .search{width:100%}
 }
 @media (prefers-reduced-motion:reduce){.kicker b{animation:none}html{scroll-behavior:auto}}
@@ -626,12 +632,12 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="액션" data-q="에어 하키 대전 드래그 컴퓨터 대전 7점 승부" style="--c:#5ee7ff;--cr:94,231,255">
+        <article class="gc" data-cat="액션" data-q="에어 하키 대전 드래그 컴퓨터 대전 7점 승부 2인 둘이서 2인용" style="--c:#5ee7ff;--cr:94,231,255">
           <a class="cover" href="hockey/" aria-label="에어 하키 플레이"></a>
           <div class="gc-art"><span class="gc-no">18</span><picture><source type="image/webp" srcset="assets/thumbs/hockey.webp"><img src="assets/hockey-card.jpg" alt="에어 하키 게임 화면" loading="lazy" decoding="async" width="1200" height="750"></picture></div>
           <div class="gc-body">
             <p class="gc-genre">AIR HOCKEY</p>
-            <h3>에어 하키</h3>
+            <h3>에어 하키<span class="gc-duo" title="한 화면에서 둘이 함께 플레이">2인</span></h3>
             <p>컴퓨터와 하는 에어 하키. 말렛을 끌어 퍽을 쳐 넣으세요. 7점 먼저 내면 승리, 이길수록 상대가 강해집니다.</p>
             <ul class="tags"><li>드래그</li><li>컴퓨터 대전</li><li>7점 승부</li></ul>
             <div class="gc-foot">
@@ -920,12 +926,12 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="보드·카드" data-q="점과 상자 두뇌 대전 탭으로 선 긋기 컴퓨터 대전 3단계" style="--c:#5ee7ff;--cr:94,231,255">
+        <article class="gc" data-cat="보드·카드" data-q="점과 상자 두뇌 대전 탭으로 선 긋기 컴퓨터 대전 3단계 2인 둘이서 2인용" style="--c:#5ee7ff;--cr:94,231,255">
           <a class="cover" href="dots/" aria-label="점과 상자 플레이"></a>
           <div class="gc-art"><span class="gc-no">39</span><picture><source type="image/webp" srcset="assets/thumbs/dots.webp"><img src="assets/dots-card.jpg" alt="점과 상자 게임 화면" loading="lazy" decoding="async" width="1200" height="750"></picture></div>
           <div class="gc-body">
             <p class="gc-genre">DOTS &amp; BOXES</p>
-            <h3>점과 상자</h3>
+            <h3>점과 상자<span class="gc-duo" title="한 화면에서 둘이 함께 플레이">2인</span></h3>
             <p>점 사이에 선을 하나씩 그어 상자를 완성하세요. 상자를 닫으면 한 번 더! 컴퓨터보다 많은 상자를 차지하면 승리.</p>
             <ul class="tags"><li>탭으로 선 긋기</li><li>컴퓨터 대전</li><li>3단계</li></ul>
             <div class="gc-foot">
@@ -934,12 +940,12 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="보드·카드" data-q="오목 오목 탭으로 두기 컴퓨터 대전 3단계" style="--c:#ffd166;--cr:255,209,102">
+        <article class="gc" data-cat="보드·카드" data-q="오목 오목 탭으로 두기 컴퓨터 대전 3단계 2인 둘이서 2인용" style="--c:#ffd166;--cr:255,209,102">
           <a class="cover" href="gomoku/" aria-label="오목 플레이"></a>
           <div class="gc-art"><span class="gc-no">40</span><picture><source type="image/webp" srcset="assets/thumbs/gomoku.webp"><img src="assets/gomoku-card.jpg" alt="오목 게임 화면" loading="lazy" decoding="async" width="1200" height="750"></picture></div>
           <div class="gc-body">
             <p class="gc-genre">GOMOKU</p>
-            <h3>오목</h3>
+            <h3>오목<span class="gc-duo" title="한 화면에서 둘이 함께 플레이">2인</span></h3>
             <p>가로·세로·대각선으로 5개를 먼저 놓으면 승리! 컴퓨터는 공격과 수비를 모두 계산합니다. 3단계 난이도.</p>
             <ul class="tags"><li>탭으로 두기</li><li>컴퓨터 대전</li><li>3단계</li></ul>
             <div class="gc-foot">
@@ -948,12 +954,12 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="보드·카드" data-q="리버시 뒤집기 탭 뒤집기 컴퓨터 대전" style="--c:#7dff9b;--cr:125,255,155">
+        <article class="gc" data-cat="보드·카드" data-q="리버시 뒤집기 탭 뒤집기 컴퓨터 대전 2인 둘이서 2인용" style="--c:#7dff9b;--cr:125,255,155">
           <a class="cover" href="reversi/" aria-label="리버시 플레이"></a>
           <div class="gc-art"><span class="gc-no">41</span><picture><source type="image/webp" srcset="assets/thumbs/reversi.webp"><img src="assets/reversi-card.jpg" alt="리버시 게임 화면" loading="lazy" decoding="async" width="1200" height="750"></picture></div>
           <div class="gc-body">
             <p class="gc-genre">REVERSI</p>
-            <h3>리버시</h3>
+            <h3>리버시<span class="gc-duo" title="한 화면에서 둘이 함께 플레이">2인</span></h3>
             <p>상대 돌을 내 돌 사이에 가두면 내 색으로 뒤집힙니다. 판이 다 찼을 때 돌이 많은 쪽이 승리.</p>
             <ul class="tags"><li>탭</li><li>뒤집기</li><li>컴퓨터 대전</li></ul>
             <div class="gc-foot">
@@ -1004,12 +1010,12 @@ footer nav a:hover{color:var(--ink)}
             </div>
           </div>
         </article>
-        <article class="gc" data-cat="두뇌" data-q="반응 속도 반응 탭 5회 평균 ms 측정" style="--c:#ff4d6d;--cr:255,77,109">
+        <article class="gc" data-cat="두뇌" data-q="반응 속도 반응 탭 5회 평균 ms 측정 2인 둘이서 2인용" style="--c:#ff4d6d;--cr:255,77,109">
           <a class="cover" href="reaction/" aria-label="반응 속도 플레이"></a>
           <div class="gc-art"><span class="gc-no">45</span><picture><source type="image/webp" srcset="assets/thumbs/reaction.webp"><img src="assets/reaction-card.jpg" alt="반응 속도 게임 화면" loading="lazy" decoding="async" width="1200" height="750"></picture></div>
           <div class="gc-body">
             <p class="gc-genre">REACTION</p>
-            <h3>반응 속도</h3>
+            <h3>반응 속도<span class="gc-duo" title="한 화면에서 둘이 함께 플레이">2인</span></h3>
             <p>화면이 초록으로 바뀌는 순간 탭! 5번 측정한 평균 반응 속도로 점수가 매겨집니다. 너무 빨리 누르면 실격.</p>
             <ul class="tags"><li>탭</li><li>5회 평균</li><li>ms 측정</li></ul>
             <div class="gc-foot">

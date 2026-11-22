@@ -26,12 +26,15 @@ def card(i, g):
     tags = ''.join(f'<li>{e(t)}</li>' for t in g['tags'])
     new = '<span class="gc-new">NEW</span>' if g.get('new') else ''
     alt = e(g['name'] + ' 게임 화면')
-    return f'''        <article class="gc" data-cat="{g['cat']}" data-q="{e(g['name'] + ' ' + g['kgenre'] + ' ' + ' '.join(g['tags']))}" style="--c:{g['accent']};--cr:{g['rgb']}">
+    # 한 화면 2인 모드가 있는 게임: 제목 옆 '2인' 배지 + 검색어('2인', '둘이서')에도 걸리게
+    duo = '<span class="gc-duo" title="한 화면에서 둘이 함께 플레이">2인</span>' if g.get('duo') else ''
+    q = g['name'] + ' ' + g['kgenre'] + ' ' + ' '.join(g['tags']) + (' 2인 둘이서 2인용' if g.get('duo') else '')
+    return f'''        <article class="gc" data-cat="{g['cat']}" data-q="{e(q)}" style="--c:{g['accent']};--cr:{g['rgb']}">
           <a class="cover" href="{g['id']}/" aria-label="{e(g['name'])} 플레이"></a>
           <div class="gc-art"><span class="gc-no">{i + 1:02d}</span>{new}{art(g, alt)}</div>
           <div class="gc-body">
             <p class="gc-genre">{e(g['genre'])}</p>
-            <h3>{e(g['name'])}</h3>
+            <h3>{e(g['name'])}{duo}</h3>
             <p>{e(g['desc'])}</p>
             <ul class="tags">{tags}</ul>
             <div class="gc-foot">

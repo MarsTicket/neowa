@@ -356,6 +356,7 @@
     ],
     "made": "gen",
     "new": false,
+    "duo": true,
     "art": "illust",
     "maxScore": 100000
   },
@@ -776,6 +777,7 @@
     ],
     "made": "gen",
     "new": false,
+    "duo": true,
     "art": "illust",
     "maxScore": 100000
   },
@@ -796,6 +798,7 @@
     ],
     "made": "gen",
     "new": false,
+    "duo": true,
     "art": "illust",
     "maxScore": 100000
   },
@@ -816,6 +819,7 @@
     ],
     "made": "gen",
     "new": false,
+    "duo": true,
     "art": "illust",
     "maxScore": 100000
   },
@@ -896,6 +900,7 @@
     ],
     "made": "gen",
     "new": false,
+    "duo": true,
     "art": "illust",
     "maxScore": 2000
   },

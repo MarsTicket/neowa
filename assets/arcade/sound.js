@@ -52,7 +52,9 @@
   }
   function audio() {
     if (!ac && !build()) return null;
-    if (ac.state === 'suspended' && !document.hidden) { try { ac.resume(); } catch (e) {} }
+    /* 멈춤(suspended)뿐 아니라 통화·잠금·다른 앱 소리에 끊긴 상태(interrupted, 주로 iOS)도 살립니다.
+       이 상태를 방치하면 한 번 끊긴 뒤로 효과음이 영영 돌아오지 않습니다. */
+    if (ac.state !== 'running' && ac.state !== 'closed' && !document.hidden) { try { ac.resume(); } catch (e) {} }
     return ac;
   }
   // 휴대폰 자동재생 제한: 첫 사용자 동작 때 켜고, iOS용으로 무음 한 번 재생
@@ -62,7 +64,11 @@
     var c = audio(); if (!c) return;
     if (!unlocked) {
       unlocked = true;
-      try { var b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+      try {
+        var b = c.createBuffer(1, 1, 22050), s = c.createBufferSource();
+        s.buffer = b; s.connect(c.destination); s.onended = function () { try { s.disconnect(); } catch (e) {} };
+        s.start(0);
+      } catch (e) {}
     }
   }
   ['pointerdown', 'touchend', 'keydown', 'mousedown'].forEach(function (ev) { window.addEventListener(ev, unlock, { capture: true, passive: true }); });
@@ -74,7 +80,28 @@
 
   /* ---------- 공통 부품 ---------- */
   var voices = 0, MAXV = 40;
-  function track(src, t) { voices++; src.onended = function () { voices--; }; }
+  /* 소리 하나가 끝나면 그 소리가 만든 오디오 노드(발진기·잡음·필터·게인·패너·잔향 보내기)를
+     그래프에서 떼어 냅니다. 떼어 내지 않으면 끝난 소리의 노드가 소리마다 하나씩 남아
+     오래 플레이할수록 오디오 그래프가 수만 개로 불어나고, 오디오 스레드가 제때 소리를
+     만들지 못해 효과음이 끊깁니다(끊김·늘어짐). 노드 하나가 여러 발진기를 쓰면(패드)
+     마지막 발진기가 끝날 때 한 번만 떼어 냅니다. */
+  function chain() { return { n: 0, nodes: [] }; }
+  function withChain(ch, node) { if (node) ch.nodes.push(node); return node; }
+  function track(src, ch) {
+    if (!ch) ch = chain(); // 옛 호출부 호환: 이 발진기 노드만 떼어 냄
+    withChain(ch, src);
+    voices++; ch.n++;
+    var done = false;
+    function reap() {
+      if (done) return; done = true;
+      voices--; ch.n--;
+      if (ch.n > 0) return; // 같은 소리의 다른 발진기가 아직 살아 있음
+      for (var i = 0; i < ch.nodes.length; i++) { try { ch.nodes[i].disconnect(); } catch (e) {} }
+      ch.nodes.length = 0;
+    }
+    src.onended = reap;
+    return ch;
+  }
   function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
   function noiseSrc(t, rate) { var s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true; if (rate) s.playbackRate.value = rate; s.start(t, Math.random() * 0.9); return s; }
   function panTo(node, p) {
@@ -94,12 +121,13 @@
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(v, t + a);
     g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(d, a + 0.01));
+    var ch = chain(); withChain(ch, g);
     if (o.n) {
       src = noiseSrc(t);
       var f = ac.createBiquadFilter(); f.type = o.ft || 'lowpass'; f.Q.value = o.q || (o.ft === 'bandpass' ? 1.4 : 0.7);
       f.frequency.setValueAtTime(o.f * p, t);
       if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2 * p, t + d);
-      src.connect(f); f.connect(g);
+      src.connect(f); f.connect(g); withChain(ch, f);
     } else {
       src = ac.createOscillator(); setWave(src, o.fm ? 'sine' : o.w);
       src.frequency.setValueAtTime(o.f * p, t);
@@ -109,14 +137,20 @@
         mod.frequency.setValueAtTime(o.f * p * o.fm, t);
         mg.gain.setValueAtTime(o.f * p * (o.mi || 2), t); mg.gain.exponentialRampToValueAtTime(o.f * p * 0.05, t + d);
         mod.connect(mg); mg.connect(src.frequency); mod.start(t); mod.stop(t + d + 0.05);
+        withChain(ch, mod); withChain(ch, mg);
       }
       src.connect(g);
     }
-    var out = panTo(g, pan);
-    out.connect(sfxBus);
+    var tail = panTo(g, pan);
+    tail.connect(sfxBus);
+    if (tail !== g) withChain(ch, tail);
     var r = o.r == null ? 0.18 : o.r;
-    if (r > 0) { var sg = ac.createGain(); sg.gain.value = r; out.connect(sg); sg.connect(revIn); }
-    src.start(t); src.stop(t + d + 0.05); track(src);
+    // 잔향 보내기 게인은 소리가 끝날 때 떼어 냅니다. 이미 울린 잔향은 리버브 안에서 계속 울립니다.
+    if (r > 0) { var sg = ac.createGain(); sg.gain.value = r; tail.connect(sg); sg.connect(revIn); withChain(ch, sg); }
+    // 잡음 소리는 noiseSrc 가 이미 start 했습니다. 두 번 start 하면 InvalidStateError 가 나서
+    // stop·정리(track)가 통째로 건너뛰어져, 끝나지 않는 소리가 그래프에 영원히 쌓입니다.
+    if (!o.n) src.start(t);
+    src.stop(t + d + 0.05); track(src, ch);
   }
   // 음계 도우미
   var N = { C4: 262, D4: 294, E4: 330, F4: 349, G4: 392, A4: 440, B4: 494, C5: 523, D5: 587, E5: 659, F5: 698, G5: 784, A5: 880, B5: 988, C6: 1047, D6: 1175, E6: 1319, G6: 1568, C7: 2093 };
@@ -302,66 +336,85 @@
     return g;
   }
   var toBus = null; // 징글은 효과음 통로로
-  function out(node, rev, dl) {
+  function out(node, rev, dl, ch) {
     node.connect(toBus || musBus);
-    if (rev) { var g = ac.createGain(); g.gain.value = rev; node.connect(g); g.connect(revIn); }
-    if (dl && !toBus) { var g2 = ac.createGain(); g2.gain.value = dl; node.connect(g2); g2.connect(dlyIn); }
+    if (rev) { var g = ac.createGain(); g.gain.value = rev; node.connect(g); g.connect(revIn); withChain(ch, g); }
+    if (dl && !toBus) { var g2 = ac.createGain(); g2.gain.value = dl; node.connect(g2); g2.connect(dlyIn); withChain(ch, g2); }
   }
   function inst(kind, t, m, len, v, extra) {
     if (voices > MAXV + 10) return;
-    var f = mtof(m), end, o, g, flt;
+    var f = mtof(m), end, o, g, flt, ch = chain();
     extra = extra || {};
     if (kind === 'ep' || kind === 'bell') { // FM: 전자피아노 / 종
       var ratio = kind === 'bell' ? 3.5 : 1, dec = kind === 'bell' ? Math.max(len, 1.2) : Math.max(len, 0.5);
-      o = ac.createOscillator(); o.frequency.value = f;
-      var md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = f * ratio;
+      o = withChain(ch, ac.createOscillator()); o.frequency.value = f;
+      var md = withChain(ch, ac.createOscillator()), mg = withChain(ch, ac.createGain()); md.frequency.value = f * ratio;
       mg.gain.setValueAtTime(f * (kind === 'bell' ? 2.2 : 1.4), t); mg.gain.exponentialRampToValueAtTime(f * 0.08, t + dec * 0.6);
       md.connect(mg); mg.connect(o.frequency);
-      g = vEnv(t, 0.004, v, 0.01, dec);
-      o.connect(g); out(panTo(g, extra.pan), extra.rev == null ? 0.3 : extra.rev, extra.dl || 0);
-      end = t + dec * 1.6; o.start(t); md.start(t); o.stop(end); md.stop(end); track(o); return;
+      g = withChain(ch, vEnv(t, 0.004, v, 0.01, dec));
+      o.connect(g); var pn = panTo(g, extra.pan); if (pn !== g) withChain(ch, pn);
+      out(pn, extra.rev == null ? 0.3 : extra.rev, extra.dl || 0, ch);
+      end = t + dec * 1.6; o.start(t); md.start(t); o.stop(end); md.stop(end); track(o, ch); track(md, ch); return;
     }
     if (kind === 'pad') {
-      g = vEnv(t, 0.35, v, len, 0.6); flt = ac.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = extra.cut || 900; flt.Q.value = 0.5;
-      [-8, 8].forEach(function (dt) { var oo = ac.createOscillator(); oo.type = extra.w || 'sawtooth'; oo.frequency.value = f; oo.detune.value = dt; oo.connect(flt); oo.start(t); oo.stop(t + len + 1); track(oo); });
-      flt.connect(g); out(g, 0.45, 0); return;
+      g = withChain(ch, vEnv(t, 0.35, v, len, 0.6)); flt = withChain(ch, ac.createBiquadFilter()); flt.type = 'lowpass'; flt.frequency.value = extra.cut || 900; flt.Q.value = 0.5;
+      [-8, 8].forEach(function (dt) {
+        var oo = withChain(ch, ac.createOscillator()); oo.type = extra.w || 'sawtooth'; oo.frequency.value = f; oo.detune.value = dt;
+        oo.connect(flt); oo.start(t); oo.stop(t + len + 1); track(oo, ch);
+      });
+      flt.connect(g); out(g, 0.45, 0, ch); return;
     }
-    o = ac.createOscillator();
+    o = withChain(ch, ac.createOscillator());
     var w = kind === 'saw' ? 'sawtooth' : kind === 'tri' ? 'triangle' : kind;
     setWave(o, w); o.frequency.value = f;
     if (extra.vib) { // 길게 끄는 음에 떨림
-      var lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 5.5; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.012, t + 0.25);
-      lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + len + 0.4);
+      var lfo = withChain(ch, ac.createOscillator()), lg = withChain(ch, ac.createGain()); lfo.frequency.value = 5.5; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.012, t + 0.25);
+      lfo.connect(lg); lg.connect(o.frequency); lfo.start(t); lfo.stop(t + len + 0.4); track(lfo, ch);
     }
-    g = vEnv(t, extra.a || 0.006, v, len, extra.rel || 0.12);
+    g = withChain(ch, vEnv(t, extra.a || 0.006, v, len, extra.rel || 0.12));
     if (extra.cut) {
-      flt = ac.createBiquadFilter(); flt.type = 'lowpass'; flt.Q.value = extra.q || 3;
+      flt = withChain(ch, ac.createBiquadFilter()); flt.type = 'lowpass'; flt.Q.value = extra.q || 3;
       flt.frequency.setValueAtTime(extra.cut * 2.5, t); flt.frequency.exponentialRampToValueAtTime(extra.cut * 0.5, t + Math.min(0.25, len + 0.1));
       o.connect(flt); flt.connect(g);
     } else o.connect(g);
-    out(panTo(g, extra.pan), extra.rev || 0.12, extra.dl || 0);
-    end = t + len + (extra.rel || 0.12) * 2 + 0.05; o.start(t); o.stop(end); track(o);
+    var pn2 = panTo(g, extra.pan); if (pn2 !== g) withChain(ch, pn2);
+    out(pn2, extra.rev || 0.12, extra.dl || 0, ch);
+    end = t + len + (extra.rel || 0.12) * 2 + 0.05; o.start(t); o.stop(end); track(o, ch);
   }
   function drum(kind, t, v) {
     if (voices > MAXV + 10) return;
-    var g, s, f, o, cs = cur().st, chip = cs.chipdrum, brush = cs.brush && M.mood !== 'boss';
+    var g, s, f, o, ch, cs = cur().st, chip = cs.chipdrum, brush = cs.brush && M.mood !== 'boss';
     if (kind === 'k') {
-      o = ac.createOscillator(); o.type = chip ? 'triangle' : 'sine';
+      ch = chain();
+      o = withChain(ch, ac.createOscillator()); o.type = chip ? 'triangle' : 'sine';
       o.frequency.setValueAtTime(chip ? 220 : 165, t); o.frequency.exponentialRampToValueAtTime(chip ? 55 : 42, t + (chip ? 0.08 : 0.12));
-      g = vEnv(t, 0.002, 0.8 * v, 0.01, chip ? 0.12 : 0.3); o.connect(g); out(g, 0, 0); o.start(t); o.stop(t + 0.45); track(o);
-      if (!chip && !brush) { s = noiseSrc(t); f = ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 4000; var cg = vEnv(t, 0.001, 0.08 * v, 0.003, 0.01); s.connect(f); f.connect(cg); out(cg, 0, 0); s.stop(t + 0.05); }
+      g = withChain(ch, vEnv(t, 0.002, 0.8 * v, 0.01, chip ? 0.12 : 0.3)); o.connect(g); out(g, 0, 0, ch); o.start(t); o.stop(t + 0.45); track(o, ch);
+      if (!chip && !brush) {
+        ch = chain(); s = withChain(ch, noiseSrc(t)); f = withChain(ch, ac.createBiquadFilter()); f.type = 'highpass'; f.frequency.value = 4000;
+        var cg = withChain(ch, vEnv(t, 0.001, 0.08 * v, 0.003, 0.01)); s.connect(f); f.connect(cg); out(cg, 0, 0, ch); s.stop(t + 0.05); track(s, ch);
+      }
     } else if (kind === 's') {
-      s = noiseSrc(t); f = ac.createBiquadFilter();
-      if (brush) { f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.6; g = vEnv(t, 0.012, 0.18 * v, 0.02, 0.18); }
-      else if (chip) { f.type = 'lowpass'; f.frequency.value = 6000; g = vEnv(t, 0.002, 0.3 * v, 0.01, 0.1); }
-      else { f.type = 'highpass'; f.frequency.value = 1100; g = vEnv(t, 0.002, 0.38 * v, 0.01, 0.16); }
-      s.connect(f); f.connect(g); out(g, 0.2, 0); s.stop(t + 0.4);
-      if (!brush) { o = ac.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(140, t + 0.08); var tg = vEnv(t, 0.002, 0.25 * v, 0.01, 0.07); o.connect(tg); out(tg, 0.1, 0); o.start(t); o.stop(t + 0.2); track(o); }
-      if (cs.clap) { var s2 = noiseSrc(t + 0.012), f2 = ac.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 1500; f2.Q.value = 1.2; var g2 = vEnv(t + 0.012, 0.002, 0.25 * v, 0.01, 0.12); s2.connect(f2); f2.connect(g2); out(g2, 0.25, 0); s2.stop(t + 0.3); }
+      ch = chain();
+      s = withChain(ch, noiseSrc(t)); f = withChain(ch, ac.createBiquadFilter());
+      if (brush) { f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.6; g = withChain(ch, vEnv(t, 0.012, 0.18 * v, 0.02, 0.18)); }
+      else if (chip) { f.type = 'lowpass'; f.frequency.value = 6000; g = withChain(ch, vEnv(t, 0.002, 0.3 * v, 0.01, 0.1)); }
+      else { f.type = 'highpass'; f.frequency.value = 1100; g = withChain(ch, vEnv(t, 0.002, 0.38 * v, 0.01, 0.16)); }
+      s.connect(f); f.connect(g); out(g, 0.2, 0, ch); s.stop(t + 0.4); track(s, ch);
+      if (!brush) {
+        var ch2 = chain();
+        o = withChain(ch2, ac.createOscillator()); o.type = 'triangle'; o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(140, t + 0.08);
+        var tg = withChain(ch2, vEnv(t, 0.002, 0.25 * v, 0.01, 0.07)); o.connect(tg); out(tg, 0.1, 0, ch2); o.start(t); o.stop(t + 0.2); track(o, ch2);
+      }
+      if (cs.clap) {
+        var ch3 = chain(), s2 = withChain(ch3, noiseSrc(t + 0.012)), f2 = withChain(ch3, ac.createBiquadFilter()); f2.type = 'bandpass'; f2.frequency.value = 1500; f2.Q.value = 1.2;
+        var g2 = withChain(ch3, vEnv(t + 0.012, 0.002, 0.25 * v, 0.01, 0.12)); s2.connect(f2); f2.connect(g2); out(g2, 0.25, 0, ch3); s2.stop(t + 0.3); track(s2, ch3);
+      }
     } else { // 하이햇 h, 열린 햇 H
-      s = noiseSrc(t); f = ac.createBiquadFilter(); f.type = brush ? 'bandpass' : 'highpass'; f.frequency.value = brush ? 7500 : chip ? 9000 : 7200;
-      g = vEnv(t, 0.001, (brush ? 0.07 : 0.1) * v, 0.005, kind === 'H' ? 0.2 : brush ? 0.06 : 0.035);
-      s.connect(f); f.connect(g); out(panTo(g, 0.25), 0.05, 0); s.stop(t + 0.3);
+      ch = chain();
+      s = withChain(ch, noiseSrc(t)); f = withChain(ch, ac.createBiquadFilter()); f.type = brush ? 'bandpass' : 'highpass'; f.frequency.value = brush ? 7500 : chip ? 9000 : 7200;
+      g = withChain(ch, vEnv(t, 0.001, (brush ? 0.07 : 0.1) * v, 0.005, kind === 'H' ? 0.2 : brush ? 0.06 : 0.035));
+      var pn = panTo(g, 0.25); withChain(ch, pn);
+      s.connect(f); f.connect(g); out(pn, 0.05, 0, ch); s.stop(t + 0.3); track(s, ch);
     }
   }
 
@@ -456,7 +509,8 @@
     return true;
   }
   function sched() {
-    if (!M.on || !ac || ac.state !== 'running') return;
+    if (!M.on || !ac) return;
+    if (ac.state !== 'running') { audio(); return; } // 끊긴 상태(interrupted)에서도 저절로 돌아오게
     var ahead = ac.currentTime + 0.14;
     if (M.next < ac.currentTime) M.next = ac.currentTime + 0.03;
     while (M.next < ahead) { try { playStep(M.step, M.next); } catch (e) {} M.next += stepDur(); M.step++; }

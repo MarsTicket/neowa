@@ -512,7 +512,7 @@
   // 사운드 엔진 읽기
   (function () {
     var s = document.createElement('script');
-    s.src = BASE + 'sound.js?v=1';
+    s.src = BASE + 'sound.js?v=2';
     document.head.appendChild(s);
   })();
   // 그래픽 보강(파티클·빛 번짐·화면 연출) 따로 불러오기. 없어도 게임은 그대로 돌아감

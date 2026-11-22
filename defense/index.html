@@ -165,7 +165,9 @@
     ammo--; shots.push({ x: BASE.x, y: BASE.y, tx: x, ty: y, sp: 900 }); A.sfx('shoot', 0.7, A.clamp(x / W * 2 - 1, -1, 1)); hud();
   }
   // root: 같은 요격탄에서 시작된 폭발끼리 공유하는 연쇄 카운터
-  function explode(x, y, chain, root) { blasts.push({ x: x, y: y, r: 0, max: 62, t: 0, chain: chain, root: root || { n: 0 } }); A.sfx(chain ? 'boom' : 'hit', chain ? 1.1 + Math.min(chainCount, 10) * 0.06 : 1, A.clamp(x / W * 2 - 1, -1, 1)); }
+  // 연쇄 소리는 그 폭발이 속한 연쇄(root)의 누적 수에서 음량을 올린다.
+  // (예전엔 explode 바깥의 chainCount를 참조했는데, 그 변수가 update 안 지역 변수로 바뀌면서 ReferenceError → 게임 루프 정지)
+  function explode(x, y, chain, root) { root = root || { n: 0 }; blasts.push({ x: x, y: y, r: 0, max: 62, t: 0, chain: chain, root: root }); A.sfx(chain ? 'boom' : 'hit', chain ? 1.1 + Math.min(root.n || 0, 10) * 0.06 : 1, A.clamp(x / W * 2 - 1, -1, 1)); }
   function update(dt) {
     fx.update(dt); if (noAmmoT > 0) noAmmoT -= dt;
     if (dyingT > 0) { dyingT -= dt; if (dyingT <= 0) S.gameOver(score, [['웨이브', String(wave)], ['최대 연쇄', String(bestChain)], ['최고 대비', vsBest(score)]]); return; }

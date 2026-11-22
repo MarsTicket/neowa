@@ -9,6 +9,15 @@
   'use strict';
   var A = window.Arcade; if (!A) return;
 
+  /* ---------- 배경음악 라디오(외부 무료 음원) 연결 ----------
+     radio.js(NeowaRadio)가 있으면 배경음악은 그 라디오가 맡습니다. 없거나 실패하면 아래 즉석 작곡이 그대로 돕니다.
+     효과음은 전혀 건드리지 않습니다. */
+  var RAD = null;
+  function rad() { if (RAD === null) RAD = window.NeowaRadio || false; return RAD || null; }
+  function radioOn() { var r = rad(); return !!(r && r.active()); }
+  function radioLevel() { return (muted || volBgm <= 0) ? 0 : 0.45 * curve(volBgm) / curve(50) * (M.vol || 1); }
+  function radioPlay() { var r = rad(); if (!r || !r.active()) return false; r.setLevel(radioLevel()); r.setLow(1); r.play(); return true; }
+
   /* ---------- 설정 ---------- */
   function num(k, d) { var v = parseInt(A.get(k, String(d)), 10); return isNaN(v) ? d : Math.max(0, Math.min(100, v)); }
   var muted = A.get('neowa_mute', '0') === '1';
@@ -243,7 +252,7 @@
     var p = (pitch || 1) * (TUNED[name] ? 1 : 1 + (Math.random() - 0.5) * 0.04);
     var lg = LOUD[name] || 1;
     try { for (var i = 0; i < list.length; i++) tone(list[i], p, pan, lg); } catch (e) {}
-    if (DUCK[name]) duck(DUCK[name][0], DUCK[name][1]);
+    if (DUCK[name]) { duck(DUCK[name][0], DUCK[name][1]); if (rad()) rad().duck(DUCK[name][0], DUCK[name][1]); }
     if (name === 'level') M.levelUp();
   };
   A.sfx.add = function (name, notes) { SFX[name] = notes; }; // 게임 전용 소리 추가
@@ -527,6 +536,8 @@
     // 게임 시작 때 엔진이 부릅니다. id: 게임 id, style: 'synth'|'chip'|'drive'|'space'|'puzzle'|'zen'|'casino'|'brain'|'sport'
     play: function (id, style) {
       id = id || curId || 'neowa';
+      /* 외부 음원 라디오가 켜져 있으면 그 곡을 틉니다(게임마다 즉석 작곡은 쉽니다). */
+      if (radioOn()) { curId = id; M.vol = SOFT[id] || 1; if (radioPlay()) return; }
       if (muted || volBgm <= 0) { curId = id; return; }
       if (!unlocked || !audio()) { curId = id; return; }
       var sn = style || curStyle || GAME[id] || ['synth', 'chip', 'puzzle', 'sport'][hash(id) % 4];
@@ -543,12 +554,14 @@
       sched();
     },
     stop: function (fade) {
+      if (rad()) rad().pause();
       if (!M.on) return;
       M.on = false;
       if (ac) fadeBus(0.0001, fade == null ? 0.5 : fade);
     },
     // 일시정지 중에는 작고 먹먹하게
     paused: function (p) {
+      if (rad()) rad().setLow(p ? 0.45 : 1);
       if (!ac) return;
       var t = ac.currentTime;
       musTone.frequency.cancelScheduledValues(t); musTone.frequency.setTargetAtTime(p ? 700 : 18000, t, 0.08);
@@ -561,8 +574,8 @@
     // 분위기 바꾸기: 'danger'(위기: 맥박 베이스·빠르게) · 'boss'(보스: 거센 전투곡) · null(원래 곡). 다음 마디부터 바뀝니다.
     mood: function (m) { M.want = m === 'danger' || m === 'boss' ? m : null; },
     levelUp: function () { M.lvl++; M.tempo = Math.min(1.1, M.tempo + 0.015); },
-    style: function (sn) { curStyle = sn; if (M.on) this.play(curId, sn); },
-    isOn: function () { return M.on; }
+    style: function (sn) { curStyle = sn; if (M.on || radioOn()) this.play(curId, sn); },
+    isOn: function () { var r = rad(); return M.on || !!(r && r.playing()); }
   };
   M.levelUp = A.music.levelUp;
 
@@ -574,6 +587,7 @@
     if (ac) { var t = ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setTargetAtTime(muted ? 0 : 1, t, 0.03); }
     if (muted) { if (M.on) { M.on = false; M.wasOn = true; } }
     else { unlock(); if ((M.wasOn || document.body.getAttribute('data-state') === 'playing') && curId) { M.wasOn = false; A.music.play(curId); if (document.body.getAttribute('data-state') === 'paused') A.music.paused(true); } }
+    if (rad()) rad().setLevel(radioLevel());
     paintPanel();
   };
   A.unlockAudio = unlock;
@@ -585,6 +599,7 @@
       if (ac && M.on) fadeBus(v <= 0 ? 0.0001 : (document.body.getAttribute('data-state') === 'paused' ? busLevel() * 0.45 : busLevel()), 0.1);
       if (v <= 0 && M.on) A.music.stop(0.1);
       else if (was <= 0 && v > 0 && /playing|paused/.test(document.body.getAttribute('data-state') || '') && curId) { A.music.play(curId); if (document.body.getAttribute('data-state') === 'paused') A.music.paused(true); }
+      if (rad()) { rad().setLevel(radioLevel()); if (v > 0 && /playing|paused/.test(document.body.getAttribute('data-state') || '') && curId && !rad().wantPlay()) A.music.play(curId); }
     } else {
       volSfx = v; A.set('neowa_vol_sfx', v);
       if (ac) sfxBus.gain.setTargetAtTime(0.42 * curve(v) / curve(80), ac.currentTime, 0.02);
@@ -643,6 +658,7 @@
     panel = document.createElement('div'); panel.className = 'snd'; panel.setAttribute('data-nostart', '');
     panel.setAttribute('role', 'group'); panel.setAttribute('aria-label', '소리 설정');
     panel.appendChild(row('sfx', '효과음')); panel.appendChild(row('bgm', '배경음악'));
+    if (rad()) { panel.style.width = 'min(340px,100%)'; rad().block(panel); } // 배경음악 테마·곡명
     var mb = document.createElement('button'); mb.type = 'button'; mb.className = 'snd-mute'; panel.appendChild(mb);
     mb.addEventListener('click', function (e) { e.stopPropagation(); A.setMuted(!muted); if (!muted) A.sfx('click'); });
     if (canVib) { // 진동을 지원하는 기기에서만 버튼 표시
@@ -663,8 +679,45 @@
     paintPanel();
   }
 
+  /* 위 메뉴줄에 배경음악 버튼을 붙입니다(좁은 화면은 아이콘만). */
+  function mountChip() {
+    var r = rad(); if (!r) return;
+    var box = document.querySelector('.g-top .g-icons'); if (!box) return;
+    var mq = window.matchMedia && matchMedia('(max-width: 820px)');
+    var chip = r.chip(box, { solo: !!(mq && mq.matches) });
+    if (chip && box.firstChild !== chip) box.insertBefore(chip, box.firstChild);
+    if (mq && mq.addEventListener) mq.addEventListener('change', function (e) { chip.classList.toggle('solo', e.matches); });
+  }
+  /* 라디오와 게임 음악이 서로 자리를 바꿔도 끊김 없이 이어지게 */
+  function hookRadio() {
+    var r = rad(); if (!r) return;
+    r.onTheme = function (id) {
+      var st = document.body.getAttribute('data-state') || '', live = st === 'playing' || st === 'paused';
+      if (id === 'original') {
+        if (!live) return false;
+        M.vol = SOFT[curId] || 1; A.music.play(curId);
+        if (st === 'paused') A.music.paused(true);
+        return true;
+      }
+      if (M.on) A.music.stop(0.25);
+      if (live) { M.vol = SOFT[curId] || 1; radioPlay(); }
+      return true;
+    };
+    /* 외부 음원이 전부 막혔을 때: 이 세션은 오리지널 음악으로 */
+    r.onFallback = function () {
+      setTimeout(function () {
+        if (radioOn()) return;
+        var st = document.body.getAttribute('data-state') || '';
+        if (st === 'playing' || st === 'paused') { M.vol = SOFT[curId] || 1; A.music.play(curId); if (st === 'paused') A.music.paused(true); }
+        r.toast('외부 음악을 불러오지 못해 오리지널 음악으로 들려 드립니다');
+      }, 0);
+    };
+  }
+
   function init() {
     mountPanel();
+    mountChip();
+    hookRadio();
     document.body.classList.toggle('muted', muted);
     if (window.MutationObserver) new MutationObserver(onState).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
     onState();

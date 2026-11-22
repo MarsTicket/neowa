@@ -509,11 +509,13 @@
       load(this.nick());
     }
   };
-  // 사운드 엔진 읽기
+  // 사운드 엔진 읽기 — 배경음악 라디오(radio.js)를 먼저 읽어야 sound.js 가 외부 음원을 씁니다.
   (function () {
+    var r = document.createElement('script');
+    r.src = BASE + 'radio.js?v=1'; r.async = false;
     var s = document.createElement('script');
-    s.src = BASE + 'sound.js?v=2';
-    document.head.appendChild(s);
+    s.src = BASE + 'sound.js?v=3'; s.async = false;
+    document.head.appendChild(r); document.head.appendChild(s);
   })();
   // 그래픽 보강(파티클·빛 번짐·화면 연출) 따로 불러오기. 없어도 게임은 그대로 돌아감
   (function () {

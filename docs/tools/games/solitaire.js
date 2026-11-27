@@ -7,6 +7,8 @@
   var diff = +A.get('neowa_solitaire_diff', '0') || 0;
   function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
   function seeded(a) { return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  // 자동 이동: 기본 꺼짐. 켜면 탭/클릭·W·1~7키가 카드를 알아서 옮긴다. 새 키 neowa_solitaire_automove
+  var autoMoveOn = A.getInt('neowa_solitaire_automove', 0) === 1;
   var tut = A.get('neowa_solitaire_tut', '') !== '1'; // 첫 판 안내
   var st, score, moves, time, hist, drag = null, winT, auto, flyers = [], hintT = 0, hintMv = null, quitT = 0, hintsUsed = 0;
   // 화면 배치: 세로 540x960 (위 줄: 덱·넘긴 카드·모으기 4칸) / 가로 960x640 (왼쪽: 덱·넘긴 카드·점수, 가운데: 바닥 7줄, 오른쪽: 모으기 4칸)
@@ -189,8 +191,10 @@
       var tw = land ? 640 : 500, tx = land ? 154 : (W - tw) / 2, ty = land ? H - 108 : 724, touch = document.body.classList.contains('touch');
       c.globalAlpha = 0.93; c.fillStyle = '#2a0818'; A.rr(c, tx, ty, tw, 92, 18); c.fill(); c.strokeStyle = '#ff7aa8'; c.lineWidth = 2; c.stroke(); c.globalAlpha = 1;
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = '#ff7aa8'; c.font = '800 21px "Pretendard Variable",system-ui'; c.fillText(touch ? '카드를 탭하면 갈 수 있는 곳으로 자동 이동!' : '카드를 클릭하면 갈 수 있는 곳으로 자동 이동!', tx + tw / 2, ty + 32);
-      c.fillStyle = 'rgba(255,214,228,.85)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.fillText('깜빡이는 카드부터 · 끌어 놓아도 되고, 막히면 힌트', tx + tw / 2, ty + 64);
+      var tut1 = autoMoveOn ? (touch ? '카드를 탭하면 갈 수 있는 곳으로 자동 이동!' : '카드를 클릭하면 갈 수 있는 곳으로 자동 이동!') : '카드를 끌어다 놓으세요!';
+      var tut2 = autoMoveOn ? '깜빡이는 카드부터 · 끌어 놓아도 되고, 막히면 힌트' : '깜빡이는 카드부터 · 막히면 힌트';
+      c.fillStyle = '#ff7aa8'; c.font = '800 21px "Pretendard Variable",system-ui'; c.fillText(tut1, tx + tw / 2, ty + 32);
+      c.fillStyle = 'rgba(255,214,228,.85)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.fillText(tut2, tx + tw / 2, ty + 64);
     }
     if (land) {
       // 가로 화면: 왼쪽 아래에 점수·이동·시간 (버튼은 오른쪽 패널)
@@ -214,6 +218,13 @@
     else { quitT = 2.5; A.sfx('click'); paintPanel(); }
   }
   var pEl = {};
+  var autoBtn = null; // 시작 화면 토글 버튼 (난이도 버튼 옆 .ov-diff 안에 넣음)
+  function paintAuto() {
+    var label = '자동 이동: ' + (autoMoveOn ? '켜짐' : '꺼짐');
+    if (autoBtn) { autoBtn.textContent = label; autoBtn.classList.toggle('on', autoMoveOn); }
+    if (pEl.auto) { pEl.auto.textContent = label; pEl.auto.classList.toggle('on', autoMoveOn); }
+  }
+  function toggleAuto() { autoMoveOn = !autoMoveOn; A.set('neowa_solitaire_automove', autoMoveOn ? '1' : '0'); A.sfx('click'); paintAuto(); }
   function paintPanel() {
     if (!pEl.quit) return;
     var play = S && S.state === 'playing' && winT <= 0;
@@ -242,21 +253,23 @@
   stage.addEventListener('pointermove', function (e) { if (!drag || drag.id !== e.pointerId) return; var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 10) drag.moved = true; });
   stage.addEventListener('pointerup', function (e) {
     if (!drag || drag.id !== e.pointerId) return; var d = drag; drag = null;
-    if (!d.moved) { autoMove(d.src); return; }
+    if (!d.moved) { if (autoMoveOn) autoMove(d.src); else A.sfx('tap'); return; }
     var tg = dropTarget({ x: d.x - d.ox + CW / 2, y: d.y - d.oy + 20 }); if (!tg || !tryMove(d.src, tg)) A.sfx('wall');
   });
   var S = new A.Shell({ id: 'solitaire', W: W, H: H, land: [960, 640], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key; if ((k === ' ' || k === 'Enter') && !e.repeat) drawStock(); if (k === 'u' || k === 'U' || (k === 'z' && (e.ctrlKey || e.metaKey))) undo(); if ((k === 'h' || k === 'H') && !e.repeat) showHint();
-      if (k === 'w' && st.waste.length) autoMove({ from: 'waste' }); if (/^[1-7]$/.test(k)) { var t = +k - 1, col = st.tab[t]; if (col.length) { var fu = 0; while (fu < col.length && !col[fu].up) fu++; if (!autoMove({ from: 'tab', i: t, k: col.length - 1 }) && fu < col.length - 1) autoMove({ from: 'tab', i: t, k: fu }); } } } });
+      if (autoMoveOn) { if (k === 'w' && st.waste.length) autoMove({ from: 'waste' }); if (/^[1-7]$/.test(k)) { var t = +k - 1, col = st.tab[t]; if (col.length) { var fu = 0; while (fu < col.length && !col[fu].up) fu++; if (!autoMove({ from: 'tab', i: t, k: col.length - 1 }) && fu < col.length - 1) autoMove({ from: 'tab', i: t, k: fu }); } } } } });
   // 가로 화면 오른쪽 패널: 되돌리기·힌트·끝내기 큰 버튼 (점수는 게임판 왼쪽 아래에 그림)
   document.querySelector('.g-hud').setAttribute('data-land-hide', '');
   S.panelSlot.innerHTML = '<button class="gp-btn main" id="pkUndo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기</button>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="gp-btn" id="pkHint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>힌트</button>' +
-    '<button class="gp-btn" id="pkQuit">끝내기</button></div>';
-  pEl = { undo: document.getElementById('pkUndo'), hint: document.getElementById('pkHint'), quit: document.getElementById('pkQuit') };
+    '<button class="gp-btn" id="pkQuit">끝내기</button></div>' +
+    '<button class="gp-btn" id="pkAuto">자동 이동: 꺼짐</button>';
+  pEl = { undo: document.getElementById('pkUndo'), hint: document.getElementById('pkHint'), quit: document.getElementById('pkQuit'), auto: document.getElementById('pkAuto') };
   pEl.undo.addEventListener('click', function () { if (S.state === 'playing') undo(); });
   pEl.hint.addEventListener('click', showHint);
   pEl.quit.addEventListener('click', quitPress);
+  pEl.auto.addEventListener('click', function () { toggleAuto(); });
   new MutationObserver(function () { paintPanel(); }).observe(document.body, { attributes: true, attributeFilter: ['data-state'] });
   paintPanel();
   // 판 고르기 버튼
@@ -264,4 +277,14 @@
   function paintDiff() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
   dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_solitaire_diff', diff); A.sfx('click'); paintDiff(); }); });
   paintDiff();
+  // 자동 이동 토글 버튼: 시작 화면 난이도 버튼 옆에 넣기 (.ov-diff는 data-nostart라 눌러도 게임이 시작되지 않음)
+  var ovDiff = document.querySelector('.ov-diff');
+  if (ovDiff) {
+    autoBtn = document.createElement('button');
+    autoBtn.type = 'button';
+    autoBtn.id = 'ovAuto';
+    autoBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleAuto(); });
+    ovDiff.appendChild(autoBtn);
+  }
+  paintAuto();
 })();

@@ -89,9 +89,11 @@ Arcade.G3D.define('shooting', function (X) {
   }
   rockGroup.visible = false; fortGroup.visible = false; pillarGroup.visible = false;
 
-  /* ---------- BatchedMesh: r160은 지오메트리당 1행렬(멀티드로우) 구조라
-     같은 기체 지오메트리를 슬롯 수만큼 복사 등록해 묶습니다.
-     색은 setColorAt이 r160에 없어 vertex color 속성에 구워 넣습니다. ---------- */
+  /* ---------- BatchedMesh: 같은 기체 지오메트리를 슬롯 수만큼 복사 등록해 묶습니다.
+     r187부터 addGeometry는 지오메트리만 등록하고 인스턴스는 addInstance로 따로 만들어야 합니다.
+     (r160은 addGeometry가 인스턴스까지 만들었으나 r187에서 분리됨. addInstance를 안 부르면
+     setMatrixAt에서 Invalid instanceId 오류가 나 3D가 꺼집니다.)
+     색은 vertex color 속성에 구워 넣습니다. ---------- */
   var _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color();
   function compose(x, y, z, rotZ, sx, sy, sz) {
     _e.set(0, 0, rotZ); _q.setFromEuler(_e); _v.set(x, y, z); _s.set(sx, sy, sz);
@@ -118,7 +120,7 @@ Arcade.G3D.define('shooting', function (X) {
     var m = new THREE.BatchedMesh(totalSlots + 8, totalV + 256, 0, material);
     m.frustumCulled = false;
     defs.forEach(function (d) {
-      for (var i = 0; i < d.count; i++) slots[d.key].ids.push(m.addGeometry(slots[d.key].geo));
+      for (var i = 0; i < d.count; i++) slots[d.key].ids.push(m.addInstance(m.addGeometry(slots[d.key].geo)));
     });
     scene.add(m);
     return { mesh: m, slots: slots };
@@ -210,6 +212,7 @@ Arcade.G3D.define('shooting', function (X) {
     update: function (s, dt, o, time) {
       var i, j;
       var playing = s.state === 'playing';
+      var mob = s.mob || 1; // 모바일에서는 기체·적기·탄을 크게 그린다
       /* 페이즈 배경 교체 */
       if (s.phase && s.phase !== curPhase) {
         curPhase = s.phase; scene.background = bgTex[curPhase] || bgTex[1];
@@ -259,7 +262,7 @@ Arcade.G3D.define('shooting', function (X) {
         me.visible = me.visible && !blink;
         me.position.set(px, -py, 30);
         me.rotation.z = -(s.state === 'ready' ? 0 : P.tilt) * 0.18;
-        me.scale.set(1 - Math.abs(P.tilt || 0) * 0.16, 1, 1);
+        me.scale.set((1 - Math.abs(P.tilt || 0) * 0.16) * mob, mob, mob);
         if (s.shipColor && s.shipColor !== lastShipColor) {
           lastShipColor = s.shipColor;
           meBodyMat.emissive.set(s.shipColor); meGlow.material.color.set(s.shipColor); meLight.color.set(s.shipColor);
@@ -283,7 +286,7 @@ Arcade.G3D.define('shooting', function (X) {
         var sq = e.hit > 0 ? e.hit / 0.08 : 0;
         var rot = e.type === 'weaver' ? -e.t * 2 : 0;
         var ez = e.type.indexOf('boss') === 0 ? 20 : 0;
-        setInst(units, sl.ids[n], e.x, -e.y, ez, rot, 1 + sq * 0.18, 1 - sq * 0.18, 1);
+        setInst(units, sl.ids[n], e.x, -e.y, ez, rot, (1 + sq * 0.18) * mob, (1 - sq * 0.18) * mob, mob);
       }
       var dbs = s.debris || [];
       for (i = 0; i < dbs.length; i++) {
@@ -305,7 +308,7 @@ Arcade.G3D.define('shooting', function (X) {
       var bls = s.bullets || [];
       for (i = 0; i < bls.length && bc < bolts.slots.bolt.count; i++) {
         var b = bls[i];
-        setInst(bolts, bolts.slots.bolt.ids[bc++], b.x, -b.y, 10, -Math.atan2(b.vx, -b.vy), 1, 1, 1);
+        setInst(bolts, bolts.slots.bolt.ids[bc++], b.x, -b.y, 10, -Math.atan2(b.vx, -b.vy), mob, mob, 1);
       }
       for (var u2 = bc; u2 < bolts.slots.bolt.count; u2++) hideInst(bolts, bolts.slots.bolt.ids[u2]);
       var ocnt = {};
@@ -316,7 +319,7 @@ Arcade.G3D.define('shooting', function (X) {
         var on = ocnt[ok] || 0;
         if (on >= osl.count) continue;
         ocnt[ok] = on + 1;
-        var osc = eb.homing ? 1.25 : 1;
+        var osc = (eb.homing ? 1.25 : 1) * mob;
         setInst(orbs, osl.ids[on], eb.x, -eb.y, 10, 0, osc, osc, 1);
       }
       Object.keys(orbs.slots).forEach(function (k) {

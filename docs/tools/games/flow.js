@@ -1,0 +1,375 @@
+(function () {
+  'use strict';
+  var A = Arcade, W = 540, H = 960;
+  var fx = new A.FX();
+  // 색 8개: 끝점 원과 길에 씀. 서로 잘 구분되는 색만 골랐다.
+  var COLS = ['#ff4d6d', '#ff9e4d', '#ffd166', '#7dff9b', '#4dd8ff', '#7aa2ff', '#b48cff', '#ff7aa8'];
+  var PAR = [90, 180, 300]; // 난이도별 10개 레벨 기준 시간(초)
+  var DIFF_NAME = ['쉬움', '보통', '어려움'];
+  // LEVELS: docs/tools/flow_check.py 로 검증한 손 설계 레벨 (끝점만으로 솔버 확인 완료)
+var LEVELS = {
+  0: [
+    { n: 5, dots: [[0,1,4,0,0], [0,2,2,3,1], [0,4,4,4,2], [1,1,4,2,3], [1,2,4,3,4]] }, // base0
+    { n: 5, dots: [[0,0,1,4,0], [2,4,3,2,1], [4,0,4,4,2], [1,3,2,0,3], [2,3,3,0,4]] }, // base0-rot90
+    { n: 5, dots: [[0,4,4,3,0], [2,1,4,2,1], [0,0,4,0,2], [0,2,3,3,3], [0,1,3,2,4]] }, // base0-rot180
+    { n: 5, dots: [[3,0,4,4,0], [1,2,2,0,1], [0,0,0,4,2], [2,4,3,1,3], [1,4,2,1,4]] }, // base0-rot270
+    { n: 5, dots: [[0,3,4,4,0], [0,2,2,1,1], [0,0,4,0,2], [1,3,4,2,3], [1,2,4,1,4]] }, // base0-flipH
+    { n: 5, dots: [[0,4,1,0,0], [2,0,3,2,1], [4,0,4,4,2], [1,1,2,4,3], [2,1,3,4,4]] }, // base0-transpose
+    { n: 5, dots: [[0,0,4,0,0], [0,1,1,4,1], [1,1,3,3,2], [2,1,4,3,3], [1,3,4,4,4]] }, // base1
+    { n: 5, dots: [[0,0,0,4,0], [1,4,4,3,1], [1,3,3,1,2], [1,2,3,0,3], [3,3,4,0,4]] }, // base1-rot90
+    { n: 5, dots: [[0,4,4,4,0], [3,0,4,3,1], [1,1,3,3,2], [0,1,2,3,3], [0,0,3,1,4]] }, // base1-rot180
+    { n: 5, dots: [[4,0,4,4,0], [0,1,3,0,1], [1,3,3,1,2], [1,4,3,2,3], [0,4,1,1,4]] }, // base1-rot270
+  ],
+  1: [
+    { n: 6, dots: [[0,1,3,0,0], [0,2,3,3,1], [0,5,4,4,2], [1,1,5,0,3], [1,2,5,1,4], [1,5,4,3,5]] }, // base0
+    { n: 6, dots: [[0,2,1,5,0], [2,5,3,2,1], [4,1,5,5,2], [0,0,1,4,3], [1,0,2,4,4], [3,1,5,4,5]] }, // base0-rot90
+    { n: 6, dots: [[2,5,5,4,0], [2,2,5,3,1], [1,1,5,0,2], [0,5,4,4,3], [0,4,4,3,4], [1,2,4,0,5]] }, // base0-rot180
+    { n: 6, dots: [[4,0,5,3,0], [2,3,3,0,1], [0,0,1,4,2], [4,1,5,5,3], [3,1,4,5,4], [0,1,2,4,5]] }, // base0-rot270
+    { n: 6, dots: [[0,4,3,5,0], [0,3,3,2,1], [0,0,4,1,2], [1,4,5,5,3], [1,3,5,4,4], [1,0,4,2,5]] }, // base0-flipH
+    { n: 6, dots: [[0,3,1,0,0], [2,0,3,3,1], [4,4,5,0,2], [0,5,1,1,3], [1,5,2,1,4], [3,4,5,1,5]] }, // base0-transpose
+    { n: 6, dots: [[0,0,2,1,0], [0,3,2,4,1], [1,4,4,2,2], [1,1,5,0,3], [3,1,4,4,4], [3,4,5,4,5]] }, // base1
+    { n: 6, dots: [[0,5,1,3,0], [3,5,4,3,1], [2,1,4,4,2], [0,0,1,4,3], [1,2,4,1,4], [4,0,4,2,5]] }, // base1-rot90
+    { n: 6, dots: [[3,4,5,5,0], [3,1,5,2,1], [1,3,4,1,2], [0,5,4,4,3], [1,1,2,4,4], [0,1,2,1,5]] }, // base1-rot180
+    { n: 6, dots: [[4,2,5,0,0], [1,2,2,0,1], [1,1,3,4,2], [4,1,5,5,3], [1,4,4,3,4], [1,3,1,5,5]] }, // base1-rot270
+  ],
+  2: [
+    { n: 7, dots: [[0,1,5,0,0], [0,2,2,6,1], [1,1,6,2,2], [1,3,5,5,3], [2,3,6,3,4], [2,1,6,0,5], [3,3,5,3,6], [3,6,6,5,7]] }, // base0
+    { n: 7, dots: [[0,1,1,6,0], [2,6,6,4,1], [1,5,2,0,2], [3,5,5,1,3], [3,0,3,4,4], [0,0,1,4,5], [3,1,3,3,6], [5,0,6,3,7]] }, // base0-rot90
+    { n: 7, dots: [[1,6,6,5,0], [4,0,6,4,1], [0,4,5,5,2], [1,1,5,3,3], [0,3,4,3,4], [0,6,4,5,5], [1,3,3,3,6], [0,1,3,0,7]] }, // base0-rot180
+    { n: 7, dots: [[5,0,6,5,0], [0,2,4,0,1], [4,6,5,1,2], [1,5,3,1,3], [3,2,3,6,4], [5,2,6,6,5], [3,3,3,5,6], [0,3,1,6,7]] }, // base0-rot270
+    { n: 7, dots: [[0,5,5,6,0], [0,4,2,0,1], [1,5,6,4,2], [1,3,5,1,3], [2,3,6,3,4], [2,5,6,6,5], [3,3,5,3,6], [3,0,6,1,7]] }, // base0-flipH
+    { n: 7, dots: [[0,5,1,0,0], [2,0,6,2,1], [1,1,2,6,2], [3,1,5,5,3], [3,2,3,6,4], [0,6,1,2,5], [3,3,3,5,6], [5,6,6,3,7]] }, // base0-transpose
+    { n: 7, dots: [[0,0,0,6,0], [1,6,6,5,1], [1,0,2,5,2], [2,0,4,4,3], [3,0,5,0,4], [3,1,6,2,5], [3,5,6,3,6], [4,2,6,0,7]] }, // base1
+    { n: 7, dots: [[0,6,6,6,0], [5,0,6,5,1], [0,5,5,4,2], [0,4,4,2,3], [0,1,0,3,4], [1,3,2,0,5], [3,0,5,3,6], [0,0,2,2,7]] }, // base1-rot90
+    { n: 7, dots: [[6,0,6,6,0], [0,1,5,0,1], [4,1,5,6,2], [2,2,4,6,3], [1,6,3,6,4], [0,4,3,5,5], [0,3,3,1,6], [0,6,2,4,7]] }, // base1-rot180
+    { n: 7, dots: [[0,0,6,0,0], [0,1,1,6,1], [1,2,6,1,2], [2,4,6,2,3], [6,3,6,5,4], [4,6,5,3,5], [1,3,3,6,6], [4,4,6,6,7]] }, // base1-rot270
+  ],
+};
+  var land = false, N, CS, GX, GY, paths, occ, dots, nCol;
+  var diff = +A.get('neowa_flow_diff', '0') || 0;
+  var levelIdx = 0, levelTime = 0, clearedTime = 0, started = false;
+  var levelDone = false, nextReady = false, winT = 0, overCalled = false;
+  var dragColor = -1, dragging = false, downX = 0, downY = 0, downT = 0, downCell = -1;
+  var cur = 0, kbd = false, hist = [];
+  var tut = A.get('neowa_flow_tut', '') !== '1';
+  function tutDone() { if (tut) { tut = false; A.set('neowa_flow_tut', '1'); } }
+  function idx(r, c) { return r * N + c; }
+  function inB(r, c) { return r >= 0 && c >= 0 && r < N && c < N; }
+  function adj(a, b) { var ar = Math.floor(a / N), ac = a % N, br = Math.floor(b / N), bc = b % N; return Math.abs(ar - br) + Math.abs(ac - bc) === 1; }
+  function cellAt(p) { var c = Math.floor((p.x - GX) / CS), r = Math.floor((p.y - GY) / CS); if (!inB(r, c)) return -1; return idx(r, c); }
+  function epColor(cell) { for (var i = 0; i < dots.length; i++) { if (dots[i][0] === cell || dots[i][1] === cell) return i; } return -1; }
+  function isEnd(cell, c) { return dots[c][0] === cell || dots[c][1] === cell; }
+  function otherEnd(cell, c) { return dots[c][0] === cell ? dots[c][1] : dots[c][0]; }
+  function layout() {
+    if (!N) return;
+    if (land) { CS = Math.floor(680 / N); GX = (W - N * CS) / 2; GY = (H - N * CS) / 2; }
+    else { CS = Math.floor(500 / N); GX = (W - N * CS) / 2; GY = 150 + (560 - N * CS) / 2; }
+  }
+  function geo(sh) { land = !!sh.land; W = sh.W; H = sh.H; layout(); }
+  function loadLevel(i) {
+    var lv = LEVELS[diff][i];
+    N = lv.n; dots = []; nCol = lv.dots.length;
+    for (var k = 0; k < lv.dots.length; k++) dots.push([idx(lv.dots[k][0], lv.dots[k][1]), idx(lv.dots[k][2], lv.dots[k][3])]);
+    paths = []; occ = [];
+    for (var j = 0; j < N * N; j++) occ.push(-1);
+    for (var c = 0; c < nCol; c++) { paths.push(null); occ[dots[c][0]] = c; occ[dots[c][1]] = c; }
+    layout();
+    levelTime = 0; started = false; levelDone = false; nextReady = false; winT = 0;
+    dragColor = -1; dragging = false; hist = []; cur = dots[0][0];
+    hud();
+  }
+  function saveProgress() { A.set('neowa_flow_level_' + diff, Math.min(levelIdx + 1, LEVELS[diff].length)); }
+  function loadProgress() { var v = A.getInt('neowa_flow_level_' + diff); levelIdx = (v >= 0 && v < LEVELS[diff].length) ? v : 0; }
+  function reset() { clearedTime = 0; overCalled = false; loadProgress(); loadLevel(levelIdx); fx.clear(); }
+  function snapshot() { hist.push(paths.map(function (p) { return p ? p.slice() : null; })); if (hist.length > 60) hist.shift(); }
+  function restore(snap) {
+    paths = snap.map(function (p) { return p ? p.slice() : null; });
+    for (var j = 0; j < N * N; j++) occ[j] = -1;
+    for (var c = 0; c < nCol; c++) { occ[dots[c][0]] = c; occ[dots[c][1]] = c; if (paths[c]) for (var k = 0; k < paths[c].length; k++) occ[paths[c][k]] = c; }
+  }
+  function undo() {
+    if (!hist.length) { A.sfx('wall'); return; }
+    restore(hist.pop()); A.sfx('slide', 0.8); hud();
+  }
+  function clearColor(c) {
+    if (!paths[c]) return;
+    snapshot(); paths[c] = null;
+    for (var j = 0; j < N * N; j++) if (occ[j] === c && !isEnd(j, c)) occ[j] = -1;
+    A.sfx('slide', 0.8); hud();
+  }
+  function clearAll() {
+    var any = false; for (var c = 0; c < nCol; c++) if (paths[c]) any = true;
+    if (!any) { A.sfx('wall'); return; }
+    snapshot();
+    for (var c2 = 0; c2 < nCol; c2++) paths[c2] = null;
+    for (var j = 0; j < N * N; j++) if (occ[j] >= 0) { var ec = epColor(j); occ[j] = ec; }
+    A.sfx('slide', 0.8); hud();
+  }
+  function filled() { var n = 0; for (var j = 0; j < N * N; j++) if (occ[j] >= 0) n++; return n; }
+  function doneCount() { var n = 0; for (var c = 0; c < nCol; c++) if (paths[c] && paths[c].length > 1 && isEnd(paths[c][paths[c].length - 1], c)) n++; return n; }
+  function startDrag(c, fromCell) {
+    snapshot();
+    paths[c] = [fromCell];
+    for (var j = 0; j < N * N; j++) if (occ[j] === c && !isEnd(j, c)) occ[j] = -1;
+    occ[fromCell] = c;
+    dragColor = c; dragging = true; started = true; tutDone();
+  }
+  // 한 칸 잇기. 성공하면 true.
+  function stepTo(cell) {
+    var c = dragColor, p = paths[c]; if (!p) return false;
+    var head = p[p.length - 1];
+    if (cell === head) return false;
+    if (!adj(head, cell)) return false;
+    var o = occ[cell];
+    if (o === -1) { p.push(cell); occ[cell] = c; A.sfx('tap', 1 + p.length * 0.015); return true; }
+    if (o === c) {
+      var at = p.indexOf(cell);
+      if (at >= 0) { // 길 중간을 잘라 거기까지만 남김
+        for (var k = at + 1; k < p.length; k++) if (!isEnd(p[k], c)) occ[p[k]] = -1;
+        paths[c] = p.slice(0, at + 1); A.sfx('slide', 0.9); return true;
+      }
+      if (isEnd(cell, c) && cell !== p[0]) { p.push(cell); A.sfx('match'); return true; }
+      return false;
+    }
+    return false; // 다른 색 길이나 원: 겹칠 수 없음
+  }
+  // 포인터가 멀리 뛰었을 때 머리에서 목표 쪽으로 한 칸씩 잇기
+  function stepToward(cell) {
+    var guard = 0;
+    while (guard++ < N * 2) {
+      var p = paths[dragColor]; if (!p) return;
+      var head = p[p.length - 1]; if (head === cell) return;
+      var hr = Math.floor(head / N), hc = head % N, tr = Math.floor(cell / N), tc = cell % N;
+      var cands = [];
+      if (tr < hr) cands.push(idx(hr - 1, hc)); if (tr > hr) cands.push(idx(hr + 1, hc));
+      if (tc < hc) cands.push(idx(hr, hc - 1)); if (tc > hc) cands.push(idx(hr, hc + 1));
+      var moved = false;
+      for (var i = 0; i < cands.length; i++) if (stepTo(cands[i])) { moved = true; break; }
+      if (!moved) return;
+    }
+  }
+  function totalTime() { return clearedTime + (started ? levelTime : 0); }
+  function score() { var par = PAR[diff]; return Math.max(10, Math.round(1000 * (diff + 1) * par / Math.max(par * 0.3, totalTime()))); }
+  function fmt(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function timeKey() { return 'neowa_flow_time_' + diff; }
+  function bestTime() { var b = parseFloat(A.get(timeKey(), '0')); return b || 0; }
+  function maybeWin() {
+    if (levelDone || S.state !== 'playing') return;
+    if (doneCount() === nCol && filled() === N * N) {
+      levelDone = true; winT = 1.1;
+      clearedTime += levelTime;
+      saveProgress();
+      A.sfx('win'); A.vibrate([40, 40, 40]);
+      for (var k = 0; k < 4; k++) fx.burst(A.rand(80, W - 80), A.rand(GY + 40, GY + N * CS - 40), COLS[k % nCol], 18, 280, 0.7, 4);
+      fx.text(W / 2, GY - 24, '완성! ' + fmt(levelTime), '#ffd08a', 26);
+      hud();
+    }
+  }
+  function doGameOver() {
+    if (overCalled) return; overCalled = true;
+    var prev = bestTime(), t = totalTime();
+    if (!prev || t < prev) A.set(timeKey(), t.toFixed(2));
+    var best = bestTime();
+    S.gameOver(score(), [['난이도', DIFF_NAME[diff]], ['기록', fmt(t) + (prev && t < prev ? ' (최단!)' : '')], ['최단', fmt(best)]], { kick: 'CLEAR!', win: true });
+  }
+  function nextLevel() {
+    if (!nextReady) return;
+    levelIdx++;
+    if (levelIdx >= LEVELS[diff].length) { doGameOver(); return; }
+    loadLevel(levelIdx);
+    S.banner('LEVEL ' + (levelIdx + 1), LEVELS[diff][levelIdx].n + 'x' + LEVELS[diff][levelIdx].n + ' · 색 ' + LEVELS[diff][levelIdx].dots.length + '개');
+  }
+  function update(dt) {
+    fx.update(dt);
+    if (S.state === 'playing' && started && !levelDone) levelTime += dt;
+    if (winT > 0) {
+      winT -= dt;
+      if (winT <= 0) {
+        if (levelIdx >= LEVELS[diff].length - 1) doGameOver();
+        else nextReady = true;
+      }
+    }
+    hud();
+  }
+  function btnRects() {
+    if (land) return null;
+    var bw = (N * CS - 12) / 2, by = GY + N * CS + 26;
+    return { undo: [GX, by, bw, 52], clear: [GX + bw + 12, by, bw, 52], next: [GX, by, N * CS, 52] };
+  }
+  function drawBtn(c, r, label, on) {
+    c.save(); c.globalAlpha = on ? 1 : 0.35;
+    c.fillStyle = on ? 'rgba(255,208,138,.16)' : 'rgba(255,255,255,.05)';
+    A.rr(c, r[0], r[1], r[2], r[3], 14); c.fill();
+    c.strokeStyle = on ? 'rgba(255,208,138,.7)' : 'rgba(255,255,255,.18)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = on ? '#ffd08a' : '#8a8a8a'; c.font = '700 20px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(label, r[0] + r[2] / 2, r[1] + r[3] / 2 + 1); c.restore();
+  }
+  function render(c) {
+    var o = fx.offset(), t = S.time;
+    c.save(); c.translate(o[0], o[1]);
+    c.fillStyle = '#0d0a06'; c.fillRect(-10, -10, W + 20, H + 20);
+    if (!paths) { loadLevel(0); }
+    var cs = Math.round(CS);
+    c.fillStyle = 'rgba(255,208,138,.07)'; A.rr(c, GX - 8, GY - 8, N * CS + 16, N * CS + 16, 16); c.fill();
+    c.strokeStyle = 'rgba(255,208,138,.25)'; c.lineWidth = 1.5; A.rr(c, GX - 8, GY - 8, N * CS + 16, N * CS + 16, 16); c.stroke();
+    for (var i = 0; i < N * N; i++) {
+      var x = i % N, y = Math.floor(i / N);
+      c.fillStyle = 'rgba(255,255,255,.045)'; A.rr(c, GX + x * CS + 2, GY + y * CS + 2, CS - 4, CS - 4, 8); c.fill();
+    }
+    // 길: 굵은 색선 + 가운데 밝은 선
+    for (var ci = 0; ci < nCol; ci++) {
+      var p = paths[ci]; if (!p || p.length < 2) continue;
+      var col = COLS[ci];
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      c.strokeStyle = col; c.globalAlpha = 0.28; c.lineWidth = CS * 0.54;
+      c.beginPath(); c.moveTo(GX + (p[0] % N + 0.5) * CS, GY + (Math.floor(p[0] / N) + 0.5) * CS);
+      for (var k = 1; k < p.length; k++) c.lineTo(GX + (p[k] % N + 0.5) * CS, GY + (Math.floor(p[k] / N) + 0.5) * CS);
+      c.stroke();
+      c.globalAlpha = 1; c.lineWidth = CS * 0.40; c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,.30)'; c.lineWidth = CS * 0.13; c.stroke();
+    }
+    // 끝점 원
+    for (var di = 0; di < nCol; di++) {
+      for (var e = 0; e < 2; e++) {
+        var cell = dots[di][e], cx = GX + (cell % N + 0.5) * CS, cy = GY + (Math.floor(cell / N) + 0.5) * CS, r = CS * 0.30;
+        c.fillStyle = COLS[di]; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.fill();
+        c.strokeStyle = 'rgba(255,255,255,.95)'; c.lineWidth = 3; c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(cx, cy, Math.max(2, CS * 0.07), 0, 7); c.fill();
+      }
+    }
+    if (kbd && S.state === 'playing') {
+      c.strokeStyle = '#fff'; c.lineWidth = 3; A.rr(c, GX + (cur % N) * CS + 3, GY + Math.floor(cur / N) * CS + 3, CS - 6, CS - 6, 10); c.stroke();
+    }
+    if (levelDone) {
+      c.fillStyle = 'rgba(0,0,0,.45)'; A.rr(c, GX, GY + N * CS / 2 - 44, N * CS, 88, 16); c.fill();
+      c.fillStyle = '#ffd08a'; c.font = '700 34px "Black Han Sans",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('완성!', W / 2, GY + N * CS / 2 - 14);
+      c.fillStyle = '#fff'; c.font = '700 18px "Pretendard Variable",system-ui';
+      c.fillText(fmt(levelTime) + (levelIdx >= LEVELS[diff].length - 1 ? ' · 마지막 레벨' : ''), W / 2, GY + N * CS / 2 + 22);
+    }
+    if (tut && levelIdx === 0 && !started && S.state === 'playing') {
+      c.fillStyle = 'rgba(255,255,255,.85)'; c.font = '700 17px "Pretendard Variable",system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('같은 색 원에서 드래그해 길을 이어요', W / 2, GY + N * CS + 104);
+    }
+    var br = btnRects();
+    if (br && S.state === 'playing') {
+      if (nextReady) drawBtn(c, br.next, '다음 레벨 ▶', true);
+      else { drawBtn(c, br.undo, '되돌리기', hist.length > 0); drawBtn(c, br.clear, '전체 지우기', doneCount() > 0 || filled() > nCol * 2); }
+    }
+    fx.draw(c); c.restore(); fx.drawFlash(c, W, H);
+  }
+  function hitBtn(p) {
+    var br = btnRects(); if (!br) return null;
+    function inside(r) { return p.x >= r[0] && p.x <= r[0] + r[2] && p.y >= r[1] && p.y <= r[1] + r[3]; }
+    if (nextReady && inside(br.next)) return 'next';
+    if (inside(br.undo)) return 'undo';
+    if (inside(br.clear)) return 'clear';
+    return null;
+  }
+  var last = '';
+  function hud() {
+    var k = score() + '|' + (levelIdx + 1) + '|' + Math.floor(levelTime) + '|' + filled() + '|' + doneCount() + '|' + hist.length + '|' + (nextReady ? 1 : 0);
+    if (k === last) return; last = k;
+    var hA = document.getElementById('hA'), hB = document.getElementById('hB'), hC = document.getElementById('hC'), hM = document.getElementById('hMult');
+    if (!hA) return;
+    hA.textContent = A.fmt(score());
+    hB.textContent = (levelIdx + 1) + '/' + LEVELS[diff].length;
+    hC.textContent = fmt(levelTime);
+    hM.textContent = '채움 ' + filled() + '/' + (N * N) + ' · 완성 ' + doneCount() + '/' + nCol;
+    var u = document.getElementById('pkUndo'), cl = document.getElementById('pkClear'), nx = document.getElementById('pkNext');
+    if (u) u.disabled = !hist.length;
+    if (cl) cl.disabled = !(doneCount() > 0 || filled() > nCol * 2);
+    if (nx) nx.disabled = !nextReady;
+    var ps = document.getElementById('pkScore'); if (ps) ps.textContent = A.fmt(score());
+    var pt = document.getElementById('pkTime'); if (pt) pt.textContent = fmt(levelTime);
+  }
+  document.getElementById('stage').addEventListener('pointerdown', function (e) {
+    if (S.state !== 'playing') return;
+    kbd = false;
+    var p = S.toLocal(e); downX = p.x; downY = p.y; downT = S.time; downCell = cellAt(p);
+    var b = hitBtn(p);
+    if (b === 'undo') { undo(); return; }
+    if (b === 'clear') { clearAll(); return; }
+    if (b === 'next') { nextLevel(); return; }
+    if (levelDone) return;
+    if (downCell < 0) return;
+    var ec = epColor(downCell);
+    if (ec >= 0) { startDrag(ec, downCell); return; }
+    var oc = occ[downCell];
+    if (oc >= 0 && paths[oc]) {
+      var at = paths[oc].indexOf(downCell);
+      if (at >= 0) {
+        snapshot();
+        for (var k2 = at + 1; k2 < paths[oc].length; k2++) if (!isEnd(paths[oc][k2], oc)) occ[paths[oc][k2]] = -1;
+        paths[oc] = paths[oc].slice(0, at + 1);
+        dragColor = oc; dragging = true; started = true; tutDone();
+      }
+    }
+  });
+  document.getElementById('stage').addEventListener('pointermove', function (e) {
+    if (!dragging || S.state !== 'playing' || levelDone) return;
+    var p = S.toLocal(e), cell = cellAt(p);
+    if (cell < 0) return;
+    stepToward(cell); maybeWin(); hud();
+  });
+  function endDrag() { dragging = false; dragColor = -1; maybeWin(); hud(); }
+  document.getElementById('stage').addEventListener('pointerup', endDrag);
+  document.getElementById('stage').addEventListener('pointercancel', endDrag);
+  var dbtns = document.querySelectorAll('[data-diff]');
+  function paint() { dbtns.forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-diff') === diff); }); }
+  dbtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); diff = +b.getAttribute('data-diff'); A.set('neowa_flow_diff', diff); A.sfx('click'); paint(); }); }); paint();
+  var S = new A.Shell({ id: 'flow', W: W, H: H, land: [720, 720], onResize: geo, reset: reset, render: render, idle: function (dt) { fx.update(dt); },
+    update: update,
+    keydown: function (e) {
+      kbd = true;
+      var k = e.key, r = Math.floor(cur / N), c = cur % N;
+      if (k === 'ArrowLeft' || k === 'a') c = Math.max(0, c - 1);
+      else if (k === 'ArrowRight' || k === 'd') c = Math.min(N - 1, c + 1);
+      else if (k === 'ArrowUp' || k === 'w') r = Math.max(0, r - 1);
+      else if (k === 'ArrowDown' || k === 's') r = Math.min(N - 1, r + 1);
+      cur = idx(r, c);
+      if (k === ' ' || k === 'Enter') {
+        if (e.repeat) return;
+        if (levelDone) { nextLevel(); return; }
+        if (dragColor < 0) {
+          var ec = epColor(cur);
+          if (ec >= 0) { startDrag(ec, cur); hud(); return; }
+          var oc = occ[cur];
+          if (oc >= 0 && paths[oc]) {
+            var at = paths[oc].indexOf(cur);
+            if (at >= 0) { snapshot(); for (var k2 = at + 1; k2 < paths[oc].length; k2++) if (!isEnd(paths[oc][k2], oc)) occ[paths[oc][k2]] = -1; paths[oc] = paths[oc].slice(0, at + 1); dragColor = oc; dragging = false; started = true; tutDone(); hud(); }
+          }
+          return;
+        }
+        if (cur === paths[dragColor][paths[dragColor].length - 1]) return;
+        var at2 = paths[dragColor].indexOf(cur);
+        if (at2 >= 0) { // 자기 길 중간을 잘라 거기까지만 남김
+          for (var k3 = at2 + 1; k3 < paths[dragColor].length; k3++) if (!isEnd(paths[dragColor][k3], dragColor)) occ[paths[dragColor][k3]] = -1;
+          paths[dragColor] = paths[dragColor].slice(0, at2 + 1); A.sfx('slide', 0.9); maybeWin(); hud(); return;
+        }
+        if (stepTo(cur)) { maybeWin(); hud(); }
+        return;
+      }
+      if (k === 'Backspace') {
+        if (dragColor < 0) return;
+        var p = paths[dragColor];
+        if (p && p.length > 1) { var lastCell = p.pop(); if (!isEnd(lastCell, dragColor)) occ[lastCell] = -1; A.sfx('slide', 0.9); hud(); }
+        else if (p) { var cc = dragColor; dragColor = -1; clearColor(cc); }
+        return;
+      }
+      if (k === 'u' || k === 'U' || (k === 'z' && (e.ctrlKey || e.metaKey))) { undo(); return; }
+      if (k === 'c' || k === 'C') { clearAll(); return; }
+      if (k === 'n' || k === 'N') { nextLevel(); return; }
+    } });
+  // 가로 화면 오른쪽 패널: 점수판 + 큰 버튼 3개
+  if (S.panelSlot) {
+    S.panelSlot.innerHTML = '<div class="g-card gp-stats"><div><span>SCORE</span><b id="pkScore">0</b></div><div><span>TIME</span><b id="pkTime">0:00</b></div></div>' +
+      '<button class="gp-btn" id="pkUndo">되돌리기</button>' +
+      '<button class="gp-btn" id="pkClear">전체 지우기</button>' +
+      '<button class="gp-btn main" id="pkNext">다음 레벨 ▶</button>';
+    document.getElementById('pkUndo').addEventListener('click', function () { if (S.state === 'playing') undo(); });
+    document.getElementById('pkClear').addEventListener('click', function () { if (S.state === 'playing') clearAll(); });
+    document.getElementById('pkNext').addEventListener('click', function () { if (S.state === 'playing') nextLevel(); });
+  }
+  loadProgress(); loadLevel(levelIdx);
+})();

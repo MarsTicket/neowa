@@ -1083,5 +1083,25 @@
     "new": true,
     "art": "illust",
     "maxScore": 500000
+  },
+  {
+    "id": "flow",
+    "name": "컬러 플로우",
+    "genre": "COLOR FLOW",
+    "kgenre": "컬러 플로우",
+    "cat": "퍼즐",
+    "accent": "#ffd08a",
+    "rgb": "255,208,138",
+    "ink": "#241a00",
+    "desc": "같은 색 원끼리 길을 이어 빈칸을 모두 채우세요. 30개 레벨, 빨리 풀수록 좋은 기록!",
+    "tags": [
+      "드래그 퍼즐",
+      "30개 레벨",
+      "최단 기록"
+    ],
+    "made": "gen",
+    "new": true,
+    "art": "capture",
+    "maxScore": 20000
   }
 ]

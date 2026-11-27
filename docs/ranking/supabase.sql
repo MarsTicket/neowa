@@ -78,7 +78,8 @@ insert into public.score_limits (game, max_score) values
   ('baduk', 400000),
   ('fall', 10000000),
   ('summon', 900000),
-  ('marble', 500000)
+  ('marble', 500000),
+  ('flow', 20000)
 on conflict (game) do update set max_score = excluded.max_score;
 
 -- 점수 등록: 이름 정리, 상한 검사, 같은 이름 20초 안 재등록 금지

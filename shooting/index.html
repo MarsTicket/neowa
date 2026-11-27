@@ -29,6 +29,7 @@ body[data-state="playing"] .ult-btn{display:flex}
 .ult-btn.ready{border-color:#ffd166;box-shadow:0 0 18px rgba(255,209,102,.65);animation:ultpulse 0.9s infinite}
 @keyframes ultpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 .h-phase{font-size:11px;color:#9fb4d8;font-family:var(--f-num);letter-spacing:.04em}
+@media (max-width:480px){.ult-btn{width:78px;height:78px;font-size:13px}.ult-btn small{font-size:11px}.ship span{font-size:10px}}
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T386KYRRLK"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T386KYRRLK');</script>
@@ -86,13 +87,14 @@ body[data-state="playing"] .ult-btn{display:flex}
         <div class="ship-pick" data-nostart>
           <button class="ship" type="button" data-ship="cheong"><canvas width="92" height="104"></canvas><b>청룡</b><span>밸런스 · 3방향 탄<br>궁극: 별빛 폭풍</span></button>
           <button class="ship" type="button" data-ship="baekho"><canvas width="92" height="104"></canvas><b>백호</b><span>화력 · 5방향 확산탄<br>궁극: 섬광 포화</span></button>
-          <button class="ship" type="button" data-ship="jujak"><canvas width="92" height="104"></canvas><b>주작</b><span>기동 · 집중탄 · 가장 빠름<br>궁극: 시간 왜곡</span></button>
+          <button class="ship" type="button" data-ship="jujak"><canvas width="92" height="104"></canvas><b>주작</b><span>기동 · 집중탄<br>궁극: 시간 왜곡</span></button>
         </div>
         <div class="ov-ctrl">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11V5a2 2 0 1 1 4 0v6m0-1a2 2 0 1 1 4 0v3a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 4 13.5V12a2 2 0 1 1 4 0"/></svg>드래그로 이동</span>
           <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 9 9H2l6 4.5L5.5 21 12 16.5 18.5 21 16 13.5 22 9h-7z"/></svg>4웨이브마다 보스</span>
         </div>
         <button class="btn btn-p ov-start-btn" data-act="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>출격하기</button>
+        <button class="btn btn-g" type="button" data-gfx3d data-nostart>3D 켜는 중</button>
         <p class="ov-best">최고기록<b data-best>0</b></p>
         <p class="ov-hint"><span class="k-only" style="display:inline">스페이스 또는 </span>화면 아무 곳이나 탭</p>
       </section>
@@ -104,6 +106,7 @@ body[data-state="playing"] .ult-btn{display:flex}
           <button class="btn btn-p" data-act="resume">계속하기</button>
           <button class="btn btn-g" data-act="restart">처음부터</button>
           <a class="btn btn-g" href="../">아케이드 홈</a>
+          <button class="btn btn-g" type="button" data-gfx3d data-nostart>3D 켜는 중</button>
         </div>
       </section>
 
@@ -139,6 +142,8 @@ body[data-state="playing"] .ult-btn{display:flex}
 (function () {
   'use strict';
   var A = Arcade, W = 540, H = 960;
+  // 모바일(터치 + 작은 화면)에서는 전투기·적기·탄을 크게 그린다. 판정(반경)은 그대로라 난이도는 안 바뀐다.
+  var MOB = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && Math.min(window.innerWidth, window.innerHeight) <= 600 ? 1.3 : 1;
   var fx = new A.FX();
   var P, bullets, enemies, ebullets, items, wave, queue, waveT, score, chain, chainT, lives, kills, dyingT, boss, bossIdx, keys = {}, drag = null, stars, bgOff = 0, nextWaveT, waveHit = false, perfectN = 0;
   var shipId = 'cheong', ultG = 0, clearT = 0, loopN = 0, meteors = [], rocks = [], dusts = [], debris2 = [], pillars = [], cracks = [], nebY = 0, planet = { x: W * 0.78, y: H * 0.26, s: 0.85 };
@@ -1184,7 +1189,7 @@ body[data-state="playing"] .ult-btn{display:flex}
       for (i = 0; i < items.length; i++) { q = items[i]; c.globalAlpha = 0.55 + Math.sin(q.t * 6) * 0.25; A.draw(c, A.glowDot(ITEM[q.k], 8), q.x, q.y, 1.1); }
       c.restore();
       for (i = 0; i < items.length; i++) {
-        q = items[i]; A.draw(c, itemSprite(q.k), q.x, q.y, 1 + Math.sin(q.t * 8) * 0.06);
+        q = items[i]; A.draw(c, itemSprite(q.k), q.x, q.y, (1 + Math.sin(q.t * 8) * 0.06) * MOB);
         c.save(); c.strokeStyle = A.hexA(ITEM[q.k], 0.5); c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath();
         c.arc(q.x, q.y, 22, q.t * 3, q.t * 3 + 1.2); c.moveTo(q.x + Math.cos(q.t * 3 + Math.PI) * 22, q.y + Math.sin(q.t * 3 + Math.PI) * 22); c.arc(q.x, q.y, 22, q.t * 3 + Math.PI, q.t * 3 + Math.PI + 1.2); c.stroke(); c.restore();
       }
@@ -1248,13 +1253,13 @@ body[data-state="playing"] .ult-btn{display:flex}
           c.save(); c.globalCompositeOperation = 'lighter';
           if (rage) { c.globalAlpha = 0.35 + pul * 0.25; A.draw(c, A.glowDot('#ff2a4a', 30), e.x, e.y, 1.3); }
           c.restore();
-          A.draw(c, e.spr, e.x, e.y, 1);
+          A.draw(c, e.spr, e.x, e.y, MOB);
           c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.7 + pul * 0.3; A.draw(c, A.glowDot(rage ? '#ff3355' : '#ff6a8a', 8), e.x, e.y - e.r * 0.08, 0.9 + pul * 0.35); c.restore();
           if (e.hp < e.max * 0.6 && Math.random() < 0.25) smokes.push({ x: e.x + A.rand(-60, 60), y: e.y + A.rand(-30, 30), vx: A.rand(-20, 20), vy: 60, r0: 8, r1: 30, life: 0, max: 0.9, rot: 0 });
         } else if (e.hit > 0) {
           // 피격 소프트바디 변형: 찌그러졌다 복원
           var sq = e.hit / 0.08;
-          c.save(); c.translate(e.x, e.y); c.scale(1 + sq * 0.18, 1 - sq * 0.18); c.rotate(rot);
+          c.save(); c.translate(e.x, e.y); c.scale((1 + sq * 0.18) * MOB, (1 - sq * 0.18) * MOB); c.rotate(rot);
           c.drawImage(e.spr, -e.spr.width / 2, -e.spr.height / 2);
           c.globalAlpha = Math.min(1, sq) * 0.75; c.drawImage(whiteOf(e.type), -e.spr.width / 2, -e.spr.height / 2);
           c.restore();
@@ -1264,7 +1269,7 @@ body[data-state="playing"] .ult-btn{display:flex}
             c.beginPath(); c.moveTo(e.x, e.y); c.lineTo(e.tx, e.ty2); c.stroke(); c.restore();
           }
         } else {
-          A.draw(c, e.spr, e.x, e.y, 1, rot);
+          A.draw(c, e.spr, e.x, e.y, MOB, rot);
           if (e.type === 'dasher' && e.st === 1) {
             c.save(); c.globalAlpha = 0.5 + Math.sin(S.time * 18) * 0.3; c.strokeStyle = '#7dff9b'; c.lineWidth = 1.5; c.setLineDash([6, 5]);
             c.beginPath(); c.moveTo(e.x, e.y); c.lineTo(e.tx, e.ty2); c.stroke(); c.restore();
@@ -1277,7 +1282,7 @@ body[data-state="playing"] .ult-btn{display:flex}
       }
       // 내 총알
       c.save(); c.globalCompositeOperation = 'lighter';
-      var BS = shipId === 'baekho' ? BOLT5 : shipId === 'jujak' ? BOLTJ : (P.pow >= 5 ? BOLT5 : BOLT), bsc = 0.85 + P.pow * 0.06;
+      var BS = shipId === 'baekho' ? BOLT5 : shipId === 'jujak' ? BOLTJ : (P.pow >= 5 ? BOLT5 : BOLT), bsc = (0.85 + P.pow * 0.06) * MOB;
       for (i = 0; i < bullets.length; i++) { b = bullets[i]; A.draw(c, BS, b.x, b.y + 8, bsc, Math.atan2(b.vx, -b.vy)); }
       for (i = 0; i < fires.length; i++) { q = fires[i]; t = q.life / q.max; c.globalAlpha = 1 - t * t; A.draw(c, FIRE, q.x, q.y, (q.r0 + (q.r1 - q.r0) * Math.sqrt(t)) / 32); }
       for (i = 0; i < flashes.length; i++) { q = flashes[i]; t = q.life / q.max; c.globalAlpha = t; A.draw(c, A.glowDot('#fff4dc', 8), q.x, q.y, q.r / 24 * (1.4 - t * 0.4)); }
@@ -1292,9 +1297,9 @@ body[data-state="playing"] .ult-btn{display:flex}
       c.save(); c.globalCompositeOperation = 'lighter';
       for (i = 0; i < ebullets.length; i++) {
         b = ebullets[i];
-        if (b.nd) A.draw(c, needleSprite(b.c), b.x, b.y, 1, Math.atan2(-b.vx, b.vy));
-        else if (b.homing) A.draw(c, orbSprite(b.c), b.x, b.y, 1.15, Math.atan2(-b.vx, b.vy));
-        else A.draw(c, orbSprite(b.c), b.x, b.y, 0.92 + Math.sin(S.time * 14 + i) * 0.08);
+        if (b.nd) A.draw(c, needleSprite(b.c), b.x, b.y, MOB, Math.atan2(-b.vx, b.vy));
+        else if (b.homing) A.draw(c, orbSprite(b.c), b.x, b.y, 1.15 * MOB, Math.atan2(-b.vx, b.vy));
+        else A.draw(c, orbSprite(b.c), b.x, b.y, (0.92 + Math.sin(S.time * 14 + i) * 0.08) * MOB);
       }
       c.restore();
       // 플레이어
@@ -1305,12 +1310,12 @@ body[data-state="playing"] .ult-btn{display:flex}
         if (!blink) {
           c.save(); c.globalCompositeOperation = 'lighter';
           var fz = 0.85 + Math.random() * 0.3;
-          both(function (s) { c.drawImage(shipFlame, sx + s * 7 * (1 - Math.abs(tilt) * 0.15) - 11, sy + 38, 22, 60 * fz); });
+          both(function (s) { c.drawImage(shipFlame, sx + s * 7 * (1 - Math.abs(tilt) * 0.15) * MOB - 11 * MOB, sy + 38 * MOB, 22 * MOB, 60 * fz * MOB); });
           A.draw(c, A.glowDot(shipCol, 8), sx, sy + 40, 0.9);
           if (S.state === 'playing' && P.fireT > 0.075) { c.globalAlpha = 0.9; A.draw(c, A.glowDot('#bff8ff', 6), sx, sy - 48, 0.9); }
           c.restore();
           c.save(); c.translate(sx, sy); c.rotate(tilt * 0.18); c.scale(1 - Math.abs(tilt) * 0.16, 1);
-          c.drawImage(shipSpr, -shipSpr.width / 2, -54, shipSpr.width, shipSpr.height);
+          c.drawImage(shipSpr, -shipSpr.width * MOB / 2, -54 * MOB, shipSpr.width * MOB, shipSpr.height * MOB);
           if (Math.abs(tilt) > 0.05) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.abs(tilt) * 0.5; A.draw(c, A.glowDot('#bff8ff', 6), tilt > 0 ? -22 : 22, 16, 1.1); }
           c.restore();
           // 레이저 궁극 빔
@@ -1433,9 +1438,37 @@ body[data-state="playing"] .ult-btn{display:flex}
       P: P, bullets: bullets, enemies: enemies, ebullets: ebullets, debris: debris, booms: booms3d,
       boss: boss, bossIdx: bossIdx, phase: phaseOf(Math.max(1, wave)), shipId: shipId, shipColor: SHIPS[shipId].color,
       ultFx: ultFx, bossIntroT: bossIntroT, introT: introT, introText: introText, introSub: introSub,
-      state: S ? S.state : 'ready', time: S ? S.time : 0, dyingT: dyingT, clearT: clearT, wave: wave, lives: lives
+      state: S ? S.state : 'ready', time: S ? S.time : 0, dyingT: dyingT, clearT: clearT, wave: wave, lives: lives, mob: MOB
     };
   }, function (h) { G3 = h; });
+
+  /* 3D 켜짐/꺼짐 토글: 시작 화면과 일시정지 메뉴의 버튼. 누르면 설정을 저장하고 다시 불러온다. */
+  function paintGfx3d() {
+    var off = false;
+    try { off = A.get('neowa_3d', '') === '0'; } catch (e) {}
+    var on = !!document.querySelector('canvas.g-3d');
+    var label = off ? '2D로 보는 중 (누르면 3D 켜기)' : on ? '3D 켜짐 (누르면 2D로 보기)' : '3D 켜는 중 (누르면 2D로 보기)';
+    var btns = document.querySelectorAll('[data-gfx3d]');
+    for (var i = 0; i < btns.length; i++) btns[i].textContent = label;
+  }
+  (function () {
+    var btns = document.querySelectorAll('[data-gfx3d]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        var cur = '';
+        try { cur = A.get('neowa_3d', ''); } catch (e) {}
+        try {
+          if (cur === '0') { A.set('neowa_3d', '1'); sessionStorage.removeItem('neowa_3d_slow_shooting'); }
+          else A.set('neowa_3d', '0');
+        } catch (e) {}
+        location.reload();
+      });
+    }
+    paintGfx3d();
+    setTimeout(paintGfx3d, 1200);
+    setTimeout(paintGfx3d, 3000);
+  })();
 
   window.addEventListener('blur', function () { keys = {}; });
   var S = new A.Shell({

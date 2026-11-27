@@ -2,7 +2,9 @@
    - 3D로 꾸민 게임만 이 파일을 부릅니다. 게임 규칙·조작·점수는 원래 2D 코드 그대로이고, 그림만 3D로 그립니다.
    - three.js는 로컬 파일 assets/three.module.js(+ three.core.js)를 import map + 동적 import로 불러옵니다. 외부 CDN은 쓰지 않습니다.
    - 3D를 못 쓰는 상황(웹GL2 없음, 저사양, 불러오기 실패, 계속 느림)이면 자동으로 원래 2D 그림으로 돌아갑니다.
-     직접 끄려면 localStorage 'neowa_3d' = '0'. r163부터 WebGLRenderer는 WebGL2만 지원합니다.
+     직접 끄려면 localStorage 'neowa_3d' = '0', 직접 켜려면 '1'. r163부터 WebGLRenderer는 WebGL2만 지원합니다.
+   - 느려서 꺼진 적 있어도 다음에 들어오면 낮은 해상도로 3D를 다시 시도합니다. 3D 시작에 성공하면 느림 기록을 지웁니다.
+     3D가 꺼질 때는 화면에도 짧게 알립니다.
 
    게임 쪽에서 할 일 (2줄):
      var G3 = A.G3D ? A.G3D.boot('tower', function () { return { ...그릴 때 필요한 상태... }; }) : null;
@@ -19,6 +21,15 @@
   var BASE = sc ? sc.src.replace(/g3d\.js.*$/, '') : '../assets/arcade/';
   var defs = {};
   var G = A.G3D = {};
+
+  // 모바일(터치 + 작은 화면) 판정: 해상도와 느림 기준을 따로 둔다
+  var isMobile = (function () {
+    try {
+      var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      var small = Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 600;
+      return touch && small;
+    } catch (e) { return false; }
+  })();
 
   function webgl() {
     try {
@@ -56,6 +67,16 @@
     s.onload = ok; s.onerror = fail || function () {};
     document.head.appendChild(s);
   }
+  function toast(msg) {
+    try {
+      var d = document.createElement('div');
+      d.textContent = msg;
+      d.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;background:rgba(10,14,34,.92);color:#fff;font-size:14px;line-height:1.4;padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.25);pointer-events:none;white-space:nowrap';
+      document.body.appendChild(d);
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 3500);
+    } catch (e) {}
+  }
+  G.mobile = isMobile;
   G.define = function (id, factory) { defs[id] = factory; };
 
   /* 게임이 부르는 시작점. 돌려주는 객체(h)의 h.draw(c, fx) 가 true면 3D로 그린 것 */
@@ -65,9 +86,13 @@
     (function wait() {
       // gfx.js(품질 단계)와 게임 틀(A.shell)이 준비될 때까지 잠깐 기다림
       if (!A.gfx || !A.shell) { if (++tries < 80) setTimeout(wait, 50); return; }
+      var setting = '';
+      try { setting = A.get('neowa_3d', ''); } catch (e) {}
+      if (setting === '0' || A.gfx.level < 1 || !webgl()) return;
+      // 느림 기록이 있어도 시도를 막지 않는다. 수동 '1'이면 보통 해상도로, 아니면 낮은 해상도로 다시 시도한다.
       var bad = false; try { bad = sessionStorage.getItem('neowa_3d_slow_' + id) === '1'; } catch (e) {}
-      if (A.get('neowa_3d', '1') === '0' || bad || A.gfx.level < 1 || !webgl()) return;
-      var go = function () { if (defs[id] && window.THREE) start(h, id, getState); };
+      var low = bad && setting !== '1';
+      var go = function () { if (defs[id] && window.THREE) start(h, id, getState, low ? { low: true } : null); };
       var next = function () { if (defs[id]) go(); else load(BASE + '3d/' + id + '.js?v=1', go); };
       loadThree(next);
     })();
@@ -156,45 +181,51 @@
     };
   }
 
-  function start(h, id, getState) {
+  function start(h, id, getState, opts) {
     var THREE = window.THREE, S = A.shell, lvl = A.gfx.level;
+    var lowStart = !!(opts && opts.low);
     var holder = S.canvas.parentNode;
     var canvas = document.createElement('canvas');
     canvas.className = 'g-3d';
     canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:block';
     var renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: lvl >= 2, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: lvl >= 2 && !lowStart && !isMobile, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
     } catch (e) { return; }
     holder.insertBefore(canvas, S.canvas);
-    var maxPr = lvl >= 2 ? 2 : 1.5, pr = Math.min(window.devicePixelRatio || 1, maxPr);
+    // 모바일은 처음부터 낮은 해상도로 시작한다. 안티앨리어싱·그림자도 기본 끔이다.
+    var maxPr = isMobile ? 1 : lowStart ? 1 : (lvl >= 2 ? 2 : 1.5), pr = Math.min(window.devicePixelRatio || 1, maxPr);
     renderer.setPixelRatio(pr);
     if (THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
-    if (lvl >= 2) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; } // r186에서 PCFSoftShadowMap이 제거됨
+    if (lvl >= 2 && !lowStart && !isMobile) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; } // r186에서 PCFSoftShadowMap이 제거됨
     var X = { THREE: THREE, renderer: renderer, canvas: canvas, scene: new THREE.Scene(), S: S, level: lvl, shadows: lvl >= 2, get W() { return S.W; }, get H() { return S.H; } };
     helpers(X);
     var mod;
     try { mod = defs[id](X); if (mod.tone === 'none') renderer.toneMapping = THREE.NoToneMapping; else if (mod.exposure) renderer.toneMappingExposure = mod.exposure; } catch (e) { cleanup(); if (window.console) console.warn('3D 장면 준비 실패:', e); return; }
     X.camera = mod.camera;
-    var cw = 0, chh = 0, ftAvg = 16.7, slowT = 0, last = 0, lastT = performance.now();
+    var cw = 0, chh = 0, ftAvg = 16.7, slowT = 0, last = 0, lastT = performance.now(), startT = performance.now();
     function cleanup() { try { renderer.dispose(); } catch (e) {} if (canvas.parentNode) canvas.parentNode.removeChild(canvas); h.on = false; G.on = false; G.canvas = null; S.canvas.style.background = ''; document.body.classList.remove('is-3d'); }
     function off(reason) {
       cleanup();
       try { sessionStorage.setItem('neowa_3d_slow_' + id, '1'); } catch (e) {}
       if (window.console) console.info('3D 끔:', reason);
+      toast(reason === '느림' ? '기기가 느려 2D로 전환했습니다' : '3D 그림을 켜지 못해 2D로 표시합니다');
     }
     h.X = X; h.mod = mod; h.off = off; G.state = getState; // G.state: 점검 스크립트용
     h.draw = function (c, fx) {
       if (!h.on) return false;
       var now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
-      // 성능 감시: 플레이 중 계속 느리면 해상도를 낮추고, 그래도 느리면 2D로
-      if (last) {
+      // 성능 감시: 시작한 뒤 처음 몇 초는 예열로 보고 세지 않는다. 플레이 중 계속 느리면 해상도를 낮추고, 그래도 느리면 2D로
+      // 모바일은 기준을 더 관대하게 둔다 (예열 8초, 36ms, 5초 누적, 해상도 0.6까지 단계적으로 낮춤)
+      var warmup = isMobile ? 8000 : 5000, slowLim = isMobile ? 36 : 28, slowNeed = isMobile ? 5000 : 3000;
+      if (last && now - startT > warmup) {
         var ft = now - last; if (ft < 250) ftAvg += (ft - ftAvg) * 0.06;
-        if (S.state === 'playing' && ftAvg > 24 && !A.gfx.forced) slowT += ft; else slowT = Math.max(0, slowT - ft * 0.5);
-        if (slowT > 3000) {
+        if (S.state === 'playing' && ftAvg > slowLim && !A.gfx.forced) slowT += ft; else slowT = Math.max(0, slowT - ft * 0.5);
+        if (slowT > slowNeed) {
           slowT = 0; ftAvg = 16.7;
-          if (pr > 0.75) { pr = Math.max(0.75, pr - 0.5); renderer.setPixelRatio(pr); cw = 0; if (renderer.shadowMap.enabled && pr <= 1) renderer.shadowMap.enabled = false; }
+          var prFloor = isMobile ? 0.6 : 0.75, prStep = isMobile ? 0.25 : 0.5;
+          if (pr > prFloor) { pr = Math.max(prFloor, pr - prStep); renderer.setPixelRatio(pr); cw = 0; if (renderer.shadowMap.enabled && pr <= 1) renderer.shadowMap.enabled = false; }
           else { off('느림'); return false; }
         }
       }
@@ -216,5 +247,7 @@
     S.canvas.style.background = 'transparent';
     h.on = true; G.on = true; G.canvas = canvas;
     document.body.classList.add('is-3d');
+    // 3D 시작에 성공했으면 지난 느림 기록을 지운다. 다음에는 보통 해상도로 다시 시도한다.
+    try { sessionStorage.removeItem('neowa_3d_slow_' + id); } catch (e) {}
   }
 })();

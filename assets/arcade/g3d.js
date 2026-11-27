@@ -1,7 +1,8 @@
-/* 너와 아케이드: 3D 그래픽 공통 틀 (three.js)
+/* 너와 아케이드: 3D 그래픽 공통 틀 (three.js r187, ES 모듈)
    - 3D로 꾸민 게임만 이 파일을 부릅니다. 게임 규칙·조작·점수는 원래 2D 코드 그대로이고, 그림만 3D로 그립니다.
-   - 3D를 못 쓰는 상황(웹GL 없음, 저사양, 불러오기 실패, 계속 느림)이면 자동으로 원래 2D 그림으로 돌아갑니다.
-     직접 끄려면 localStorage 'neowa_3d' = '0'
+   - three.js는 로컬 파일 assets/three.module.js(+ three.core.js)를 import map + 동적 import로 불러옵니다. 외부 CDN은 쓰지 않습니다.
+   - 3D를 못 쓰는 상황(웹GL2 없음, 저사양, 불러오기 실패, 계속 느림)이면 자동으로 원래 2D 그림으로 돌아갑니다.
+     직접 끄려면 localStorage 'neowa_3d' = '0'. r163부터 WebGLRenderer는 WebGL2만 지원합니다.
 
    게임 쪽에서 할 일 (2줄):
      var G3 = A.G3D ? A.G3D.boot('tower', function () { return { ...그릴 때 필요한 상태... }; }) : null;
@@ -22,8 +23,33 @@
   function webgl() {
     try {
       var c = document.createElement('canvas');
-      return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+      // r163부터 WebGLRenderer는 WebGL2만 지원합니다. WebGL1만 되는 기기는 2D로 돌아갑니다.
+      return !!(window.WebGLRenderingContext && c.getContext('webgl2'));
     } catch (e) { return false; }
+  }
+  /* three.js r187 모듈 로더: import map에 'three'를 등록하고, module 스크립트에서 동적 import합니다.
+     오래된 브라우저는 module 스크립트를 실행하지 않으므로, 타임아웃이 지나면 불러오기 실패로 보고 2D로 돌아갑니다. */
+  var threeLoading = false, threeTried = false;
+  function loadThree(next) {
+    if (window.THREE) { next(); return; }
+    if (threeLoading) { var iv = setInterval(function () { if (threeTried) { clearInterval(iv); if (!window.THREE) next(); } }, 100); return; } // 성공 때는 finish가 이미 next를 불렀으므로 실패 때만 부름
+    threeLoading = true;
+    var done = false;
+    function finish() { if (done) return; done = true; threeTried = true; next(); }
+    setTimeout(finish, 8000);
+    window.__neowaThreeOk = function (mod) { window.THREE = mod; finish(); };
+    try {
+      var url = new URL(BASE + '../three.module.js?v=2', document.baseURI).href;
+      var im = document.createElement('script');
+      im.type = 'importmap';
+      im.textContent = JSON.stringify({ imports: { 'three': url } });
+      document.head.appendChild(im);
+      var m = document.createElement('script');
+      m.type = 'module';
+      m.textContent = "import * as THREE from 'three'; window.__neowaThreeOk(THREE);";
+      m.onerror = finish;
+      document.head.appendChild(m);
+    } catch (e) { finish(); }
   }
   function load(src, ok, fail) {
     var s = document.createElement('script'); s.src = src; s.async = true;
@@ -41,9 +67,9 @@
       if (!A.gfx || !A.shell) { if (++tries < 80) setTimeout(wait, 50); return; }
       var bad = false; try { bad = sessionStorage.getItem('neowa_3d_slow_' + id) === '1'; } catch (e) {}
       if (A.get('neowa_3d', '1') === '0' || bad || A.gfx.level < 1 || !webgl()) return;
-      var go = function () { if (defs[id]) start(h, id, getState); };
+      var go = function () { if (defs[id] && window.THREE) start(h, id, getState); };
       var next = function () { if (defs[id]) go(); else load(BASE + '3d/' + id + '.js?v=1', go); };
-      if (window.THREE) next(); else load(BASE + '../three.min.js', next);
+      loadThree(next);
     })();
     return h;
   };
@@ -145,7 +171,7 @@
     renderer.setPixelRatio(pr);
     if (THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
-    if (lvl >= 2) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
+    if (lvl >= 2) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; } // r186에서 PCFSoftShadowMap이 제거됨
     var X = { THREE: THREE, renderer: renderer, canvas: canvas, scene: new THREE.Scene(), S: S, level: lvl, shadows: lvl >= 2, get W() { return S.W; }, get H() { return S.H; } };
     helpers(X);
     var mod;

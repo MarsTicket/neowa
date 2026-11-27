@@ -70,7 +70,7 @@ neowa/
 │  ├─ engine.js, scenario.js, style.css, i18n/, images/  ← 스토리 게임 전용 (건드리지 말 것)
 │  ├─ arcade/gfx.js       ← 그래픽 보강(파티클·빛 번짐·화면 연출·품질 자동 조절). arcade.js 가 알아서 불러옴
 │  ├─ arcade/g3d.js, arcade/3d/<id>.js ← 3D 그래픽 틀과 게임별 3D 장면 (4-8)
-│  ├─ three.min.js        ← 3D 게임에서만 불러오는 three.js (r160)
+│  ├─ three.module.js + three.core.js ← 3D 게임에서만 불러오는 three.js (r187, ES 모듈. 옛 three.min.js(r160)는 아직 남겨둠)
 │  └─ sounds/             ← 예전 버전 잔재. 지금은 안 씀
 ├─ docs/GAME_GUIDE.md      ← 이 문서
 ├─ docs/tools/smoke.js     ← 자동 점검 스크립트 (게임 10종 + 스토리)
@@ -400,6 +400,7 @@ var fx = new A.FX();
   - 비스듬한 카메라(lanes)처럼 좌표가 안 맞으면 `map(x, y)`로 파티클 위치를 화면 좌표로 바꿔 줌
   - 도우미: `X.glow`, `X.glowTex`, `X.gradTex`, `X.canvasTex`, `X.stars`, `X.std`, `X.basic`, `X.roundBox`
 - 성능: 3D 파일과 three.js는 3D 게임에서만 불러옵니다. 그림자는 '높음'에서만. 느리면 해상도를 낮추고, 그래도 느리면 그 탭에서는 2D로 돌아감
+- 로더: `g3d.js`가 `assets/three.module.js`를 import map + 동적 import로 불러옵니다(로컬 파일, 외부 CDN 없음). three.module.js는 `./three.core.js`를 함께 불러오므로 두 파일을 같이 둬야 합니다. r163부터 WebGLRenderer는 WebGL2만 지원하므로, WebGL1만 되는 기기는 3D가 안 뜨고 2D로 돌아갑니다. 그림자 종류는 PCFShadowMap을 씁니다(r186에서 PCFSoftShadowMap 제거됨).
 
 ### 한 화면 2인 모드 (`A.duo`)
 한 기기에서 두 사람이 대결하는 모드입니다. 예시: 에어 하키, 오목, 리버시, 점과 상자.
@@ -533,7 +534,7 @@ var fx = new A.FX();
 3. `story/`와 스토리 전용 파일(`assets/engine.js`, `scenario.js`, `style.css`, `i18n/`, `images/`)은 이 작업과 무관합니다. 건드리지 말 것.
 4. 공통 엔진(`arcade.js`, `arcade.css`)을 고칠 때는 **기존 게임 10개가 다 정상인지** 점검 스크립트로 확인할 것. 고친 뒤에는 버전 번호를 올려야 방문자 브라우저가 옛 파일을 계속 쓰지 않습니다. 지금은 `?v=3`. 올릴 때: 손으로 쓴 3개 + `_template`은 직접 고치고, 생성기 게임은 `make_game_page.py` 안의 `?v=3`을 고친 뒤 전체 재생성.
 7. 생성된 `runner/index.html` 같은 파일을 직접 고치지 말 것. 다음 재생성 때 사라집니다. `docs/tools/games/<id>.js`를 고치세요.
-5. 외부 라이브러리나 빌드 도구를 새로 들이지 말 것. 지금 구조(HTML 한 파일 + 공통 엔진)를 유지합니다. (예외: 저장소에 이미 있는 `assets/three.min.js`는 3D 게임에서만 4-8 방식으로 씀)
+5. 외부 라이브러리나 빌드 도구를 새로 들이지 말 것. 지금 구조(HTML 한 파일 + 공통 엔진)를 유지합니다. (예외: 저장소에 이미 있는 `assets/three.module.js`(r187)는 3D 게임에서만 4-8 방식으로 씀)
 6. `main` 브랜치에 직접 올리거나 PR을 직접 병합하지 말 것. 병합은 사이트 주인이 결정합니다. (예외: 사이트 주인이 "바로 올려줘"처럼 바로 반영을 요청한 경우에는 점검 통과 후 PR을 만들어 곧바로 병합)
 
 **자주 하는 실수**

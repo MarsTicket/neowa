@@ -403,6 +403,7 @@ var fx = new A.FX();
   - 도우미: `X.glow`, `X.glowTex`, `X.gradTex`, `X.canvasTex`, `X.stars`, `X.std`, `X.basic`, `X.roundBox`
 - 성능: 3D 파일과 three.js는 3D 게임에서만 불러옵니다. 그림자는 '높음'에서만. 느리면 해상도를 낮추고, 그래도 느리면 그 탭에서는 2D로 돌아감
 - 로더: `g3d.js`가 `assets/three.module.js`를 import map + 동적 import로 불러옵니다(로컬 파일, 외부 CDN 없음). three.module.js는 `./three.core.js`를 함께 불러오므로 두 파일을 같이 둬야 합니다. r163부터 WebGLRenderer는 WebGL2만 지원하므로, WebGL1만 되는 기기는 3D가 안 뜨고 2D로 돌아갑니다. 그림자 종류는 PCFShadowMap을 씁니다(r186에서 PCFSoftShadowMap 제거됨).
+- BatchedMesh: r187부터 `addGeometry`는 지오메트리만 등록하고, 인스턴스는 `addInstance`로 따로 만들어야 합니다. 안 부르면 첫 프레임에서 오류가 나 3D가 꺼집니다.
 
 ### 한 화면 2인 모드 (`A.duo`)
 한 기기에서 두 사람이 대결하는 모드입니다. 예시: 에어 하키, 오목, 리버시, 점과 상자.

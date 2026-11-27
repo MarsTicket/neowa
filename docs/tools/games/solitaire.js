@@ -7,7 +7,7 @@
   var diff = +A.get('neowa_solitaire_diff', '0') || 0;
   function today() { var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
   function seeded(a) { return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-  // 자동 이동: 기본 꺼짐. 켜면 탭/클릭·W·1~7키가 카드를 알아서 옮긴다. 새 키 neowa_solitaire_automove
+  // 자동 이동: 기본 꺼짐. 켜면 탭/클릭·W·1~7키가 카드를 알아서 옮긴다. 꺼져 있어도 기초 더미로 갈 수 있는 카드는 탭/클릭·W·1~7키로 바로 보낼 수 있다. 새 키 neowa_solitaire_automove
   var autoMoveOn = A.getInt('neowa_solitaire_automove', 0) === 1;
   var tut = A.get('neowa_solitaire_tut', '') !== '1'; // 첫 판 안내
   var st, score, moves, time, hist, drag = null, winT, auto, flyers = [], hintT = 0, hintMv = null, quitT = 0, hintsUsed = 0;
@@ -57,6 +57,12 @@
     var cards = cardsOf(src); if (!cards[0]) return false;
     if (dst.to === 'found') { if (cards.length !== 1 || !canFound(cards[0], dst.i)) return false; snap(); take(src); st.found[dst.i].push(cards[0]); score += 10; A.sfx('coin', 1 + cards[0].r * 0.04); afterMove(); return true; }
     if (dst.to === 'tab') { if (src.from === 'tab' && src.i === dst.i) return false; if (!canTab(cards[0], dst.i)) return false; snap(); take(src); st.tab[dst.i] = st.tab[dst.i].concat(cards); if (src.from === 'waste') score += 5; if (src.from === 'found') score = Math.max(0, score - 15); A.sfx('place', 1.2); afterMove(); return true; }
+    return false;
+  }
+  // 기초 더미 보내기: 카드 1장이고 기초 더미로 갈 수 있을 때만 옮긴다. 자동 이동이 꺼져 있어도 탭/클릭·W·1~7키는 이걸로만 보낸다.
+  function sendToFoundation(src) {
+    var cards = cardsOf(src); if (!cards[0] || cards.length !== 1 || src.from === 'found') return false;
+    for (var f = 0; f < 4; f++) if (tryMove(src, { to: 'found', i: f })) return true;
     return false;
   }
   function autoMove(src) {
@@ -191,8 +197,8 @@
       var tw = land ? 640 : 500, tx = land ? 154 : (W - tw) / 2, ty = land ? H - 108 : 724, touch = document.body.classList.contains('touch');
       c.globalAlpha = 0.93; c.fillStyle = '#2a0818'; A.rr(c, tx, ty, tw, 92, 18); c.fill(); c.strokeStyle = '#ff7aa8'; c.lineWidth = 2; c.stroke(); c.globalAlpha = 1;
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      var tut1 = autoMoveOn ? (touch ? '카드를 탭하면 갈 수 있는 곳으로 자동 이동!' : '카드를 클릭하면 갈 수 있는 곳으로 자동 이동!') : '카드를 끌어다 놓으세요!';
-      var tut2 = autoMoveOn ? '깜빡이는 카드부터 · 끌어 놓아도 되고, 막히면 힌트' : '깜빡이는 카드부터 · 막히면 힌트';
+      var tut1 = autoMoveOn ? (touch ? '카드를 탭하면 갈 수 있는 곳으로 자동 이동!' : '카드를 클릭하면 갈 수 있는 곳으로 자동 이동!') : (touch ? '올릴 수 있는 카드는 탭하면 기초 더미로!' : '올릴 수 있는 카드는 클릭하면 기초 더미로!');
+      var tut2 = autoMoveOn ? '깜빡이는 카드부터 · 끌어 놓아도 되고, 막히면 힌트' : '올릴 수 없는 카드는 끌어 놓기 · 막히면 힌트';
       c.fillStyle = '#ff7aa8'; c.font = '800 21px "Pretendard Variable",system-ui'; c.fillText(tut1, tx + tw / 2, ty + 32);
       c.fillStyle = 'rgba(255,214,228,.85)'; c.font = '600 16px "Pretendard Variable",system-ui'; c.fillText(tut2, tx + tw / 2, ty + 64);
     }
@@ -253,12 +259,13 @@
   stage.addEventListener('pointermove', function (e) { if (!drag || drag.id !== e.pointerId) return; var p = S.toLocal(e); drag.x = p.x; drag.y = p.y; if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 10) drag.moved = true; });
   stage.addEventListener('pointerup', function (e) {
     if (!drag || drag.id !== e.pointerId) return; var d = drag; drag = null;
-    if (!d.moved) { if (autoMoveOn) autoMove(d.src); else A.sfx('tap'); return; }
+    if (!d.moved) { if (autoMoveOn) autoMove(d.src); else if (!sendToFoundation(d.src)) A.sfx('tap'); return; }
     var tg = dropTarget({ x: d.x - d.ox + CW / 2, y: d.y - d.oy + 20 }); if (!tg || !tryMove(d.src, tg)) A.sfx('wall');
   });
   var S = new A.Shell({ id: 'solitaire', W: W, H: H, land: [960, 640], onResize: geo, reset: reset, update: update, idle: function (dt) { fx.update(dt); }, render: render,
     keydown: function (e) { var k = e.key; if ((k === ' ' || k === 'Enter') && !e.repeat) drawStock(); if (k === 'u' || k === 'U' || (k === 'z' && (e.ctrlKey || e.metaKey))) undo(); if ((k === 'h' || k === 'H') && !e.repeat) showHint();
-      if (autoMoveOn) { if (k === 'w' && st.waste.length) autoMove({ from: 'waste' }); if (/^[1-7]$/.test(k)) { var t = +k - 1, col = st.tab[t]; if (col.length) { var fu = 0; while (fu < col.length && !col[fu].up) fu++; if (!autoMove({ from: 'tab', i: t, k: col.length - 1 }) && fu < col.length - 1) autoMove({ from: 'tab', i: t, k: fu }); } } } } });
+      if (k === 'w' && st.waste.length) { if (autoMoveOn) autoMove({ from: 'waste' }); else if (!sendToFoundation({ from: 'waste' })) A.sfx('wall'); }
+      if (/^[1-7]$/.test(k)) { var t = +k - 1, col = st.tab[t]; if (col.length) { if (autoMoveOn) { var fu = 0; while (fu < col.length && !col[fu].up) fu++; if (!autoMove({ from: 'tab', i: t, k: col.length - 1 }) && fu < col.length - 1) autoMove({ from: 'tab', i: t, k: fu }); } else if (!sendToFoundation({ from: 'tab', i: t, k: col.length - 1 })) A.sfx('wall'); } } } });
   // 가로 화면 오른쪽 패널: 되돌리기·힌트·끝내기 큰 버튼 (점수는 게임판 왼쪽 아래에 그림)
   document.querySelector('.g-hud').setAttribute('data-land-hide', '');
   S.panelSlot.innerHTML = '<button class="gp-btn main" id="pkUndo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기</button>' +

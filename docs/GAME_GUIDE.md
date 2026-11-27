@@ -393,7 +393,9 @@ var fx = new A.FX();
 - 파티클 개수를 품질에 맞추려면 `A.gfx ? A.gfx.n(20) : 20`
 
 **3D 그래픽 (`g3d.js` + `assets/arcade/3d/<id>.js`)**: 지금 3D 게임은 tower, lanes, orbit, hockey, runner, pinball, racer, rocks 8개입니다.
-- 게임 규칙·조작·점수는 원래 2D 코드 그대로. 그림만 3D 장면 파일이 그립니다. 그래서 **3D를 못 쓰는 기기(웹GL 없음, 품질 '낮음', 불러오기 실패, 계속 느림)에서는 원래 2D 그림이 그대로 나옵니다.** 직접 끄려면 localStorage `neowa_3d` = `0`
+- 게임 규칙·조작·점수는 원래 2D 코드 그대로. 그림만 3D 장면 파일이 그립니다. 그래서 **3D를 못 쓰는 기기(웹GL 없음, 품질 '낮음', 불러오기 실패, 계속 느림)에서는 원래 2D 그림이 그대로 나옵니다.** 직접 끄려면 localStorage `neowa_3d` = `0`, 직접 켜려면 `1` (켜면 느림 기록이 있어도 다시 시도함)
+- 게임 코드에 넣는 것 (`tower.js` 참고): `A.load3D('<id>', 그릴 때 필요한 상태를 돌려주는 함수, function (h) { G3 = h; })` 와 render 맨 앞의 `if (G3.draw(c, fx)) return;`
+- 성능: 3D 파일과 three.js는 3D 게임에서만 불러옵니다. 그림자는 '높음'에서만. 느리면 해상도를 낮추고, 그래도 느리면 그 탭에서는 2D로 돌아가며 화면에 짧게 알립니다. 느림 기록이 있어도 다음에 들어오면 낮은 해상도로 3D를 다시 시도하고, 시작에 성공하면 기록을 지웁니다. 시작한 뒤 처음 5초는 예열이라 느림으로 세지 않고, 기준은 프레임 평균 28ms입니다. 모바일(터치 + 작은 화면)은 처음부터 해상도 1배, 안티앨리어싱·그림자 끔으로 시작하고 기준은 36ms, 예열 8초, 누적 5초로 더 관대합니다.
 - 게임 코드에 넣는 것 (`tower.js` 참고): `A.load3D('<id>', 그릴 때 필요한 상태를 돌려주는 함수, function (h) { G3 = h; })` 와 render 맨 앞의 `if (G3.draw(c, fx)) return;`
 - 3D 장면 파일은 `Arcade.G3D.define('<id>', function (X) { ...; return { camera, update(state, dt, shake, time), map? }; })`
   - `X.planeCam(눈x, 눈y, 거리)`: 게임 평면(z=0)의 논리 좌표가 화면에 정확히 맞는 카메라. 터치 위치·파티클 위치가 2D와 그대로 맞음 (tower, orbit, hockey, runner)

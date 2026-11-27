@@ -13,6 +13,10 @@ Arcade.G3D.define('shooting', function (X) {
   'use strict';
   var THREE = X.THREE, A = Arcade, scene = X.scene;
   var W = 540, H = 960, HI = X.level >= 2;
+  /* 크기 조정: 보이는 크기를 줄여 화면 여유를 확보합니다. 판정(히트박스)은 그대로 둡니다.
+     PC 기준 배율에 모바일 추가 배율을 곱합니다 (모바일은 화면이 작아 조금만 키웁니다).
+     보스는 모바일 추가 배율을 두지 않습니다 (원래 모바일 배율이 없어 PC와 같은 크기입니다). */
+  var SHIP_S0 = 0.72, ENEMY_S0 = 0.8, BOLT_S0 = 0.85, ORB_S0 = 0.9, BOSS_S0 = 0.8;
   var cam = X.planeCam(W * 0.5, H * 0.42, 1200);
 
   scene.add(new THREE.HemisphereLight(0xc0b8ff, 0x1a0a30, 0.9));
@@ -409,6 +413,8 @@ Arcade.G3D.define('shooting', function (X) {
       var i, j;
       var playing = s.state === 'playing';
       var mob = s.mob || 1; // 모바일에서는 기체·적기·탄을 크게 그린다
+      var mShip = mob > 1 ? 1.15 : 1, mEnemy = mob > 1 ? 1.1 : 1, mBolt = mob > 1 ? 1.1 : 1;
+      var shipS = SHIP_S0 * mShip, enemyS = ENEMY_S0 * mEnemy, boltS = BOLT_S0 * mBolt, orbS = ORB_S0 * mBolt, bossS = BOSS_S0;
       var useTex = texReady && !texFail; // 그림이 다 뜨면 그림 입힌 평면, 아니면 예전 기본 도형
       /* 페이즈 배경 교체 */
       if (s.phase && s.phase !== curPhase) {
@@ -459,7 +465,7 @@ Arcade.G3D.define('shooting', function (X) {
         me.visible = me.visible && !blink;
         me.position.set(px, -py, 30);
         me.rotation.z = -(s.state === 'ready' ? 0 : P.tilt) * 0.18;
-        me.scale.set((1 - Math.abs(P.tilt || 0) * 0.16) * mob, mob, mob);
+        me.scale.set((1 - Math.abs(P.tilt || 0) * 0.16) * shipS, shipS, shipS);
         meArt.visible = useTex; meShadow.visible = useTex;
         meBody.visible = !useTex; meWings[0].visible = !useTex; meWings[1].visible = !useTex;
         if (useTex && s.shipId && s.shipId !== lastShipId && SHIP_TEX[s.shipId]) {
@@ -496,7 +502,7 @@ Arcade.G3D.define('shooting', function (X) {
             var n = tcnt[e.type] || 0;
             if (n < tb.count) {
               tcnt[e.type] = n + 1;
-              var sz = ENEMY_SZ[e.type] * mob;
+              var sz = ENEMY_SZ[e.type] * enemyS;
               setInst(atlasBatch, tb.ids[n], e.x, -e.y, 0, enemyRot(e), (1 + sq * 0.18) * sz, (1 - sq * 0.18) * sz, 1);
               if (shN < shadowBatch.count) setInst(shadowBatch, shadowBatch.ids[shN++], e.x, -(e.y + 8), -8, enemyRot(e), sz * 1.08, sz * 1.08, 1);
               if (e.type === 'shielded' && shieldN < shieldBatch.count) {
@@ -531,6 +537,7 @@ Arcade.G3D.define('shooting', function (X) {
       if (useTex && hasBoss) {
         var bg = bossGroups[bi], b = s.boss;
         bg.position.set(b.x, -b.y, 20);
+        bg.scale.set(bossS, bossS, 1);
         bg.rotation.z = Math.sin(time * 0.8) * 0.06;
         if (bi === 1) {
           for (var li2 = 0; li2 < legs1.length; li2++) legs1[li2].rotation.z = -legs1[li2].userData.a + Math.sin(time * 3 + li2 * 0.9) * 0.18;
@@ -560,7 +567,7 @@ Arcade.G3D.define('shooting', function (X) {
       var bls = s.bullets || [];
       for (i = 0; i < bls.length && bc < bolts.count; i++) {
         var b = bls[i];
-        setInst(bolts, bolts.ids[bc++], b.x, -b.y, 10, -Math.atan2(b.vx, -b.vy), 12 * mob, 36 * mob, 1);
+        setInst(bolts, bolts.ids[bc++], b.x, -b.y, 10, -Math.atan2(b.vx, -b.vy), 12 * boltS, 36 * boltS, 1);
       }
       syncHide(bolts, bolts.ids, bc, 'bolt');
       var ocnt = {};
@@ -571,7 +578,7 @@ Arcade.G3D.define('shooting', function (X) {
         var on = ocnt[ok] || 0;
         if (on >= osl.count) continue;
         ocnt[ok] = on + 1;
-        var osc = (eb.homing ? 1.25 : 1) * mob;
+        var osc = (eb.homing ? 1.25 : 1) * orbS;
         setInst(orbs, osl.ids[on], eb.x, -eb.y, 10, 0, osc, osc, 1);
       }
       Object.keys(orbs.slots).forEach(function (k) {
@@ -595,12 +602,14 @@ Arcade.G3D.define('shooting', function (X) {
         var b3 = s.boss;
         for (i = 0; i < segs.length; i++) {
           segs[i].position.set(
-            b3.x + Math.sin(b3.t * 2.2 + i * 0.7) * (14 + i * 7),
-            -(b3.y - b3.r * 0.55 - i * 15),
+            b3.x + Math.sin(b3.t * 2.2 + i * 0.7) * (14 + i * 7) * bossS,
+            -(b3.y - (b3.r * 0.55 + i * 15) * bossS),
             10 - i * 2);
+          segs[i].scale.set(bossS, bossS, bossS);
           segs[i].rotation.z = Math.sin(time * 3 + i) * 0.4;
         }
-        bossCrown.position.set(b3.x, -(b3.y - b3.r * 0.75 - 8), 22);
+        bossCrown.position.set(b3.x, -(b3.y - (b3.r * 0.75 + 8) * bossS), 22);
+        bossCrown.scale.set(bossS, bossS, bossS);
         bossCrown.rotation.z = Math.sin(time * 2) * 0.08;
       }
       /* 궁극 연출 */
@@ -628,6 +637,7 @@ Arcade.G3D.define('shooting', function (X) {
       var bi2 = s.bossIntroT || 0;
       if (s.boss && bi2 > 0) {
         var ba = Math.min(1, bi2);
+        introCone.scale.set(bossS, bossS, 1);
         introCone.material.opacity = 0.14 * ba;
         introCone.position.set(s.boss.x, -(s.boss.y - 260), 60);
         introCone.rotation.z = Math.sin(time * 1.4) * 0.25;

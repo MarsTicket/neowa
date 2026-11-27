@@ -1,5 +1,9 @@
 /* 별빛 수호대 3D 장면 (게임 규칙은 shooting/index.html 2D 그대로, 그림만 3D)
-   - BatchedMesh: 탄환·적기·파편을 묶어 드로우콜 절감 (r160에도 있는 기능)
+   - 전투기·적기·보스는 art/*.webp 그림을 입힌 평면으로 그립니다. 외곽선은 alphaTest로 자르고,
+     그림자를 따로 깔아 입체감을 냅니다. 그림이 안 뜨면 예전 기본 도형으로 되돌아갑니다.
+   - BatchedMesh는 재질이 하나라 적기 종류마다 따로 묶습니다. r187은 addGeometry 뒤
+     addInstance를 따로 불러야 합니다. 안 부르면 첫 프레임 오류로 3D가 꺼집니다.
+   - 탄환은 빛나는 캡슐 그림, 적 탄은 빛나는 구슬 그대로입니다.
    - 발광·블룸: 폭발 글로우, 머즐 플래시, 궁극 글로우 (gfx.js 블룸과 함께)
    - 볼류메트릭 빛줄기: 보스 등장 시 원뿔 빛줄기 + 탐색광 글로우
    - 피격 소프트바디: 맞으면 찌그러졌다 복원되는 스케일 변형 (물리 엔진 없음)
@@ -89,6 +93,82 @@ Arcade.G3D.define('shooting', function (X) {
   }
   rockGroup.visible = false; fortGroup.visible = false; pillarGroup.visible = false;
 
+  /* ---------- 그림 파일 불러오기 (art/*.webp, 2D와 같은 파일) ----------
+     불러오는 동안은 예전 기본 도형으로 그리고, 다 뜨면 그림 입힌 평면으로 바꿉니다.
+     하나라도 실패하면 기본 도형 그대로 둡니다.
+     적기·보스 그림은 한 장의 아틀라스로 모아 드로우콜을 1개로 줄입니다. */
+  var texLoader = new THREE.TextureLoader();
+  var texPending = 0, texFail = false, texReady = false;
+  function checkTex() { if (texPending === 0 && !texFail) texReady = true; }
+  function loadArt(url) {
+    texPending++;
+    var t = texLoader.load(url, function () { texPending--; checkTex(); }, undefined, function () { texFail = true; texPending--; });
+    t.colorSpace = THREE.SRGBColorSpace;
+    try { t.anisotropy = Math.min(4, X.renderer.capabilities.getMaxAnisotropy()); } catch (e) {}
+    return t;
+  }
+  var SHIP_TEX = {
+    cheong: loadArt('art/ship.webp'),
+    baekho: loadArt('art/ship_w.webp'),
+    jujak: loadArt('art/ship_j.webp')
+  };
+  var ENEMY_TYPES = ['drone', 'weaver', 'gunner', 'tank', 'dasher', 'splitter', 'mini', 'sniper', 'shielded', 'meteor'];
+  var ATLAS_COLS = 4, ATLAS_ROWS = 3, ATLAS_CELL = 512;
+  var ATLAS_CELL_OF = { drone: 0, weaver: 1, gunner: 2, tank: 3, dasher: 4, splitter: 5, mini: 6, sniper: 7, shielded: 8, meteor: 9, boss: 10 };
+  var atlasCanvas = document.createElement('canvas');
+  atlasCanvas.width = ATLAS_COLS * ATLAS_CELL; atlasCanvas.height = ATLAS_ROWS * ATLAS_CELL;
+  var atlasCtx = atlasCanvas.getContext('2d');
+  var atlasTex = new THREE.CanvasTexture(atlasCanvas);
+  atlasTex.colorSpace = THREE.SRGBColorSpace;
+  atlasTex.minFilter = THREE.LinearFilter; atlasTex.generateMipmaps = false;
+  try { atlasTex.anisotropy = Math.min(4, X.renderer.capabilities.getMaxAnisotropy()); } catch (e) {}
+  function loadAtlasCell(key, url) {
+    texPending++;
+    var t = texLoader.load(url, function () {
+      var idx = ATLAS_CELL_OF[key], col = idx % ATLAS_COLS, row = Math.floor(idx / ATLAS_COLS);
+      try { atlasCtx.drawImage(t.image, col * ATLAS_CELL, row * ATLAS_CELL, ATLAS_CELL, ATLAS_CELL); } catch (e) { texFail = true; }
+      atlasTex.needsUpdate = true;
+      texPending--; checkTex();
+    }, undefined, function () { texFail = true; texPending--; });
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  ENEMY_TYPES.forEach(function (k) { loadAtlasCell(k, 'art/' + k + '.webp'); });
+  loadAtlasCell('boss', 'art/boss.webp');
+
+  /* 그림자·탄환 캡슐·실드 링은 캔버스로 한 번만 만들어 둡니다 (매 프레임 만들지 않음) */
+  var shadowTex = X.canvasTex(128, 128, function (x, w, h) {
+    var g = x.createRadialGradient(64, 64, 4, 64, 64, 62);
+    g.addColorStop(0, 'rgba(0,0,0,0.5)'); g.addColorStop(0.6, 'rgba(0,0,0,0.25)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+  });
+  var shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false });
+  var boltTex = X.canvasTex(32, 96, function (x, w, h) {
+    x.translate(16, 48); x.save(); x.scale(1, 3);
+    var g = x.createRadialGradient(0, 0, 0, 0, 0, 10);
+    g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.35, 'rgba(255,255,255,0.55)'); g.addColorStop(0.7, 'rgba(255,255,255,0.12)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, 10, 0, Math.PI * 2); x.fill(); x.restore();
+    x.fillStyle = 'rgba(255,255,255,0.95)';
+    x.beginPath(); x.moveTo(13, 12); x.lineTo(13, 84); x.arc(16, 84, 3, Math.PI, 0, true); x.lineTo(19, 12); x.arc(16, 12, 3, 0, Math.PI, true); x.closePath(); x.fill();
+  });
+  var shieldTex = X.canvasTex(128, 128, function (x, w, h) {
+    var i, a, px, py;
+    x.translate(64, 64);
+    x.save(); x.beginPath(); x.arc(0, 0, 56, 0, Math.PI * 2); x.clip();
+    x.strokeStyle = 'rgba(122,162,255,0.5)'; x.lineWidth = 1;
+    for (var gy = -64; gy < 64; gy += 15) {
+      for (var gx = -64; gx < 64; gx += 17) {
+        var ox = gx + ((Math.round(gy / 15) % 2) ? 8.5 : 0);
+        x.beginPath();
+        for (i = 0; i < 6; i++) { a = i / 6 * Math.PI * 2; px = ox + Math.cos(a) * 8.5; py = gy + Math.sin(a) * 8.5; if (i === 0) x.moveTo(px, py); else x.lineTo(px, py); }
+        x.closePath(); x.stroke();
+      }
+    }
+    x.restore();
+    x.strokeStyle = 'rgba(190,215,255,0.85)'; x.lineWidth = 2.5; x.beginPath(); x.arc(0, 0, 56, 0, Math.PI * 2); x.stroke();
+    x.strokeStyle = 'rgba(122,162,255,0.35)'; x.lineWidth = 6; x.beginPath(); x.arc(0, 0, 50, 0, Math.PI * 2); x.stroke();
+  });
+
   /* ---------- BatchedMesh: 같은 기체 지오메트리를 슬롯 수만큼 복사 등록해 묶습니다.
      r187부터 addGeometry는 지오메트리만 등록하고 인스턴스는 addInstance로 따로 만들어야 합니다.
      (r160은 addGeometry가 인스턴스까지 만들었으나 r187에서 분리됨. addInstance를 안 부르면
@@ -125,12 +205,38 @@ Arcade.G3D.define('shooting', function (X) {
     scene.add(m);
     return { mesh: m, slots: slots };
   }
+  /* 그림 입힌 평면 묶음: 종류마다 재질(그림)이 달라 따로 묶습니다. 평면은 1x1로 하나만 등록하고
+     인스턴스마다 크기를 달리해 씁니다. */
+  function makeTexBatched(tex, count, opts) {
+    opts = opts || {};
+    var mat = opts.material || new THREE.MeshBasicMaterial({ map: tex, alphaTest: opts.alphaTest == null ? 0.4 : opts.alphaTest, toneMapped: false });
+    var m = new THREE.BatchedMesh(count + 2, 16, 24, mat);
+    m.frustumCulled = false;
+    var gid = m.addGeometry(new THREE.PlaneGeometry(1, 1));
+    var ids = [];
+    for (var i = 0; i < count; i++) ids.push(m.addInstance(gid));
+    scene.add(m);
+    return { mesh: m, ids: ids, count: count };
+  }
   function setInst(b, slotId, x, y, z, rotZ, sx, sy, sz) {
     b.mesh.setMatrixAt(slotId, compose(x, y, z, rotZ, sx, sy, sz));
     b.mesh.setVisibleAt(slotId, true);
   }
   function hideInst(b, slotId) { b.mesh.setVisibleAt(slotId, false); }
+  /* 묶음의 모든 슬롯을 처음부터 숨깁니다 (BatchedMesh는 기본적으로 다 보입니다) */
+  function hideAllSlots(b) {
+    if (b.slots) { Object.keys(b.slots).forEach(function (k) { b.slots[k].ids.forEach(function (id) { hideInst(b, id); }); }); }
+    else if (b.ids) { b.ids.forEach(function (id) { hideInst(b, id); }); }
+  }
+  /* 이번 프레임에 쓰지 않은 슬롯만 숨깁니다 (매 프레임 전체를 다시 숨기지 않습니다) */
+  var _lastUsed = {};
+  function syncHide(b, ids, used, lk) {
+    var last = _lastUsed[lk] || 0;
+    if (used < last) { for (var i = used; i < last; i++) hideInst(b, ids[i]); }
+    _lastUsed[lk] = used;
+  }
   function downGeo(r, h, seg) { var g = new THREE.ConeGeometry(r, h, seg || 4); g.rotateZ(Math.PI); return g; }
+  /* 예전 기본 도형 묶음 (그림이 안 뜰 때 되돌아가는 용도 + 파편) */
   var units = makeBatched([
     { key: 'drone', geo: downGeo(14, 30), color: '#ff5d8f', count: 40 },
     { key: 'weaver', geo: new THREE.OctahedronGeometry(16), color: '#ffb547', count: 30 },
@@ -151,10 +257,39 @@ Arcade.G3D.define('shooting', function (X) {
     { key: 'debris4', geo: new THREE.TetrahedronGeometry(5), color: '#5ee7ff', count: 12 },
     { key: 'debris5', geo: new THREE.TetrahedronGeometry(5), color: '#ffd166', count: 12 }
   ], new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.45, metalness: 0.3, flatShading: true }));
-  var boltMat = new THREE.MeshBasicMaterial({ color: 0x5ee7ff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
-  var bolts = makeBatched([
-    { key: 'bolt', geo: new THREE.BoxGeometry(5, 26, 5), count: 220 }
-  ], boltMat);
+  /* 그림 입힌 적기 묶음 (2D와 같은 크기: r*2 + 26, 보스는 r*2 + 44) */
+  var ENEMY_SZ = { drone: 60, weaver: 60, gunner: 66, tank: 86, dasher: 60, splitter: 70, mini: 46, sniper: 62, shielded: 74, meteor: 58 };
+  var ENEMY_COUNT = { drone: 40, weaver: 30, gunner: 12, tank: 6, dasher: 12, splitter: 8, mini: 12, sniper: 8, shielded: 6, meteor: 10 };
+  /* 그림 입힌 적기 묶음: 아틀라스 1장 + 종류별 UV 평면으로 드로우콜 1개 */
+  function atlasPlane(idx) {
+    var g = new THREE.PlaneGeometry(1, 1);
+    var col = idx % ATLAS_COLS, row = Math.floor(idx / ATLAS_COLS);
+    var uv = g.attributes.uv;
+    for (var i = 0; i < uv.count; i++) {
+      uv.setXY(i, (col + uv.getX(i)) / ATLAS_COLS, (ATLAS_ROWS - 1 - row + uv.getY(i)) / ATLAS_ROWS);
+    }
+    return g;
+  }
+  var atlasBatch = (function () {
+    var total = 0;
+    ENEMY_TYPES.forEach(function (k) { total += ENEMY_COUNT[k]; });
+    var m = new THREE.BatchedMesh(total + 2, 64, 96, new THREE.MeshBasicMaterial({ map: atlasTex, alphaTest: 0.4, toneMapped: false }));
+    m.frustumCulled = false;
+    var slots = {};
+    ENEMY_TYPES.forEach(function (k) {
+      var gid = m.addGeometry(atlasPlane(ATLAS_CELL_OF[k]));
+      var ids = [];
+      for (var i = 0; i < ENEMY_COUNT[k]; i++) ids.push(m.addInstance(gid));
+      slots[k] = { count: ENEMY_COUNT[k], ids: ids };
+    });
+    scene.add(m);
+    return { mesh: m, slots: slots };
+  })();
+  var shadowBatch = makeTexBatched(null, 144, { material: shadowMat });
+  var shieldBatch = makeTexBatched(null, 6, { material: new THREE.MeshBasicMaterial({ map: shieldTex, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }) });
+  /* 아군 탄환: 빛나는 캡슐 그림 (색은 기체 색으로 물들임) */
+  var boltMat = new THREE.MeshBasicMaterial({ map: boltTex, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  var bolts = makeTexBatched(null, 220, { material: boltMat });
   var orbs = makeBatched([
     { key: 'pink', geo: new THREE.SphereGeometry(7, 8, 6), color: '#ff5d8f', count: 50 },
     { key: 'orange', geo: new THREE.SphereGeometry(7, 8, 6), color: '#ffb547', count: 40 },
@@ -164,23 +299,73 @@ Arcade.G3D.define('shooting', function (X) {
   ], new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
   var DEBRIS_KEYS = ['debris', 'debris2', 'debris3', 'debris4', 'debris5'];
   var ORB_BY_COLOR = { '#ff5d8f': 'pink', '#ffb547': 'orange', '#b48cff': 'purple', '#ff5a3c': 'red', '#ff2a5e': 'crimson', '#9be7ff': 'purple', '#7dff9b': 'orange', '#ff9ecf': 'pink', '#ff7a45': 'orange', '#8a90b0': 'purple', '#c8b8a0': 'orange' };
+  /* 묶음 슬롯은 처음부터 전부 숨겨 둡니다 (첫 프레임에 원점에 도형이 뜨는 것을 막습니다) */
+  hideAllSlots(units); hideAllSlots(atlasBatch); hideAllSlots(shadowBatch);
+  hideAllSlots(shieldBatch); hideAllSlots(bolts); hideAllSlots(orbs);
 
-  /* 플레이어 기체 (기체별 색은 상태로 받아옴) */
+  /* 플레이어 기체 (그림 입힌 평면 + 그림자 + 엔진 불꽃. 그림이 안 뜨면 예전 원뿔 몸통) */
   var me = new THREE.Group();
+  var meArt = new THREE.Mesh(new THREE.PlaneGeometry(92, 104), new THREE.MeshBasicMaterial({ map: SHIP_TEX.cheong, alphaTest: 0.4, toneMapped: false }));
+  me.add(meArt);
+  var meShadow = new THREE.Mesh(new THREE.PlaneGeometry(112, 124), shadowMat);
+  meShadow.position.set(0, -8, -8); me.add(meShadow);
   var meBodyMat = new THREE.MeshStandardMaterial({ color: 0xd8efff, roughness: 0.3, metalness: 0.4, flatShading: true, emissive: 0x0a2a3a, emissiveIntensity: 0.7 });
   var meBody = new THREE.Mesh(new THREE.ConeGeometry(15, 46, 4), meBodyMat); meBody.scale.z = 0.5; me.add(meBody);
   var meWingMat = new THREE.MeshStandardMaterial({ color: 0x355a80, roughness: 0.4, metalness: 0.5, flatShading: true });
+  var meWings = [];
   [-1, 1].forEach(function (s) {
     var w = new THREE.Mesh(new THREE.BoxGeometry(30, 5, 3), meWingMat);
-    w.position.set(s * 20, -12, 0); w.rotation.z = s * -0.35; me.add(w);
+    w.position.set(s * 20, -12, 0); w.rotation.z = s * -0.35; me.add(w); meWings.push(w);
   });
   var meGlow = X.glow('#ffffff', 110, 0.55); meGlow.material.color.set('#5ee7ff'); me.add(meGlow);
   var meFlame = new THREE.Mesh(new THREE.ConeGeometry(7, 26, 6), new THREE.MeshBasicMaterial({ color: 0x9be7ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
   meFlame.geometry.rotateZ(Math.PI); meFlame.position.set(0, -34, 0); me.add(meFlame);
-  var muzzle = X.glow('#ffffff', 70, 0.95); muzzle.position.set(0, 30, 6); muzzle.visible = false; me.add(muzzle);
+  var muzzle = X.glow('#ffffff', 70, 0.95); muzzle.position.set(0, 48, 6); muzzle.visible = false; me.add(muzzle);
   var meLight = new THREE.PointLight(0x5ee7ff, 60, 320, 1.8); me.add(meLight);
   me.position.z = 30; scene.add(me);
-  var lastShipColor = '';
+  var lastShipColor = '', lastShipId = '';
+
+  /* 보스 3종: 같은 boss.webp 그림에 보스별 색조·부품을 다르게 붙입니다 */
+  var BOSS_DEF = {
+    1: { size: 172, tint: 0xe8c8ff, glow: '#c05eff' },
+    2: { size: 188, tint: 0xffd9a0, glow: '#ff9a3c' },
+    3: { size: 204, tint: 0xffffff, glow: '#ff2a5e' }
+  };
+  var bossGroups = {};
+  [1, 2, 3].forEach(function (n) {
+    var d = BOSS_DEF[n], g = new THREE.Group();
+    var art = new THREE.Mesh(atlasPlane(ATLAS_CELL_OF.boss), new THREE.MeshBasicMaterial({ map: atlasTex, alphaTest: 0.4, toneMapped: false, color: d.tint }));
+    art.scale.set(d.size, d.size, 1);
+    g.add(art);
+    var sh = new THREE.Mesh(new THREE.PlaneGeometry(d.size * 1.1, d.size * 1.1), shadowMat);
+    sh.position.set(0, -10, -8); g.add(sh);
+    var gl = X.glow(d.glow, 300, 0.35); gl.position.z = -24; g.add(gl);
+    g.visible = false; scene.add(g); bossGroups[n] = g;
+  });
+  /* 보스1 성운 거미: 다리 8개 (몸통 뒤에서 바깥으로 뻗어 흔들림) */
+  var legs1 = [];
+  var legMat = new THREE.MeshStandardMaterial({ color: 0x7a2ad0, roughness: 0.5, metalness: 0.2, emissive: 0x2a0a4a, emissiveIntensity: 0.8, flatShading: true });
+  for (var li = 0; li < 8; li++) {
+    var leg = new THREE.Mesh(new THREE.ConeGeometry(5, 44, 4), legMat);
+    var la = li / 8 * Math.PI * 2;
+    leg.position.set(Math.sin(la) * 78, Math.cos(la) * 78, -6);
+    leg.rotation.z = -la;
+    leg.userData.a = la;
+    bossGroups[1].add(leg); legs1.push(leg);
+  }
+  /* 보스2 소행성 모함: 금빛 고리 + 포탑 3개 (아래를 향함) */
+  var ring2 = new THREE.Mesh(new THREE.TorusGeometry(102, 5, 8, 48), new THREE.MeshStandardMaterial({ color: 0xd8a03c, roughness: 0.3, metalness: 0.8, emissive: 0x4a2a00, emissiveIntensity: 0.6 }));
+  ring2.position.z = -3; bossGroups[2].add(ring2);
+  var turrets2 = [];
+  [Math.PI / 2, Math.PI / 2 + Math.PI * 2 / 3, Math.PI / 2 + Math.PI * 4 / 3].forEach(function (a) {
+    var tu = new THREE.Mesh(new THREE.ConeGeometry(9, 26, 5), new THREE.MeshStandardMaterial({ color: 0x3a3f58, roughness: 0.4, metalness: 0.6, flatShading: true }));
+    tu.geometry.rotateZ(Math.PI);
+    tu.position.set(Math.cos(a) * 52, Math.sin(a) * 52, 10);
+    bossGroups[2].add(tu); turrets2.push(tu);
+  });
+  /* 보스3 심연의 여제: 후광 링 (촉수·왕관은 아래 분절 그룹 그대로) */
+  var halo3 = new THREE.Mesh(new THREE.RingGeometry(88, 112, 48), new THREE.MeshBasicMaterial({ color: 0xff2a5e, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+  halo3.position.z = -10; bossGroups[3].add(halo3);
 
   /* 최종 보스 분절 촉수 (마디 8개가 따로 움직임) */
   var segGroup = new THREE.Group(); scene.add(segGroup);
@@ -207,12 +392,24 @@ Arcade.G3D.define('shooting', function (X) {
   introCone.geometry.rotateZ(Math.PI); scene.add(introCone);
   var searchGlow = X.glow('#ff8899', 200, 0); scene.add(searchGlow);
 
+  /* 2D 캔버스 회전(화면 기준 시계 방향 +)을 three.js rotation.z(반시계 +)로 바꿉니다 */
+  function enemyRot(e) {
+    var r = 0;
+    if (e.type === 'weaver') r = e.t * 2;
+    else if (e.m === 'dive') r = -Math.atan2(e.vx || 0, e.vy || 1) * 0.6;
+    else if (e.m === 'dash' && e.st === 2) r = Math.atan2(e.vy, e.vx) - Math.PI / 2;
+    else if (e.m === 'fall') r = e.rot || 0;
+    else if (e.type === 'meteor') r = (e.t || 0) * 0.5;
+    return -r;
+  }
+
   return {
     camera: cam,
     update: function (s, dt, o, time) {
       var i, j;
       var playing = s.state === 'playing';
       var mob = s.mob || 1; // 모바일에서는 기체·적기·탄을 크게 그린다
+      var useTex = texReady && !texFail; // 그림이 다 뜨면 그림 입힌 평면, 아니면 예전 기본 도형
       /* 페이즈 배경 교체 */
       if (s.phase && s.phase !== curPhase) {
         curPhase = s.phase; scene.background = bgTex[curPhase] || bgTex[1];
@@ -263,31 +460,87 @@ Arcade.G3D.define('shooting', function (X) {
         me.position.set(px, -py, 30);
         me.rotation.z = -(s.state === 'ready' ? 0 : P.tilt) * 0.18;
         me.scale.set((1 - Math.abs(P.tilt || 0) * 0.16) * mob, mob, mob);
+        meArt.visible = useTex; meShadow.visible = useTex;
+        meBody.visible = !useTex; meWings[0].visible = !useTex; meWings[1].visible = !useTex;
+        if (useTex && s.shipId && s.shipId !== lastShipId && SHIP_TEX[s.shipId]) {
+          lastShipId = s.shipId;
+          meArt.material.map = SHIP_TEX[s.shipId];
+          meArt.material.needsUpdate = true;
+        }
         if (s.shipColor && s.shipColor !== lastShipColor) {
           lastShipColor = s.shipColor;
           meBodyMat.emissive.set(s.shipColor); meGlow.material.color.set(s.shipColor); meLight.color.set(s.shipColor);
           meFlame.material.color.set(s.shipColor);
         }
+        meFlame.position.y = useTex ? -62 : -34;
+        muzzle.position.y = useTex ? 48 : 30;
         var fz = 0.85 + Math.random() * 0.3;
         meFlame.scale.set(fz, fz * (1.1 + Math.sin(time * 31) * 0.15), 1);
         muzzle.visible = s.state === 'playing' && P.fireT > 0.075;
         if (muzzle.visible) { var ms = 0.8 + Math.random() * 0.5; muzzle.scale.set(ms * 70, ms * 70, 1); }
       }
-      /* 적기·파편 (BatchedMesh 슬롯) */
+      /* 적기: 그림 입힌 평면(종류별 묶음) 또는 예전 기본 도형 */
       var cnt = {};
       Object.keys(units.slots).forEach(function (k) { cnt[k] = 0; });
+      var tcnt = {};
+      ENEMY_TYPES.forEach(function (k) { tcnt[k] = 0; });
+      var shN = 0, shieldN = 0;
       var ens = s.enemies || [];
       for (i = 0; i < ens.length; i++) {
         var e = ens[i], sl = units.slots[e.type];
         if (!sl) continue;
-        var n = cnt[e.type] || 0;
-        if (n >= sl.count) continue;
-        cnt[e.type] = n + 1;
         var sq = e.hit > 0 ? e.hit / 0.08 : 0;
-        var rot = e.type === 'weaver' ? -e.t * 2 : 0;
-        var ez = e.type.indexOf('boss') === 0 ? 20 : 0;
-        setInst(units, sl.ids[n], e.x, -e.y, ez, rot, (1 + sq * 0.18) * mob, (1 - sq * 0.18) * mob, mob);
+        if (useTex) {
+          var tb = atlasBatch.slots[e.type];
+          if (tb && e.type.indexOf('boss') !== 0) {
+            var n = tcnt[e.type] || 0;
+            if (n < tb.count) {
+              tcnt[e.type] = n + 1;
+              var sz = ENEMY_SZ[e.type] * mob;
+              setInst(atlasBatch, tb.ids[n], e.x, -e.y, 0, enemyRot(e), (1 + sq * 0.18) * sz, (1 - sq * 0.18) * sz, 1);
+              if (shN < shadowBatch.count) setInst(shadowBatch, shadowBatch.ids[shN++], e.x, -(e.y + 8), -8, enemyRot(e), sz * 1.08, sz * 1.08, 1);
+              if (e.type === 'shielded' && shieldN < shieldBatch.count) {
+                setInst(shieldBatch, shieldBatch.ids[shieldN], e.x, -e.y, 6, time * 0.5 + shieldN * 1.1, sz * 1.7, sz * 1.7, 1);
+                shieldN++;
+              }
+            }
+          }
+        } else {
+          var n2 = cnt[e.type] || 0;
+          if (n2 >= sl.count) continue;
+          cnt[e.type] = n2 + 1;
+          var rot = e.type === 'weaver' ? -e.t * 2 : 0;
+          var ez = e.type.indexOf('boss') === 0 ? 20 : 0;
+          setInst(units, sl.ids[n2], e.x, -e.y, ez, rot, (1 + sq * 0.18) * mob, (1 - sq * 0.18) * mob, mob);
+        }
       }
+      Object.keys(units.slots).forEach(function (k) {
+        if (k === 'debris' || k === 'debris2' || k === 'debris3' || k === 'debris4' || k === 'debris5') return;
+        var s2 = units.slots[k];
+        syncHide(units, s2.ids, cnt[k] || 0, 'legacy:' + k);
+      });
+      ENEMY_TYPES.forEach(function (k) {
+        var tb2 = atlasBatch.slots[k];
+        syncHide(atlasBatch, tb2.ids, tcnt[k] || 0, 'atlas:' + k);
+      });
+      syncHide(shadowBatch, shadowBatch.ids, shN, 'shadow');
+      syncHide(shieldBatch, shieldBatch.ids, shieldN, 'shield');
+      /* 보스 3종: 그림 입힌 평면 + 보스별 부품 (그림이 안 뜨면 예전 기본 도형이 위에서 그려짐) */
+      var bi = s.bossIdx || 0, hasBoss = !!s.boss && bi >= 1 && bi <= 3;
+      [1, 2, 3].forEach(function (bn) { bossGroups[bn].visible = useTex && hasBoss && bi === bn; });
+      if (useTex && hasBoss) {
+        var bg = bossGroups[bi], b = s.boss;
+        bg.position.set(b.x, -b.y, 20);
+        bg.rotation.z = Math.sin(time * 0.8) * 0.06;
+        if (bi === 1) {
+          for (var li2 = 0; li2 < legs1.length; li2++) legs1[li2].rotation.z = -legs1[li2].userData.a + Math.sin(time * 3 + li2 * 0.9) * 0.18;
+        } else if (bi === 2) {
+          ring2.rotation.z = time * 0.25;
+        } else if (bi === 3) {
+          halo3.material.opacity = 0.22 + Math.sin(time * 2.4) * 0.1;
+        }
+      }
+      /* 파편 (예전 기본 도형 그대로) */
       var dbs = s.debris || [];
       for (i = 0; i < dbs.length; i++) {
         var dk = DEBRIS_KEYS[i % DEBRIS_KEYS.length], dsl = units.slots[dk];
@@ -298,19 +551,18 @@ Arcade.G3D.define('shooting', function (X) {
         var ds = Math.max(0.2, q.sz / 5) * Math.min(1, q.life * 2);
         setInst(units, dsl.ids[dn], q.x, -q.y, 5, -q.a, ds, ds, ds);
       }
-      Object.keys(units.slots).forEach(function (k) {
-        var s2 = units.slots[k], used = cnt[k] || 0;
-        for (var u = used; u < s2.count; u++) hideInst(units, s2.ids[u]);
+      ['debris', 'debris2', 'debris3', 'debris4', 'debris5'].forEach(function (k) {
+        syncHide(units, units.slots[k].ids, cnt[k] || 0, 'legacy:' + k);
       });
-      /* 탄환 (BatchedMesh 슬롯) */
+      /* 탄환: 빛나는 캡슐 그림 (색은 기체 색) */
       if (s.shipColor) boltMat.color.set(s.shipColor);
       var bc = 0;
       var bls = s.bullets || [];
-      for (i = 0; i < bls.length && bc < bolts.slots.bolt.count; i++) {
+      for (i = 0; i < bls.length && bc < bolts.count; i++) {
         var b = bls[i];
-        setInst(bolts, bolts.slots.bolt.ids[bc++], b.x, -b.y, 10, -Math.atan2(b.vx, -b.vy), mob, mob, 1);
+        setInst(bolts, bolts.ids[bc++], b.x, -b.y, 10, -Math.atan2(b.vx, -b.vy), 12 * mob, 36 * mob, 1);
       }
-      for (var u2 = bc; u2 < bolts.slots.bolt.count; u2++) hideInst(bolts, bolts.slots.bolt.ids[u2]);
+      syncHide(bolts, bolts.ids, bc, 'bolt');
       var ocnt = {};
       Object.keys(orbs.slots).forEach(function (k) { ocnt[k] = 0; });
       var ebl = s.ebullets || [];
@@ -323,8 +575,7 @@ Arcade.G3D.define('shooting', function (X) {
         setInst(orbs, osl.ids[on], eb.x, -eb.y, 10, 0, osc, osc, 1);
       }
       Object.keys(orbs.slots).forEach(function (k) {
-        var s3 = orbs.slots[k], used3 = ocnt[k] || 0;
-        for (var u3 = used3; u3 < s3.count; u3++) hideInst(orbs, s3.ids[u3]);
+        syncHide(orbs, orbs.slots[k].ids, ocnt[k] || 0, 'orb:' + k);
       });
       /* 폭발 글로우 풀 */
       var bms = s.booms || [];
@@ -374,9 +625,9 @@ Arcade.G3D.define('shooting', function (X) {
       warpGlow.material.opacity = warping ? 0.35 + Math.sin(time * 6) * 0.1 : 0;
       if (warping && P) { warpGlow.position.set(P.x, -P.y, 40); }
       /* 보스 등장 볼류메트릭 빛줄기 + 탐색광 */
-      var bi = s.bossIntroT || 0;
-      if (s.boss && bi > 0) {
-        var ba = Math.min(1, bi);
+      var bi2 = s.bossIntroT || 0;
+      if (s.boss && bi2 > 0) {
+        var ba = Math.min(1, bi2);
         introCone.material.opacity = 0.14 * ba;
         introCone.position.set(s.boss.x, -(s.boss.y - 260), 60);
         introCone.rotation.z = Math.sin(time * 1.4) * 0.25;
